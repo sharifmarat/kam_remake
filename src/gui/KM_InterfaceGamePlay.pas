@@ -108,8 +108,8 @@ type
     procedure Message_GoTo(Sender: TObject);
     procedure Message_UpdateStack;
     procedure MessageLog_Click(Sender: TObject);
-    procedure MessageLog_ShowMessage(aMessageId: Integer);
-    procedure MessageLog_ItemClick(Sender: TObject);
+    procedure MessageLog_ShowMessage(aMessageId: Integer; aJumpToLoc: Boolean = True);
+    function MessageLog_ItemClick(Sender: TObject; Shift: TShiftState; const X,Y: Integer): Boolean;
     procedure MessageLog_Close(Sender: TObject);
     procedure MessageLog_Update(aFullRefresh: Boolean);
     procedure Minimap_Update(Sender: TObject; const X,Y:integer);
@@ -1203,7 +1203,7 @@ begin
     ColumnBox_MessageLog.ItemHeight := 20;
     ColumnBox_MessageLog.BackAlpha := 0;
     ColumnBox_MessageLog.EdgeAlpha := 0;
-    ColumnBox_MessageLog.OnClick := MessageLog_ItemClick;
+    ColumnBox_MessageLog.OnCellClickShift := MessageLog_ItemClick;
     for I := 0 to MAX_LOG_MSGS - 1 do
       ColumnBox_MessageLog.AddItem(MakeListRow(['', ''], -1));
 end;
@@ -1994,7 +1994,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.MessageLog_ShowMessage(aMessageId: Integer);
+procedure TKMGamePlayInterface.MessageLog_ShowMessage(aMessageId: Integer; aJumpToLoc: Boolean = True);
 var
   Msg: TKMLogMessage;
   H: TKMHouse;
@@ -2004,33 +2004,36 @@ begin
   Msg.IsReadLocal := True;
   gGame.GameInputProcess.CmdGame(gicGameMessageLogRead, aMessageId);
 
-  // Jump to location
-  fViewport.Position := KMPointF(Msg.Loc);
-
-  // Try to highlight the house in question
-  H := gHands.HousesHitTest(Msg.Loc.X, Msg.Loc.Y);
-
-  // Do not highlight a house if it is not the one that has issued the notification
-  // (happens when note is issues and house is destroyed and a new one is build in the same place)
-  // NOTE: It will highlight next house built on the 'ruins' which is unoccupied to be precise
-  //       even the NEW message has not been issued yet
-  if (H <> nil) then
+  if aJumpToLoc then
   begin
-    if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.HasOwner
-        and (gRes.Houses[H.HouseType].OwnerType <> utNone) and (H.HouseType <> htBarracks))
-      or H.ResourceDepletedMsgIssued
-      or H.OrderCompletedMsgIssued then
+    // Jump to location
+    fViewport.Position := KMPointF(Msg.Loc);
+
+    // Try to highlight the house in question
+    H := gHands.HousesHitTest(Msg.Loc.X, Msg.Loc.Y);
+
+    // Do not highlight a house if it is not the one that has issued the notification
+    // (happens when note is issues and house is destroyed and a new one is build in the same place)
+    // NOTE: It will highlight next house built on the 'ruins' which is unoccupied to be precise
+    //       even the NEW message has not been issued yet
+    if (H <> nil) then
     begin
-      gMySpectator.Highlight := H;
-      gMySpectator.Selected := H;
-      UpdateSelectedObject;
-    end;
-  end else begin
-    G := gHands.GroupsHitTest(Msg.Loc.X, Msg.Loc.Y);
-    if (G <> nil) and not G.IsDead then
-    begin
-      SelectUnitGroup(G);
-      UpdateSelectedObject;
+      if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.HasOwner
+          and (gRes.Houses[H.HouseType].OwnerType <> utNone) and (H.HouseType <> htBarracks))
+        or H.ResourceDepletedMsgIssued
+        or H.OrderCompletedMsgIssued then
+      begin
+        gMySpectator.Highlight := H;
+        gMySpectator.Selected := H;
+        UpdateSelectedObject;
+      end;
+    end else begin
+      G := gHands.GroupsHitTest(Msg.Loc.X, Msg.Loc.Y);
+      if (G <> nil) and not G.IsDead then
+      begin
+        SelectUnitGroup(G);
+        UpdateSelectedObject;
+      end;
     end;
   end;
 
@@ -2038,17 +2041,20 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.MessageLog_ItemClick(Sender: TObject);
+function TKMGamePlayInterface.MessageLog_ItemClick(Sender: TObject; Shift: TShiftState; const X,Y: Integer): Boolean;
 var
   ItemId, MessageId: Integer;
 begin
-  ItemId := ColumnBox_MessageLog.ItemIndex;
-  if ItemId = -1 then Exit;
+  Result := False;
+  ItemId := Y;
+  if ItemId >= Length(ColumnBox_MessageLog.Rows) then Exit;
 
   MessageId := ColumnBox_MessageLog.Rows[ItemId].Tag;
   if MessageId = -1 then Exit;
 
-  MessageLog_ShowMessage(MessageId);
+  Result := True;
+
+  MessageLog_ShowMessage(MessageId, ssLeft in Shift);
 end;
 
 

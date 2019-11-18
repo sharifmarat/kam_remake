@@ -19,6 +19,7 @@ type
   TNotifyEventKeyShiftFunc = function(Sender: TObject; Key: Word; Shift: TShiftState): Boolean of object;
   TNotifyEventXY = procedure(Sender: TObject; X, Y: Integer) of object;
   TNotifyEvenClickHold = procedure(Sender: TObject; AButton: TMouseButton; var aHandled: Boolean) of object;
+  TPointEventShiftFunc = function (Sender: TObject; Shift: TShiftState; const X,Y: Integer): Boolean of object;
 
   TKMControlState = (csDown, csFocus, csOver);
   TKMControlStateSet = set of TKMControlState;
@@ -1195,6 +1196,7 @@ type
     fScrollBar: TKMScrollBar;
     fOnChange: TNotifyEvent;
     fOnCellClick: TPointEventFunc;
+    fOnCellClickShift: TPointEventShiftFunc;
     function GetTopIndex: Integer;
     procedure SetTopIndex(aIndex: Integer);
     procedure SetBackAlpha(aValue: single);
@@ -1269,6 +1271,7 @@ type
     //Sort properties are just hints to render Up/Down arrows. Actual sorting is done by client
     property OnColumnClick: TIntegerEvent read GetOnColumnClick write SetOnColumnClick;
     property OnCellClick: TPointEventFunc read fOnCellClick write fOnCellClick;
+    property OnCellClickShift: TPointEventShiftFunc read fOnCellClickShift write fOnCellClickShift;
     property SortIndex: Integer read GetSortIndex write SetSortIndex;
     property SortDirection: TSortDirection read GetSortDirection write SetSortDirection;
 
@@ -7350,8 +7353,15 @@ begin
   //do not invoke inherited here, to fully override parent DoClick method
   IsClickHandled := False;
 
-  if (Button = mbLeft) and Assigned(fOnCellClick) and not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) then
-    IsClickHandled := fOnCellClick(Self, fMouseOverCell.X, fMouseOverCell.Y);
+  if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) then
+  begin
+    if Assigned(fOnCellClick) then
+      IsClickHandled := IsClickHandled or fOnCellClick(Self, fMouseOverCell.X, fMouseOverCell.Y)
+    else
+      if Assigned(fOnCellClickShift) then
+        IsClickHandled := IsClickHandled or fOnCellClickShift(Self, Shift, fMouseOverCell.X, fMouseOverCell.Y)
+
+  end;
 
   //Let propagate click event only when OnCellClick did not handle it
   if not IsClickHandled then
