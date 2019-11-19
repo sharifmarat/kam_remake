@@ -1775,6 +1775,9 @@ begin
       mkFileChunk:
               if not IsHost and (fFileReceiver <> nil) then
               begin
+                if SLOW_MAP_SAVE_LOAD then
+                  Sleep(50);
+                  
                 fFileReceiver.DataReceived(M);
                 PacketSend(aSenderIndex, mkFileAck);
                 M2 := TKMemoryStreamBinary.Create;
