@@ -101,9 +101,10 @@ type
     procedure Allies_Click(Sender: TObject);
     procedure Allies_Show(Sender: TObject);
     procedure MessageStack_UpdatePositions;
-    procedure Message_Click(Sender: TObject);
+    procedure Message_Click(Sender: TObject; Shift: TShiftState);
     procedure Message_Close(Sender: TObject);
-    procedure Message_Delete(Sender: TObject);
+    procedure Message_Delete(aIndex: Integer);
+    procedure Message_DeleteClick(Sender: TObject);
     procedure Message_Show(aIndex: Integer);
     procedure Message_GoTo(Sender: TObject);
     procedure Message_UpdateStack;
@@ -1049,7 +1050,7 @@ begin
     Image_Message[I].Hide;
     Image_Message[I].HighlightOnMouseOver := True;
     Image_Message[I].Tag := I;
-    Image_Message[I].OnClick := Message_Click;
+    Image_Message[I].OnClickShift := Message_Click;
   end;
 end;
 
@@ -1162,7 +1163,7 @@ begin
     Button_MessageDelete := TKMButton.Create(Panel_Message, 490, 104, 100, 24, gResTexts[TX_MSG_DELETE], bsGame);
     Button_MessageDelete.Font := fntAntiqua;
     Button_MessageDelete.Hint := gResTexts[TX_MSG_DELETE_HINT];
-    Button_MessageDelete.OnClick := Message_Delete;
+    Button_MessageDelete.OnClick := Message_DeleteClick;
     Button_MessageDelete.MakesSound := False; // Don't play default Click as these buttons use sfxMessageClose
 
     Image_MessageClose := TKMImage.Create(Panel_Message, 600 - 76, 24, 32, 32, 52);
@@ -1527,12 +1528,19 @@ end;
 
 
 // Click on the same message again closes it
-procedure TKMGamePlayInterface.Message_Click(Sender: TObject);
+procedure TKMGamePlayInterface.Message_Click(Sender: TObject; Shift: TShiftState);
 begin
-  if TKMImage(Sender).Tag <> fShownMessage then
-    Message_Show(TKMImage(Sender).Tag)
+  if ssLeft in Shift then
+  begin
+    if TKMImage(Sender).Tag <> fShownMessage then
+      Message_Show(TKMImage(Sender).Tag)
+    else
+      Message_Close(Sender);
+  end
   else
-    Message_Close(Sender);
+  begin
+    Message_Delete(TKMImage(Sender).Tag);
+  end;
 end;
 
 
@@ -1577,16 +1585,24 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.Message_Delete(Sender: TObject);
+procedure TKMGamePlayInterface.Message_DeleteClick(Sender: TObject);
 var
   OldMsg: Integer;
 begin
   if fShownMessage = -1 then Exit; // Player pressed DEL with no Msg opened
 
   OldMsg := fShownMessage;
-
   Message_Close(Sender);
-  fMessageStack.RemoveStack(OldMsg);
+  Message_Delete(OldMsg);
+end;
+
+
+procedure TKMGamePlayInterface.Message_Delete(aIndex: Integer);
+begin
+  if aIndex = fShownMessage then
+    Message_Close(nil);
+
+  fMessageStack.RemoveStack(aIndex);
 
   Message_UpdateStack;
   DisplayHint(nil);
