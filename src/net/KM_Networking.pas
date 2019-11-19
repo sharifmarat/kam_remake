@@ -204,7 +204,7 @@ type
     function  Connected: Boolean;
     procedure MatchPlayersToSave(aPlayerID: Integer = -1);
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
-    procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
+    procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder; aSendPlayerSetup: Boolean = False);
     procedure SelectSave(const aName: UnicodeString);
     procedure SelectLoc(aIndex:integer; aPlayerIndex:integer);
     procedure SelectTeam(aIndex:integer; aPlayerIndex:integer);
@@ -645,7 +645,7 @@ end;
 
 //Tell other players which map we will be using
 //Players will reset their starting locations and "Ready" status on their own
-procedure TKMNetworking.SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
+procedure TKMNetworking.SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder; aSendPlayerSetup: Boolean = False);
 begin
   Assert(IsHost, 'Only host can select maps');
   FreeAndNil(fMapInfo);
@@ -682,7 +682,9 @@ begin
   if Assigned(fOnMapName) then
     fOnMapName(fMapInfo.FileName);
 
-  SendPlayerListAndRefreshPlayersSetup;
+  //Don't send player setup by default. Cause it will be sent from lobby just afterwards
+  if aSendPlayerSetup then
+    SendPlayerListAndRefreshPlayersSetup;
 end;
 
 
