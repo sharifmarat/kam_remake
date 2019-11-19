@@ -782,6 +782,156 @@
 829:Zamówienie zostało zrealizowane
 830:Dodaj azjatyckie czcionki
 831:Wyjdź z pobranych
+832:Zmień nazwę powtórki
+833:Zmień nazwę powtórki
+834:Usuń tę powtórkę
+835:Nazwa:
+836:Zatwierdź
+837:Edytuj powiązania klawiszy
+838:Powiązania klawiszy
+839:OK
+840:Funkcja
+841:Klawisz
+842:Specjalne nieedytowalne powiązania klawiszy
+843:Specjalne powiązania klawiszy
+844:Przywróć domyślne powiązania klawiszy
+845:Przewiń w lewo
+846:Przewiń w prawo
+847:Przewiń do góry
+848:Przewiń w dół
+849:Menu budowania
+850:Menu podziału towarów
+851:Menu statystyk
+852:Menu opcji
+853:Komenda stop
+854:Komenda podziel
+855:Komenda połącz
+856:Komenda nakarm
+857:Komenda szturmuj
+858:Powiększ formację
+859:Pomniejsz formację
+860:Obróć zgodnie z ruchem zegara
+861:Obróc przeciwnie do ruchu zegara
+862:Normalna prędkość gry (x1)
+863:Prędkość x%s
+864:Prędkość x%s
+865:Prędkość x%s
+866:Sygnał
+867:Pauza
+868:Pokaż drużyny (MP)
+869:Przybliż
+870:Oddal
+871:Przywróć przybliżenie
+872:Zaznacz grupę 1
+873:Zaznacz grupę 2
+874:Zaznacz grupę 3
+875:Zaznacz grupę 4
+876:Zaznacz grupę 5
+877:Zaznacz grupę 6
+878:Zaznacz grupę 7
+879:Zaznacz grupę 8
+880:Zaznacz grupę 9
+881:Zaznacz grupę 10
+964:Oczekiwanie na dane rozłączonych graczy:
+965:Zakrapiacz - wybiera rodzaj płytki pod kursorem myszy
+966:Ta kuźnia zbroi nie ma gospodarza
+967:Ten warsztat pancerzy nie ma gospodarza
+968:Ta piekarnia nie ma gospodarza
+969:Ta rzeźnia nie ma gospodarza
+970:Ta kopalnia węgla nie ma gospodarza
+971:To gospodarstwo nie ma gospodarza
+972:Ta chatka rybacka nie ma gospodarza
+973:Ta kopalnia złota nie ma gospodarza
+974:Ta kopalnia żelaza nie ma gospodarza
+975:Ta dymarka nie ma gospodarza
+976:Ta mennica nie ma gospodarza
+977:Ten młyn nie ma gospodarza
+978:Ten kamieniołom nie ma gospodarza
+979:Ten tartak nie ma gospodarza
+980:Ten warsztat wojenny nie ma gospodarza
+981:Ta stajnia nie ma gospodarza
+982:Ten chlew nie ma gospodarza
+983:Ta garbarnia nie ma gospodarza
+984:Ta wieża obronna nie ma gospodarza
+985:Ta kuźnia płatnerska nie ma gospodarza
+986:Ten warsztat płatnerski nie ma gospodarza
+987:Ta winnica nie ma gospodarza
+988:Ta leśniczówka nie ma gospodarza
+989:%s wyszedł i został pokonany
+990:Host (%s) wyszedł z gry i został pokonany
+991:Anuluj
+992:Wyczyść klawisz
+993:Zaznacz grupę 11
+994:Zaznacz grupę 12
+995:Zaznacz grupę 13
+996:Zaznacz grupę 14
+997:Zaznacz grupę 15
+998:Zaznacz grupę 16
+999:Zaznacz grupę 17
+1000:Zaznacz grupę 18
+1001:Zaznacz grupę 19
+1002:Zaznacz grupę 20
+1003:Konstruuj drogę
+1004:Wykop pole
+1005:Załóż winnicę
+1006:Usuń plan
+1007:Zaznacz kolejny budynek/jednostkę tego samego typu
+1009:Oglądaj gracza 1
+1010:Oglądaj gracza 2
+1011:Oglądaj gracza 3
+1012:Oglądaj gracza 4
+1013:Oglądaj gracza 5
+1014:Oglądaj gracza 6
+1015:Oglądaj gracza 7
+1016:Oglądaj gracza 8
+1017:Przesuń mapę
+1019:%s cię wyciszył. Nie możesz więcej wysyłać mu wiadomości ani sygnałów
+1022:Twój drwal nie może znaleźć miejsca do zasadzenia drzewa.
+1106:Oglądaj gracza 9
+1107:Oglądaj gracza 10
+1108:Oglądaj gracza 11
+1109:Oglądaj gracza 12
 1118:Mapy dla wielu graczy
 1119:Wyłącz muzykę
 1120:Wymieszaj utwory
+1121:Losuj utwory wł./wył.
+1128:Pokaż drogi/pola/winnice
+1137:Dodaj atak komputera
+1138:Usuń atak komputera
+1139:Zwolniony
+1140:Zwolnij
+1141:Czy naprawdę chcesz zwolnić jednostkę?|Poddany uda się do szkoły i opuści twoje miasto na zawsze
+1142:Zwolnij poddanego
+1143:Anuluj zwolnienie poddanego
+1144:Nie da się zwolnić poddanego, ponieważ nie posiadasz w mieście szkoły
+1160:Pokaż zasięg wydobycia
+1161:Pokaż zasięg ataku wieży
+1162:Pokaż zasięg ataku jednostki
+1197:Wymuś malowanie
+1198:Wymusza malowanie pędzlem po płytkach, które były wcześniej wstawione ręcznie (o ile to możliwe)
+1199:Magiczny pędzel - automatycznie napraw wszystkie przejścia płytek przy użyciu wybranej maski
+1200:Bez maski - używaj domyślnych przejść między płytkami
+1201:Najmiększa maska - użyj automatycznie utworzonych przejść
+1202:Miękka maska - użyj automatycznie utworzonych przejść
+1203:Twarda maska - użyj automatycznie utworzonych przejść
+1229:Klasyczne SI|Parametry
+1230:Zmień parametry używane jedynie przez klasyczne SI
+1231:Parametry klasycznego SI
+1232:Użyj wszystkich rodzajów jednostek
+1235:Eksport danych moża zająć do kilku minut.\nWyeksportowane dane zostaną zapisane w katalogu '%s'.\nCzy chcesz kontynuować?
+1236:Procedura [ %s ] zadeklarowana dla konsolowej komendy /%s nie została znaleziona w skrypcie
+1237:Zły typ parametru dla komendy /%s: [%s]
+1238:Zły pierwszy typ parametru dla komendy /%s. Oczekiwano: [%s] a jest: [%s]
+1239:Zbyt wiele parametrów dla komendy /%s: [%s]. Maksymalna liczba parametrów to [%s] (wliczając obowiązkowy parametr HandID)
+1240:Złe parametry dla komendy /%s. Oczekiwane typy parametrów to: [%s]
+1241:Zbyt wiele parametrów przekazanych do komendy /%s: Oczekiwana liczba parametrów [ %s ], a jest: [ %s ]
+1242:Komenda wykonana: /%s(%s)
+1243:Błąd w trakcie wykonania komendy /%s(%s)
+1244:Komenda /%s nie została odnaleziona
+1245:Włącz/wyłącz kopiuj-wklej w oknie czatu
+1255:Błąd: Nazwa gracza '%s' jest zarezerwowana
+1256:Poddani (P/B/R)
+1257:Poddani (inni)
+1259:Dostarczanie %s jest zablokowane
+1260:Wynoszenie %s jest zablokowane
+1261:Rekrut nie może wejść do Warowni
