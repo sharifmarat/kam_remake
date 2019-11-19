@@ -1199,6 +1199,7 @@ type
     fOnChange: TNotifyEvent;
     fOnCellClick: TPointEventFunc;
     fOnCellClickShift: TPointEventShiftFunc;
+    fOnChangeInvoked: Boolean;
     function GetTopIndex: Integer;
     procedure SetTopIndex(aIndex: Integer);
     procedure SetBackAlpha(aValue: single);
@@ -1216,7 +1217,7 @@ type
     procedure SetSearchColumn(aValue: ShortInt);
     procedure SetItemIndex(const Value: Smallint);
     procedure UpdateMouseOverPosition(X,Y: Integer);
-    procedure UpdateItemIndex(Shift: TShiftState);
+    procedure UpdateItemIndex(Shift: TShiftState; var aOnChangeInvoked: Boolean);
     function GetItem(aIndex: Integer): TKMListRow;
     function GetSelectedItem: TKMListRow;
     function GetSelectedItemTag: Integer;
@@ -7381,15 +7382,16 @@ begin
   if not IsClickHandled then
   begin
     inherited DoClick(X, Y, Shift, Button);
-    if Assigned(fOnChange) then
+    if Assigned(fOnChange) and not fOnChangeInvoked then
       fOnChange(Self);
   end;
 end;
 
 
-procedure TKMColumnBox.UpdateItemIndex(Shift: TShiftState);
+procedure TKMColumnBox.UpdateItemIndex(Shift: TShiftState; var aOnChangeInvoked: Boolean);
 var NewIndex: Integer;
 begin
+  aOnChangeInvoked := False;
   if not (ssLeft in Shift) or (fMouseOverRow = -1) then
     Exit;
 
@@ -7408,7 +7410,10 @@ begin
     ItemIndex := NewIndex;
     if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) and Columns[fMouseOverCell.X].TriggerOnChange
       and Assigned(fOnChange) then
+    begin
       fOnChange(Self);
+      aOnChangeInvoked := True;
+    end;
   end;
 end;
 
@@ -7417,7 +7422,7 @@ procedure TKMColumnBox.MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMous
 begin
   inherited;
   UpdateMouseOverPosition(X, Y);
-  UpdateItemIndex(Shift);
+  UpdateItemIndex(Shift, fOnChangeInvoked);
   //Lets do DoClick here instead of MouseUp event handler, because of some TKMColumnBox specific logic
   if (csDown in State) then
   begin
@@ -7425,15 +7430,18 @@ begin
 
     //Send Click events
     DoClick(X, Y, Shift, Button);
+    fOnChangeInvoked := False;
   end;
 end;
 
 
 procedure TKMColumnBox.MouseMove(X,Y: Integer; Shift: TShiftState);
+var
+  OnChangeInvoked: Boolean;
 begin
   inherited;
   UpdateMouseOverPosition(X, Y);
-  UpdateItemIndex(Shift);
+  UpdateItemIndex(Shift, OnChangeInvoked);
 end;
 
 
