@@ -424,6 +424,7 @@ begin
     RegisterMethodCheck(c, 'function GroupColumnCount(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupDead(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupIdle(aGroupID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function GroupInFight(aGroupID: Integer; aCountCitizens: Boolean): Boolean');
     RegisterMethodCheck(c, 'function GroupMember(aGroupID, aMemberIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupMemberCount(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupOrder(aGroupID: Integer): TKMGroupOrder');
@@ -561,6 +562,7 @@ begin
     RegisterMethodCheck(c, 'function UnitTypeName(aUnitType: Byte): AnsiString');
 
     RegisterMethodCheck(c, 'function WareTypeName(aWareType: Byte): AnsiString');
+    RegisterMethodCheck(c, 'function WarriorInFight(aUnitID: Integer; aCountCitizens: Boolean): Boolean');
 
     c := Sender.AddClassN(nil, AnsiString(fActions.ClassName));
     RegisterMethodCheck(c, 'function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;' +
@@ -999,6 +1001,7 @@ begin
       RegisterMethod(@TKMScriptStates.GroupColumnCount,                         'GroupColumnCount');
       RegisterMethod(@TKMScriptStates.GroupDead,                                'GroupDead');
       RegisterMethod(@TKMScriptStates.GroupIdle,                                'GroupIdle');
+      RegisterMethod(@TKMScriptStates.GroupInFight,                             'GroupInFight');
       RegisterMethod(@TKMScriptStates.GroupMember,                              'GroupMember');
       RegisterMethod(@TKMScriptStates.GroupMemberCount,                         'GroupMemberCount');
       RegisterMethod(@TKMScriptStates.GroupOrder,                               'GroupOrder');
@@ -1136,6 +1139,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitTypeName,                             'UnitTypeName');
 
       RegisterMethod(@TKMScriptStates.WareTypeName,                             'WareTypeName');
+      RegisterMethod(@TKMScriptStates.WarriorInFight,                           'WarriorInFight');
     end;
 
     with ClassImp.Add(TKMScriptActions) do
