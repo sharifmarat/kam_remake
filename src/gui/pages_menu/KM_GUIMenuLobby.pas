@@ -1512,6 +1512,7 @@ end;
 
 //Players list has been updated
 //We should reflect it to UI
+//Not very fast operation - ~4ms per player = ~60ms per all
 procedure TKMMenuLobby.Lobby_OnPlayersSetup(Sender: TObject);
 
   function ConvertSpeedRange(aSpeedRng: TKMRangeSingle): TKMRangeInt;
