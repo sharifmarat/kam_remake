@@ -103,7 +103,7 @@ type
 
 implementation
 uses
-  KM_RenderAux, KM_Game, KM_HandsCollection, KM_Terrain, KM_ResUnits,
+  KM_RenderAux, KM_Game, KM_HandsCollection, KM_Terrain, KM_ResUnits, KM_UnitGroup,
   KM_UnitActionGoInOut, KM_UnitActionStay, KM_UnitTaskBuild, KM_UnitTaskDismiss,
   KM_UnitWarrior, KM_Log, KM_Resource, KM_CommonClassesExt;
 
@@ -1261,7 +1261,11 @@ end;
 procedure TKMUnitActionWalkTo.Paint;
 begin
   if SHOW_UNIT_ROUTES then
-    if not (gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected = fUnit) then
+    if not ((gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected is TKMUnitGroup))
+      or (gMySpectator.Selected = fUnit)
+      or ((fUnit is TKMUnitWarrior)
+        and (gMySpectator.Selected is TKMUnitGroup)
+        and (TKMUnitGroup(gMySpectator.Selected).SelectedUnit = fUnit)) then
       gRenderAux.UnitRoute(NodeList, NodePos, byte(fUnit.UnitType));
 end;
 
