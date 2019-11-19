@@ -129,7 +129,7 @@ type
     procedure GameMPReadyToPlay(Sender: TObject);
     procedure GameHold(DoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
     procedure RequestGameHold(Msg: TKMGameResultMsg);
-    procedure PlayerVictory(aPlayerIndex: TKMHandID);
+    procedure PlayerVictory(aHandIndex: TKMHandID);
     procedure PlayerDefeat(aPlayerIndex: TKMHandID; aShowDefeatMessage: Boolean = True);
     procedure WaitingPlayersDisplay(aWaiting: Boolean);
     procedure WaitingPlayersDrop;
@@ -967,12 +967,15 @@ begin
 end;
 
 
-procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandID);
+procedure TKMGame.PlayerVictory(aHandIndex: TKMHandID);
 begin
   if IsMultiPlayerOrSpec then
   begin
+    if fNetworking.NetPlayers.PlayerIndexToLocal(aHandIndex) = -1 then
+      Exit;
+      
     fNetworking.PostLocalMessage(
-      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON], [gHands[aPlayerIndex].GetOwnerNameColoredU]),
+      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON], [gHands[aHandIndex].GetOwnerNameColoredU]),
       csSystem);
 
     if Assigned(fNetworking.OnPlayersSetup) then
@@ -982,12 +985,12 @@ begin
   if fGameMode = gmMultiSpectate then
     Exit;
 
-  if aPlayerIndex = gMySpectator.HandID then
+  if aHandIndex = gMySpectator.HandID then
     gSoundPlayer.Play(sfxnVictory, 1, True); //Fade music
 
   if fGameMode = gmMulti then
   begin
-    if aPlayerIndex = gMySpectator.HandID then
+    if aHandIndex = gMySpectator.HandID then
     begin
       GameResult := grWin;
       fGamePlayInterface.ShowMPPlayMore(grWin);
