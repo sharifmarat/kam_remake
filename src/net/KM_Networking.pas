@@ -36,7 +36,8 @@ const
     [mkAskForAuth,mkAskToJoin,mkClientLost,mkReassignHost,mkDisconnect,mkPing,mkPingInfo,mkPlayersList,
      mkStartingLocQuery,mkSetTeam,mkFlagColorQuery,mkResetMap,mkMapSelect,mkSaveSelect,
      mkReadyToStart,mkStart,mkTextChat,mkKicked,mkLangCode,mkGameOptions,mkServerName,
-     mkFileRequest,mkFileChunk,mkFileEnd,mkFileAck,mkFileProgress,mkTextTranslated,mkHasMapOrSave,mkSetPassword],
+     mkFileRequest,mkFileSendStarted,mkFileChunk,mkFileEnd,mkFileAck,mkFileProgress,
+     mkTextTranslated,mkHasMapOrSave,mkSetPassword],
     //lgsLoading
     [mkAskForAuth,mkClientLost,mkReassignHost,mkDisconnect,mkPing,mkPingInfo,mkPlayersList,
      mkReadyToPlay,mkPlay,mkTextChat,mkKicked,mkTextTranslated,mkVote],
@@ -132,6 +133,7 @@ type
     fOnCommands: TStreamIntEvent;
     fOnResyncFromTick: TResyncEvent;
     fOnSetPassword: TAnsiStringEvent;
+    fOnAbortAllTransfers: TEvent;
 
     procedure DecodePingInfo(aStream: TKMemoryStreamBinary);
     procedure ForcedDisconnect(Sender: TObject);
@@ -151,6 +153,8 @@ type
     procedure TransferOnCompleted(aClientIndex: TKMNetHandleIndex);
     procedure TransferOnPacket(aClientIndex: TKMNetHandleIndex; aStream: TKMemoryStreamBinary; out SendBufferEmpty: Boolean);
     function GetMyNetPlayer: TKMNetPlayerInfo;
+    procedure SetDownloadlInProgress(aSenderIndex: TKMNetHandleIndex; aValue: Boolean);
+    procedure FileRequestReceived(aSenderIndex: TKMNetHandleIndex; aM: TKMemoryStreamBinary);
 
     procedure ConnectSucceed(Sender:TObject);
     procedure ConnectFailed(const S: string);
@@ -203,6 +207,7 @@ type
     procedure DropPlayers(aPlayers: TKMByteArray);
     function  Connected: Boolean;
     procedure MatchPlayersToSave(aPlayerID: Integer = -1);
+    procedure AbortAllTransfers;
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
     procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder; aSendPlayerSetup: Boolean = False);
     procedure SelectSave(const aName: UnicodeString);
@@ -276,6 +281,7 @@ type
     property OnPingInfo: TNotifyEvent write fOnPingInfo;         //Ping info updated
     property OnMPGameInfoChanged: TNotifyEvent write fOnMPGameInfoChanged;
     property OnSetPassword: TAnsiStringEvent write fOnSetPassword;
+    property OnAbortAllTransfers: TEvent read fOnAbortAllTransfers write fOnAbortAllTransfers;
 
     property OnDisconnect: TUnicodeStringEvent write fOnDisconnect;     //Lost connection, was kicked
     property OnJoinerDropped: TIntegerEvent write fOnJoinerDropped; //Other player disconnected
@@ -483,7 +489,7 @@ begin
   FreeAndNil(fMapInfo);
   FreeAndNil(fSaveInfo);
   FreeAndNil(fFileReceiver);
-  fFileSenderManager.AbortAllTransfers;
+  AbortAllTransfers;
 
   fSelectGameKind := ngkNone;
 end;
@@ -620,6 +626,14 @@ begin
 end;
 
 
+procedure TKMNetworking.AbortAllTransfers;
+begin
+  fFileSenderManager.AbortAllTransfers; //Any ongoing transfer is cancelled
+  if Assigned(fOnAbortAllTransfers) then
+    fOnAbortAllTransfers;
+end;
+
+
 //Clear selection from any map/save
 procedure TKMNetworking.SelectNoMap(const aErrorMessage: UnicodeString);
 begin
@@ -629,7 +643,8 @@ begin
 
   FreeAndNil(fMapInfo);
   FreeAndNil(fSaveInfo);
-  fFileSenderManager.AbortAllTransfers; //Any ongoing transfer is cancelled
+
+  AbortAllTransfers;
 
   PacketSend(NET_ADDRESS_OTHERS, mkResetMap);
   fNetPlayers.ResetLocAndReady; //Reset start locations
@@ -675,7 +690,7 @@ begin
   fSelectGameKind := ngkMap;
   MyNetPlayer.ReadyToStart := True;
   MyNetPlayer.HasMapOrSave := True;
-  fFileSenderManager.AbortAllTransfers; //Any ongoing transfer is cancelled
+  AbortAllTransfers; //Any ongoing transfer is cancelled
 
   SendMapOrSave;
 
@@ -725,7 +740,7 @@ begin
 
   //Randomise locations within team is disabled for saves
   NetPlayers.RandomizeTeamLocations := False;
-  fFileSenderManager.AbortAllTransfers; //Any ongoing transfer is cancelled
+  AbortAllTransfers; //Any ongoing transfer is cancelled
 
   SendMapOrSave;
   MatchPlayersToSave; //Don't match players if it's not a valid save
@@ -1300,7 +1315,7 @@ begin
   if IsHost then
   begin
     //We are no longer the host
-    fFileSenderManager.AbortAllTransfers;
+    AbortAllTransfers;
     fNetPlayerKind := lpkJoiner;
     if Assigned(fOnReassignedJoiner) then fOnReassignedJoiner(Self); //Lobby/game might need to know
     if Assigned(fOnPlayersSetup) then fOnPlayersSetup(Self);
@@ -1757,20 +1772,8 @@ begin
                 end;
               end;
 
-      mkFileRequest:
-              if IsHost then
-              begin
-                //Validate request and set up file sender
-                M.ReadW(tmpStringW);
-                case fSelectGameKind of
-                  ngkMap:  if ((tmpStringW <> MapInfo.FileName) and (tmpStringW <> MapInfo.FileName + '_' + IntToHex(MapInfo.CRC, 8)))
-                            or not fFileSenderManager.StartNewSend(kttMap, MapInfo.FileName, MapInfo.MapFolder, aSenderIndex) then
-                              PacketSend(aSenderIndex, mkFileEnd); //Abort
-                  ngkSave: if (tmpStringW <> SaveInfo.FileName)
-                            or not fFileSenderManager.StartNewSend(kttSave, SaveInfo.FileName, mfDL, aSenderIndex) then
-                              PacketSend(aSenderIndex, mkFileEnd); //Abort
-                end;
-              end;
+      mkFileRequest: FileRequestReceived(aSenderIndex, M);
+              
 
       mkFileChunk:
               if not IsHost and (fFileReceiver <> nil) then
@@ -1798,6 +1801,7 @@ begin
               begin
                 fFileReceiver.ProcessTransfer;
                 FreeAndNil(fFileReceiver);
+                SetDownloadlInProgress(aSenderIndex, False);
               end;
 
       mkFileProgress:
@@ -1806,7 +1810,15 @@ begin
                 M.Read(tmpCardinal);
                 M.Read(tmpCardinal2);
                 PlayerIndex := fNetPlayers.ServerToLocal(aSenderIndex);
-                fOnPlayerFileTransferProgress(PlayerIndex, tmpCardinal, tmpCardinal2);
+                if (PlayerIndex <> -1) and fNetPlayers[PlayerIndex].DownloadInProgress then
+                  fOnPlayerFileTransferProgress(PlayerIndex, tmpCardinal, tmpCardinal2);
+              end;
+
+      mkFileSendStarted:
+              if not IsHost then //Host will mark NetPlayers before file send
+              begin
+                M.Read(tmpCardinal);
+                SetDownloadlInProgress(tmpCardinal, True);
               end;
 
       mkLangCode:
@@ -2624,6 +2636,57 @@ end;
 function TKMNetworking.GetMyNetPlayer: TKMNetPlayerInfo;
 begin
   Result := fNetPlayers[fMyIndex];
+end;
+
+
+procedure TKMNetworking.SetDownloadlInProgress(aSenderIndex: TKMNetHandleIndex; aValue: Boolean);
+var
+  PlayerIndex: Integer;
+begin
+  PlayerIndex := fNetPlayers.ServerToLocal(aSenderIndex);
+  if PlayerIndex <> -1 then
+    fNetPlayers[PlayerIndex].DownloadInProgress := aValue;
+end;
+
+
+procedure TKMNetworking.FileRequestReceived(aSenderIndex: TKMNetHandleIndex; aM: TKMemoryStreamBinary);
+
+  procedure AbortSend;
+  begin
+    PacketSend(aSenderIndex, mkFileEnd); //Abort
+    SetDownloadlInProgress(aSenderIndex, False);
+  end;
+  
+var
+  tmpStringW: UnicodeString;
+begin
+  if IsHost then
+  begin
+    //Validate request and set up file sender
+    aM.ReadW(tmpStringW);
+    case fSelectGameKind of
+      ngkMap: if ((tmpStringW = MapInfo.FileName) or (tmpStringW = MapInfo.FileName + '_' + IntToHex(MapInfo.CRC, 8))) then
+              begin
+                PacketSend(NET_ADDRESS_OTHERS, mkFileSendStarted, aSenderIndex);
+                SetDownloadlInProgress(aSenderIndex, True);
+                if not fFileSenderManager.StartNewSend(kttMap, MapInfo.FileName, MapInfo.MapFolder, aSenderIndex) then
+                  AbortSend;
+              end 
+              else
+                AbortSend;
+                            
+
+      ngkSave:if tmpStringW = SaveInfo.FileName then
+              begin
+                PacketSend(NET_ADDRESS_OTHERS, mkFileSendStarted, aSenderIndex);
+                SetDownloadlInProgress(aSenderIndex, True);
+                if not fFileSenderManager.StartNewSend(kttSave, SaveInfo.FileName, mfDL, aSenderIndex) then    
+                  AbortSend;
+              end
+              else
+                AbortSend;
+    end;
+  end;
 end;
 
 

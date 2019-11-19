@@ -91,6 +91,7 @@ type
     mkSetPassword,     //Host sets password on server
 
     mkFileRequest,     //Joiner requests host to send file
+    mkFileSendStarted, //Host notify all about he start sending file
     mkFileChunk,       //Host sends chunk of file to joiner
     mkFileAck,         //Joiner tells host he received a chunk
     mkFileEnd,         //Host informs joiner that the whole file has been sent
@@ -163,6 +164,7 @@ const
     pfBinary,   //mkPassword
     pfStringA,  //mkSetPassword
     pfStringW,  //mkFileRequest
+    pfNumber,   //mkFileSendStarted
     pfBinary,   //mkFileChunk
     pfNoData,   //mkFileAck
     pfNoData,   //mkFileEnd

@@ -113,6 +113,7 @@ type
     procedure Lobby_OnFileTransferProgress(aTotal, aProgress: Cardinal);
     procedure Lobby_OnPlayerFileTransferProgress(aNetPlayerIndex: Integer; aTotal, aProgress: Cardinal);
     procedure Lobby_OnSetPassword(const aPassword: AnsiString);
+    procedure Lobby_AbortAllTransfers;
 
     procedure StartBtnChangeEnabled(Sender: TObject; aEnable: Boolean);
 
@@ -882,6 +883,7 @@ begin
   fNetworking.OnFileTransferProgress := Lobby_OnFileTransferProgress;
   fNetworking.OnPlayerFileTransferProgress := Lobby_OnPlayerFileTransferProgress;
   fNetworking.OnSetPassword := Lobby_OnSetPassword;
+  fNetworking.OnAbortAllTransfers := Lobby_AbortAllTransfers;
 
   Radio_MapType.ItemIndex := gGameApp.GameSettings.MenuLobbyMapType;
   UpdateMapList;
@@ -2578,6 +2580,17 @@ end;
 procedure TKMMenuLobby.Lobby_OnSetPassword(const aPassword: AnsiString);
 begin
   Image_PasswordLock.Visible := aPassword <> '';
+end;
+
+
+//Abort all transfers
+procedure TKMMenuLobby.Lobby_AbortAllTransfers;
+var
+  I: Integer;
+begin
+  for I := 1 to MAX_LOBBY_SLOTS do
+    PercentBar_PlayerDl_ChVisibility(I, False);
+  fNetworking.NetPlayers.SetDownloadAborted; //Mark all players as not downloading
 end;
 
 
