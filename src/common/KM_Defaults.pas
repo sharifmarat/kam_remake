@@ -233,6 +233,7 @@ const
   REPLAY_AUTOSAVE_FREQUENCY_MIN  = 300; //30 sec
   REPLAY_AUTOSAVE_FREQUENCY_MAX  = 10*60*60; // 1hour
   REPLAY_AUTOSAVE_FREQUENCY_DEFAULT = 3000; //5 min
+  REPLAY_AUTOSAVE_MAX_SAVE_POINTS = 40; //Default max number of replay autosaves
 
 
   BEACON_COOLDOWN         = 400;  //Minimum time in milliseconds between beacons

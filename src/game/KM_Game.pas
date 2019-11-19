@@ -101,6 +101,7 @@ type
 
     function PlayNextTick: Boolean;
     procedure UserAction(aActionType: TKMUserActionType);
+    function GetReplayAutosaveEffectiveFrequency: Integer;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -2292,10 +2293,10 @@ begin
                         //Save replay to memory (to be able to load it later)
                         //Make replay save only after everything is updated (UpdateState)
                         if gGameApp.GameSettings.ReplayAutosave
-                          and (
-                            (fGameTick = 1)//First tick
+                          and (fSavedReplays.Count <= REPLAY_AUTOSAVE_MAX_SAVE_POINTS) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
+                          and ((fGameTick = 1) //First tick
                             or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
-                            or ((fGameTick mod gGameApp.GameSettings.ReplayAutosaveFrequency) = 0)) then
+                            or ((fGameTick mod GetReplayAutosaveEffectiveFrequency) = 0)) then
                         begin
                           SaveReplayToMemory;
                           if fGamePlayInterface <> nil then
@@ -2334,6 +2335,16 @@ begin
   finally
     fBlockGetPointer := True;
   end;
+end;
+
+
+function TKMGame.GetReplayAutosaveEffectiveFrequency: Integer;
+begin
+  Assert(IsReplay, 'Wrong game mode');
+  Result := Math.Max(gGameApp.GameSettings.ReplayAutosaveFrequency,
+                     //Do not save too often, that could cause OUT_OF_MEMORY error
+                     fGameInputProcess.GetLastTick div (REPLAY_AUTOSAVE_MAX_SAVE_POINTS - 2)); // - 2 for starting one and for PT
+  Result := Ceil(Result / 300)*300; //Ceil to every 30 sec
 end;
 
 
