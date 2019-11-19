@@ -237,6 +237,7 @@ type
     function GetPoint(aIndex: Integer): TKMPoint; inline;
     procedure SetPoint(aIndex: Integer; const aValue: TKMPoint); inline; //1..Count
     function GetLast: TKMPoint;
+    function GetLen: Single;
   public
     constructor Create;
 
@@ -244,6 +245,7 @@ type
     property Items[aIndex: Integer]: TKMPoint read GetPoint write SetPoint; default;
     property Last: TKMPoint read GetLast;
     function IsEmpty: Boolean;
+    property Len: Single read GetLen;
 
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
@@ -589,6 +591,16 @@ end;
 procedure TKMPointList.SetPoint(aIndex: Integer; const aValue: TKMPoint);
 begin
   fItems[aIndex] := aValue;
+end;
+
+
+function TKMPointList.GetLen: Single;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to fCount - 2 do
+    Result := Result + KMLengthDiag(fItems[I], fItems[I + 1]);
 end;
 
 
