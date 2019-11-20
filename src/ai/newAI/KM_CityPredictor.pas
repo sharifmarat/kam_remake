@@ -4,11 +4,7 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes,
-  KM_AISetup, KM_ResHouses, KM_ResWares, KM_HandStats;
-
-var
-  GA_PREDICTOR_WareNeedPerAWorker_Stone : Single = 0.65;
-  GA_PREDICTOR_WareNeedPerAWorker_Wood  : Single = 0.28;
+  KM_AISetup, KM_ResHouses, KM_ResWares, KM_HandStats, KM_AIParameters;
 
 type
   TWareBalance = record
