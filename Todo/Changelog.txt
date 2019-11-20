@@ -43,6 +43,8 @@ Bugs:
  +  Fixed coloring in Memo control for long (wrapped) texts. F.e. if server description contains long colored text it will be colored only only on the very first line
  +  When drag scrolling with middle mouse button close to window border viewport scroll start moving view position
  +  Update Cinematics speed due to changes in GameSpeed
+ +  Sometimes when player disconnects the game other players does not receive his "I am leaving" message. That cause game to wait for already left player 
+ +  Fix possible desync in scripting cache
  +  MapEd: bug with group formatting when reducing group size with more then 1 row to less then row size units (F.e. you have 5x2 group and reduce its size to 3 units)
  +  MapEd: when placing markers(reveal FOW/center screen/AI start/defence AI)/units/houses/roads/fields/tile brushes/tile objects - after RBM click buttons are still selected, even if you can't use them actually.
  +  MapEd: fixed unit delete - unit was highlighted and deleted not right under the cursor, but on the cell under the cursor, so when you could not delete unit by pointing on its head
@@ -118,14 +120,15 @@ Improvements:
  +  L Unit group: Splitting one soldier from the group by pressing Ctrl+Separate warrior order
  +  L Unit group: do not change UnitsPerRow of a group that is exiting Barracks if player has manually changed it at least once
  +    Unit group: feed or split command should not cancel group previous order
+ +    Improve group ordering: ranged groups do not stop their attacks on Link command, Split command, unit linked to group after being trained in Barracks, unit died while group was attacking housecha
  +    All units (not animals) has higher importance on minimap, then road. So enemy soldiers will be always seen in your city, even on road
  +    Defeat player if he intentionally quit. Show win messages in chat when player win
  +    Reveal FOW by house from all tiles it covers (instead of only its right-bottom corner tile)
  +    Increase number of players up to 12 + 1 spectator (will be adjusted later, after beta-testing)
  +  L Allow changing speed in MP when there's only 1 human (for playing vs AI like it's SP)
+ +    Reduced ArmyAttack minimap alert fight distance (24 -> 12) and duration (6s -> 5s)
  +    Make game speed precise
  +    Block weapon production separately in armor workshop
- +    Swap wooden shield and leather jacket in Armor workshop to make same order with Iron smithy (armors first, shields second)
  +    Limit max possible weapons to 5 in the houses producing warfare
  +    Enlarge troops direction selector change dir from 15 to 20 pixels
  +    Limit number of units appeared after house destroy to 50 (was 255)
@@ -162,6 +165,8 @@ Improvements:
  +    Stats page (F3) - added highlight unit qty number when there is no enought workers
  +    Stats page (F3) - click on house icon will jump to next house with same type
  +    Jump to selected unit / house when click on its scroll / logo
+ +    Messages (house not occupied etc): right click will mark it as 'read'
+ +    Messages (by script command Actions.ShowMsg, f.e.): right click on it will delete it
  +    Better scripting overlay placement depends of the game type (allow to draw overlay closer to the top of the screen during the game)
  +    Colored niknames in chat system messages
  +    Add scull icon for defeated players in game information
@@ -190,6 +195,7 @@ Improvements:
  +    Lobby reset bans - added cooldown 1s, to prohibit annoying spam with it
  +    Lobby: added new button to the lobby setting menu, to notify not ready players
  +    Lobby: added lock icon, when password is set
+ +    Lobby: Show progress bar for those who is downloading map or save
  +    SinglePlayer menu: added separatation by map type: scenario/build/fight/special. Also added PlayableBySp map tag, to make it possible to play MP maps from singleplayer menu (against AI)
       Map Editor page:
         + added map description and 'view PDF' button, same as in lobby
@@ -219,6 +225,7 @@ Improvements:
  +    Separated and sorted by teams list of players
  +    Allow to see players beacons while spectating/watching replay
  +    New option - replay autopause on PT end
+ +    New view mode - 'teams'
  +    Unblock Build button (F1) to try test house build (show house / field marks)
  +    Enable 'Quit mission' (renamed to 'Quit Replay') button when watching replay
  
@@ -263,7 +270,9 @@ Improvements:
  +  L Allow to rotate tiles on the map like in Krom's editor
  +  L Add a button into barracks and woodcutters UI to allow to set a rally/cutting point
  +    Add ability to set loc possible AI type (classic/advanced) on mission/player type submenu
+ +    Add cost of buildings when selecting them
  +    Added 'Fix terrain brushes' feature on Terrain brushes page (new 'options' popup menu). This feature will try to fix map inner info (terrain kinds) to make brushes work again in case if they are broken.
+ +    Add new terrain filter in Extras Menu - tpBuildNoObj (Can we build a house on this tile after removing an object on the tile or house near it?)
  +    Its possible to add many units at once by hold LMB and mouse move (mouse drag)
  +    Added ability to set up house delivery mode/repair mode/closed for worker mode
  +    Added new layer - show tile owner (for corn/wine/roads)
@@ -306,6 +315,7 @@ Improvements:
  +    Added Actions.AIAttack function (Add/Remove)
  +    Added new script module Utils
  +    Added shortcuts for Actions/States/Utils as A/S/U
+ +    Added functions to check if group or warrior is in fight
  
  Other: 
  +  L Saving and restoring games window position on restart
@@ -323,6 +333,7 @@ Improvements:
  +    Map format was changed (*.map file), that will significantly reduce map file sizes (~3 times)
  +    All maps were resaved to the new format, so they can't be open in older game version. Back compatibility is stored
  +    Render game at least 1 frame per second, usefull to check game state on superfast game speeds (x300). Max time between renders could be adjusted in the ini parameter NoRenderMaxTime
+ +    Prevent game to update unit/house pointers while out of the tick. It prevents possible desyncs
  
    
    
