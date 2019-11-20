@@ -4,12 +4,7 @@ interface
 uses
   Math, KM_CommonUtils, SysUtils, KM_Defaults, KM_CommonClasses, KM_Points,
   KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats, KM_HouseCollection,
-  KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
-
-var
-  GA_MANAGEMENT_CheckUnitCount_SerfCoef    : Single = 0.393; //0.193077
-  GA_MANAGEMENT_CheckUnitCount_SerfLimit   : Single = 0.825; //2.178943
-
+  KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation, KM_AIParameters;
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record

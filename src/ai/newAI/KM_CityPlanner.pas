@@ -5,115 +5,11 @@ uses
   Classes, Graphics, KromUtils, Math, SysUtils, Contnrs,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_CommonUtils,
   KM_TerrainFinder, KM_PerfLog, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
-  KM_PathFindingRoad, KM_CityPredictor, KM_Eye,
+  KM_PathFindingRoad, KM_CityPredictor, KM_Eye, KM_AIParameters,
   KM_AIInfluences, KM_NavMeshDefences;
-
-
-var
-  GA_PLANNER_FindPlaceForHouse_AllyInfluence          : Single =  1; // 0..255
-  GA_PLANNER_FindPlaceForHouse_EnemyInfluence         : Single = 10; // 0..255
-  GA_PLANNER_FindForestAndWoodcutter_AllyInfluence    : Single =  3; // 0..255
-  GA_PLANNER_FindForestAndWoodcutter_EnemyInfluence   : Single = 10; // 0..255
-
-
-{
-  GA_PLANNER_ObstaclesInHousePlan_Tree        : Single = 841.3786292;
-  GA_PLANNER_ObstaclesInHousePlan_Road        : Single = 493.7465489;
-  GA_PLANNER_FieldCrit_PolyRoute              : Single =   5;
-  GA_PLANNER_FieldCrit_FlatArea               : Single =   1.095071644;
-  GA_PLANNER_FieldCrit_Soil                   : Single =   1.468697906;
-  GA_PLANNER_SnapCrit_SnapToHouse             : Single =   0;
-  GA_PLANNER_SnapCrit_SnapToFields            : Single =  45.83452046;
-  GA_PLANNER_SnapCrit_SnapToRoads             : Single =  27.67475247;
-  GA_PLANNER_SnapCrit_ClearEntrance           : Single =  73.31552982;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit       : Single =   0.815679014;
-  GA_PLANNER_FindPlaceForHouse_HouseDist      : Single =  15.93156815;
-  GA_PLANNER_FindPlaceForHouse_SeedDist       : Single =  35.0065589;
-  GA_PLANNER_FindPlaceForHouse_CityCenter     : Single =  25.83347261;
-  GA_PLANNER_FindPlaceForHouse_Route          : Single =   1.038699865;
-  GA_PLANNER_FindPlaceForHouse_FlatArea       : Single =   0.832797021;
-  GA_PLANNER_FindPlaceForHouse_RouteFarm      : Single =  1.05445170402527;//-1.722400993; // 1,05445170402527
-  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm   : Single =  -0.37953233718872;//-0.468331337; // -0,37953233718872
-  GA_PLANNER_FindPlaceForHouse_HouseDistFarm  : Single =  4.1189032793045;// 3.518705368; // 4,1189032793045
-  GA_PLANNER_FindPlaceForHouse_CityCenterFarm : Single =  8.66540372371675;//17.59352684; // 8,66540372371675
-  GA_PLANNER_PlaceWoodcutter_DistFromForest	  : Single =   0.899758935;
-//}
-//{
-  GA_PLANNER_ObstaclesInHousePlan_Tree        : Single = 788.3220911;
-  GA_PLANNER_ObstaclesInHousePlan_Road        : Single = 219.6835876;
-  GA_PLANNER_FieldCrit_PolyRoute              : Single =   2.883937657;
-  GA_PLANNER_FieldCrit_FlatArea               : Single =   1.613979578;
-  GA_PLANNER_FieldCrit_Soil                   : Single =   2.607529342;
-  GA_PLANNER_SnapCrit_SnapToHouse             : Single =   0;
-  GA_PLANNER_SnapCrit_SnapToFields            : Single =   0.288372883;
-  GA_PLANNER_SnapCrit_SnapToRoads             : Single =   7.870791852;
-  GA_PLANNER_SnapCrit_ClearEntrance           : Single =  19.17334318;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit       : Single =   1.07497108;
-  GA_PLANNER_FindPlaceForHouse_HouseDist      : Single =  18.67234826;
-  GA_PLANNER_FindPlaceForHouse_SeedDist       : Single =  42.05959439;
-  GA_PLANNER_FindPlaceForHouse_CityCenter     : Single =  43.24023426;
-  GA_PLANNER_FindPlaceForHouse_Route          : Single =   3.326784611;
-  GA_PLANNER_FindPlaceForHouse_FlatArea       : Single =   1.945348799;
-  GA_PLANNER_FindPlaceForHouse_RouteFarm      : Single =  -1.3515504;
-  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm   : Single =  -5;
-  GA_PLANNER_FindPlaceForHouse_HouseDistFarm  : Single =   4.647785425;
-  GA_PLANNER_FindPlaceForHouse_CityCenterFarm : Single =  23.23892713;
-  GA_PLANNER_PlaceWoodcutter_DistFromForest	  : Single =   0.899758935;
-//}
-
-
-  GA_PLANNER_PlanFields_CanBuild              : Word = 20;
-  GA_PLANNER_PlanFields_Dist                  : Word =  6;
-  GA_PLANNER_PlanFields_ExistField            : Word = 51;
-  GA_PLANNER_PlanFields_MaxFields             : Word = 17;
-  GA_PLANNER_PlanFields_MaxWine               : Word = 10;
-
-  GA_PLANNER_FindPlaceForQuary_Obstacle	      : Single =    35;
-  GA_PLANNER_FindPlaceForQuary_DistCity	      : Single =    15;
-  GA_PLANNER_FindPlaceForQuary_DistTimer      : Single = 10000;
-  GA_PLANNER_FindPlaceForQuary_DistStone	    : Single =    48;
-  GA_PLANNER_FindPlaceForQuary_SnapCrit	      : Single =    15;
-
-
-//{
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single =    32.1456005573273;
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer  : Single = 13805.7332038879;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single =   406.349253058433;
-  GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single =     0.816604614257812;
-  GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single =     3.37718081474304;
-  GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single =     2.91867184638977;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single =     0.94243973493576;
-  GA_PLANNER_FindPlaceForWoodcutter_DistTimer     : Single = 11655.6522846222;
-  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     : Single =     3.34831988811493; // c
-  GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single =   138.00858259201; // c
-  GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single =     4.72347187995911;
-  GA_PLANNER_FindForestAround_MaxDist             : Single =     7.36316233873368; // c
-//}
-
-
-
-  GA_PATHFINDING_BasePrice      : Word = 34;
-  GA_PATHFINDING_Road           : Word = 34;
-  GA_PATHFINDING_noBuildArea    : Word = 14;
-  GA_PATHFINDING_Field          : Word = 41;
-  GA_PATHFINDING_Coal           : Word = 35;
-  GA_PATHFINDING_Forest         : Word = 50;
-  GA_PATHFINDING_OtherCase      : Word = 43;
-
-  GA_SHORTCUTS_BasePrice        : Word = 65;
-  GA_SHORTCUTS_Road             : Word = 27;
-  GA_SHORTCUTS_noBuildArea      : Word = 27;
-  GA_SHORTCUTS_Field            : Word = 47;
-  GA_SHORTCUTS_Coal             : Word = 26;
-  GA_SHORTCUTS_Forest           : Word = 27;
-  GA_SHORTCUTS_OtherCase        : Word = 22;
-  // Note: it is interesting to see different GA strategy for pathfinding
-  // of first road to new house and pathfinding of shortcuts
-
 
 const
   FARM_RADIUS = 11;
-
 
 type
   THousePlan = record

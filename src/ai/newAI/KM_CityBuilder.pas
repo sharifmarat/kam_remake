@@ -5,25 +5,7 @@ uses
   KromUtils, Math, SysUtils,
   KM_Defaults, KM_CommonClasses, KM_CommonUtils, KM_Points, KM_Sort,
   KM_ResHouses, KM_ResWares, KM_BuildList, KM_Houses,
-  KM_AIInfluences, KM_CityPlanner, KM_CityPredictor, KM_Eye;
-
-
-var
-  GA_BUILDER_BuildHouse_FieldMaxWork    : Single =  1;
-  GA_BUILDER_BuildHouse_RTPMaxWork      : Single =  5;
-  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 16;
-  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 10;
-  GA_BUILDER_ChHTB_FractionCoef         : Single =  9.352;
-  GA_BUILDER_ChHTB_TrunkFactor          : Single = 16.045;
-  GA_BUILDER_ChHTB_TrunkBalance         : Single =  2.511;
-  GA_BUILDER_ChHTB_AllWorkerCoef        : Single =  7.154;
-  GA_BUILDER_ChHTB_FreeWorkerCoef       : Single =  4.251;
-  GA_BUILDER_Shortage_Stone             : Single = 13.772;
-  GA_BUILDER_Shortage_StoneNoQuarry     : Single = 30.000;
-  GA_BUILDER_Shortage_Gold              : Single = 27.638;
-  GA_BUILDER_Shortage_Trunk             : Single =  3.360;
-  GA_BUILDER_Shortage_Wood              : Single = 12.890;
-
+  KM_AIInfluences, KM_CityPlanner, KM_CityPredictor, KM_Eye, KM_AIParameters;
 
 const
   NODE_PRIO_RoadsUnlockHouse = 1;
