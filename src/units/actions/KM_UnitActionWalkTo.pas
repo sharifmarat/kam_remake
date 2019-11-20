@@ -98,6 +98,7 @@ type
     function Execute: TKMActionResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure Paint; override; //Used only for debug so far
+    function NeedToPaint(aRect: TKMRect): Boolean; //Used only for debug so far
   end;
 
 
@@ -1273,6 +1274,21 @@ end;
 function TKMUnitActionWalkTo.CanBeInterrupted(aForced: Boolean = True): Boolean;
 begin
   Result := CanAbandonExternal and StepDone;//Only when unit is idling during Interaction pauses
+end;
+
+
+//Check if our path is through viewport, to show debug unit route
+function TKMUnitActionWalkTo.NeedToPaint(aRect: TKMRect): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to NodeList.Count - 1 do
+  begin
+    Result := Result or KMInRect(NodeList[I], aRect);
+    if Result then
+      Exit;
+  end;
 end;
 
 
