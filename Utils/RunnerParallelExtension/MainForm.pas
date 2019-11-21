@@ -34,10 +34,8 @@ type
     gbGA: TGroupBox;
       lPopulation: TLabel;
       lGenerations: TLabel;
-      lGenes: TLabel;
       sePopulation: TSpinEdit;
       seGenerations: TSpinEdit;
-      seGenes: TSpinEdit;
 
       lTournament: TLabel;
       seStartTournament: TSpinEdit;
@@ -60,6 +58,7 @@ type
   private
     fPlot: TPlotGraph;
     fSim: TMainSimThread;
+    procedure LoadCfg();
   public
     procedure Log(const aText: String);
     procedure ClearLog();
@@ -82,6 +81,7 @@ const
 
 procedure TParaller_Runner.FormCreate(Sender: TObject);
 var
+  K: Integer;
   s: String;
 begin
   s := ExtractFilePath(ParamStr(0));
@@ -89,25 +89,7 @@ begin
   fPlot := TPlotGraph.Create(imgGenes,imgFitness,tbGeneSwitch);
   fSim := TMainSimThread.Create(fPlot,ExtractFilePath(ParamStr(0)));
   // Load default configuration
-  with fSim do
-  begin
-      seMaps.Value            := GA_CountMaps;
-      seDuration.Value        := SIM_TimeInMin;
-      seThreads.Value         := SIM_CountThreads;
-
-      sePopulation.Value      := GA_CountIndividuals;
-      seGenerations.Value     := GA_Generations;
-      seGenes.Value           := GA_CountGenes;
-
-      seStartTournament.Value := GA_START_TOURNAMENT_IndividualsCnt;
-      seEndTournament.Value   := GA_FINAL_TOURNAMENT_IndividualsCnt;
-      eStartResetGene.Text    := FloatToStr(GA_START_MUTATION_ResetGene);
-      eEndResetGene.Text      := FloatToStr(GA_FINAL_MUTATION_ResetGene);
-      eStartGaussMut.Text     := FloatToStr(GA_START_MUTATION_Gaussian);
-      eEndGaussMut.Text       := FloatToStr(GA_FINAL_MUTATION_Gaussian);
-      eStartVariance.Text     := FloatToStr(GA_START_MUTATION_Variance);
-      eEndVariance.Text       := FloatToStr(GA_FINAL_MUTATION_Variance);
-  end;
+  LoadCfg();
 end;
 
 
@@ -121,6 +103,33 @@ begin
 end;
 
 
+procedure TParaller_Runner.LoadCfg();
+var
+  K: Integer;
+begin  with fSim do
+  begin
+      for K := 0 to lbClasses.Items.Count - 1 do
+        if (CompareStr(SIM_Class,lbClasses.Items[K]) = 0) then
+          lbClasses.ItemIndex := K;
+      seMaps.Value            := GA_CountMaps;
+      seDuration.Value        := SIM_TimeInMin;
+      seThreads.Value         := SIM_CountThreads;
+
+      sePopulation.Value      := GA_CountIndividuals;
+      seGenerations.Value     := GA_Generations;
+
+      seStartTournament.Value := GA_START_TOURNAMENT_IndividualsCnt;
+      seEndTournament.Value   := GA_FINAL_TOURNAMENT_IndividualsCnt;
+      eStartResetGene.Text    := FloatToStr(GA_START_MUTATION_ResetGene);
+      eEndResetGene.Text      := FloatToStr(GA_FINAL_MUTATION_ResetGene);
+      eStartGaussMut.Text     := FloatToStr(GA_START_MUTATION_Gaussian);
+      eEndGaussMut.Text       := FloatToStr(GA_FINAL_MUTATION_Gaussian);
+      eStartVariance.Text     := FloatToStr(GA_START_MUTATION_Variance);
+      eEndVariance.Text       := FloatToStr(GA_FINAL_MUTATION_Variance);
+  end;
+end;
+
+
 
 procedure TParaller_Runner.bLoadClick(Sender: TObject);
 begin
@@ -129,14 +138,8 @@ begin
     if fSim.InitSimulation(0) then
     begin
       gLog.Log('Simulation was loaded');
-      // Load default configuration so GA can continue (other parameters does not makes sense)
-      with fSim do
-      begin
-        seDuration.Value        := SIM_TimeInMin;
-        sePopulation.Value      := GA_CountIndividuals;
-        seGenes.Value           := GA_CountGenes;
-        seMaps.Value            := GA_CountMaps;
-      end;
+      // Load default configuration so GA can continue
+      LoadCfg();
     end
     else
       gLog.Log('Simulation could not be loaded');
@@ -151,13 +154,14 @@ begin
 
     with fSim do
     begin
+      SIM_Class := lbClasses.Items[ lbClasses.ItemIndex ];
+      GA_CountGenes                          := Parametrization.GetParCnt(SIM_Class);
       GA_CountMaps	                         := seMaps.Value;
       SIM_TimeInMin                          := seDuration.Value;
       SIM_CountThreads                       := seThreads.Value;
 
       GA_CountIndividuals                    := sePopulation.Value;
       GA_Generations                         := seGenerations.Value;
-      GA_CountGenes                          := seGenes.Value;
 
       GA_START_TOURNAMENT_IndividualsCnt     := seStartTournament.Value;
       GA_FINAL_TOURNAMENT_IndividualsCnt     := seEndTournament.Value;

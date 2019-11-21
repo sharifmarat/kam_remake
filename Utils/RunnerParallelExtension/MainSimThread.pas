@@ -5,7 +5,8 @@ interface
 uses
   Windows,
   Classes, SysUtils, IOUtils, System.Math,
-  ComInterface, SimThread, GeneticAlgorithm, PlotGraph;
+  ComInterface, SimThread, GeneticAlgorithm, GeneticAlgorithmParameters, PlotGraph,
+  KM_Log, KM_AIParameters;
 
 type
   TKMSimulationRequest = (srRun,srNone,srTerminate);
@@ -17,6 +18,8 @@ type
     fPlotGraph: TPlotGraph;
     fSimSetup: TSimSetup;
     fGASetup: TGASetup;
+    fParLog: TKMLog;
+    fParametrization: TGAParameterization;
 
     function RunThreads(const THREADS: Byte): Boolean;
     procedure RunSimulation();
@@ -47,6 +50,7 @@ type
 
     property SimulationRequest: TKMSimulationRequest read fSimulationRequest write fSimulationRequest;
     property SimulationInitialized: boolean read fSimulationInitialized write fSimulationInitialized;
+    property Parametrization: TGAParameterization read fParametrization;
 
     function InitSimulation(aBackupIdx: Integer): Boolean;
   end;
@@ -68,28 +72,25 @@ begin
   gLog.Log('TMainSimThread: Create');
   fExePath := aExePath;
   fPlotGraph := aPlotGraph;
+  fParLog := TKMLog.Create(Format('%s..\..\%s',[ParamStr(0),SAVE_RESULTS_NAME]));
+  fParametrization := TGAParameterization.Create();
+  fParametrization.SetLogPar := fParLog;
 
   fSimulationRequest := srNone;
   fSimulationInitialized := False;
 
-  {
-    TKMRunnerGA_TestParRun
-    TKMRunnerGA_Farm
-    TKMRunnerGA_Quarry
-    TKMRunnerGA_CityPlanner
-    TKMRunnerGA_CityRoadPlanner
-    TKMRunnerGA_Forest
-  }
-  SIM_Class           := 'TKMRunnerGA_Forest';//
-  SIM_TimeInMin       := 75; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
+  // Default cfg
+  fParametrization.CurrentClass := 'TKMRunnerGA_RoadPlanner';
+  SIM_Class           := fParametrization.CurrentClass;
+  SIM_TimeInMin       := 65; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
   SIM_CountThreads    := 3; //3;
-  GA_Generations      := 25; //40; // Count of generations
+  GA_Generations      := 35; //40; // Count of generations
   GA_CountIndividuals := 30; // Count of individuals in population
-  GA_CountGenes       := 20; // Count of genes
+  GA_CountGenes       := fParametrization.GetParCnt(); // Count of genes
   GA_CountMaps        := 27; // Count of simulated maps for each invididual
   GA_START_TOURNAMENT_IndividualsCnt := 3; // Initial count of individuals in tournament
   GA_FINAL_TOURNAMENT_IndividualsCnt := 5; // Final count of individuals in tournament
-  GA_START_MUTATION_ResetGene := 0.05; // Initial mutation (first generation)
+  GA_START_MUTATION_ResetGene := 0.01; // Initial mutation (first generation)
   GA_FINAL_MUTATION_ResetGene := 0.001; // Final mutation (last generation)
   GA_START_MUTATION_Gaussian := 0.1; // Initial mutation (first generation)
   GA_FINAL_MUTATION_Gaussian := 0.4; // Final mutation (last generation)
@@ -103,6 +104,8 @@ destructor TMainSimThread.Destroy();
 begin
   if (fGASetup.Population <> nil) then
     FreeAndNil(fGASetup.Population);
+  fParametrization.Free;
+  fParLog.Free;
   gLog.Log('TKMMainSimThread: Destroy');
   inherited;
 end;
@@ -373,34 +376,28 @@ end;
 procedure TMainSimThread.SaveResults(const aFileName: String; aGenNumber: Integer; aPopulation: TGAPopulation);
 var
   K: Integer;
-  ResultsFile: TextFile;
   BestWIdv,BestIdv: TGAIndividual;
 begin
   gLog.Log('Saving results...');
-  // Init result file
-  AssignFile(ResultsFile, aFileName);
-  try
-    if FileExists(aFileName) then
-      Append(ResultsFile)
-    else
-      Rewrite(ResultsFile);
+  BestWIdv := aPopulation.GetFittest(nil, True);
+  fParLog.AddTime('');
+  fParLog.AddTime(Format('%.2d. generation; best weighted individual (fitness = %f15.5)',[aGenNumber,BestWIdv.FitnessSum]));
+  fParLog.AddTime('');
+  fParLog.AddTime('GA parameters:');
+  for K := 0 to BestWIdv.GenesCount - 1 do
+    fParLog.AddTime(Format('%16.15f',[BestWIdv.Gene[K]]));
+  fParLog.AddTime('KaM Parameters:');
+  fParametrization.SetPar(BestWIdv,True);
 
-    BestWIdv := aPopulation.GetFittest(nil, True);
-    Writeln(ResultsFile, IntToStr(aGenNumber) + '. generation; best weighted individual (fitness = ' + FloatToStr(BestWIdv.FitnessSum) + ')');
-    for K := 0 to BestWIdv.GenesCount - 1 do
-      Writeln(ResultsFile, FloatToStr(BestWIdv.Gene[K]));
-
-    BestIdv := aPopulation.GetFittest(nil, True);
-    if (BestWIdv <> BestIdv) then
-    begin
-      Writeln(ResultsFile, IntToStr(aGenNumber) + '. generation; best individual (fitness = ' + FloatToStr(BestIdv.FitnessSum) + ')');
-      for K := 0 to BestIdv.GenesCount - 1 do
-        Writeln(ResultsFile, FloatToStr(BestIdv.Gene[K]));
-    end;
-    CloseFile(ResultsFile);
-  except
-    on E: EInOutError do
-      gLog.Log('TMainSimThread: File handling error occurred.');
+  BestIdv := aPopulation.GetFittest(nil, True);
+  if (BestWIdv <> BestIdv) then
+  begin
+    fParLog.AddTime(Format('%.2d. generation; best individual (fitness = %f15.5)',[aGenNumber,BestIdv.FitnessSum]));
+    fParLog.AddTime('GA parameters:');
+    for K := 0 to BestIdv.GenesCount - 1 do
+      fParLog.AddTime(Format('%16.15f',[BestIdv.Gene[K]]));
+    fParLog.AddTime('KaM Parameters:');
+    fParametrization.SetPar(BestIdv,True);
   end;
   gLog.Log('Results were saved!');
 end;

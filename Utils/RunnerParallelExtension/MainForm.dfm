@@ -23,13 +23,22 @@ object Paraller_Runner: TParaller_Runner
     Width = 185
     Height = 113
     ItemHeight = 13
+    Items.Strings = (
+      'TKMRunnerGA_CityBuilder'
+      'TKMRunnerGA_CityPlanner'
+      'TKMRunnerGA_Farm'
+      'TKMRunnerGA_Forest'
+      'TKMRunnerGA_HandLogistics'
+      'TKMRunnerGA_Quarry'
+      'TKMRunnerGA_RoadPlanner'
+      'TKMRunnerGA_TestParRun')
     TabOrder = 3
   end
   object bRunSimulation: TButton
-    Left = 70
-    Top = 575
-    Width = 44
-    Height = 31
+    Left = 104
+    Top = 527
+    Width = 89
+    Height = 42
     Caption = 'Run'
     TabOrder = 1
     OnClick = bRunSimulationClick
@@ -44,10 +53,6 @@ object Paraller_Runner: TParaller_Runner
     TabOrder = 2
     object tsFitness: TTabSheet
       Caption = 'Fitness'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         1194
         616)
@@ -88,10 +93,6 @@ object Paraller_Runner: TParaller_Runner
     object TabSheet3: TTabSheet
       Caption = 'Times'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         1194
         616)
@@ -106,10 +107,6 @@ object Paraller_Runner: TParaller_Runner
     object tsLog: TTabSheet
       Caption = 'Log'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object mLog: TMemo
         Left = 0
         Top = 0
@@ -122,63 +119,56 @@ object Paraller_Runner: TParaller_Runner
   end
   object gbGA: TGroupBox
     Left = 8
-    Top = 251
+    Top = 252
     Width = 185
-    Height = 318
+    Height = 269
     Caption = 'GA parameters'
     TabOrder = 0
     object lGenerations: TLabel
-      Left = 10
-      Top = 63
+      Left = 96
+      Top = 24
       Width = 62
       Height = 13
       Caption = 'Generations:'
     end
-    object lGenes: TLabel
-      Left = 96
-      Top = 16
-      Width = 34
-      Height = 13
-      Caption = 'Genes:'
-    end
     object lPopulation: TLabel
       Left = 10
-      Top = 16
+      Top = 24
       Width = 54
       Height = 13
       Caption = 'Population:'
     end
     object lTournament: TLabel
       Left = 10
-      Top = 119
+      Top = 71
       Width = 125
       Height = 13
       Caption = 'Individuals in tournament:'
     end
     object lResetGene: TLabel
       Left = 10
-      Top = 166
+      Top = 118
       Width = 109
       Height = 13
       Caption = 'Probability reset gene:'
     end
     object lNormalMutation: TLabel
       Left = 10
-      Top = 213
+      Top = 165
       Width = 134
       Height = 13
       Caption = 'Probability normal mutation:'
     end
     object lVariance: TLabel
       Left = 10
-      Top = 260
+      Top = 212
       Width = 138
       Height = 13
       Caption = 'Variance of normal mutation:'
     end
     object seGenerations: TSpinEdit
-      Left = 10
-      Top = 82
+      Left = 96
+      Top = 43
       Width = 80
       Height = 22
       MaxValue = 1000000
@@ -186,9 +176,9 @@ object Paraller_Runner: TParaller_Runner
       TabOrder = 0
       Value = 10
     end
-    object seGenes: TSpinEdit
-      Left = 96
-      Top = 35
+    object sePopulation: TSpinEdit
+      Left = 10
+      Top = 43
       Width = 80
       Height = 22
       MaxValue = 1000000
@@ -196,82 +186,72 @@ object Paraller_Runner: TParaller_Runner
       TabOrder = 1
       Value = 10
     end
-    object sePopulation: TSpinEdit
-      Left = 10
-      Top = 35
-      Width = 80
-      Height = 22
-      MaxValue = 1000000
-      MinValue = 1
-      TabOrder = 2
-      Value = 10
-    end
     object eStartVariance: TEdit
       Left = 10
-      Top = 279
+      Top = 231
+      Width = 80
+      Height = 21
+      TabOrder = 2
+      Text = '0.1'
+    end
+    object eEndVariance: TEdit
+      Left = 96
+      Top = 231
       Width = 80
       Height = 21
       TabOrder = 3
       Text = '0.1'
     end
-    object eEndVariance: TEdit
+    object eEndGaussMut: TEdit
       Left = 96
-      Top = 279
+      Top = 185
       Width = 80
       Height = 21
       TabOrder = 4
       Text = '0.1'
     end
-    object eEndGaussMut: TEdit
-      Left = 96
-      Top = 233
+    object eStartResetGene: TEdit
+      Left = 10
+      Top = 137
       Width = 80
       Height = 21
       TabOrder = 5
       Text = '0.1'
     end
-    object eStartResetGene: TEdit
-      Left = 10
-      Top = 185
+    object eEndResetGene: TEdit
+      Left = 96
+      Top = 137
       Width = 80
       Height = 21
       TabOrder = 6
       Text = '0.1'
     end
-    object eEndResetGene: TEdit
-      Left = 96
-      Top = 185
+    object eStartGaussMut: TEdit
+      Left = 10
+      Top = 184
       Width = 80
       Height = 21
       TabOrder = 7
       Text = '0.1'
     end
-    object eStartGaussMut: TEdit
-      Left = 10
-      Top = 232
-      Width = 80
-      Height = 21
-      TabOrder = 8
-      Text = '0.1'
-    end
     object seEndTournament: TSpinEdit
       Left = 96
-      Top = 138
+      Top = 90
+      Width = 80
+      Height = 22
+      MaxValue = 1000000
+      MinValue = 1
+      TabOrder = 8
+      Value = 10
+    end
+    object seStartTournament: TSpinEdit
+      Left = 10
+      Top = 90
       Width = 80
       Height = 22
       MaxValue = 1000000
       MinValue = 1
       TabOrder = 9
-      Value = 10
-    end
-    object seStartTournament: TSpinEdit
-      Left = 10
-      Top = 138
-      Width = 80
-      Height = 22
-      MaxValue = 1000000
-      MinValue = 1
-      TabOrder = 10
       Value = 10
     end
   end
@@ -335,10 +315,10 @@ object Paraller_Runner: TParaller_Runner
     end
   end
   object bLoad: TButton
-    Left = 16
-    Top = 576
-    Width = 41
-    Height = 25
+    Left = 8
+    Top = 527
+    Width = 90
+    Height = 42
     Caption = 'Load'
     TabOrder = 5
     OnClick = bLoadClick
