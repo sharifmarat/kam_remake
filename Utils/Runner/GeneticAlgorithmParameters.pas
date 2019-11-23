@@ -13,6 +13,7 @@ type
     fClass: String;
     function Incr(var Idx: Integer): Integer;
     // Get count of parameters
+    function GetParCnt_TestParRun(): Word;
     function GetParCnt_HandLogistics(): Word;
     function GetParCnt_CityBuilder(): Word;
     function GetParCnt_Farm(): Word;
@@ -81,6 +82,7 @@ begin
   else if (CompareStr(fClass, 'TKMRunnerGA_HandLogistics') = 0) then Result := GetParCnt_HandLogistics
   else if (CompareStr(fClass, 'TKMRunnerGA_Quarry'       ) = 0) then Result := GetParCnt_Quarry
   else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then Result := GetParCnt_RoadPlanner
+  else if (CompareStr(fClass, 'TKMRunnerGA_TestParRun'   ) = 0) then Result := GetParCnt_TestParRun
   else Result := 0;
 end;
 
@@ -93,6 +95,12 @@ begin
   else if (CompareStr(fClass, 'TKMRunnerGA_HandLogistics') = 0) then SetPar_HandLogistics(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Quarry'       ) = 0) then SetPar_Quarry(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then SetPar_RoadPlanner(aIdv, aLogIt);
+end;
+
+
+function TGAParameterization.GetParCnt_TestParRun(): Word;
+begin
+  Result := 10;
 end;
 
 
@@ -159,23 +167,24 @@ begin
 
   if aLogIt AND (fLogPar <> nil) then
   begin
-    fLogPar.AddTime(Format('GA_BUILDER_BuildHouse_FieldMaxWork              : Single = %16.10f;',[ GA_BUILDER_BuildHouse_FieldMaxWork    ]));
-    fLogPar.AddTime(Format('GA_BUILDER_BuildHouse_RTPMaxWork                : Single = %16.10f;',[ GA_BUILDER_BuildHouse_RTPMaxWork      ]));
-    fLogPar.AddTime(Format('GA_BUILDER_BuildHouse_RoadMaxWork               : Single = %16.10f;',[ GA_BUILDER_BuildHouse_RoadMaxWork     ]));
-    fLogPar.AddTime(Format('GA_BUILDER_CreateShortcuts_MaxWork              : Single = %16.10f;',[ GA_BUILDER_CreateShortcuts_MaxWork    ]));
-    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_FractionCoef                   : Single = %16.10f;',[ GA_BUILDER_ChHTB_FractionCoef         ]));
-    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_TrunkFactor                    : Single = %16.10f;',[ GA_BUILDER_ChHTB_TrunkFactor          ]));
-    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_TrunkBalance                   : Single = %16.10f;',[ GA_BUILDER_ChHTB_TrunkBalance         ]));
-    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_AllWorkerCoef                  : Single = %16.10f;',[ GA_BUILDER_ChHTB_AllWorkerCoef        ]));
-    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_FreeWorkerCoef                 : Single = %16.10f;',[ GA_BUILDER_ChHTB_FreeWorkerCoef       ]));
-    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Stone                       : Single = %16.10f;',[ GA_BUILDER_Shortage_Stone             ]));
-    fLogPar.AddTime(Format('GA_BUILDER_Shortage_StoneNoQuarry               : Single = %16.10f;',[ GA_BUILDER_Shortage_StoneNoQuarry     ]));
-    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Gold                        : Single = %16.10f;',[ GA_BUILDER_Shortage_Gold              ]));
-    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Trunk                       : Single = %16.10f;',[ GA_BUILDER_Shortage_Trunk             ]));
-    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Wood                        : Single = %16.10f;',[ GA_BUILDER_Shortage_Wood              ]));
-    fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Stone           : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Stone ]));
-    fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Wood            : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Wood  ]));
+    fLogPar.AddTime(Format('GA_BUILDER_BuildHouse_FieldMaxWork               : Single = %16.10f;',[ GA_BUILDER_BuildHouse_FieldMaxWork    ]));
+    fLogPar.AddTime(Format('GA_BUILDER_BuildHouse_RTPMaxWork                 : Single = %16.10f;',[ GA_BUILDER_BuildHouse_RTPMaxWork      ]));
+    fLogPar.AddTime(Format('GA_BUILDER_BuildHouse_RoadMaxWork                : Single = %16.10f;',[ GA_BUILDER_BuildHouse_RoadMaxWork     ]));
+    fLogPar.AddTime(Format('GA_BUILDER_CreateShortcuts_MaxWork               : Single = %16.10f;',[ GA_BUILDER_CreateShortcuts_MaxWork    ]));
+    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_FractionCoef                    : Single = %16.10f;',[ GA_BUILDER_ChHTB_FractionCoef         ]));
+    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_TrunkFactor                     : Single = %16.10f;',[ GA_BUILDER_ChHTB_TrunkFactor          ]));
+    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_TrunkBalance                    : Single = %16.10f;',[ GA_BUILDER_ChHTB_TrunkBalance         ]));
+    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_AllWorkerCoef                   : Single = %16.10f;',[ GA_BUILDER_ChHTB_AllWorkerCoef        ]));
+    fLogPar.AddTime(Format('GA_BUILDER_ChHTB_FreeWorkerCoef                  : Single = %16.10f;',[ GA_BUILDER_ChHTB_FreeWorkerCoef       ]));
+    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Stone                        : Single = %16.10f;',[ GA_BUILDER_Shortage_Stone             ]));
+    fLogPar.AddTime(Format('GA_BUILDER_Shortage_StoneNoQuarry                : Single = %16.10f;',[ GA_BUILDER_Shortage_StoneNoQuarry     ]));
+    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Gold                         : Single = %16.10f;',[ GA_BUILDER_Shortage_Gold              ]));
+    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Trunk                        : Single = %16.10f;',[ GA_BUILDER_Shortage_Trunk             ]));
+    fLogPar.AddTime(Format('GA_BUILDER_Shortage_Wood                         : Single = %16.10f;',[ GA_BUILDER_Shortage_Wood              ]));
+    fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Stone            : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Stone ]));
+    fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Wood             : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Wood  ]));
   end;
+
 end;
 
 

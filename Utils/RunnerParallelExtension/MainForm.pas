@@ -1,16 +1,13 @@
 unit MainForm;
 interface
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.StrUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls,
   Vcl.ComCtrls, Vcl.Samples.Spin,
   MainSimThread, PlotGraph, Log, Vcl.Mask, Vcl.DBCtrls;
 
 type
   TParaller_Runner = class(TForm)
-    lbClasses: TListBox;
-    bRunSimulation: TButton;
-    bLoad: TButton;
 
     pcMainPages: TPageControl;
       tsFitness: TTabSheet;
@@ -19,7 +16,7 @@ type
         tbGeneSwitch: TTrackBar;
         imgGenes: TImage;
       TabSheet3: TTabSheet;
-        Image3: TImage;
+        imgTimes: TImage;
       tsLog: TTabSheet;
         mLog: TMemo;
 
@@ -38,7 +35,6 @@ type
       seGenerations: TSpinEdit;
 
       lTournament: TLabel;
-      seStartTournament: TSpinEdit;
       seEndTournament: TSpinEdit;
       lResetGene: TLabel;
       eStartResetGene: TEdit;
@@ -49,16 +45,30 @@ type
       lVariance: TLabel;
       eStartVariance: TEdit;
       eEndVariance: TEdit;
+    gbLoad: TGroupBox;
+    cbBackupClass: TComboBox;
+    cbBackupDate: TComboBox;
+    bLoad: TButton;
+    lClass: TLabel;
+    lDate: TLabel;
+    seStartTournament: TSpinEdit;
+    lbClasses: TListBox;
+    bRunSimulation: TButton;
+    lClasses: TLabel;
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure bRunSimulationClick(Sender: TObject);
     procedure tbGeneSwitchChange(Sender: TObject);
     procedure bLoadClick(Sender: TObject);
+    procedure cbBackupClassChange(Sender: TObject);
+    procedure RefreshGraphs(Sender: TObject);
   private
+    fBackups: TStringList;
     fPlot: TPlotGraph;
     fSim: TMainSimThread;
     procedure LoadCfg();
+    procedure RefreshBackups();
   public
     procedure Log(const aText: String);
     procedure ClearLog();
@@ -73,23 +83,29 @@ implementation
 
 const
   COLORS_COUNT = 8;
-  LineCol: array [0..COLORS_COUNT - 1] of TColor =
-    (clRed, clBlue, clGreen, clPurple, clMaroon, clGray, clBlack, clOlive);
 
 
 
 
 procedure TParaller_Runner.FormCreate(Sender: TObject);
 var
-  K: Integer;
   s: String;
 begin
+  fBackups := nil;
   s := ExtractFilePath(ParamStr(0));
   gLog := TLog.Create(Log);
   fPlot := TPlotGraph.Create(imgGenes,imgFitness,tbGeneSwitch);
   fSim := TMainSimThread.Create(fPlot,ExtractFilePath(ParamStr(0)));
+  // Refresh images
+  imgGenes.Canvas.Brush.Color := $00282828;
+  imgGenes.Canvas.FillRect(imgGenes.Canvas.ClipRect);
+  imgFitness.Canvas.Brush.Color := $00282828;
+  imgFitness.Canvas.FillRect(imgFitness.Canvas.ClipRect);
+  imgTimes.Canvas.Brush.Color := $00282828;
+  imgTimes.Canvas.FillRect(imgTimes.Canvas.ClipRect);
   // Load default configuration
   LoadCfg();
+  RefreshBackups();
 end;
 
 
@@ -98,6 +114,7 @@ begin
   FreeAndNil(fPlot);
   fSim.SimulationRequest := srTerminate;
   Sleep(100);
+  FreeAndNil(fBackups);
   FreeAndNil(fSim);
   FreeAndNil(gLog);
 end;
@@ -130,12 +147,85 @@ begin  with fSim do
 end;
 
 
+procedure TParaller_Runner.RefreshBackups();
+  procedure ExtractParts(aBackup: String; var aClass,aDate: String);
+  begin
+    aClass := ExtractFileName(aBackup); // Remove path to folder
+    aDate := LeftStr(RightStr(aClass,25),21); // Remove class name and .txt
+    aClass := LeftStr(aClass,Length(aClass)-26); // Remove date and .txt
+  end;
+var
+  Check: Boolean;
+  K, L: Integer;
+  BckpClass,BckpDate, NewClass,NewDate: String;
+begin
+  // Save previous selection
+  BckpClass := cbBackupClass.Items[cbBackupClass.ItemIndex];
+  BckpDate := cbBackupDate.Items[cbBackupDate.ItemIndex];
+
+  // Refresh list
+  fSim.GetBackups(fBackups);
+  // Check preselection or select the oldest backup as default
+  if (fBackups.Count > 0) then
+  begin
+    Check := False;
+    for K := 0 to fBackups.Count - 1 do
+      Check := Check OR ContainsText(fBackups[K],BckpClass);
+    if not Check OR (CompareStr(BckpClass,'') = 0) then
+      ExtractParts(fBackups[ fBackups.Count-1 ], BckpClass, BckpDate);
+  end;
+
+  // Update GUI with classes
+  cbBackupClass.Clear;
+  for K := 0 to fBackups.Count - 1 do
+  begin
+    ExtractParts(fBackups[K], NewClass, NewDate);
+    // Check duplicities
+    Check := False;
+    for L := 0 to cbBackupClass.Items.Count - 1 do
+      Check := Check OR (CompareStr(cbBackupClass.Items[L],NewClass) = 0);
+    if not Check then
+      cbBackupClass.Items.Add( NewClass );
+    if (CompareStr(BckpClass,NewClass) = 0) then
+      cbBackupClass.ItemIndex := K;
+  end;
+
+  // Update GUI with dates
+  cbBackupDate.Clear;
+  for K := 0 to fBackups.Count - 1 do
+  begin
+    ExtractParts(fBackups[K], NewClass, NewDate);
+    if (CompareStr(BckpClass,NewClass) = 0) then
+    begin
+      cbBackupDate.Items.Add( NewDate );
+      if (CompareStr(BckpDate,NewDate) = 0) then
+        cbBackupDate.ItemIndex := K;
+    end;
+  end;
+end;
+
+
+procedure TParaller_Runner.RefreshGraphs(Sender: TObject);
+begin
+  fPlot.RefreshGraphs();
+end;
+
+
+procedure TParaller_Runner.cbBackupClassChange(Sender: TObject);
+begin
+  RefreshBackups();
+end;
+
 
 procedure TParaller_Runner.bLoadClick(Sender: TObject);
+var
+  BackupName: String;
 begin
   if (fSim.SimulationRequest = srNone) then
   begin
-    if fSim.InitSimulation(0) then
+    // Get name of the Backup file
+    BackupName := Format('%s\%s_%s.txt',[ dir_BACKUPS, cbBackupClass.Items[cbBackupClass.ItemIndex], cbBackupDate.Items[cbBackupDate.ItemIndex] ]);
+    if fSim.InitSimulation(BackupName) then
     begin
       gLog.Log('Simulation was loaded');
       // Load default configuration so GA can continue
@@ -145,6 +235,7 @@ begin
       gLog.Log('Simulation could not be loaded');
   end;
 end;
+
 
 procedure TParaller_Runner.bRunSimulationClick(Sender: TObject);
 begin
@@ -206,6 +297,7 @@ begin
       fPlot.PlotGenes(tbGeneSwitch.Position);
     end
   );
+  RefreshBackups();
 end;
 
 

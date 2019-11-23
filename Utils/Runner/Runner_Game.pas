@@ -52,6 +52,7 @@ type
 
   TKMRunnerGA_TestParRun = class(TKMRunnerGA_Common)
   protected
+    procedure InitGAParameters(); override;
     procedure Execute(aRun: Integer); override;
   end;
 
@@ -401,21 +402,30 @@ end;
 
 
 
+
 { TKMRunnerGA_TestParRun }
+procedure TKMRunnerGA_TestParRun.InitGAParameters();
+begin
+  inherited;
+  f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_TestParRun');
+end;
+
+
 procedure TKMRunnerGA_TestParRun.Execute(aRun: Integer);
 var
   K,L,MapNum: Integer;
   Fitness: Single;
 begin
   // Fitness is calculated from genes in this debug class
-  for MapNum := 0 to f_SIM_NumberOfMaps - 1 do
-    for K := 0 to fNewPopulation.Count - 1 do
-    begin
-      Fitness := 0;
-      for L := 0 to fNewPopulation.Individual[K].GenesCount - 1 do
-        Fitness := Fitness - abs(L / fNewPopulation.Individual[K].GenesCount - fNewPopulation.Individual[K].Gene[L]);
-      fNewPopulation.Individual[K].Fitness[MapNum] := Fitness;
-    end;
+  if (fNewPopulation <> nil) then
+    for MapNum := 0 to f_SIM_NumberOfMaps - 1 do
+      for K := 0 to fNewPopulation.Count - 1 do
+      begin
+        Fitness := 0;
+        for L := 0 to fNewPopulation.Individual[K].GenesCount - 1 do
+          Fitness := Fitness - abs(L / fNewPopulation.Individual[K].GenesCount - fNewPopulation.Individual[K].Gene[L]);
+        fNewPopulation.Individual[K].Fitness[MapNum] := Fitness;
+      end;
   fOldPopulation := fNewPopulation;
   fNewPopulation := nil;
 
