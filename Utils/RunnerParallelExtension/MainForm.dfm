@@ -20,10 +20,10 @@ object Paraller_Runner: TParaller_Runner
   TextHeight = 13
   object pcMainPages: TPageControl
     Left = 199
-    Top = 8
+    Top = 3
     Width = 1209
-    Height = 770
-    ActivePage = TabSheet3
+    Height = 775
+    ActivePage = tsLog
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 1
     object tsFitness: TTabSheet
@@ -32,12 +32,12 @@ object Paraller_Runner: TParaller_Runner
       ExplicitHeight = 616
       DesignSize = (
         1201
-        742)
+        747)
       object imgFitness: TImage
         Left = 3
         Top = 3
         Width = 1195
-        Height = 736
+        Height = 741
         Anchors = [akLeft, akTop, akRight, akBottom]
         ExplicitWidth = 1188
         ExplicitHeight = 610
@@ -50,13 +50,14 @@ object Paraller_Runner: TParaller_Runner
       ExplicitHeight = 616
       DesignSize = (
         1201
-        742)
+        747)
       object imgGenes: TImage
         Left = 3
         Top = 3
         Width = 1194
-        Height = 736
+        Height = 741
         Anchors = [akLeft, akTop, akRight, akBottom]
+        ExplicitHeight = 736
       end
       object tbGeneSwitch: TTrackBar
         Left = 3
@@ -78,13 +79,14 @@ object Paraller_Runner: TParaller_Runner
       ExplicitHeight = 616
       DesignSize = (
         1201
-        742)
+        747)
       object imgTimes: TImage
         Left = 3
         Top = 3
         Width = 1195
-        Height = 736
+        Height = 741
         Anchors = [akLeft, akTop, akRight, akBottom]
+        ExplicitHeight = 736
       end
     end
     object tsLog: TTabSheet
@@ -96,7 +98,7 @@ object Paraller_Runner: TParaller_Runner
         Left = 0
         Top = 0
         Width = 1201
-        Height = 742
+        Height = 747
         Align = alClient
         Color = 2631720
         Font.Charset = DEFAULT_CHARSET
@@ -108,6 +110,7 @@ object Paraller_Runner: TParaller_Runner
         ScrollBars = ssBoth
         TabOrder = 0
         ExplicitLeft = -4
+        ExplicitHeight = 742
       end
     end
   end

@@ -320,7 +320,6 @@ begin
   // Draw mean, relative fitness, and variance
   SetLength( Samples, Length(fFitnessHistory[0]) );
   SetLength( fYFitLab, Length(fFitnessHistory));
-
   SetLength( VarianceArr, Min( fActualGeneration, High(fFitnessHistory) ) + 1 );
   MaxVariance := -1E30;
   for K := Low(fFitnessHistory) to Min( fActualGeneration, High(fFitnessHistory) ) do
@@ -345,6 +344,13 @@ begin
       Img.Canvas.PenPos := Point(X, Y)
     else
       Img.Canvas.LineTo(X,Y);
+    // Draw description
+    fYFitLab[K] := TLabel.Create(Img.Parent);
+    fYFitLab[K].Parent := Img.Parent;
+    fYFitLab[K].Left := X + 5;
+    fYFitLab[K].Top := Y;
+    fYFitLab[K].Caption := Format('%5.0f',[Mean]);
+    fYFitLab[K].Font.Color := $00FFFFFF;
     // Get variance
     VarianceArr[K] := 0;
     for L := Low(Samples) to High(Samples) do
