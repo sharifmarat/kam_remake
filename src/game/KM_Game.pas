@@ -165,6 +165,10 @@ type
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedChangeAllowed: Boolean;
+
+    function IsTactic: Boolean;
+    function IsNormalMission: Boolean;
+
     property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandID);
     procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
@@ -1304,6 +1308,18 @@ function TKMGame.IsMPGameSpeedChangeAllowed: Boolean;
 begin
   Result := (fGameMode in [gmMulti, gmMultiSpectate])
         and (fNetworking.NetPlayers.GetNotDroppedCount = 1);
+end;
+
+
+function TKMGame.IsTactic: Boolean;
+begin
+  Result := fMissionMode = mmTactic;
+end;
+
+
+function TKMGame.IsNormalMission: Boolean;
+begin
+  Result := fMissionMode = mmNormal;
 end;
 
 
