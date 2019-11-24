@@ -108,6 +108,7 @@ type
     fSpeedFast: Single;
     fSpeedVeryFast: Single;
     fWareDistribution: TKMWareDistribution;
+    fSaveWareDistribution: Boolean;
 
     fDayGamesCount: Integer;       //Number of games played today (used for saves namings)
     fLastDayGamePlayed: TDateTime; //Last day game played
@@ -295,6 +296,7 @@ type
     property SpeedFast: Single read fSpeedFast;
     property SpeedVeryFast: Single read fSpeedVeryFast;
     property WareDistribution: TKMWareDistribution read fWareDistribution;
+    property SaveWareDistribution: Boolean read fSaveWareDistribution;
 
     property DayGamesCount: Integer read fDayGamesCount write SetDayGamesCount;
     property LastDayGamePlayed: TDateTime read fLastDayGamePlayed write SetLastDayGamePlayed;
@@ -619,6 +621,7 @@ begin
     fLastDayGamePlayed  := F.ReadDate     ('Game', 'LastDayGamePlayed', 0);
 
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
+    fSaveWareDistribution := F.ReadBool     ('Game', 'SaveWareDistribution', True); //Enabled by default
 
     fCampaignLastDifficulty := TKMMissionDifficulty(F.ReadInteger('Campaign', 'CampaignLastDifficulty', Byte(mdNormal))); //Normal as default
 
@@ -740,7 +743,8 @@ begin
     F.WriteInteger('Game','DayGamesCount',        fDayGamesCount);
     F.WriteDate   ('Game','LastDayGamePlayed',  fLastDayGamePlayed);
 
-    F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
+    F.WriteString ('Game','WareDistribution', fWareDistribution.PackToStr);
+    F.WriteBool   ('Game','SaveWareDistribution', fSaveWareDistribution);
 
     F.WriteInteger('Campaign','CampaignLastDifficulty', Byte(fCampaignLastDifficulty));
 

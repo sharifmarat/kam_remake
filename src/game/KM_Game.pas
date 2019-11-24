@@ -166,6 +166,8 @@ type
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedChangeAllowed: Boolean;
 
+    function IsWareDistributionStoredBetweenGames: Boolean;
+
     function IsTactic: Boolean;
     function IsNormalMission: Boolean;
 
@@ -1311,6 +1313,14 @@ begin
 end;
 
 
+function TKMGame.IsWareDistributionStoredBetweenGames: Boolean;
+begin
+  Result := IsNormalMission //No need to store ware distribution for Tactic mission
+            and gGameApp.GameSettings.SaveWareDistribution //If "save ware distribution" is ON
+            and (fGameMode in [gmSingle, gmCampaign, gmMulti]); //Not for Replay / MapEd
+end;
+
+
 function TKMGame.IsTactic: Boolean;
 begin
   Result := fMissionMode = mmTactic;
@@ -2261,7 +2271,8 @@ begin
                             fGameInputProcess.CmdTemp(gicTempDoNothing);
 
                           // Update our ware distributions from settings at the start of the game
-                          if (fGameTick = 1) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
+                          if (fGameTick = 1)
+                            and IsWareDistributionStoredBetweenGames then
                             fGameInputProcess.CmdWareDistribution(gicWareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
 
                           if (fGameTick mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
