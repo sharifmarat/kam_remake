@@ -1222,9 +1222,11 @@ begin
   if aShow then
   begin
     DropBox_Loc[aPlayerIndex].Hide;
-    PercentBar_DownloadProgress[aPlayerIndex].Show;
+    PercentBar_DownloadProgress[aPlayerIndex].DoSetVisible; //Don't use Show here, since it will Show parent panels as well...
   end else begin
-    DropBox_Loc[aPlayerIndex].Show;
+    //Don't use Show here, since it will Show parent panels as well...
+    //And since we call this method on disconnection we will see Lobby window over Multiplayer list window then...
+    DropBox_Loc[aPlayerIndex].DoSetVisible;
     PercentBar_DownloadProgress[aPlayerIndex].Hide;
   end;
 end;
