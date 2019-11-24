@@ -1532,6 +1532,24 @@ procedure TKMMenuLobby.Lobby_OnPlayersSetup(Sender: TObject);
     DropBox_Loc[aIndex].Add(LocationName, aLocation);
   end;
 
+  function ImgReadyToStart(aNetPlayer: TKMNetPlayerInfo): Integer;
+  begin
+    if aNetPlayer.IsSpectator then
+    begin
+      if not aNetPlayer.ReadyToStart then
+        Result := 32 //Not ready
+      else
+      begin
+        if aNetPlayer.HasMapOrSave then
+          Result := 33 //Ready
+        else
+          Result := 88; //Spec ready, but need DL map
+      end;
+    end
+    else
+      Result := 32 + Byte(aNetPlayer.ReadyToStart and aNetPlayer.HasMapOrSave); //Not ready or ready
+  end;
+
 var
   I,K,ID,LocaleID: Integer;
   MyNik, CanEdit, HostCanEdit, IsSave, IsValid: Boolean;
@@ -1714,7 +1732,7 @@ begin
       if CurPlayer.IsClosed then
         Image_Ready[I].TexID := 0
       else
-        Image_Ready[I].TexID := 32 + Byte(CurPlayer.ReadyToStart and (CurPlayer.HasMapOrSave or CurPlayer.IsSpectator));
+        Image_Ready[I].TexID := ImgReadyToStart(CurPlayer);
 
       MyNik := (fLocalToNetPlayers[I] = fNetworking.MyIndex); //Our index
       //We are allowed to edit if it is our nickname and we are set as NOT ready,
