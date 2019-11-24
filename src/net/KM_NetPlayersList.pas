@@ -282,7 +282,7 @@ begin
   if IsHuman or (gHands = nil) or (HandIndex = -1) then
     Result := fNikname
   else
-    Result := AnsiString(gHands[HandIndex].OwnerName);
+    Result := AnsiString(gHands[HandIndex].OwnerName(True, False));
 end;
 
 
