@@ -496,6 +496,8 @@ const
   WARRIOR_MAX = utHorseman;
   WARRIOR_EQUIPABLE_MIN = utMilitia; //Available from barracks
   WARRIOR_EQUIPABLE_MAX = utCavalry;
+  WARRIOR_EQUIPABLE_TH_MIN = utBarbarian; //Available from Townhall
+  WARRIOR_EQUIPABLE_TH_MAX = utHorseman;
   HUMANS_MIN = utSerf;
   HUMANS_MAX = utHorseman;
   ANIMAL_MIN = utWolf;

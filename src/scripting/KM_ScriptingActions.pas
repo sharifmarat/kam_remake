@@ -89,6 +89,7 @@ type
     function  HouseSchoolQueueAdd(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer;
     procedure HouseSchoolQueueRemove(aHouseID, QueueIndex: Integer);
     procedure HouseTakeWaresFrom(aHouseID: Integer; aType, aCount: Word);
+    function  HouseTownHallEquip(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer;
     procedure HouseTownHallMaxGold(aHouseID: Integer; aMaxGold: Integer);
     procedure HouseUnlock(aPlayer, aHouseType: Word);
     procedure HouseWoodcutterChopOnly(aHouseID: Integer; aChopOnly: Boolean);
@@ -2072,6 +2073,32 @@ begin
     end
     else
       LogParamWarning('Actions.HouseTakeWaresFrom', [aHouseID, aType, aCount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Equips the specified unit from the specified TownHall.
+//* Returns the number of units successfully equipped.
+function TKMScriptActions.HouseTownHallEquip(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := 0;
+    if (aHouseID > 0)
+      and ((aUnitType = UnitTypeToIndex[utMilitia])
+        or (aUnitType in [UnitTypeToIndex[WARRIOR_EQUIPABLE_TH_MIN]..UnitTypeToIndex[WARRIOR_EQUIPABLE_TH_MAX]])) then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if (H <> nil) and (H is TKMHouseTownHall) then
+        Result := TKMHouseTownHall(H).Equip(UnitIndexToType[aUnitType], aCount);
+    end
+    else
+      LogParamWarning('Actions.HouseTownHallEquip', [aHouseID, aUnitType]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
