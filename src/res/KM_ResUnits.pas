@@ -210,7 +210,7 @@ end;
 
 function TKMUnitSpec.IsWarriorEquipable: boolean;
 begin
-  Result := fUnitType in [WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX];
+  Result := fUnitType in [WARRIOR_EQUIPABLE_BARRACKS_MIN..WARRIOR_EQUIPABLE_BARRACKS_MAX];
 end;
 
 

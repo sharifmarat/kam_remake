@@ -11,7 +11,7 @@ type
     Available, Required: Word;
     Fraction: Single;
   end;
-  TKMWarriorsDemands = array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Integer;
+  TKMWarriorsDemands = array[WARRIOR_EQUIPABLE_BARRACKS_MIN..WARRIOR_EQUIPABLE_BARRACKS_MAX] of Integer;
 
   TKMCityManagement = class
   private
@@ -762,7 +762,7 @@ var
   procedure CheckMinArmyReq();
   const
     DEFAULT_COEFICIENT = 15;
-    DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Single = (
+    DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_BARRACKS_MIN..WARRIOR_EQUIPABLE_BARRACKS_MAX] of Single = (
       1, 1, 1, 3,//utMilitia,      utAxeFighter,   utSwordsman,     utBowman,
       3, 1, 1, 0.5,//utArbaletman,   utPikeman,      utHallebardman,  utHorseScout,
       0.5//utCavalry
@@ -879,7 +879,7 @@ begin
   end;
 
   // Get count of needed weapons
-  for UT := utAxeFighter to WARRIOR_EQUIPABLE_MAX do // Skip militia
+  for UT := utAxeFighter to WARRIOR_EQUIPABLE_BARRACKS_MAX do // Skip militia
     for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
       if (TROOP_COST[UT,I] <> wtNone) then
       begin

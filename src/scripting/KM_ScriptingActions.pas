@@ -2389,7 +2389,7 @@ begin
   try
     Result := 0;
     if (aHouseID > 0)
-    and (aUnitType in [UnitTypeToIndex[WARRIOR_EQUIPABLE_MIN]..UnitTypeToIndex[WARRIOR_EQUIPABLE_MAX]]) then
+    and (aUnitType in [UnitTypeToIndex[WARRIOR_EQUIPABLE_BARRACKS_MIN]..UnitTypeToIndex[WARRIOR_EQUIPABLE_BARRACKS_MAX]]) then
     begin
       H := fIDCache.GetHouse(aHouseID);
       if (H <> nil) and (H is TKMHouseBarracks) then
