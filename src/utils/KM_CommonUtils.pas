@@ -65,6 +65,7 @@ uses
   function KaMRandomS(Range_Both_Directions: Single; const aCaller: String): Single; overload;
 
   function TimeGet: Cardinal;
+  function TimeGetUsec: Int64;
   function GetTimeSince(aTime: Cardinal): Cardinal;
   function UTCNow: TDateTime;
   function UTCToLocal(Input: TDateTime): TDateTime;
@@ -344,6 +345,19 @@ begin
   {$IFDEF Unix}
   Result := Cardinal(Trunc(Now * 24 * 60 * 60 * 1000) mod high(Cardinal));
   {$ENDIF}
+end;
+
+// Returns time in micro-seconds (usec)
+function TimeGetUsec: Int64;
+var
+  freq: Int64;
+  newTime: Int64;
+  factor: Double;
+begin
+  QueryPerformanceFrequency(freq);
+  QueryPerformanceCounter(newTime);
+  factor := 1000000 / freq; // Separate calculation to avoid "big Int64 * 1 000 000" overflow
+  Result := Round(newTime * factor);
 end;
 
 
