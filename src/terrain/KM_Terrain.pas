@@ -3145,67 +3145,75 @@ begin
 end;
 
 
-//Return random tile surrounding Loc with aPass property. PusherLoc is the unit that pushed us
-//which is preferable to other units (otherwise we can get two units swapping places forever)
+// Return random tile surrounding Loc with aPass property. PusherLoc is the unit that pushed us
+// which is preferable to other units (otherwise we can get two units swapping places forever)
 function TKMTerrain.GetOutOfTheWay(aUnit: Pointer; const PusherLoc: TKMPoint; aPass: TKMTerrainPassability): TKMPoint;
 var
   U: TKMUnit;
   Loc: TKMPoint;
 
-  function GoodForWorker(X,Y: Word): Boolean;
+  function GoodForBuilder(X,Y: Word): Boolean;
   var
     DistNext: Single;
   begin
     DistNext := gHands.DistanceToEnemyTowers(KMPoint(X,Y), U.Owner);
     Result := (DistNext > RANGE_WATCHTOWER_MAX)
-    or (DistNext >= gHands.DistanceToEnemyTowers(Loc, U.Owner));
+      or (DistNext >= gHands.DistanceToEnemyTowers(Loc, U.Owner));
   end;
 var
   I, K: Integer;
-  L1, L2, L3: TKMPointList;
+  tx, ty: Integer;
+  isFree, isOffroad, isPushable: Boolean;
+  newWeight, bestWeight: Single;
   TempUnit: TKMUnit;
 begin
   U := TKMUnit(aUnit);
   Loc := U.CurrPosition;
+  Result := Loc;
+  bestWeight := -1;
 
-  //List 1 holds all available walkable positions except self
-  L1 := TKMPointList.Create;
-  for I:=-1 to 1 do for K:=-1 to 1 do
-    if ((I<>0) or (K<>0))
-    and TileInMapCoords(Loc.X+K, Loc.Y+I)
-    and CanWalkDiagonaly(Loc, Loc.X + K, Loc.Y + I) //Check for trees that stop us walking on the diagonals!
-    and (Land[Loc.Y+I,Loc.X+K].TileLock in [tlNone, tlFenced])
-    and (aPass in Land[Loc.Y+I,Loc.X+K].Passability)
-    and (not (U is TKMUnitWorker) or GoodForWorker(Loc.X+K, Loc.Y+I)) then
-      L1.Add(KMPoint(Loc.X+K, Loc.Y+I));
-
-  //List 2 holds the best positions, ones which are not occupied
-  L2 := TKMPointList.Create;
-  for I := 0 to L1.Count - 1 do
-    if Land[L1[I].Y, L1[I].X].IsUnit = nil then
-      L2.Add(L1[I]);
-
-  //List 3 holds the second best positions, ones which are occupied with an idle units
-  L3 := TKMPointList.Create;
-  for I := 0 to L1.Count - 1 do
-    if Land[L1[I].Y, L1[I].X].IsUnit <> nil then
+  // Check all available walkable positions except self
+  for I := -1 to 1 do for K := -1 to 1 do
+  if (I <> 0) or (K <> 0) then
     begin
-      TempUnit := UnitsHitTest(L1[I].X, L1[I].Y);
-      //Always include the pushers loc in the possibilities, otherwise we can get two units swapping places forever
-      if KMSamePoint(L1[I],PusherLoc)
-      or ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
-          and (not TKMUnitActionStay(TempUnit.Action).Locked)) then
-        L3.Add(L1[I]);
+      tx := Loc.X + K;
+      ty := Loc.Y + I;
+      newWeight := 0;
+
+      if TileInMapCoords(tx, ty)
+        and CanWalkDiagonaly(Loc, tx, ty) //Check for trees that stop us walking on the diagonals!
+        and (Land[ty,tx].TileLock in [tlNone, tlFenced])
+        and (aPass in Land[ty,tx].Passability)
+        and (not (U is TKMUnitWorker) or GoodForBuilder(tx, ty)) then
+      begin
+        // Try to be pushed to empty tiles
+        isFree := Land[ty, tx].IsUnit = nil;
+
+        // Try to be pushed out to non-road tiles when possible
+        isOffroad := not TileHasRoad(tx, ty);
+        // Try to be pushed to exchange with pusher or to push other non-locked units
+        isPushable := False;
+        if Land[ty, tx].IsUnit <> nil then
+        begin
+          TempUnit := UnitsHitTest(tx, ty);
+          // Always include the pushers loc in the possibilities, otherwise we can get two units swapping places forever
+          if (KMPoint(tx, ty) = PusherLoc)
+          or ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
+              and (not TKMUnitActionStay(TempUnit.Action).Locked)) then
+            isPushable := True;
+        end;
+
+        // If everything is bad, don't consider it (and remain at 0 - original Loc)
+        if isFree or isOffroad or isPushable then
+          newWeight := Ord(isFree) * 8 + Ord(isOffroad) * 4 + Ord(isPushable) * 2 + KaMRandom('TKMTerrain.GetOutOfTheWay');
+
+        if newWeight > bestWeight then
+        begin
+          bestWeight := newWeight;
+          Result := KMPoint(tx, ty);
+        end;
+      end;
     end;
-
-  if not(L2.GetRandom(Result)) then
-    if not(L3.GetRandom(Result)) then
-      if not(L1.GetRandom(Result)) then
-        Result := Loc;
-
-  L1.Free;
-  L2.Free;
-  L3.Free;
 end;
 
 
