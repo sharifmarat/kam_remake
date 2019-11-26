@@ -400,6 +400,7 @@ const
   CW = 690; C1 = 35; C2 = 200; C3 = 360; C4 = 445; C5 = 570; C6 = 650;
   C1W = 155; C2W = 150; C3W = 75; C4W = 80;
   TC2_ADD = 50;
+  ALL_TXT_W_MIN = 35;
 var
   I, K, OffY, SlotTxtWidth, AllTxtWidth, SpeedsCnt: Integer;
 begin
@@ -448,7 +449,7 @@ begin
                                                                           gResTexts[TX_AI_PLAYER_CLASSIC],
                                                                           gResTexts[TX_AI_PLAYER_ADVANCED]]));
 
-      AllTxtWidth := Max(40, gRes.Fonts[fntGrey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
+      AllTxtWidth := Max(ALL_TXT_W_MIN, gRes.Fonts[fntGrey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
                                                                              gResTexts[TX_LOBBY_SLOT_CLOSED_ALL],
                                                                              gResTexts[TX_LOBBY_SLOT_AI_ALL]]));
 
@@ -464,9 +465,8 @@ begin
         Label_Player[I] := TKMLabel.Create(Panel_Players, C1, OffY+2, C1W, 20, '', fntGrey, taLeft);
         Label_Player[I].Hide;
 
-
         DropBox_PlayerSlot[I] := TKMDropColumns.Create(Panel_Players, C1, OffY, C1W, 20, fntGrey, '', bsMenu, False);
-        DropBox_PlayerSlot[I].DropWidth := SlotTxtWidth + 5 + AllTxtWidth;
+        DropBox_PlayerSlot[I].DropWidth := SlotTxtWidth + 5 + AllTxtWidth + 7*Byte(AllTxtWidth > ALL_TXT_W_MIN); //Add some extra space for 'All' word
         DropBox_PlayerSlot[I].SetColumns(fntOutline, ['', gResTexts[TX_MENU_MAP_TITLE]], [0, SlotTxtWidth + 5], [True, False]);
         //1st column is used to set 'All' (All Open/All AI/All Closed),
         //Its external button analogue, so we do not want to invoke f.e. OnChange (AI) when 'AI All' clicked
