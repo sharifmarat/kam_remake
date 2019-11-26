@@ -249,7 +249,7 @@ type
 
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
-    procedure Add(const aLoc: TKMPoint);
+    procedure Add(const aLoc: TKMPoint); virtual;
     procedure AddList(aList: TKMPointList);
     procedure AddUnique(const aLoc: TKMPoint);
     procedure AddListUnique(aList: TKMPointList);
@@ -307,6 +307,15 @@ type
     procedure SortByTag;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
+  end;
+
+
+  TKMPointAppearenceList = class(TKMPointList)
+  private
+    fAppearences: array of Word;
+  public
+    procedure Add(const aLoc: TKMPoint); override;
+    function GetAppearences(aIndex: Integer): Word;
   end;
 
 
@@ -919,6 +928,30 @@ begin
   SetLength(Tag, fCount);
   if fCount > 0 then
     LoadStream.Read(Tag[0], SizeOf(Tag[0]) * fCount);
+end;
+
+
+{ TKMPointCntList }
+procedure TKMPointAppearenceList.Add(const aLoc: TKMPoint);
+var
+  Ind: Integer;
+begin
+  Ind := IndexOf(aLoc);
+  if Ind = -1 then
+  begin
+    inherited Add(aLoc);
+
+    if fCount >= Length(fAppearences) then  SetLength(fAppearences, fCount + 32); //Expand the list
+
+    fAppearences[fCount - 1]  := 1;
+  end else
+    fAppearences[Ind] := fAppearences[Ind] + 1;
+end;
+
+
+function TKMPointAppearenceList.GetAppearences(aIndex: Integer): Word;
+begin
+  Result := fAppearences[aIndex];
 end;
 
 
