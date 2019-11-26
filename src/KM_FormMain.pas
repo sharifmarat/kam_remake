@@ -300,18 +300,18 @@ end;
 
 procedure TFormMain.FormKeyDownProc(aKey: Word; aShift: TShiftState);
 begin
-  if gGameApp <> nil then gGameApp.KeyDown(aKey, aShift);
-end;
-
-
-procedure TFormMain.FormKeyUpProc(aKey: Word; aShift: TShiftState);
-begin
   if aKey = gResKeys[SC_DEBUG_WINDOW].Key then
   begin
     SHOW_DEBUG_CONTROLS := not SHOW_DEBUG_CONTROLS;
     ControlsSetVisibile(SHOW_DEBUG_CONTROLS, not (ssCtrl in aShift)); //Hide groupbox when Ctrl is pressed
   end;
 
+  if gGameApp <> nil then gGameApp.KeyDown(aKey, aShift);
+end;
+
+
+procedure TFormMain.FormKeyUpProc(aKey: Word; aShift: TShiftState);
+begin
   if gGameApp <> nil then gGameApp.KeyUp(aKey, aShift);
 end;
 
