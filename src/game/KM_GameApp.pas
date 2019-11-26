@@ -36,7 +36,7 @@ type
     procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: String);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
+    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
     procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                  aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
@@ -86,6 +86,7 @@ type
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
     procedure NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
     procedure NewReplay(const aFilePath: UnicodeString);
+    procedure NewSaveAndReplay(const aSavPath, aRplPath: UnicodeString);
     function TryLoadSavedReplay(aTick: Integer): Boolean;
 
     procedure SaveMapEditor(const aPathName: UnicodeString);
@@ -582,7 +583,7 @@ begin
 end;
 
 
-procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
+procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
 var
   LoadError, FilePath: String;
 begin
@@ -599,7 +600,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.LoadFromFile(FilePath);
+    gGame.LoadFromFile(FilePath, aGIPPath);
   except
     on E: Exception do
     begin
@@ -886,6 +887,15 @@ procedure TKMGameApp.NewReplay(const aFilePath: UnicodeString);
 begin
   Assert(ExtractFileExt(aFilePath) = EXT_SAVE_BASE_DOT);
   LoadGameFromSave(aFilePath, gmReplaySingle); //Will be changed to gmReplayMulti depending on save contents
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
+end;
+
+
+procedure TKMGameApp.NewSaveAndReplay(const aSavPath, aRplPath: UnicodeString);
+begin
+  LoadGameFromSave(aSavPath, gmReplaySingle, aRplPath); //Will be changed to gmReplayMulti depending on save contents
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);

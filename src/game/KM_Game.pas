@@ -120,7 +120,7 @@ type
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
     procedure LoadFromStream(var LoadStream: TKMemoryStreamBinary; aReplayStream: Boolean = False);
-    procedure LoadFromFile(const aPathName: UnicodeString);
+    procedure LoadFromFile(const aPathName: UnicodeString; aCustomReplayFile: UnicodeString = '');
     procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
     procedure AfterLoad;
 
@@ -1920,7 +1920,7 @@ begin
 end;
 
 
-procedure TKMGame.LoadFromFile(const aPathName: UnicodeString);
+procedure TKMGame.LoadFromFile(const aPathName: UnicodeString; aCustomReplayFile: UnicodeString = '');
 var
   LoadStream: TKMemoryStreamBinary;
   GameMPLocalData: TKMGameMPLocalData;
@@ -1938,7 +1938,13 @@ begin
 
     LoadFromStream(LoadStream, False);
 
-    fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
+    if aCustomReplayFile = '' then
+      fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT))
+    else
+    begin
+      gLog.AddTime('Loading game replay from: ' + aCustomReplayFile);
+      fGameInputProcess.LoadFromFile(aCustomReplayFile);
+    end;
 
     //Load MP game local data
     if fGameMode = gmReplayMulti then

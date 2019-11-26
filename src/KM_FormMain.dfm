@@ -670,6 +670,13 @@ object FormMain: TFormMain
         Enabled = False
         OnClick = SaveEditableMission1Click
       end
+      object N5: TMenuItem
+        Caption = '-'
+      end
+      object LoadSavThenRpl: TMenuItem
+        Caption = 'Load .sav then .rpl'
+        OnClick = LoadSavThenRplClick
+      end
       object N4: TMenuItem
         Caption = '-'
       end

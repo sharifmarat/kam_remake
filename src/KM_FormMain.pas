@@ -125,6 +125,8 @@ type
     cpUserInreface: TCategoryPanel;
     cpGraphicTweaks: TCategoryPanel;
     cpLogs: TCategoryPanel;
+    N5: TMenuItem;
+    LoadSavThenRpl: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -178,6 +180,7 @@ type
     procedure SaveEditableMission1Click(Sender: TObject);
     procedure ValidateGameStatsClick(Sender: TObject);
     procedure Button_UpdateUI_Click(Sender: TObject);
+    procedure LoadSavThenRplClick(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -540,6 +543,24 @@ end;
 procedure TFormMain.HousesDat1Click(Sender: TObject);
 begin
   gRes.Houses.ExportCSV(ExeDir + 'Export' + PathDelim + 'houses.dat.csv')
+end;
+
+
+procedure TFormMain.LoadSavThenRplClick(Sender: TObject);
+var
+  SavPath, RplPath: UnicodeString;
+begin
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Save (*.sav)|*.sav') then
+  begin
+    SavPath := OpenDialog1.FileName;
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+    if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Replay (*.rpl)|*.rpl') then
+    begin
+      RplPath := OpenDialog1.FileName;
+
+      gGameApp.NewSaveAndReplay(SavPath, RplPath);
+    end;
+  end;
 end;
 
 
