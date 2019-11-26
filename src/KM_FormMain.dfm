@@ -688,6 +688,13 @@ object FormMain: TFormMain
         Caption = 'Save settings.ini'
         OnClick = SaveSettingsClick
       end
+      object N7: TMenuItem
+        Caption = '-'
+      end
+      object ReloadLibx: TMenuItem
+        Caption = 'Reload Libx (translations)'
+        OnClick = ReloadLibxClick
+      end
       object N1: TMenuItem
         Caption = '-'
       end

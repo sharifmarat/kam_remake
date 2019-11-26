@@ -127,6 +127,8 @@ type
     cpLogs: TCategoryPanel;
     N5: TMenuItem;
     LoadSavThenRpl: TMenuItem;
+    N7: TMenuItem;
+    ReloadLibx: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -181,6 +183,7 @@ type
     procedure ValidateGameStatsClick(Sender: TObject);
     procedure Button_UpdateUI_Click(Sender: TObject);
     procedure LoadSavThenRplClick(Sender: TObject);
+    procedure ReloadLibxClick(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -335,6 +338,12 @@ begin
   Assert(KeyPreview, 'MainForm should recieve all keys to pass them to fGame');
 
   FormKeyUpProc(Key, Shift);
+end;
+
+
+procedure TFormMain.ReloadLibxClick(Sender: TObject);
+begin
+  gRes.LoadLocaleAndFonts(gGameApp.GameSettings.Locale, gGameApp.GameSettings.LoadFullFonts);
 end;
 
 
