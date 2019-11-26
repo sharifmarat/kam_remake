@@ -38,7 +38,6 @@ type
     Export_Custom: TMenuItem;
     Export_Tileset: TMenuItem;
     Export_Fonts1: TMenuItem;
-    GroupBox1: TGroupBox;
     chkSuperSpeed: TCheckBox;
     Export_Deliverlists1: TMenuItem;
     Export_Sounds1: TMenuItem;
@@ -56,7 +55,6 @@ type
     ExportUIPages: TMenuItem;
     Resources1: TMenuItem;
     HousesDat1: TMenuItem;
-    GroupBox2: TGroupBox;
     chkShowOwnership: TCheckBox;
     chkShowNavMesh: TCheckBox;
     chkShowAvoid: TCheckBox;
@@ -69,17 +67,14 @@ type
     chkBuildAI: TCheckBox;
     chkCombatAI: TCheckBox;
     ResourceValues1: TMenuItem;
-    GroupBox3: TGroupBox;
     chkUIControlsBounds: TCheckBox;
     chkUITextBounds: TCheckBox;
-    GroupBox4: TGroupBox;
     tbAngleX: TTrackBar;
     tbAngleY: TTrackBar;
     Label3: TLabel;
     Label4: TLabel;
     tbBuildingStep: TTrackBar;
     Label1: TLabel;
-    GroupBox5: TGroupBox;
     tbPassability: TTrackBar;
     Label2: TLabel;
     chkShowRoutes: TCheckBox;
@@ -87,7 +82,6 @@ type
     tbAngleZ: TTrackBar;
     Label7: TLabel;
     chkSelectionBuffer: TCheckBox;
-    GroupBoxLogs: TGroupBox;
     chkLogDelivery: TCheckBox;
     chkLogNetConnection: TCheckBox;
     RGLogNetPackets: TRadioGroup;
@@ -124,6 +118,13 @@ type
     chkShowFPS: TCheckBox;
     chkHands: TCheckBox;
     btnUpdateUI: TButton;
+    cpGroup: TCategoryPanelGroup;
+    cpGameControls: TCategoryPanel;
+    cpDebugRender: TCategoryPanel;
+    cpAI: TCategoryPanel;
+    cpUserInreface: TCategoryPanel;
+    cpGraphicTweaks: TCategoryPanel;
+    cpLogs: TCategoryPanel;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -256,7 +257,7 @@ begin
 
   //Put debug panel on top
   RenderArea.SendToBack;
-  GroupBox1.BringToFront;
+  cpGroup.BringToFront;
 end;
 
 procedure TFormMain.FormShow(Sender: TObject);
@@ -466,7 +467,7 @@ end;
 
 procedure TFormMain.Debug_ShowPanelClick(Sender: TObject);
 begin
-  GroupBox1.Visible := not GroupBox1.Visible;
+  cpGroup.Visible := not cpGroup.Visible;
 end;
 
 
@@ -654,30 +655,44 @@ end;
 
 //Revert all controls to defaults (e.g. before MP session)
 procedure TFormMain.ControlsReset;
-  procedure ResetGroupBox(aBox: TGroupBox);
+
+  procedure ResetCategoryPanel(aPanel: TCategoryPanel);
+  var
+    I: Integer;
+    PanelSurface: TCategoryPanelSurface;
+  begin
+    if aPanel.Controls[0] is TCategoryPanelSurface then
+    begin
+      PanelSurface := TCategoryPanelSurface(aPanel.Controls[0]);
+      for I := 0 to PanelSurface.ControlCount - 1 do
+      begin
+        if PanelSurface.Controls[I] is TCheckBox then
+          TCheckBox(PanelSurface.Controls[I]).Checked :=    (PanelSurface.Controls[I] = chkBevel)
+                                                 or (PanelSurface.Controls[I] = chkLogNetConnection)
+        else
+        if PanelSurface.Controls[I] is TTrackBar then
+          TTrackBar(PanelSurface.Controls[I]).Position := 0
+        else
+        if PanelSurface.Controls[I] is TRadioGroup then
+          TRadioGroup(PanelSurface.Controls[I]).ItemIndex := 0;
+      end;
+    end;
+  end;
+
+  procedure ResetCategoryPanelGroup(aGroup: TCategoryPanelGroup);
   var
     I: Integer;
   begin
-    for I := 0 to aBox.ControlCount - 1 do
-      if aBox.Controls[I] is TCheckBox then
-        TCheckBox(aBox.Controls[I]).Checked :=    (aBox.Controls[I] = chkBevel)
-                                               or (aBox.Controls[I] = chkLogNetConnection)
-      else
-      if aBox.Controls[I] is TTrackBar then
-        TTrackBar(aBox.Controls[I]).Position := 0
-      else
-      if aBox.Controls[I] is TRadioGroup then
-        TRadioGroup(aBox.Controls[I]).ItemIndex := 0
-      else
-      if (aBox.Controls[I] is TGroupBox) then
-        ResetGroupBox(TGroupBox(aBox.Controls[I]));
+    for I := 0 to aGroup.ControlCount - 1 do
+      if (aGroup.Controls[I] is TCategoryPanel) then
+        ResetCategoryPanel(TCategoryPanel(aGroup.Controls[I]));
   end;
 begin
   if not RESET_DEBUG_CONTROLS then
     Exit;
 
   fUpdating := True;
-  ResetGroupBox(GroupBox1);
+  ResetCategoryPanelGroup(cpGroup);
 
   tbOwnMargin.Position := OWN_MARGIN_DEF;
   tbOwnThresh.Position := OWN_THRESHOLD_DEF;
@@ -719,7 +734,7 @@ var
 begin
   Refresh;
 
-  GroupBox1.Visible  := aShowGroupBox and aShowCtrls;
+  cpGroup.Visible  := aShowGroupBox and aShowCtrls;
   StatusBar1.Visible := aShowCtrls;
 
   //For some reason cycling Form.Menu fixes the black bar appearing under the menu upon making it visible.
@@ -727,7 +742,7 @@ begin
   Menu := nil;
   if aShowCtrls then Menu := MainMenu1;
 
-  GroupBox1.Enabled  := aShowGroupBox and aShowCtrls;
+  cpGroup.Enabled  := aShowGroupBox and aShowCtrls;
   StatusBar1.Enabled := aShowCtrls;
   for I := 0 to MainMenu1.Items.Count - 1 do
     MainMenu1.Items[I].Enabled := aShowCtrls;
