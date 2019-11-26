@@ -1210,3 +1210,49 @@
 1260:Take out %s is prohibited while in the "offer" delivery mode
 1261:Recruit is not allowed to get into Barracks
 1262:Enter tile ID to select it
+1263:RMG Settings
+1264:Random map generator settings
+1265:Random Map Generator - Settings
+1266:Locs
+1267:Active
+1268:Layout
+1269:Rectangle
+1270:Vertical
+1271:Horizontal
+1272:Random
+1273:Center Screen
+1274:Loc radius
+1275:Resources
+1276:Connect Locs
+1277:Mine fix
+1278:Obstacles
+1279:Swamp
+1280:Wetland
+1281:Water
+1282:Density
+1283:Size
+1284:Variance
+1285:Walk textures
+1286:Biomes
+1287:Grass
+1288:Ground
+1289:Snow
+1290:Sand
+1291:First layer
+1292:Second layer
+1293:Step
+1294:Limit
+1295:Height
+1296:H_N-S_T
+1297:Inaccesible places
+1298:NoGo Zones
+1299:Replace mountains terrain
+1300:Objects
+1301:Animals
+1302:Forests
+1303:Trees
+1304:Seed
+1305:Basic tiles
+1306:Cellular automaton
+1307:New Random Seed
+1308:Generate map
