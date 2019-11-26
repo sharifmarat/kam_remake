@@ -596,7 +596,7 @@ end;
 {Decreases the pointer counter}
 procedure TKMHouse.ReleaseHousePointer;
 begin
-  Assert(gGame.AllowGetPointer, 'GetHousePointer is not allowed outside of game tick update procedure, it could cause game desync');
+  Assert(gGame.AllowGetPointer, 'ReleaseHousePointer is not allowed outside of game tick update procedure, it could cause game desync');
 
   if fPointerCount < 1 then
     raise ELocError.Create('House remove pointer for '+gRes.Houses[fType].HouseName, fPosition);

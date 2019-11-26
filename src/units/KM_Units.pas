@@ -1293,7 +1293,7 @@ end;
 //Should be used only by gHands for clarity sake
 procedure TKMUnit.ReleaseUnitPointer;
 begin
-  Assert(gGame.AllowGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+  Assert(gGame.AllowGetPointer, 'ReleaseUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
 
   if fPointerCount < 1 then
     raise ELocError.Create('Unit remove pointer', PrevPosition);
