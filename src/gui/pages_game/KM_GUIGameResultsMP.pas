@@ -177,7 +177,7 @@ type
 implementation
 uses
   KM_Main, KM_ResTexts, KM_Game, KM_HandsCollection, KM_CommonUtils, KM_Resource, KM_ResFonts,
-  KM_RenderUI, KM_Hand, KM_ResUnits,
+  KM_RenderUI, KM_Hand, KM_ResUnits, KM_MapTypes,
   KM_GameTypes;
 
 
@@ -1380,7 +1380,14 @@ begin
   if ResultsLabelCap <> '' then
     Label_ResultsMP.Caption := Label_ResultsMP.Caption + ' - ';
 
-  Label_ResultsMP.Caption := Label_ResultsMP.Caption + gGame.GameName + ' - ' + TimeToString(gGame.MissionTime);
+  Label_ResultsMP.Caption := Label_ResultsMP.Caption + gGame.GameName;
+
+  //Append difficulty level to game results caption
+  if gGame.MissionDifficulty <> mdNone then
+    Label_ResultsMP.Caption := Label_ResultsMP.Caption + ' (' + gResTexts[DIFFICULTY_LEVELS_TX[gGame.MissionDifficulty]] + ')';
+
+  //Append mission time
+  Label_ResultsMP.Caption := Label_ResultsMP.Caption + ' - ' + TimeToString(gGame.MissionTime);
 
   ReinitPlayersToShow;
   ReinitTeamsToShow; //Should be done after ReinitPlayersToShow
