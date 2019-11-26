@@ -293,7 +293,8 @@ type
     procedure Add(const aLoc: TKMPointDir);
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TKMPointDir read GetItem; default;
-    function GetRandom(out Point: TKMPointDir):Boolean;
+    function GetRandom(out Point: TKMPointDir): Boolean;
+    procedure ToPointList(aList: TKMPointList; aUnique: Boolean);
     procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
     procedure SaveToStream(SaveStream: TKMemoryStream); virtual;
   end;
@@ -847,6 +848,18 @@ begin
     Point := fItems[KaMRandom(fCount, 'TKMPointDirList.GetRandom')];
     Result := True;
   end;
+end;
+
+
+procedure TKMPointDirList.ToPointList(aList: TKMPointList; aUnique: Boolean);
+var
+  I: Integer;
+begin
+  for I := 0 to fCount - 1 do
+    if aUnique then
+      aList.AddUnique(fItems[I].Loc)
+    else
+      aList.Add(fItems[I].Loc)
 end;
 
 
