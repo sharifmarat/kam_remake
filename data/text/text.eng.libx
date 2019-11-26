@@ -969,7 +969,7 @@
 1018:Spectate/Replay view Keys
 1019:%s has muted you. You can no longer send messages or beacons to him
 1020:Objects palette
-1021:Universal erasor
+1021:Universal eraser
 1022:Your woodcutter cannot find any free place to plant a tree
 1023:PT-
 1024:%s has won!
@@ -1033,7 +1033,7 @@
 1083:Save map and start game for selected player
 1084:In Barracks:
 1085:In TownHall:
-1086:Rotate tile
+1086:Rotate tile on map
 1087:Objects palette
 1088:Close palette
 1089:Remove units/groups
@@ -1097,7 +1097,7 @@
 1147:Mission parameters
 1148:Author
 1149:Small description
-1150:Big description
+1150:Long description
 1151:Libx text ID
 1152:This map will be always visible in singleplayer maps list
 1153:Block team selection
@@ -1146,7 +1146,7 @@
 1196:Shift + Mouse wheel
 1197:Force paint
 1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
-1199:Magic brush - automatically fix all generated or missing tile transitions with chosen mask
+1199:Magic brush - using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
 1200:No mask - use exiting tiles for transitions
 1201:Softest mask - use automatically created transitions
 1202:Soft mask - use automatically created transitions
@@ -1159,7 +1159,7 @@
 1209:Fix terrain brushes
 1210:Try to repair internal terrain information to make brushes work
 1211:Fix terrain brushes
-1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
+1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|in spots where manual tiles were used
 1213:Def.
 1214:Human player
 1215:Classic AI Player %d
@@ -1199,9 +1199,9 @@
 1249:Default
 1250:Ally / Enemy
 1251:Teams
-1252:Show initial players colors
-1253:Show self / ally / enemy players colors
-1254:Show teams colors
+1252:Show player colors according to their choice in lobby
+1253:Show 3 different colors (yours, allied, hostile) for citizens and buildings
+1254:Show colors according to team membership
 1255:Error: Player name '%s' is reserved
 1256:Citizens (S/L/R)
 1257:Citizens (Others)
