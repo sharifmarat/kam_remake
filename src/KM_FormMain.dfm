@@ -77,10 +77,12 @@ object FormMain: TFormMain
     HeaderFont.Height = -11
     HeaderFont.Name = 'Tahoma'
     HeaderFont.Style = []
+    HeaderHeight = 18
+    HeaderStyle = hsThemed
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 553
-      Height = 185
+      Top = 523
+      Height = 179
       Caption = 'Logs'
       TabOrder = 0
       object chkLogCommands: TCheckBox
@@ -156,8 +158,8 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 523
-      Height = 30
+      Top = 499
+      Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
       TabOrder = 1
@@ -249,8 +251,8 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 493
-      Height = 30
+      Top = 475
+      Height = 24
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
@@ -284,8 +286,8 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 321
-      Height = 172
+      Top = 309
+      Height = 166
       Caption = 'AI'
       TabOrder = 3
       object Label5: TLabel
@@ -446,7 +448,8 @@ object FormMain: TFormMain
       end
     end
     object cpDebugRender: TCategoryPanel
-      Top = 121
+      Top = 115
+      Height = 194
       Caption = 'Debug Render'
       TabOrder = 4
       object Label2: TLabel
@@ -598,7 +601,7 @@ object FormMain: TFormMain
     end
     object cpGameControls: TCategoryPanel
       Top = 0
-      Height = 121
+      Height = 115
       Caption = 'Game Controls'
       TabOrder = 5
       object RGPlayer: TRadioGroup
