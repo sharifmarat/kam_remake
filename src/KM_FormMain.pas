@@ -259,8 +259,9 @@ begin
   {$ENDIF}
 
   //Put debug panel on top
-  RenderArea.SendToBack;
-  cpGroup.BringToFront;
+  RenderArea.BringToFront;
+  cpGroup.SendToBack;
+  StatusBar1.SendToBack;
 end;
 
 procedure TFormMain.FormShow(Sender: TObject);
