@@ -1129,6 +1129,7 @@ TX_MAPED_TERRAIN_ROTATE_TILE = 1086; //Rotate tile
 TX_MAPED_TERRAIN_OBJECTS_PALETTE = 1087; //Objects palette
 TX_MAPED_TERRAIN_CLOSE_PALETTE = 1088; //Close palette
 TX_MAPED_UNITS_REMOVE_HINT = 1089; //Remove units/groups
+TX_MAPED_TERRAIN_TILE_ID_EDIT_HINT = 1262; //Enter tile ID to select it
 
 TX_GAME_SETTINGS_REPLAY_AUTOPAUSE = 1090; //Replay|autopause
 TX_GAME_SETTINGS_REPLAY_AUTOPAUSE_HINT = 1091; //Automatically pause replay when peacetime ends
