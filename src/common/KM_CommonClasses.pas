@@ -739,7 +739,7 @@ begin
   if fCount >= Length(fWeight) then
     SetLength(fWeight, fCount + 32);
 
-  fWeight[fCount - 1] := 1000 / KMLengthSqr(fCenter, aLoc); //smaller weight for distant locs
+  fWeight[fCount - 1] := 1000 / KMLength(fCenter, aLoc); //smaller weight for distant locs
 end;
 
 
@@ -975,7 +975,7 @@ begin
   if fCount >= Length(fWeight) then
     SetLength(fWeight, fCount + 32);
 
-  fWeight[fCount - 1] := 1000 / KMLengthSqr(fCenter, aLoc.Loc); //smaller weight for distant locs
+  fWeight[fCount - 1] := 1000 / KMLength(fCenter, aLoc.Loc); //smaller weight for distant locs
 end;
 
 
