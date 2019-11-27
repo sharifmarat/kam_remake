@@ -797,7 +797,8 @@ var
   DistanceSqr: Single;
 begin
   Result := ((fSounds[aIndex].HandIndex = gMySpectator.HandID) or (fSounds[aIndex].HandIndex = PLAYER_NONE))
-             and (not fSounds[aIndex].Attenuate or (gMySpectator.FogOfWar.CheckTileRevelation(fSounds[aIndex].Loc.X, fSounds[aIndex].Loc.Y) > 0));
+             and (not fSounds[aIndex].Attenuate
+                  or (gMySpectator.FogOfWar.CheckTileRevelation(fSounds[aIndex].Loc.X, fSounds[aIndex].Loc.Y) > 0));
   if not Result then Exit;
 
   if fSounds[aIndex].Attenuate then
