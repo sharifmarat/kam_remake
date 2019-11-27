@@ -186,7 +186,7 @@ type
     procedure FindOrePointsByDistance(aLoc: TKMPoint; aRes: TKMWareType; var aPoints: TKMPointListArray);
     function CanFindTree(const aLoc: TKMPoint; aRadius: Word; aOnlyAgeFull: Boolean = False):Boolean;
     procedure FindTree(const aLoc: TKMPoint; aRadius: Word; const aAvoidLoc: TKMPoint; aPlantAct: TKMPlantAct;
-                       Trees: TKMPointDirList; BestToPlant,SecondBestToPlant: TKMPointList);
+                       Trees: TKMPointDirCenteredList; BestToPlant,SecondBestToPlant: TKMPointCenteredList);
     procedure FindPossibleTreePoints(const aLoc: TKMPoint; aRadius: Word; aTiles: TKMPointList);
     procedure FindFishWaterLocs(const aLoc: TKMPoint; aRadius: Integer; const aAvoidLoc: TKMPoint; aIgnoreWorkingUnits: Boolean;
                                 ChosenTiles: TKMPointDirList);
@@ -2344,7 +2344,7 @@ end;
 //taAny - Anything will do since Woodcutter is querying from home
 //Result indicates if desired TreeAct place was found successfully
 procedure TKMTerrain.FindTree(const aLoc: TKMPoint; aRadius: Word; const aAvoidLoc: TKMPoint; aPlantAct: TKMPlantAct;
-                              Trees: TKMPointDirList; BestToPlant, SecondBestToPlant: TKMPointList);
+                              Trees: TKMPointDirCenteredList; BestToPlant, SecondBestToPlant: TKMPointCenteredList);
 var
   ValidTiles: TKMPointList;
   I: Integer;
