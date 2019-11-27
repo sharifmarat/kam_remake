@@ -179,8 +179,8 @@ type
     procedure FocusChanged(aFocused: Boolean); virtual;
     procedure DoClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean); virtual;
     function DoHandleMouseWheelByDefault: Boolean; virtual;
-    function GetHint: String; virtual;
-    procedure SetHint(const aHint: String); virtual;
+    function GetHint: UnicodeString; virtual;
+    procedure SetHint(const aHint: UnicodeString); virtual;
     procedure SetPaintLayer(aPaintLayer: Integer);
   public
     Hitable: Boolean; //Can this control be hit with the cursor?
@@ -834,7 +834,7 @@ type
     procedure SetTop(aValue: Integer); override;
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
-    procedure SetHint(const aValue: String); override;
+    procedure SetHint(const aValue: UnicodeString); override;
     function GetSelfAbsLeft: Integer; override;
     function GetSelfWidth: Integer; override;
     function GetMaxLength: Word; override;
@@ -866,8 +866,8 @@ type
     fImmidiateOrder: Boolean; //Order count should be changed immidiately in control. Should be False usually
     procedure ButtonClick(Sender: TObject; Shift: TShiftState);
     procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
-    procedure SetOrderRemHint(const aValue: String);
-    procedure SetOrderAddHint(const aValue: String);
+    procedure SetOrderRemHint(const aValue: UnicodeString);
+    procedure SetOrderAddHint(const aValue: UnicodeString);
     procedure SetOrderCount(aValue: Integer);
   protected
     procedure SetTop(aValue: Integer); override;
@@ -1122,8 +1122,8 @@ type
     function GetColumnWidth(aIndex: Integer): Integer;
     function GetOffset(aIndex: Integer): Word;
     procedure SetOffset(aIndex: Integer; aValue: Word);
-    function GetHeaderHint(aIndex: Integer): String;
-    procedure SetHeaderHint(aIndex: Integer; const aValue: String);
+    function GetHeaderHint(aIndex: Integer): UnicodeString;
+    procedure SetHeaderHint(aIndex: Integer; const aValue: UnicodeString);
   protected
     procedure DoClick(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     function GetHint: UnicodeString; override;
@@ -1593,7 +1593,7 @@ type
 
   TKMGraphLine = record
                 Title: UnicodeString;
-                TitleDetailed: TStringArray;
+                TitleDetailed: TKMStringArray;
                 TitleDetailedColor: TKMCardinalArray;
                 Tag: Integer;
                 Color: TColor4;
@@ -1634,7 +1634,7 @@ type
     destructor Destroy; override;
 
     procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1); overload;
-    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TStringArray;
+    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TKMStringArray;
                       const aTitleDetailedColor: TKMCardinalArray; const aValues: TKMCardinalArray; aTag: Integer = -1); overload;
     procedure AddAltLine(const aAltValues: TKMCardinalArray);
     procedure TrimToFirstVariation;
@@ -1952,13 +1952,13 @@ begin
 end;
 
 
-function TKMControl.GetHint: String;
+function TKMControl.GetHint: UnicodeString;
 begin
   Result := fHint;
 end;
 
 
-procedure TKMControl.SetHint(const aHint: String);
+procedure TKMControl.SetHint(const aHint: UnicodeString);
 begin
   //fHint := StringReplace(aHint, '|', ' ', [rfReplaceAll]); //Not sure why we were need to replace | here...
   fHint := aHint;
@@ -4646,7 +4646,7 @@ begin
 end;
 
 
-procedure TKMNumericEdit.SetHint(const aValue: String);
+procedure TKMNumericEdit.SetHint(const aValue: UnicodeString);
 begin
   inherited;
   fButtonDec.Hint := aValue;
@@ -4894,13 +4894,13 @@ begin
 end;
 
 
-procedure TKMWareOrderRow.SetOrderRemHint(const aValue: String);
+procedure TKMWareOrderRow.SetOrderRemHint(const aValue: UnicodeString);
 begin
   fOrderRem.Hint := aValue;
 end;
 
 
-procedure TKMWareOrderRow.SetOrderAddHint(const aValue: String);
+procedure TKMWareOrderRow.SetOrderAddHint(const aValue: UnicodeString);
 begin
   fOrderAdd.Hint := aValue;
 end;
@@ -6798,13 +6798,13 @@ begin
 end;
 
 
-function TKMListHeader.GetHeaderHint(aIndex: Integer): String;
+function TKMListHeader.GetHeaderHint(aIndex: Integer): UnicodeString;
 begin
   Result := fColumns[aIndex].HeaderHint;
 end;
 
 
-procedure TKMListHeader.SetHeaderHint(aIndex: Integer; const aValue: String);
+procedure TKMListHeader.SetHeaderHint(aIndex: Integer; const aValue: UnicodeString);
 begin
   fColumns[aIndex].HeaderHint := aValue;
 end;
@@ -8727,7 +8727,7 @@ end;
 
 procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
 var
-  TitleDetailed: TStringArray;
+  TitleDetailed: TKMStringArray;
   TitleDetailedColor: TKMCardinalArray;
 begin
   SetLength(TitleDetailed, 0);
@@ -8736,7 +8736,7 @@ begin
 end;
 
 
-procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TStringArray;
+procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TKMStringArray;
                            const aTitleDetailedColor: TKMCardinalArray; const aValues: TKMCardinalArray; aTag: Integer = -1);
 begin
   if fMaxLength = 0 then Exit;

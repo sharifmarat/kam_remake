@@ -80,15 +80,15 @@ type
     property MapsInfo: TKMCampaignMapDataArray read fMapsInfo;
     property MapsProgressData: TKMCampaignMapProgressDataArray read fMapsProgressData;
 
-    function GetCampaignTitle: String;
-    function GetCampaignDescription: String;
+    function GetCampaignTitle: UnicodeString;
+    function GetCampaignDescription: UnicodeString;
     function GetCampaignMissionTitle(aIndex: Byte): String;
     function GetMissionFile(aIndex: Byte; const aExt: UnicodeString = '.dat'): String;
     function GetMissionName(aIndex: Byte): String;
     function GetMissionTitle(aIndex: Byte): String;
     function GetMissionBriefing(aIndex: Byte): String;
     function GetBreifingAudioFile(aIndex: Byte): String;
-    function GetScriptDataTypeFile: String;
+    function GetScriptDataTypeFile: UnicodeString;
   end;
 
 
@@ -554,7 +554,7 @@ begin
 end;
 
 
-function TKMCampaign.GetDefaultMissionTitle(aIndex: Byte): String;
+function TKMCampaign.GetDefaultMissionTitle(aIndex: Byte): UnicodeString;
 begin
   if fMapsInfo[aIndex].MissionName <> '' then
     Result := fMapsInfo[aIndex].MissionName

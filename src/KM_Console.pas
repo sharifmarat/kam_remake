@@ -18,9 +18,9 @@ type
       fOnPost: TUnicodeStringEvent;
       fOnPostLocal: TUnicodeStringEvent;
       fOnError: TUnicodeStringEvent;
-      fMessages: String;
+      fMessages: UnicodeString;
 
-      procedure SetMessages(const aMessages: String);
+      procedure SetMessages(const aMessages: UnicodeString);
 
       function TryDoCallConsoleCommand: Boolean;
     public
@@ -115,7 +115,7 @@ begin
 end;
 
 
-procedure TKMConsole.SetMessages(const aMessages: String);
+procedure TKMConsole.SetMessages(const aMessages: UnicodeString);
 begin
   fMessages := aMessages;
 end;

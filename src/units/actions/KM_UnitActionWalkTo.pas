@@ -107,6 +107,8 @@ uses
   KM_UnitActionGoInOut, KM_UnitActionStay, KM_UnitTaskBuild, KM_UnitTaskDismiss,
   KM_UnitWarrior, KM_Log, KM_Resource, KM_CommonClassesExt;
 
+type
+  TKMSetByteSet = TSet<TKMByteSet>;
 //INTERACTION CONSTANTS: (may need to be tweaked for optimal performance)
 //TIMEOUT is the time after which each solution things will be checked.
 //FREQ is the frequency that it will be checked, to save CPU time.
@@ -200,7 +202,7 @@ begin
     gLog.AddNoTimeNoFlush('Unable to make a route for ' + gRes.Units[aUnit.UnitType].GUIName +
                    ' from ' + KM_Points.TypeToString(fWalkFrom) + ' to ' + KM_Points.TypeToString(fWalkTo) +
                    ' with "' + PassabilityGuiText[fPass] + '"' +
-                   ' TargetWalkConnectSet = ' + TSet<TKMByteSet>.SetToString(aTargetWalkConnectSet));
+                   ' TargetWalkConnectSet = ' + TKMSetByteSet.SetToString(aTargetWalkConnectSet));
 end;
 
 

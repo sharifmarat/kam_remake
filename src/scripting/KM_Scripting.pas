@@ -44,7 +44,7 @@ type
     property Included[I: Integer]: TKMScriptFileInfo read GetIncluded; default;
     property IncludedCount: Integer read fIncludedCnt;
     procedure AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
-    function FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+    function FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TKMStringArray; out aRowsArr: TIntegerArray): Integer;
   end;
 
 
@@ -66,8 +66,8 @@ type
     property WarningsString: TKMScriptErrorMessage read fWarningsString;
 
     procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
-    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
-                                      const aDetailedErrorString: String = '');
+    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString;
+                                      const aDetailedErrorString: UnicodeString = '');
     function HasErrors: Boolean;
     function HasWarnings: Boolean;
     procedure AppendError(aError: TKMScriptErrorMessage);
@@ -138,7 +138,7 @@ type
 
     function GetScriptFilesInfo: TKMScriptFilesCollection;
     function GetCodeLine(aRowNum: Cardinal): AnsiString;
-    function FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+    function FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TKMStringArray; out aRowsArr: TIntegerArray): Integer;
     procedure RecreateValidationIssues;
     constructor Create(aOnScriptError: TUnicodeStringEvent); // Scripting has to be created via special TKMScriptingCreator
   public
@@ -1643,7 +1643,7 @@ begin
 end;
 
 
-function TKMScripting.FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+function TKMScripting.FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TKMStringArray; out aRowsArr: TIntegerArray): Integer;
 begin
   Result := fPreProcessor.fScriptFilesInfo.FindCodeLine(GetCodeLine(aRowNumber), aFileNamesArr, aRowsArr);
 end;
@@ -1657,7 +1657,7 @@ end;
 
 function TKMScripting.GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage;
 var I, CodeLinesFound: Integer;
-    FileNamesArr: TStringArray;
+    FileNamesArr: TKMStringArray;
     RowsArr: TIntegerArray;
     ErrorMsg, DetailedErrorMsg, ErrorMsgTemplate, FirstError, ErrorTemplate: UnicodeString;
 begin
@@ -1798,8 +1798,8 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
-                                                        const aDetailedErrorString: String = '');
+procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString;
+                                                        const aDetailedErrorString: UnicodeString = '');
 var
   fl: TextFile;
   LogErrorMsg: UnicodeString;
@@ -2301,7 +2301,7 @@ end;
 
 //Try to find line of code in all script files
 //Returns number of occurences
-function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray;
+function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TKMStringArray;
                                                out aRowsArr: TIntegerArray): Integer;
 
   procedure AddFoundLineInfo(var aFoundCnt: Integer; const aFileNameFound: String; aRowFound: Integer);

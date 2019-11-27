@@ -19,12 +19,14 @@ type
 //    Tick: Cardinal;
   end;
 
+  TKMRLRecordList = TList<TKMRngLogRecord>;
+
   TKMRandomCheckLogger = class
   private
     fGameTick: Cardinal;
 //    fRngLogStream: TKMemoryStream;
     fCallers: TDictionary<Byte, AnsiString>;
-    fRngLog: TDictionary<Cardinal, TList<TKMRngLogRecord>>;
+    fRngLog: TDictionary<Cardinal, TKMRLRecordList>;
     function GetCallerID(const aCaller: AnsiString; aValue: Extended; aValueType: TKMLogRngType): Byte;
     procedure AddRecordToList(aTick: Cardinal; const aRec: TKMRngLogRecord);
   public
@@ -66,7 +68,7 @@ constructor TKMRandomCheckLogger.Create;
 begin
 //  fRngLogStream := TKMemoryStream.Create;
   fCallers := TDictionary<Byte, AnsiString>.Create;
-  fRngLog := TDictionary<Cardinal, TList<TKMRngLogRecord>>.Create;
+  fRngLog := TDictionary<Cardinal, TKMRLRecordList>.Create;
 end;
 
 
@@ -216,7 +218,7 @@ var
   SaveStream: TKMemoryStream;
 //  CompressionStream: TCompressionStream;
   CallerPair: TPair<Byte, AnsiString>;
-  LogPair: TPair<Cardinal, TList<TKMRngLogRecord>>;
+  LogPair: TPair<Cardinal, TKMRLRecordList>;
   I, Cnt: Integer;
   RngValueType: TKMLogRngType;
 begin
@@ -226,7 +228,7 @@ begin
   SaveStream := TKMemoryStream.Create;
 
   SaveStream.WriteA('CallersTable');
-  SaveStream.Write(fCallers.Count);
+  SaveStream.Write(Integer(fCallers.Count));
 
   for CallerPair in fCallers do
   begin
@@ -236,11 +238,11 @@ begin
 
   SaveStream.WriteA('KaMRandom_calls');
   Cnt := 0;
-  SaveStream.Write(fRngLog.Count);
+  SaveStream.Write(Integer(fRngLog.Count));
   for LogPair in fRngLog do
   begin
     SaveStream.Write(LogPair.Key); //Tick
-    SaveStream.Write(LogPair.Value.Count); //Number of log records in tick
+    SaveStream.Write(Integer(LogPair.Value.Count)); //Number of log records in tick
     Inc(Cnt, LogPair.Value.Count);
     for I := 0 to LogPair.Value.Count - 1 do
     begin

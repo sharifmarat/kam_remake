@@ -41,9 +41,9 @@ interface
 uses OSTypes;
 
 const
-{$IFDEF WIN32}
+{$IFDEF WIN64}
   OggLib = 'ogg.dll';
-{$ENDIF WIN32}
+{$ENDIF WIN64}
 
 {$IFDEF UNIX}
   OggLib = 'libogg.so';
