@@ -61,6 +61,7 @@ uses
   function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer; overload;
   function KaMRandom(const aCaller: String; aLogRng: Boolean = True): Extended; overload;
   function KaMRandom(aMax: Integer; const aCaller: String; aLogRng: Boolean = True): Integer; overload;
+  function KaMRandomS1(aMax: Single; const aCaller: String): Single;
   function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: String): Integer; overload;
   function KaMRandomS2(Range_Both_Directions: Single; const aCaller: String): Single; overload;
 
@@ -1103,6 +1104,15 @@ begin
   Result := KaMRandom(Round(Range_Both_Directions*20000)+1, 'S2S*' + aCaller, False)/10000-Range_Both_Directions;
 
   LogKamRandom(Result, aCaller, 'S2S*');
+end;
+
+
+//Returns random number from 0 to +aMax
+function KaMRandomS1(aMax: Single; const aCaller: String): Single;
+begin
+  Result := KaMRandom(Round(aMax*10000), 'S1S*' + aCaller, False)/10000;
+
+  LogKamRandom(Result, aCaller, 'S1S*');
 end;
 
 
