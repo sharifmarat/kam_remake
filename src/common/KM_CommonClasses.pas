@@ -269,6 +269,16 @@ type
 
   TKMPointListArray = array of TKMPointList;
 
+  TKMPointCenteredList = class(TKMPointList)
+  private
+    fCenter: TKMPoint;
+    fWeight: array of Single;
+  public
+    constructor Create(aCenter: TKMPoint);
+    procedure Add(const aLoc: TKMPoint); override;
+    function GetWeightedRandom(out Point: TKMPoint): Boolean;
+  end;
+
   TKMPointTagList = class(TKMPointList)
   public
     Tag, Tag2: array of Cardinal; //0..Count-1
@@ -290,13 +300,26 @@ type
     function GetItem(aIndex: Integer): TKMPointDir;
   public
     procedure Clear;
-    procedure Add(const aLoc: TKMPointDir);
+    procedure Add(const aLoc: TKMPointDir); virtual;
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TKMPointDir read GetItem; default;
-    function GetRandom(out Point: TKMPointDir): Boolean;
+    function GetRandom(out Point: TKMPointDir): Boolean; //overload;
+
+//    function GetRandom(aCloseToLoc: TKMPoint; out Point: TKMPointDir): Boolean; overload;
     procedure ToPointList(aList: TKMPointList; aUnique: Boolean);
     procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
     procedure SaveToStream(SaveStream: TKMemoryStream); virtual;
+  end;
+
+
+  TKMPointDirCenteredList = class(TKMPointDirList)
+  private
+    fCenter: TKMPoint;
+    fWeight: array of Single;
+  public
+    constructor Create(aCenter: TKMPoint);
+    procedure Add(const aLoc: TKMPointDir); override;
+    function GetWeightedRandom(out Point: TKMPointDir): Boolean;
   end;
 
 
@@ -701,6 +724,54 @@ begin
 end;
 
 
+{ TKMPointCenteredList }
+constructor TKMPointCenteredList.Create(aCenter: TKMPoint);
+begin
+  inherited Create;
+  fCenter := aCenter;
+end;
+
+
+procedure TKMPointCenteredList.Add(const aLoc: TKMPoint);
+begin
+  inherited;
+
+  if fCount >= Length(fWeight) then
+    SetLength(fWeight, fCount + 32);
+
+  fWeight[fCount - 1] := 1000 / KMLengthSqr(fCenter, aLoc); //smaller weight for distant locs
+end;
+
+
+function TKMPointCenteredList.GetWeightedRandom(out Point: TKMPoint): Boolean;
+var
+  I: Integer;
+  WeightsSum, Rnd: Extended;
+begin
+  Result := False;
+
+  if Count = 0 then
+    Exit;
+
+  WeightsSum := 0;
+  for I := 0 to fCount - 1 do
+    WeightsSum := WeightsSum + fWeight[I];
+
+  Rnd := KaMRandomS1(WeightsSum, 'TKMPointCenteredList.GetWeightedRandom');
+
+  for I := 0 to fCount - 1 do
+  begin
+    if Rnd < fWeight[I] then
+    begin
+      Point := fItems[I];
+      Exit(True);
+    end;
+    Rnd := Rnd - fWeight[I];
+  end;
+  Assert(False, 'Error getting weighted random');
+end;
+
+
 { TKMPointTagList }
 procedure TKMPointTagList.Clear;
 begin
@@ -889,6 +960,55 @@ begin
 end;
 
 
+{ TKMPointDirCenteredList }
+constructor TKMPointDirCenteredList.Create(aCenter: TKMPoint);
+begin
+  inherited Create;
+  fCenter := aCenter;
+end;
+
+
+procedure TKMPointDirCenteredList.Add(const aLoc: TKMPointDir);
+begin
+  inherited;
+
+  if fCount >= Length(fWeight) then
+    SetLength(fWeight, fCount + 32);
+
+  fWeight[fCount - 1] := 1000 / KMLengthSqr(fCenter, aLoc.Loc); //smaller weight for distant locs
+end;
+
+
+function TKMPointDirCenteredList.GetWeightedRandom(out Point: TKMPointDir): Boolean;
+var
+  I: Integer;
+  WeightsSum, Rnd: Extended;
+begin
+  Result := False;
+
+  if Count = 0 then
+    Exit;
+
+  WeightsSum := 0;
+  for I := 0 to fCount - 1 do
+    WeightsSum := WeightsSum + fWeight[I];
+
+  Rnd := KaMRandomS1(WeightsSum, 'TKMPointDirCenteredList.GetWeightedRandom');
+
+  for I := 0 to fCount - 1 do
+  begin
+    if Rnd < fWeight[I] then
+    begin
+      Point := fItems[I];
+      Exit(True);
+    end;
+    Rnd := Rnd - fWeight[I];
+  end;
+  Assert(False, 'Error getting weighted random');
+end;
+
+
+{ TKMPointDirTagList }
 procedure TKMPointDirTagList.Add(const aLoc: TKMPointDir; aTag: Cardinal);
 begin
   inherited Add(aLoc);
@@ -931,7 +1051,7 @@ begin
 end;
 
 
-{ TKMPointCntList }
+{ TKMPointAppearenceList }
 procedure TKMPointAppearenceList.Add(const aLoc: TKMPoint);
 var
   Ind: Integer;
