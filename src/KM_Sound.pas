@@ -596,7 +596,7 @@ begin
   fSound[FreeBuf].PlaySince := TimeGet;
   fSound[FreeBuf].Volume := Volume;
   fSound[FreeBuf].FromScript := aFromScript;
-  fSound[FreeBuf].FromScript := aLooped;
+  fSound[FreeBuf].Looped := aLooped;
   fSound[FreeBuf].FadesMusic := FadeMusic;
 
   Result := FreeBuf;
