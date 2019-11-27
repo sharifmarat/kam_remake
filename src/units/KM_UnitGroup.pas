@@ -292,7 +292,7 @@ begin
   fOrderLoc := KMPointDir(PosX, PosY, aDir);
 
   //Whole group should have the same condition
-  NewCondition := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM, 'TKMUnitGroup.Create')));
+  NewCondition := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS2(UNIT_CONDITION_RANDOM, 'TKMUnitGroup.Create')));
 
   if gGame.IsMapEditor then
   begin

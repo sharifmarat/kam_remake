@@ -1146,7 +1146,7 @@ begin
   //Units start with a random amount of condition ranging from 0.5 to 0.7 (KaM uses 0.6 for all units)
   //By adding the random amount they won't all go eat at the same time and cause crowding, blockages, food shortages and other problems.
   if (gGame <> nil) and (gGame.GameMode <> gmMapEd) then
-    fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM, 'TKMUnit.Create')))
+    fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS2(UNIT_CONDITION_RANDOM, 'TKMUnit.Create')))
   else begin
     fCondition    := GetDefaultCondition;
     fStartWDefaultCondition := True;
