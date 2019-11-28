@@ -43,9 +43,9 @@ interface
 uses OSTypes, Ogg, Codec;
 
 const
-{$IFDEF WIN32}
+{$IFDEF WIN64}
   VorbisfileLib = 'vorbisfile.dll';
-{$ENDIF WIN32}
+{$ENDIF WIN64}
 
 {$IFDEF UNIX}
   VorbisfileLib = 'libvorbisfile.so';

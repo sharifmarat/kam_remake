@@ -1,7 +1,7 @@
 //WDC/FPC defines used for RTL-specific cases
 //If you use any Delphi compiler that is not listed here - you need to add it
 {$IFDEF VER140} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi 6 compiler
-{$IFDEF VER150} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi 7 compiler
+{$IFDEF VER150} {.$DEFINE WDC} {$ENDIF} //Define Windows Delphi 7 compiler
 {$IFDEF VER220} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi XE compiler
 {$IFDEF VER230} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi XE2 compiler
 {$IFDEF VER240} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi XE3 compiler
@@ -14,7 +14,7 @@
 {$IFDEF VER310} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi 10.1 Berlin compiler
 {$IFDEF VER320} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi 10.2 Tokyo compiler
 {$IFDEF VER330} {$DEFINE WDC} {$ENDIF} //Define Windows Delphi 10.3 Rio compiler
-{.$DEFINE FPC} //Define Free Pascal compiler (defined automatically by Lazarus)
+{$DEFINE FPC} //Define Free Pascal compiler (defined automatically by Lazarus)
 
 //Lazarus compiler specific settings
 {$IFDEF FPC}
@@ -32,8 +32,8 @@
 //Delphi compiler specific settings
 {$IFDEF WDC}
   //Project can be compiled without madExcept features (if you dont have madExcept installed)
-  {$DEFINE USE_MAD_EXCEPT}
+  {.$DEFINE USE_MAD_EXCEPT}
 {$ENDIF}
 
 //Use secure authentication unit (KM_NetAuthSecure)
-{$DEFINE USESECUREAUTH}
+{.$DEFINE USESECUREAUTH}

@@ -20,6 +20,8 @@ type
 const
   Masks: array[0..7] of Byte = (1, 2, 4, 8, 16, 32, 64, 128);
 
+function GetCardinality(const PSet: PByteArray; const SizeOfSet(*in bytes*): Integer): Integer; inline;
+
 implementation
 
 
@@ -57,7 +59,7 @@ var
   BaseType: PTypeInfo;
 begin
   Result := '';
-  BaseType := GetTypeData(TypeInfo).CompType^;
+  BaseType := GetTypeData(TypeInfo).CompType;
   for I := 0 to SizeOfSet - 1 do
     for J := 0 to 7 do
       if (PSet^[I] and Masks[J]) > 0 then

@@ -9,7 +9,7 @@ const
   MAX_SCRIPT_CONSOLE_COMMAND_PARAMS = 4;
 type
 
-  TKMScriptCommandParamsArray = array [0..MAX_SCRIPT_CONSOLE_COMMAND_PARAMS-1] of String;
+  TKMScriptCommandParamsArray = array [0..MAX_SCRIPT_CONSOLE_COMMAND_PARAMS-1] of UnicodeString;
 
   TKMCmdProcParamTypeKind = (
     cpkNone,
@@ -1362,7 +1362,7 @@ end;
 
 initialization
 begin
-  gSingleDotFormat := TFormatSettings.Create;
+  gSingleDotFormat := DefaultFormatSettings;
   gSingleDotFormat.DecimalSeparator := '.';
 end;
 

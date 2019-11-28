@@ -26,7 +26,7 @@ type
   TAnsiStringArray = array of AnsiString;
   TSingleArray = array of Single;
   TSingle2Array = array of array of Single;
-  TStringArray = array of string;
+  TKMStringArray = array of string;
   TKMCharArray = array of Char;
   TRGBArray = array of record R,G,B: Byte end;
   TKMStaticByteArray = array [0..MaxInt - 1] of Byte;
