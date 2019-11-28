@@ -110,7 +110,13 @@ var
 
 implementation
 uses
-  uPSUtils, RegExpr,
+  uPSUtils,
+  {$IFDEF WDC}
+  System.RegularExpressions,
+  {$ENDIF}
+  {$IFDEF FPC}
+  RegExpr,
+  {$ENDIF}
   TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResTexts, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_MethodParser,
@@ -393,7 +399,13 @@ var
   CmdFound: Boolean;
   SL: TStringList;
   CmdPair: TPair<AnsiString, TKMConsoleCommand>;
+
+  {$IFDEF WDC}
+  RegEx: TRegEx;
+  {$ENDIF}
+  {$IFDEF FPC}
   RegEx: TRegExpr;
+  {$ENDIF}
 begin
   Result := False;
   SL := TStringList.Create;
@@ -403,11 +415,21 @@ begin
     begin
       CmdFound := False;
       //Check procedure name with regular expression
+      {$IFDEF WDC}
+      RegEx := TRegEx.Create(Format('^\s*procedure\s+%s\s*\(.+\).*$', [CmdPair.Value.ProcName]), [roIgnoreCase]);
+      {$ENDIF}
+      {$IFDEF FPC}
       RegEx := TRegExpr.Create(Format('^\s*procedure\s+%s\s*\(.+\).*$', [CmdPair.Value.ProcName]));
       RegEx.ModifierI := True;
+      {$ENDIF}
       for I := 0 to SL.Count - 1 do
       begin
+        {$IFDEF WDC}
+        if RegEx.Match(SL[I]).Success then
+        {$ENDIF}
+        {$IFDEF FPC}
         if RegEx.Exec(SL[I]) then
+        {$ENDIF}
         begin
           CmdPair.Value.ParseParameters(SL[I], I + 1);
           CmdFound := True;

@@ -1362,7 +1362,8 @@ end;
 
 initialization
 begin
-  gSingleDotFormat := DefaultFormatSettings;
+  gSingleDotFormat := {$IFDEF WDC} TFormatSettings.Create; {$ENDIF}
+                      {$IFDEF FPC} DefaultFormatSettings;  {$ENDIF}
   gSingleDotFormat.DecimalSeparator := '.';
 end;
 

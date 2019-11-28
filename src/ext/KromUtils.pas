@@ -6,7 +6,7 @@ uses
   {$IFDEF MSWindows}Windows, MMSystem, {$ENDIF}
   {$IFDEF Unix}LCLType, {$ENDIF}
   {$IFDEF FPC}LCLIntf, UTF8Process, LazHelpHTML {$ENDIF}
-  //{$IFDEF WDC}ShellApi {$ENDIF}
+  {$IFDEF WDC}ShellApi {$ENDIF}
   ;
 
 type
