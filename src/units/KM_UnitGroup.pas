@@ -338,6 +338,7 @@ var
   W: TKMUnitWarrior;
 begin
   inherited Create;
+  LoadStream.CheckMarker('UnitGroup');
   fMembers := TList.Create;
   fOffenders := TList.Create;
 
@@ -427,6 +428,7 @@ procedure TKMUnitGroup.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitGroup');
   SaveStream.Write(fGroupType, SizeOf(fGroupType));
   SaveStream.Write(fUID);
   SaveStream.Write(fOwner);
