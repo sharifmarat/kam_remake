@@ -21,6 +21,7 @@ type
   TKMHouseSketchType = (hstHousePlan, hstHouse);
   TKMHouseSketchTypeSet = set of TKMHouseSketchType;
 
+  //Todo check how does this line works on Lazarus (no 'reference of')
   TAnonHouseSketchBoolFn = function(aSketch: TKMHouseSketch; aBoolParam: Boolean): Boolean;
 
   TKMHouseAction = class

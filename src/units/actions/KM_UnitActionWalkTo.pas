@@ -109,7 +109,7 @@ uses
   KM_UnitWarrior, KM_Log, KM_Resource, KM_CommonClassesExt;
 
 type
-  TKMSetByteSet = TSet<TKMByteSet>;
+  TKMSetByteSet = TSet<TKMByteSet>; //Todo check how does this work on Lazarus
 //INTERACTION CONSTANTS: (may need to be tweaked for optimal performance)
 //TIMEOUT is the time after which each solution things will be checked.
 //FREQ is the frequency that it will be checked, to save CPU time.

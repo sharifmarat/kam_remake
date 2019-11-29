@@ -60,7 +60,7 @@ var
 begin
   Result := '';
 
-  BaseType := GetTypeData(TypeInfo).CompType{$IFDEF WDC}^{$ENDIF};
+  BaseType := GetTypeData(TypeInfo).CompType{$IFDEF WDC}^{$ENDIF}; //Todo check how does this line works on Lazarus
 
   for I := 0 to SizeOfSet - 1 do
     for J := 0 to 7 do
