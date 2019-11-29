@@ -553,7 +553,7 @@ procedure TKMRunnerFindBugs.Execute(aRun: Integer);
 const
   // Maps for simulation (I dont use for loop in this array)
   MAPS: array [1..27] of String = ('GA_S1_001','GA_S1_002','GA_S1_003','GA_S1_004','GA_S1_005','GA_S1_006','GA_S1_007','GA_S1_008','GA_S1_009','GA_S1_010','GA_S1_011','GA_S1_012','GA_S1_013','GA_S1_014','GA_S1_015','GA_S1_016','GA_S1_017','GA_S1_018','GA_S1_019','GA_S1_020','GA_S1_021','GA_S1_022','GA_S1_023','GA_S1_024','GA_S1_025','GA_S1_026','GA_S1_027');
-  cnt_MAP_SIMULATIONS = 1;
+  cnt_MAP_SIMULATIONS = 30;
   CRASH_DETECTION_MODE = True;
 var
   K,L: Integer;
