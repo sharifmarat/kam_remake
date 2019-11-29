@@ -5,6 +5,8 @@ uses
   dglOpenGL,
   {$IFDEF WDC}
   System.Generics.Collections,
+  {$ELSE}
+  Generics.Collections,
   {$ENDIF}
   Controls, Math, KromOGLUtils, StrUtils, SysUtils,
   KM_Defaults, KM_CommonTypes, KM_Points, KM_Pics,

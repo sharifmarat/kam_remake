@@ -85,7 +85,9 @@ uses
 
   procedure KMSwapFloat(var A,B: Single); overload;
   procedure KMSwapFloat(var A,B: Double); overload;
-  procedure KMSwapFloat(var A,B: Extended); overload;
+  // Extended == Double, so already declared error
+  //https://forum.lazarus.freepascal.org/index.php?topic=29678.0
+  //procedure KMSwapFloat(var A,B: Extended); overload;
 
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
@@ -133,13 +135,13 @@ uses
 const
   DEFAULT_ATTEMPS_CNT_TO_TRY = 3;
 
-  function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: String; var aErrorStr: String;
+  function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                             aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 
-  function TryExecuteMethodProc(const aStrParam, aMethodName: String; var aErrorStr: String;
+  function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                                 aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
 
-  function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: String; var aErrorStr: String;
+  function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                                 aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
 
 implementation
@@ -222,11 +224,11 @@ begin
   S:=A; A:=B; B:=S;
 end;
 
-procedure KMSwapFloat(var A,B: Extended);
-var S: Extended;
-begin
-  S:=A; A:=B; B:=S;
-end;
+//procedure KMSwapFloat(var A,B: Extended);
+//var S: Extended;
+//begin
+//  S:=A; A:=B; B:=S;
+//end;
 
 
 procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
@@ -1426,7 +1428,7 @@ begin
 end;
 {$ENDIF}
 
-function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: String; var aErrorStr: String;
+function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                           aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;
@@ -1457,7 +1459,7 @@ begin
 end;
 
 
-function TryExecuteMethodProc(const aStrParam, aMethodName: String; var aErrorStr: String;
+function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                               aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;
@@ -1488,7 +1490,7 @@ begin
 end;
 
 
-function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: String; var aErrorStr: String;
+function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                               aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;

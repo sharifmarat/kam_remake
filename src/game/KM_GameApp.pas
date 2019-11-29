@@ -34,7 +34,7 @@ type
     fOnGameEnd: TKMGameModeChangeEvent;
 
     procedure SaveCampaignsProgress;
-    procedure GameLoadingStep(const aText: String);
+    procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
     procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
     procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
@@ -429,7 +429,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameLoadingStep(const aText: String);
+procedure TKMGameApp.GameLoadingStep(const aText: UnicodeString);
 begin
   fMainMenuInterface.AppendLoadingText(aText);
   Render;

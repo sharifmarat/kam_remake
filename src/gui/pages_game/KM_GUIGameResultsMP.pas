@@ -110,7 +110,7 @@ type
     procedure RadioWareTypeChange(Sender: TObject);
     procedure RadioArmyTypeChange(Sender: TObject);
 
-    function GetChartLegendDetailedTitles(aStatType: TKMStatType; aLineI: Integer): TStringArray;
+    function GetChartLegendDetailedTitles(aStatType: TKMStatType; aLineI: Integer): TKMStringArray;
     function GetChartLegendDetailedColors(aStatType: TKMStatType; aLineI: Integer): TKMCardinalArray;
 
     procedure Reinit;
@@ -689,7 +689,7 @@ begin
 end;
 
 
-function TKMGameResultsMP.GetChartLegendDetailedTitles(aStatType: TKMStatType; aLineI: Integer): TStringArray;
+function TKMGameResultsMP.GetChartLegendDetailedTitles(aStatType: TKMStatType; aLineI: Integer): TKMStringArray;
 var
   I: Integer;
 begin
