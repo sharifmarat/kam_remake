@@ -33,7 +33,7 @@ type
   // City builder (build nodes, selection from required houses)
   TKMCityBuilder = class
   private
-    fStoneShortage, fWoodShortage, fTrunkShortage, fGoldShortage: Boolean;
+    fStoneCrisis, fStoneShortage, fWoodShortage, fTrunkShortage, fGoldShortage: Boolean;
     fOwner: TKMHandID;
     fBuildNodes: array of TBuildNode;
     fWorkersPos: TKMPointArray;
@@ -61,6 +61,7 @@ type
     property Planner: TKMCityPlanner read fPlanner;
     property WorkersPos: TKMPointArray read fWorkersPos;
     property StoneShortage: Boolean read fStoneShortage;
+    property StoneCrisis: Boolean read fStoneCrisis;
     property WoodShortage: Boolean read fWoodShortage;
     property TrunkShortage: Boolean read fTrunkShortage;
     property GoldShortage: Boolean read fGoldShortage;
@@ -130,6 +131,7 @@ var
   I, Cnt: Integer;
 begin
   SaveStream.WriteA('CityBuilder');
+  SaveStream.Write(fStoneCrisis);
   SaveStream.Write(fStoneShortage);
   SaveStream.Write(fWoodShortage);
   SaveStream.Write(fTrunkShortage);
@@ -167,6 +169,7 @@ var
   I, Cnt: Integer;
 begin
   LoadStream.ReadAssert('CityBuilder');
+  LoadStream.Read(fStoneCrisis);
   LoadStream.Read(fStoneShortage);
   LoadStream.Read(fWoodShortage);
   LoadStream.Read(fTrunkShortage);
@@ -230,13 +233,32 @@ end;
 procedure TKMCityBuilder.UpdateState(aTick: Cardinal; out aFreeWorkersCnt: Integer);
 const
   CHECK_STONE_RESERVES = 3 * 60 * MAX_HANDS; // Every 3 min check stone reserves
+  CHECK_FIELDS = 1 * 30 * MAX_HANDS; // Every 30 sec 1 Farm
+var
+  K: Integer;
 begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
     fPlanner.UpdateState(aTick); // Planner must be updated as first to secure that completed houses are actualized
     UpdateBuildNodes(aFreeWorkersCnt);
     if (fPredictor.RequiredHouses[htQuary] = 0) AND (aTick mod CHECK_STONE_RESERVES = fOwner) then // First update stone reserves
-      Planner.CheckStoneReserves();
+      Planner.CheckStoneReserves()
+    else if (aTick mod CHECK_FIELDS = fOwner) then
+      for K := Low(fBuildNodes) to High(fBuildNodes) do
+        with fBuildNodes[K] do
+          if not Active AND Planner.CheckFields(FieldType, FieldList) then
+          begin
+            LockNode(fBuildNodes[K]);
+            Active := True;
+            Priority := NODE_PRIO_Fields;
+            RemoveTreesMode := False;
+            ShortcutMode := False;
+            MaxReqWorkers := 1;
+            RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
+            CenterPoint := FieldList[0];
+
+            break;
+          end;
   end;
 end;
 
@@ -250,7 +272,7 @@ var
 begin
   HMA := gAIFields.Eye.HousesMapping;
   // Reserve all tiles inside house plan
-  if (aHT <> htCoalMine) then
+  //if (aHT <> htCoalMine) then
     for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
     begin
       Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
@@ -284,7 +306,7 @@ begin
     Exit;
   HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
-  if (aHT <> htCoalMine) then
+  //if (aHT <> htCoalMine) then
     for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
     begin
       Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
@@ -498,10 +520,17 @@ end;
 
 
 procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
-  function IsPlan(aPoint: TKMPoint; aLock: TKMTileLock; aField: TKMFieldType): Boolean;
+  function IsPlan(aPoint: TKMPoint; aField: TKMFieldType): Boolean; overload;
   begin
-    Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
-              OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);
+    Result := gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField;
+  end;
+  function IsPlan(aPoint: TKMPoint; aLock: TKMTileLock): Boolean; overload;
+  begin
+    Result := gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock;
+  end;
+  function IsPlan(aPoint: TKMPoint; aLock: TKMTileLock; aField: TKMFieldType): Boolean; overload;
+  begin
+    Result := IsPlan(aPoint, aField) OR IsPlan(aPoint, aLock);
   end;
   function IsCompletedRoad(aPoint: TKMPoint): Boolean;
   begin
@@ -569,11 +598,18 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       RequiredWorkers := FieldList.Count;
       for K := FieldList.Count - 1 downto 0 do
       begin
+        // Is there field / wine plan in progress?
+        if IsPlan(FieldList.Items[K], ftWine) OR IsPlan(FieldList.Items[K], ftCorn) then
+          gHands[fOwner].BuildList.FieldworksList.RemFieldPlan( FieldList.Items[K] );
         // Is there road plan / work in progress?
         if IsPlan(FieldList.Items[K], tlRoadWork, ftRoad) then
         begin
           ActiveWorkers := ActiveWorkers + 1;
           RequiredWorkers := RequiredWorkers - 1;
+        end
+        else if IsPlan(FieldList.Items[K], tlFieldWork) AND ( IsPlan(FieldList.Items[K], ftCorn) OR IsPlan(FieldList.Items[K], ftCorn) ) then
+        begin
+          // Wait for worker to finish the corn
         end
         // Is there completed road?
         else if IsCompletedRoad(FieldList.Items[K]) then
@@ -765,8 +801,7 @@ begin
     aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wtStone is OK
-  fStoneShortage := (WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone)
-                     OR ((fPlanner.PlannedHouses[htQuary].Completed < 3) AND (gHands[fOwner].Stats.GetWareBalance(wtStone) < GA_BUILDER_Shortage_StoneNoQuarry));
+  fStoneShortage := (WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
 
   // Secure wood production: only process trunk -> wood => minimal delay, exhaustion is OK
   fWoodShortage := (WareBalance[wtWood].Exhaustion < GA_BUILDER_Shortage_Wood);
@@ -793,8 +828,14 @@ begin
       RequiredWood := RequiredWood + gRes.Houses[H.HouseType].WoodCost - H.GetBuildWoodDelivered;
     end;
   end;
-  //fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wtStone) < RequiredStones);
-  //fTrunkShortage := fTrunkShortage OR (gHands[fOwner].Stats.GetWareBalance(wtWood) < RequiredWood);
+  // Compute road demands
+  for K := Low(fBuildNodes) to High(fBuildNodes) do
+    if fBuildNodes[K].Active AND (fBuildNodes[K].FieldType = ftRoad) then
+      RequiredStones := RequiredStones + fBuildNodes[K].FieldList.Count - 1;
+  // Determine stone crisis (based on material)
+  fStoneCrisis := (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (gHands[fOwner].Stats.GetWareBalance(wtStone) < RequiredStones + GA_BUILDER_Shortage_StoneReserve);
+  fStoneShortage := fStoneShortage OR fStoneCrisis; // Make sure that we have also shortage
+  // Determine wood shortage (based on material)
   fTrunkShortage := fTrunkShortage OR (WoodReserves < RequiredWood);
   aMaxPlace := Round((Wood // Available wood
                      + Min(Trunk * 2 , gHands[fOwner].Stats.GetHouseQty(htSawmill) * 4) // Trunk which can be turned into wood while the house is digged
@@ -1061,9 +1102,10 @@ var
     NodePrio: Byte;
     K: Integer;
     HTArr: TKMHouseTypeArray;
-    Output: TConstructionState;
   begin
-    Output := csCannotPlaceHouse;
+    Result := csCannotPlaceHouse;
+    if fStoneCrisis AND not (aHT in [htQuary, htSchool, htInn]) then
+      Exit;
     // Check if AI can build house (if is house blocked [by script] ignore it)
     if GetHousesToUnlock(aHT, HTArr) AND ((aUnlockProcedureAllowed) OR (Length(HTArr) = 1)) then
     begin
@@ -1080,16 +1122,15 @@ var
             NodePrio := NODE_PRIO_Roads // House is unlocked, prio is high
           else
             NodePrio := NODE_PRIO_RoadsUnlockHouse; // House is unlocked and its construction will unlock another house, prio is TOP
-          Output := BuildHouse(IgnoreTreesInPlan, HouseReservation, IgnoreExistingPlans, HTArr[K], NodePrio);
+          Result := BuildHouse(IgnoreTreesInPlan, HouseReservation, IgnoreExistingPlans, HTArr[K], NodePrio);
           RequiredHouses[ HTArr[K] ] := 0;
         end;
     end
     else if aUnlockProcedureAllowed AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
     begin
-      Output := BuildHouse(False, False, False, aHT);
+      Result := BuildHouse(False, False, False, aHT);
       RequiredHouses[aHT] := 0;
     end;
-    Result := Output;
   end;
 
 
@@ -1316,8 +1357,8 @@ begin
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
   HT := htWoodcutters;
   if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
-    AND ((fTrunkShortage OR not fGoldShortage) AND not fWoodShortage)
     AND not fStoneShortage
+    AND ((fTrunkShortage OR not fGoldShortage) AND not fWoodShortage)
     AND (AddToConstruction(HT, True, True) = csHousePlaced) then
   begin
     MaxPlans := MaxPlans - 1;

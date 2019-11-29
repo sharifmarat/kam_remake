@@ -5,11 +5,13 @@ uses
   Classes, Graphics, KromUtils, Math, SysUtils, Contnrs,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_CommonUtils,
   KM_TerrainFinder, KM_PerfLog, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
-  KM_PathFindingRoad, KM_CityPredictor, KM_Eye, KM_AIParameters,
+  KM_PathFindingRoad, KM_PathFindingAStarNew, KM_CityPredictor, KM_Eye, KM_AIParameters,
   KM_AIInfluences, KM_NavMeshDefences;
 
 const
   FARM_RADIUS = 11;
+  FIELDS_PER_FARM = 14;
+  FIELDS_PER_WINE = 9;
 
 type
   THousePlan = record
@@ -25,6 +27,15 @@ type
 
   TFieldEval = (feUnvisitedTile = 0, feFertileTile = 1, feExistingField = 2, feObstacle = 3);
   TFieldPrice = array[-FARM_RADIUS..FARM_RADIUS,-FARM_RADIUS..FARM_RADIUS] of Integer;
+  TFieldMemory = record
+    Count, UpdateIdx: Word;
+    Farms: array of record
+      FieldAvailable: Boolean;
+      Center: TKMPoint;
+      FieldType: TKMFieldType;
+      Points: array[0..FIELDS_PER_FARM-1] of TKMPoint;
+    end;
+  end;
 
   TPathFindingCityPlanner = class(TPathFindingRoad)
   private
@@ -32,6 +43,12 @@ type
     function IsWalkableTile(aX, aY: Word): Boolean; override;
     function MovementCost(aFromX, aFromY, aToX, aToY: Word): Word; override;
   public
+    {$IFDEF DEBUG_NewAI}
+      Ctr: Word;
+      Price: array[0..256,0..256] of Word;
+      Order: array[0..256,0..256] of Word;
+      function Route_Make(const aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean; reintroduce;
+    {$ENDIF}
   end;
 
   TPathFindingShortcutsCityPlanner = class(TPathFindingCityPlanner)
@@ -96,6 +113,7 @@ type
     fDefenceTowersPlanned: Boolean;
     fPlannedHouses: TPlannedHousesArray;
     fForestsInfo: TKMForestsInfo;
+    fFields: TFieldMemory;
 
     fRoadPlanner: TPathFindingCityPlanner;
     fRoadShortcutPlanner: TPathFindingShortcutsCityPlanner;
@@ -112,7 +130,7 @@ type
 
     //procedure PlanWineFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
     //procedure PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
-    procedure PlanFields(aLoc: TKMPoint; aFieldType: TKMFieldType; var aNodeList: TKMPointList);
+    procedure PlanFields(aCnt: Word; aLoc: TKMPoint; aFieldType: TKMFieldType; var aNodeList: TKMPointList; aReplaceFarmIdx: Integer = -1; aReplaceFieldIdx: Word = 0);
     function FindPlaceForHouse(aIgnoreTrees: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
     function FindPlaceForMines(aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
     function FindPlaceForQuary(var StoneLocs: TKMPointTagList): Boolean;
@@ -121,7 +139,6 @@ type
     function PlanDefenceTowers(): Boolean;
 
   public
-
     constructor Create(aPlayer: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
@@ -150,6 +167,7 @@ type
     function GetTreesInHousePlan(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList): Byte;
     function FindForestAround(const aPoint: TKMPoint; aCountByInfluence: Boolean = False): Boolean;
     procedure CheckStoneReserves(aForceToPlaceQuarry: Boolean = False);
+    function CheckFields(var aFieldType: TKMFieldType; var aNodeList: TKMPointList): Boolean;
 
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
@@ -239,6 +257,9 @@ begin
   fDefenceTowersPlanned := False;
   fForestsInfo.Count := 0;
   SetLength(fForestsInfo.Forests,0);
+  fFields.Count := 0;
+  fFields.UpdateIdx := 0;
+  SetLength(fFields.Farms,0);
   fRoadPlanner := TPathFindingCityPlanner.Create(fOwner);
   fRoadShortcutPlanner := TPathFindingShortcutsCityPlanner.Create(fOwner);
   fFieldEval := TKMFieldEvaluation.Create(gTerrain.MapX, gTerrain.MapY, fOwner);
@@ -273,7 +294,11 @@ begin
   SaveStream.Write(fDefenceTowersPlanned);
   SaveStream.Write(fForestsInfo.Count);
   if (fForestsInfo.Count > 0) then
-    SaveStream.Write(fForestsInfo.Forests[0],SizeOf(TKMForestInfo) * fForestsInfo.Count);
+    SaveStream.Write(fForestsInfo.Forests[0], SizeOf(TKMForestInfo) * fForestsInfo.Count);
+  SaveStream.Write(fFields.Count);
+  SaveStream.Write(fFields.UpdateIdx);
+  if (fFields.Count > 0) then
+    SaveStream.Write(fFields.Farms[0], SizeOf(fFields.Farms[0]) * fFields.Count);
 
   for HT := HOUSE_MIN to HOUSE_MAX do
   begin
@@ -318,6 +343,11 @@ begin
   SetLength(fForestsInfo.Forests,fForestsInfo.Count);
   if (fForestsInfo.Count > 0) then
     LoadStream.Read(fForestsInfo.Forests[0],SizeOf(TKMForestInfo) * fForestsInfo.Count);
+  LoadStream.Read(fFields.Count);
+  LoadStream.Read(fFields.UpdateIdx);
+  SetLength(fFields.Farms,fFields.Count);
+  if (fFields.Count > 0) then
+    LoadStream.Read(fFields.Farms[0],SizeOf(fFields.Farms[0]) * fFields.Count);
 
   for HT := HOUSE_MIN to HOUSE_MAX do
   begin
@@ -957,11 +987,11 @@ begin
   if not Result then
     Exit;
 
-  if (aHT = htFarm) then
-    aFieldType := ftCorn
-  else if (aHT = htWineyard) then
+  aFieldType := ftCorn;
+  if (aHT = htWineyard) then
     aFieldType := ftWine;
-  PlanFields( fPlannedHouses[aHT].Plans[aIdx].Loc, aFieldType, aField );
+  aField.Clear;
+  PlanFields( ifthen(aHT = htWineyard,FIELDS_PER_WINE,FIELDS_PER_FARM), fPlannedHouses[aHT].Plans[aIdx].Loc, aFieldType, aField );
 end;
 
 
@@ -1103,12 +1133,54 @@ end;
 }
 
 
+function TKMCityPlanner.CheckFields(var aFieldType: TKMFieldType; var aNodeList: TKMPointList): Boolean;
+  function IsWine(aP: TKMPoint): Boolean;
+  begin
+    Result := gTerrain.TileIsWineField(aP)
+              OR (gHands[fOwner].BuildList.FieldworksList.HasField(aP) = ftWine)
+              OR (gTerrain.Land[aP.Y, aP.X].TileLock = tlFieldWork)
+              OR ((gAIFields.Influences.AvoidBuilding[aP.Y, aP.X] = AVOID_BUILDING_NODE_LOCK_FIELD) AND (gHands[fOwner].CanAddFieldPlan(aP, ftWine)));
+  end;
+  function IsField(aP: TKMPoint): Boolean;
+  begin
+    Result := gTerrain.TileIsCornField(aP)
+              OR (gHands[fOwner].BuildList.FieldworksList.HasField(aP) = ftCorn)
+              OR (gTerrain.Land[aP.Y, aP.X].TileLock = tlFieldWork)
+              OR ((gAIFields.Influences.AvoidBuilding[aP.Y, aP.X] = AVOID_BUILDING_NODE_LOCK_FIELD) AND (gHands[fOwner].CanAddFieldPlan(aP, ftCorn)));
+  end;
+var
+  K,Cnt,ExpectedCnt: Integer;
+begin
+  Result := False;
+  if (fFields.Count <= 0) then
+    Exit;
 
-procedure TKMCityPlanner.PlanFields(aLoc: TKMPoint; aFieldType: TKMFieldType; var aNodeList: TKMPointList);
-const
-  MAX_DIST = 11;
-  MAX_WINE = 10;
-  MAX_CORN = 15;
+  fFields.UpdateIdx := (fFields.UpdateIdx + 1) mod fFields.Count;
+  with fFields.Farms[ fFields.UpdateIdx ] do
+  begin
+    if not FieldAvailable then
+      Exit;
+    ExpectedCnt := FIELDS_PER_FARM * Byte(FieldType = ftCorn) + FIELDS_PER_WINE * Byte(FieldType = ftWine);
+    Cnt := ExpectedCnt;
+    for K := ExpectedCnt - 1 downto Low(Points) do
+      if KMSamePoint(Points[K],KMPoint_ZERO) OR ((FieldType = ftWine) AND not IsWine(Points[K])) OR ((FieldType = ftCorn) AND not IsField(Points[K])) then
+      begin
+        Cnt := Cnt - 1;
+        Points[K] := Points[Cnt];
+        Points[Cnt] := KMPoint_ZERO;
+      end;
+    if (ExpectedCnt - Cnt > 1) then
+    begin
+      PlanFields(ExpectedCnt-Cnt, Center, FieldType, aNodeList, fFields.UpdateIdx, Cnt);
+      aFieldType := FieldType;
+    end;
+  end;
+
+  Result := aNodeList.Count > 0;
+end;
+
+
+procedure TKMCityPlanner.PlanFields(aCnt: Word; aLoc: TKMPoint; aFieldType: TKMFieldType; var aNodeList: TKMPointList; aReplaceFarmIdx: Integer = -1; aReplaceFieldIdx: Word = 0);
 var
   Check: Boolean;
   X,Y, X2,Y2: Integer;
@@ -1130,38 +1202,35 @@ begin
   {$ENDIF}
   FillChar(Price, SizeOf(Price), #0);
 
-  aNodeList.Clear;
+
   BuildFF := gAIFields.Eye.BuildFF;
   BuildFF.UpdateState(); // BuildFF is already updated if Fields are requested in same tick like Farm
   BelowLoc := KMPointBelow(aLoc);
 
   fFieldEval.EvalField(FARM_RADIUS, BelowLoc, aFieldType);
 
-  // Find build areas
-  for Y := -FARM_RADIUS to FARM_RADIUS do
-  for X := -FARM_RADIUS to FARM_RADIUS do
-  begin
-    P := KMPointAdd(KMPoint(X,Y),BelowLoc);
-    Build[Y,X] := False;
-    if gTerrain.TileInMapCoords(P.X, P.Y) AND (BuildFF.State[P.Y,P.X] in [bsBuild, bsTree] ) then
-      Build[Y,X] := True;
-  end;
-  // Evaluate tpBuild
-  with fFieldEval do
-    for Y := -FARM_RADIUS+1 to FARM_RADIUS-1 do
-    for X := -FARM_RADIUS+1 to FARM_RADIUS-1 do
+  // Find build areas (11*11 = 121)
+  for Y := -FARM_RADIUS to +FARM_RADIUS do
+  for X := -FARM_RADIUS to +FARM_RADIUS do
+    Build[Y,X] := gTerrain.TileInMapCoords(BelowLoc.X+X, BelowLoc.Y+Y) AND (BuildFF.State[BelowLoc.Y+Y,BelowLoc.X+X] in [bsBuild, bsTree] );
+
+  // Evaluate fields
+  for Y := -FARM_RADIUS+1 to +FARM_RADIUS-1 do
+  for X := -FARM_RADIUS+1 to +FARM_RADIUS-1 do
+    with fFieldEval do
     begin
+      // Evaluate tbBuild
       Check := True;
-      for Y2 := -1 to 1 do
-      for X2 := -1 to 1 do
+      for Y2 := -1 to +1 do
+      for X2 := -1 to +1 do
         if not Check OR not Build[Y+Y2,X+X2] then
         begin
           Check := False;
           break;
         end;
       if Check then
-        for Y2 := -1 to 1 do
-        for X2 := -1 to 1 do
+        for Y2 := -1 to +1 do
+        for X2 := -1 to +1 do
         begin
           Dec(Price[Y+Y2,X+X2], GA_PLANNER_PlanFields_CanBuild);
         {$IFDEF DEBUG_NewAI}
@@ -1170,57 +1239,63 @@ begin
             Inc(DA3[P.Y+Y2,P.X+X2], 40);
         {$ENDIF}
         end;
-    end;
-
-  //
-  with fFieldEval do
-    for Y := -FARM_RADIUS to FARM_RADIUS do
-    for X := -FARM_RADIUS to FARM_RADIUS do
-    begin
+      // Evaluate fertile tiles
       P := KMPointAdd(KMPoint(X,Y),BelowLoc);
       if gTerrain.TileInMapCoords(P.X, P.Y) then
         case FieldEval[Y,X] of
           {$IFDEF DEBUG_NewAI}
-          feUnvisitedTile: DA4[P.Y,P.X] := 50;
-          feExistingField: DA2[P.Y,P.X] := 100;
+          feUnvisitedTile:
+          begin
+            DA4[P.Y,P.X] := 50;
+          end;
           {$ENDIF}
+          feExistingField:
+          begin
+            if (Y > -FARM_RADIUS+2) AND (Y < FARM_RADIUS-2) AND (X > -FARM_RADIUS+2) AND (X < FARM_RADIUS-2) then
+              for Y2 := -2 to +2 do
+              for X2 := -2 to +2 do
+                Price[Y2,X2] := Price[Y2,X2] + Round(GA_PLANNER_PlanFields_ExistField * (1 - 0.2 * (abs(Y2) + abs(X2))));
+          {$IFDEF DEBUG_NewAI}
+            DA2[P.Y,P.X] := 100;
+          {$ENDIF}
+          end;
           feFertileTile:
           begin
-            Check := false;
-            if (Y > -FARM_RADIUS+2) AND (Y < FARM_RADIUS-2) AND (X > -FARM_RADIUS+2) AND (X < FARM_RADIUS-2) then
-              for Y2 := -2 to 2 do
-              for X2 := -2 to 2 do
-              begin
-                P2 := KMPointAdd(KMPoint(X2,Y2),BelowLoc);
-                if Check OR gTerrain.TileInMapCoords(P.X, P.Y) AND (FieldEval[Y+Y2,X+X2] = feFertileTile) then
-                begin
-                  Check := True;
-                  break;
-                end;
-              end;
-            Price[Y,X] := Price[Y,X]
-                          + GA_PLANNER_PlanFields_Dist * (FARM_RADIUS - FieldPrice[Y,X])
-                          + GA_PLANNER_PlanFields_ExistField * Byte(Check);
+            Price[Y,X] := Price[Y,X] + GA_PLANNER_PlanFields_Dist * (FARM_RADIUS - FieldPrice[Y,X]);
           end;
-          feObstacle:      begin end;
+          feObstacle: begin end;
         end;
     end;
 
+  if (Length(fFields.Farms) <= fFields.Count) then
+    SetLength(fFields.Farms,fFields.Count + 6);
   TagList := TKMPointTagList.Create();
   try
-    for Y := -FARM_RADIUS to FARM_RADIUS do
-    for X := -FARM_RADIUS to FARM_RADIUS do
+    for Y := -FARM_RADIUS to +FARM_RADIUS do
+    for X := -FARM_RADIUS to +FARM_RADIUS do
       if (fFieldEval.FieldEval[Y,X] = feFertileTile) then
       begin
         P := KMPointAdd(KMPoint(X,Y),BelowLoc);
-        TagList.Add(P, 20000 + Price[Y,X]);
+        TagList.Add(P, 2000 + Price[Y,X]);
         {$IFDEF DEBUG_NewAI}
         DA1[P.Y,P.X] := Price[Y,X];
         {$ENDIF}
       end;
     TagList.SortByTag;
-    for X := TagList.Count - 1 downto Max(0, TagList.Count - GA_PLANNER_PlanFields_MaxFields * Byte(aFieldType = ftCorn) - GA_PLANNER_PlanFields_MaxWine * Byte(aFieldType = ftWine)) do
-      aNodeList.Add(TagList.Items[X]);
+    with fFields.Farms[ ifthen(aReplaceFarmIdx <> -1, aReplaceFarmIdx, fFields.Count) ] do
+    begin
+      X2 := aReplaceFieldIdx;
+      for X := TagList.Count - 1 downto Max(0, TagList.Count - aCnt) do
+      begin
+        Points[X2] := TagList.Items[X];
+        Inc(X2);
+        aNodeList.Add(TagList.Items[X]);
+      end;
+      Center := aLoc;
+      FieldType := aFieldType;
+      FieldAvailable := TagList.Count > aCnt;
+    end;
+    fFields.Count := fFields.Count + Byte(aReplaceFarmIdx = -1);
   finally
     TagList.Free;
   end;
@@ -1336,9 +1411,11 @@ begin
       Output := Output
                 + Byte(IsNearHouse(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToHouse
                 + Byte(IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_SnapToFields // OR IsCornField(Point) OR IsWineField(Point)
-                + Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToRoads
-                - Byte((Dir = dirS) AND IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_ClearEntrance;
+                + Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToRoads;
     end;
+  Output := Output
+            - Byte(IsReservedField( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X] )) * GA_PLANNER_SnapCrit_ObstacleInEntrance
+            + Byte(IsRoad( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X], aLoc )) * GA_PLANNER_SnapCrit_RoadInEntrance;
   Result := Output;
 end;
 
@@ -2463,31 +2540,48 @@ const
 var
   K,L: Integer;
   Division: Single;
+  H: TKMHouse;
   HT: TKMHouseType;
   Loc: TKMPoint;
   Color: Cardinal;
   HMA: THouseMappingArray;
   {$IFDEF DEBUG_NewAI}
+  X,Y: Integer;
   Val: Cardinal;
   {$ENDIF}
 begin
 
   {$IFDEF DEBUG_NewAI}
+    //fPrice[aToY,aTox] := Result;
+    with fRoadPlanner do
+      for Y := Low(Price) to High(Price) do
+      for X := Low(Price[Y]) to High(Price[Y]) do
+      begin
+        //Val := GA_PATHFINDING_BasePrice + Max(Max(GA_PATHFINDING_noBuildArea,GA_PATHFINDING_Field),Max(Max(GA_PATHFINDING_Coal,GA_PATHFINDING_Forest),GA_PATHFINDING_OtherCase));
+        //Val := Cardinal(Max(0, Min(250, Round(Price[Y,X]/Single(Val)*250))));
+        //gRenderAux.Quad(X, Y, (Val shl 24) OR COLOR_RED);
+        //gRenderAux.Text(X, Y, IntToStr(Order[Y,X]), $FF000000);
+      end;
+    //fRoadPlanner: TPathFindingCityPlanner;
+    //fRoadShortcutPlanner:
+  {$ENDIF}
+
+  {$IFDEF DEBUG_NewAI}
   Division := 1;
-  for L := Low(DA1) to High(DA1) do
-  for K := Low(DA1[0]) to High(DA1[0]) do
-    if (Division < DA1[L,K]) then
-      Division := DA1[L,K];
-  for L := Low(DA1) to High(DA1) do
-  for K := Low(DA1[0]) to High(DA1[0]) do
-    if gTerrain.TileInMapCoords(K,L) then
+  for Y := Low(DA1) to High(DA1) do
+  for X := Low(DA1[0]) to High(DA1[0]) do
+    if (Division < DA1[Y,X]) then
+      Division := DA1[Y,X];
+  for Y := Low(DA1) to High(DA1) do
+  for X := Low(DA1[0]) to High(DA1[0]) do
+    if gTerrain.TileInMapCoords(X,Y) then
     begin
-      Val := Cardinal(Max(0, Min(250, Round(DA1[L,K]/Division*250))));
-      gRenderAux.Quad(K, L, (Val shl 24) OR COLOR_YELLOW);
-      //gRenderAux.Text(K, L, IntToStr(Round(DA1[L,K])), $FF000000);
-      //gRenderAux.Quad(K, L, (Cardinal(Max(0, Min(127, DA2[L,K]))) shl 24) OR COLOR_WHITE);
-      //gRenderAux.Quad(K, L, (Cardinal(Max(0, Min(127, DA3[L,K]))) shl 24) OR COLOR_BLUE);
-      //gRenderAux.Quad(K, L, (Cardinal(Max(0, Min(127, DA4[L,K]))) shl 24) OR COLOR_BLACK);
+      Val := Cardinal(Max(0, Min(250, Round(DA1[Y,X]/Division*250))));
+      gRenderAux.Quad(X, Y, (Val shl 24) OR COLOR_YELLOW);
+      //gRenderAux.Text(X, Y, IntToStr(Round(DA1[Y,X])), $FF000000);
+      //gRenderAux.Quad(X, Y, (Cardinal(Max(0, Min(127, DA2[Y,X]))) shl 24) OR COLOR_WHITE);
+      //gRenderAux.Quad(X, Y, (Cardinal(Max(0, Min(127, DA3[Y,X]))) shl 24) OR COLOR_BLUE);
+      //gRenderAux.Quad(X, Y, (Cardinal(Max(0, Min(127, DA4[Y,X]))) shl 24) OR COLOR_BLACK);
     end;
   {$ENDIF}
 
@@ -2533,6 +2627,31 @@ begin
       gRenderAux.Quad(Loc.X, Loc.Y, Color);
     end;
   end;
+
+  // Paint field of specific farm
+  if (gMySpectator.Selected is TKMHouse) then
+  begin
+    H := TKMHouse(gMySpectator.Selected);
+    if (H.HouseType in [htFarm, htWineyard]) then
+      for K := 0 to fFields.Count - 1 do
+        if KMSamePoint(H.Entrance,fFields.Farms[K].Center) then
+          with fFields.Farms[K] do
+            for L := Low(Points) to High(Points) do
+              if not KMSamePoint(Points[L],KMPOINT_ZERO) then
+                gRenderAux.Quad(Points[L].X, Points[L].Y, $AA000000 OR COLOR_RED);
+  end;
+
+  {
+  for K := 0 to fFields.Count - 1 do
+    with fFields.Farms[K] do
+      if FieldAvailable then
+        for L := Low(Points) to Min(High(Points), Byte(FieldType=ftWine)*8 + Byte(FieldType=ftCorn)*High(Points)) do
+          for X := Low(Points) to Min(High(Points), Byte(FieldType=ftWine)*8 + Byte(FieldType=ftCorn)*High(Points)) do
+            if (L<>X) AND KMSamePoint(Points[L],Points[X]) then
+            begin
+              gRenderAux.Quad(Points[L].X, Points[L].Y, $FF000000 OR COLOR_RED);
+            end;
+  //}
 end;
 
 
@@ -2542,10 +2661,23 @@ end;
 
 
 { TPathFindingCityPlanner }
+{$IFDEF DEBUG_NewAI}
+function TPathFindingCityPlanner.Route_Make(const aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean;
+begin
+  //FillChar(Price,SizeOf(Price),#0);
+  //FillChar(Order,SizeOf(Order),#0);
+  Result := inherited Route_Make(aLocA, aLocB, NodeList);
+end;
+{$ENDIF}
+
+
 function TPathFindingCityPlanner.IsWalkableTile(aX, aY: Word): Boolean;
 begin
   // Just in case that worker will die while digging house plan or when you plan road near ally
-  Result := inherited AND (gAIFields.Influences.AvoidBuilding[aY, aX] <> AVOID_BUILDING_HOUSE_INSIDE_LOCK);
+  Result := ( ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[aY,aX].Passability <> []) OR (gTerrain.Land[aY, aX].TileLock in [tlRoadWork, tlFieldWork]) ) // Existing road / road construction
+             //AND (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) in [ftNone, ftRoad]) // AI can handle plans
+             //AND not gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY)) // Use avoid building instead so plans are also considered
+             AND (gAIFields.Influences.AvoidBuilding[aY, aX] <> AVOID_BUILDING_HOUSE_INSIDE_LOCK);
 end;
 
 
@@ -2553,8 +2685,14 @@ function TPathFindingCityPlanner.MovementCost(aFromX, aFromY, aToX, aToY: Word):
 var
   IsRoad: Boolean;
   AvoidBuilding: Byte;
+  Node: TANode;
 begin
   Result := GA_PATHFINDING_BasePrice;
+
+  Node := GetNodeAt(aFromX, aFromY);
+  if (Node <> nil) AND (Node.Parent <> nil) AND (Node.Parent.X <> aToX) AND (Node.Parent.Y <> aToY) then
+    Inc(Result, GA_PATHFINDING_TurnPenalization);
+
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                     // Reserved road plan
             OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                            // Completed road
@@ -2577,6 +2715,13 @@ begin
   else if not (tpBuild in gTerrain.Land[aToY,aToX].Passability) then Inc(Result, GA_PATHFINDING_noBuildArea)
   // Other case
   else                                                               Inc(Result, GA_PATHFINDING_OtherCase);
+  {$IFDEF DEBUG_NewAI}
+    Price[aToY,aTox] := Result;
+    if (Ctr >= High(Word)) then
+      Ctr := 0;
+    Inc(Ctr);
+    Order[aToY,aTox] := Ctr;
+  {$ENDIF}
 end;
 
 
@@ -2585,8 +2730,14 @@ function TPathFindingShortcutsCityPlanner.MovementCost(aFromX, aFromY, aToX, aTo
 var
   IsRoad: Boolean;
   AvoidBuilding: Byte;
+  Node: TANode;
 begin
   Result := GA_SHORTCUTS_BasePrice;
+
+  Node := GetNodeAt(aFromX, aFromY);
+  if (Node <> nil) AND (Node.Parent <> nil) AND (Node.Parent.X <> aToX) AND (Node.Parent.Y <> aToY) then
+    Inc(Result, GA_SHORTCUTS_TurnPenalization);
+
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                     // Reserved road plan
             OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                            // Completed road
@@ -2609,6 +2760,13 @@ begin
   else if not (tpBuild in gTerrain.Land[aToY,aToX].Passability) then Inc(Result, GA_SHORTCUTS_noBuildArea)
   // Other case
   else                                                               Inc(Result, GA_SHORTCUTS_OtherCase);
+  {$IFDEF DEBUG_NewAI}
+    Price[aToY,aTox] := Result;
+    if (Ctr >= High(Word)) then
+      Ctr := 0;
+    Inc(Ctr);
+    Order[aToY,aTox] := Ctr;
+  {$ENDIF}
 end;
 
 
