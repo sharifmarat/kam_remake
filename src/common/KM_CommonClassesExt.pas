@@ -59,7 +59,9 @@ var
   BaseType: PTypeInfo;
 begin
   Result := '';
-  BaseType := GetTypeData(TypeInfo).CompType^;
+
+  BaseType := GetTypeData(TypeInfo).CompType{$IFDEF WDC}^{$ENDIF};
+
   for I := 0 to SizeOfSet - 1 do
     for J := 0 to 7 do
       if (PSet^[I] and Masks[J]) > 0 then

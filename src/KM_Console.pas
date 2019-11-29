@@ -41,11 +41,11 @@ type
       function IsPostAllowed: Boolean;
       function TryCallConsoleCommand: Boolean;
 
-      function GetNextHistoryMsg: String;
-      function GetPrevHistoryMsg: String;
+      function GetNextHistoryMsg: UnicodeString;
+      function GetPrevHistoryMsg: UnicodeString;
 
-      procedure Add(aMessage: String);
-      procedure AddLine(aMessage: String);
+      procedure Add(aMessage: UnicodeString);
+      procedure AddLine(aMessage: UnicodeString);
 
       procedure Clear; virtual;
     end;
@@ -121,7 +121,7 @@ begin
 end;
 
 
-function TKMConsole.GetNextHistoryMsg: String;
+function TKMConsole.GetNextHistoryMsg: UnicodeString;
 begin
   if fHistory.Count = 0 then
   begin
@@ -134,7 +134,7 @@ begin
 end;
 
 
-function TKMConsole.GetPrevHistoryMsg: String;
+function TKMConsole.GetPrevHistoryMsg: UnicodeString;
 begin
   if fHistory.Count = 0 then
   begin
@@ -147,7 +147,7 @@ begin
 end;
 
 
-procedure TKMConsole.Add(aMessage: String);
+procedure TKMConsole.Add(aMessage: UnicodeString);
 begin
   fMessages := fMessages + aMessage;
 
@@ -156,11 +156,12 @@ begin
 end;
 
 
-procedure TKMConsole.AddLine(aMessage: String);
+procedure TKMConsole.AddLine(aMessage: UnicodeString);
 begin
   if fMessages <> '' then
   begin
-    if not fMessages.EndsWith('[]') then
+    //if not fMessages.EndsWith('[]') then
+    if EndsText('[]', fMessages) then
       fMessages := fMessages + '[]';
     fMessages := fMessages + '|';
   end;

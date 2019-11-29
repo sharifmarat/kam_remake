@@ -66,7 +66,7 @@ object FormMain: TFormMain
         Width = 80
       end>
   end
-  object cpGroup: TCategoryPanelGroup
+  object mainGroup: TCategoryPanelGroup
     Left = 321
     Top = 0
     Height = 765
