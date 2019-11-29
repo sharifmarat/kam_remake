@@ -679,7 +679,6 @@ begin
     Result := HouseProgress.BuildingProgress / HouseProgress.MaxHealth;
 end;
 
-//Todo check how does this line works on Lazarus
 function ConstructingGetVerifyHouseSketchFnInline(aSketch: TKMHouseSketch; aBoolParam: Boolean): Boolean;
 begin
   Result := (aSketch <> nil)
