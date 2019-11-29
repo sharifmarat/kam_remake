@@ -733,13 +733,22 @@ end;
 
 
 procedure TKMPointCenteredList.Add(const aLoc: TKMPoint);
+const
+  BASE_VAL = 100;
+var
+  Len: Single;
 begin
   inherited;
 
   if fCount >= Length(fWeight) then
     SetLength(fWeight, fCount + 32);
 
-  fWeight[fCount - 1] := 1000 / KMLength(fCenter, aLoc); //smaller weight for distant locs
+  Len := KMLength(fCenter, aLoc);
+  //Special case when we aLoc is in the center
+  if Len = 0 then
+    fWeight[fCount - 1] := BASE_VAL * 2
+  else
+    fWeight[fCount - 1] := BASE_VAL / Len; //smaller weight for distant locs
 end;
 
 
@@ -969,20 +978,29 @@ end;
 
 
 procedure TKMPointDirCenteredList.Add(const aLoc: TKMPointDir);
+const
+  BASE_VAL = 100;
+var
+  Len: Single;
 begin
   inherited;
 
   if fCount >= Length(fWeight) then
     SetLength(fWeight, fCount + 32);
 
-  fWeight[fCount - 1] := 1000 / KMLength(fCenter, aLoc.Loc); //smaller weight for distant locs
+  Len := KMLength(fCenter, aLoc.Loc);
+  //Special case when we aLoc is in the center
+  if Len = 0 then
+    fWeight[fCount - 1] := BASE_VAL * 2
+  else
+    fWeight[fCount - 1] := BASE_VAL / Len; //smaller weight for distant locs
 end;
 
 
 function TKMPointDirCenteredList.GetWeightedRandom(out Point: TKMPointDir): Boolean;
 var
   I: Integer;
-  WeightsSum, Rnd: Extended;
+  WeightsSum, Rnd: Single;
 begin
   Result := False;
 
