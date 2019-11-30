@@ -212,7 +212,7 @@ type
     procedure DecStoneDeposit(const Loc: TKMPoint);
     function DecOreDeposit(const Loc: TKMPoint; rt: TKMWareType): Boolean;
 
-    function GetPassablePointWithinSegment(OriginPoint, TargetPoint: TKMPoint; aPassability: TKMTerrainPassability; MaxDistance: Integer = -1): TKMPoint;
+    function GetPassablePointWithinSegment(OriginPoint, TargetPoint: TKMPoint; aPass: TKMTerrainPassability; MaxDistance: Integer = -1): TKMPoint;
     function CheckPassability(const Loc: TKMPoint; aPass: TKMTerrainPassability): Boolean;
     function HasUnit(const Loc: TKMPoint): Boolean;
     function HasVertexUnit(const Loc: TKMPoint): Boolean;
@@ -3166,9 +3166,9 @@ end;
 //Find closest passable point to TargetPoint within line segment OriginPoint <-> TargetPoint
 //MaxDistance - maximum distance between finded point and origin point. MaxDistance = -1 means there is no distance restriction
 function TKMTerrain.GetPassablePointWithinSegment(OriginPoint, TargetPoint: TKMPoint;
-                                                  aPassability: TKMTerrainPassability;
+                                                  aPass: TKMTerrainPassability;
                                                   MaxDistance: Integer = -1): TKMPoint;
-  function IsDistanceBetweenPointsAllowed(const OriginPoint, TargetPoint: TKMPoint): Boolean;
+  function IsDistBetweenPointsAllowed(const OriginPoint, TargetPoint: TKMPoint): Boolean;
   begin
     Result := (MaxDistance = -1) or (KMDistanceSqr(OriginPoint, TargetPoint) <= Sqr(MaxDistance));
   end;
@@ -3182,8 +3182,8 @@ begin
     NormDistance := Min(MaxDistance, Floor(KMLength(OriginPoint, TargetPoint)));
 
   while (NormDistance >= 0)
-    and (not IsDistanceBetweenPointsAllowed(OriginPoint, TargetPoint)
-         or not CheckPassability(TargetPoint, aPassability)) do
+    and (not IsDistBetweenPointsAllowed(OriginPoint, TargetPoint)
+         or not CheckPassability(TargetPoint, aPass)) do
   begin
     NormVector := KMNormVector(KMPoint(TargetPoint.X - OriginPoint.X, TargetPoint.Y - OriginPoint.Y), NormDistance);
     TargetPoint := KMPoint(OriginPoint.X + NormVector.X, OriginPoint.Y + NormVector.Y);
