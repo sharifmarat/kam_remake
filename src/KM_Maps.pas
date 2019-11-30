@@ -239,7 +239,8 @@ type
 
 implementation
 uses
-  SysUtils, StrUtils, Math, KromShellUtils, KromUtils,
+  SysUtils, StrUtils, TypInfo, Math,
+  KromShellUtils, KromUtils,
   KM_GameApp, KM_FileIO,
   KM_MissionScript_Info, KM_Scripting,
   KM_Utils, KM_CommonUtils, KM_Log;
@@ -868,6 +869,7 @@ procedure TKMMapTxtInfo.SaveTXTInfo(const aFilePath: String);
 var
   St: String;
   ft: TextFile;
+  MD: TKMMissionDifficulty;
 
   procedure WriteLine(const aLineHeader: String; const aLineValue: String = '');
   begin
@@ -924,20 +926,13 @@ begin
   if HasDifficultyLevels then
   begin
     St := '';
-    if St <> '' then
-      St := St + ',';
-    if mdEasy in DifficultyLevels then
-      St := 'Easy';
-    if mdNormal in DifficultyLevels then
-    begin
-      if St <> '' then
-        St := St + ',';
-      St := St + 'Normal';
-    end;
-    if mdHard in DifficultyLevels then
-    begin
-      St := St + ',Hard';
-    end;
+    for MD := MISSION_DIFFICULTY_MIN to MISSION_DIFFICULTY_MAX do
+      if MD in DifficultyLevels then
+      begin
+        if St <> '' then
+          St := St + ',';
+        St := St + GetEnumName(TypeInfo(TKMMissionDifficulty), Integer(MD));
+      end;
     WriteLine('DifficultyLevels', St);
   end;
 
@@ -963,6 +958,7 @@ var
   St, S: String;
   ft: TextFile;
   StList: TStringList;
+  MD: TKMMissionDifficulty;
 begin
   //Load additional text info
   if FileExists(aFilePath) then
@@ -1019,14 +1015,9 @@ begin
         StList := TStringList.Create;
         StringSplit(S, ',', StList);
         for I := 0 to StList.Count - 1 do
-        begin
-          if SameText(StList[I], 'Easy') then
-            Include(DifficultyLevels, mdEasy);
-          if SameText(StList[I], 'Normal') then
-            Include(DifficultyLevels, mdNormal);
-          if SameText(StList[I], 'Hard') then
-            Include(DifficultyLevels, mdHard);
-        end;
+          for MD := MISSION_DIFFICULTY_MIN to MISSION_DIFFICULTY_MAX do
+            if SameText(StList[I], GetEnumName(TypeInfo(TKMMissionDifficulty), Integer(MD))) then
+              Include(DifficultyLevels, MD);
         StList.Free;
       end;
     until(eof(ft));
@@ -1072,12 +1063,13 @@ end;
 
 
 function TKMMapTxtInfo.HasDifficultyLevels: Boolean;
+var
+  MD: TKMMissionDifficulty;
 begin
+  Result := (DifficultyLevels <> []);
   //We consider there is no difficulty levels, if only one is presented
-  Result := (DifficultyLevels <> [])
-            and (DifficultyLevels <> [mdEasy])
-            and (DifficultyLevels <> [mdNormal])
-            and (DifficultyLevels <> [mdHard]);
+  for MD := MISSION_DIFFICULTY_MIN to MISSION_DIFFICULTY_MAX do
+    Result := Result and (DifficultyLevels <> [MD]);
 end;
 
 

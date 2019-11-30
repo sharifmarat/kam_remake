@@ -243,9 +243,13 @@ begin
     if I < fCampaign.MapCount then
       case fCampaign.MapsProgressData[I].BestCompleteDifficulty of
         mdNone: Color := icLightGray2;
-        mdEasy: Color := icGreen;
+        mdEasy3: Color := icBlue;
+        mdEasy2: Color := icLightGreen;
+        mdEasy1: Color := icGreen;
         mdNormal: Color := icYellow;
-        mdHard: Color := icRed;
+        mdHard1: Color := icOrange;
+        mdHard2: Color := icLightRed;
+        mdHard3: Color := icRed;
       end;
     Label_CampaignFlags[I].FontColor := Color;
   end;
