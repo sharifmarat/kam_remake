@@ -3385,6 +3385,9 @@ begin
         Exit;
       end;
     end;
+
+    if (Key = gResKeys[SC_REPLAY_PLAY_NEXT_TICK].Key) and Button_ReplayStep.Enabled then
+      ReplayClick(Button_ReplayStep);
   end;
 
   fGuiGameUnit.KeyUp(Key, Shift);
