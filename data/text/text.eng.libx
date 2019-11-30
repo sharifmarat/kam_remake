@@ -1251,10 +1251,12 @@
 1301:Animals
 1302:Forests
 1303:Trees
-1304:Seed
-1305:Basic tiles
-1306:Cellular automaton
-1307:New Random Seed
-1308:Generate map
-1309:Map size:
-1310:Play next tick in replay
+1304:Empty gold
+1305:Empty iron
+1306:Seed
+1307:Basic tiles
+1308:Cellular automaton
+1309:New Random Seed
+1310:Generate map
+1311:Map size:
+1312:Play next tick in replay

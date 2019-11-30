@@ -200,10 +200,10 @@ begin
     Check_Obstacles := TKMCheckBox.Create(Panel_Settings, Column_2_X, NextLine(Column_2_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_OBSTACLES], fntMetal);
     Check_Obstacles.Checked := True;//True;
   // Ratio of biomes
-  TKMLabel.Create(Panel_Settings, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'E' + gResTexts[TX_RESOURCES_GOLD], fntMetal, taLeft);
+  TKMLabel.Create(Panel_Settings, Column_2_X+OFFSET_1, NextLine(Column_2_Y), gResTexts[TX_MAPED_RMG_SETTINGS_EMPTY_GOLD], fntMetal, taLeft);
     TBar_NonWalk_EGold := TKMTrackBar.Create(Panel_Settings, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
     TBar_NonWalk_EGold.Position := 8;
-  TKMLabel.Create(Panel_Settings, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'E' + gResTexts[TX_RESOURCES_IRON], fntMetal, taLeft);
+  TKMLabel.Create(Panel_Settings, Column_2_X+OFFSET_1, NextLine(Column_2_Y), gResTexts[TX_MAPED_RMG_SETTINGS_EMPTY_IRON], fntMetal, taLeft);
     TBar_NonWalk_EIron := TKMTrackBar.Create(Panel_Settings, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
     TBar_NonWalk_EIron.Position := 7;
   TKMLabel.Create(Panel_Settings, Column_2_X+OFFSET_1, NextLine(Column_2_Y), gResTexts[TX_MAPED_RMG_SETTINGS_SWAMP], fntMetal, taLeft);
