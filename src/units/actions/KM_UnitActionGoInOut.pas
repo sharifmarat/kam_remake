@@ -158,8 +158,29 @@ end;
 //Attempt to find a tile below the door (on the street) we can walk to
 //We can push idle units away. Check center first
 function TKMUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TKMBestExit;
+
+  function ChooseBestExit(aL, aR: Boolean): TKMBestExit;
+  begin
+    //Choose randomly between left and right
+    if (aL and aR) then
+    begin
+      if KaMRandom(2, 'TKMUnitActionGoInOut.FindBestExit.ChooseBestExit') = 0 then
+        Result := beLeft
+      else
+        Result := beRight;
+    end
+    else
+    if aL then
+      Result := beLeft
+    else
+    if aR then
+      Result := beRight
+    else
+      Result := beNone;
+  end;
+
 var
-  U: TKMUnit;
+  U, UC, UL, UR: TKMUnit;
   L, R: Boolean;
 begin
   if fUnit.CanStepTo(aLoc.X, aLoc.Y, tpWalk) then
@@ -168,39 +189,29 @@ begin
   begin
     L := fUnit.CanStepTo(aLoc.X-1, aLoc.Y, tpWalk);
     R := fUnit.CanStepTo(aLoc.X+1, aLoc.Y, tpWalk);
-    //Choose randomly between left and right
-    if (L and R) then
+
+    Result := ChooseBestExit(L, R);
+
+    if Result = beNone then
     begin
-      if KaMRandom(2, 'TKMUnitActionGoInOut.FindBestExit') = 0 then
-        Result := beLeft
-      else
-        Result := beRight;
-    end
-    else
-    if L then
-      Result := beLeft
-    else
-    if R then
-      Result := beRight
-    else
-    begin
+      U := nil;
       //U could be nil if tile is unwalkable for some reason
-      U := TileHasIdleUnit(aLoc.X, aLoc.Y);
-      if U <> nil then
+      UC := TileHasIdleUnit(aLoc.X, aLoc.Y);
+      if UC <> nil then
         Result := beCenter
       else
       begin
-        U := TileHasIdleUnit(aLoc.X-1, aLoc.Y);
-        if U <> nil then
-          Result := beLeft
-        else
-        begin
-          U := TileHasIdleUnit(aLoc.X+1, aLoc.Y);
-          if U <> nil then
-            Result := beRight
-          else
-            Result := beNone;
-        end;
+        UL := TileHasIdleUnit(aLoc.X-1, aLoc.Y);
+        L := UL <> nil;
+        UR := TileHasIdleUnit(aLoc.X+1, aLoc.Y);
+        R := UR <> nil;
+        Result := ChooseBestExit(L, R);
+      end;
+
+      case Result of
+        beCenter: U := UC;
+        beLeft:   U := UL;
+        beRight:  U := UR;
       end;
 
       if U <> nil then
