@@ -260,13 +260,13 @@ begin
 				for p := 0 to States.StatPlayerCount() -1 do
 					case Difficulty of
 						mdNormal: 	exit;
-						mdEasy: 	if States.PlayerIsAI(p) then 
+						mdEasy1: 	if States.PlayerIsAI(p) then 
 									begin
 										if States.PlayerAllianceCheck(iPlayer, p) then	
 											IncreaseGroupSize(p, 0);
 										end else
 											IncreaseGroupSize(p, 0);
-						mdHard:		if States.PlayerIsAI(p) then
+						mdHard1:		if States.PlayerIsAI(p) then
 										if not States.PlayerAllianceCheck(iPlayer, p) then
 											IncreaseGroupSize(p, 0);
 					end;
