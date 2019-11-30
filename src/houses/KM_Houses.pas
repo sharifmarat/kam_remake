@@ -2452,8 +2452,6 @@ var
   P: TKMPoint;
 begin
   P := PointBelowEntrance;
-  L := False;
-  R := False;
   if not gTerrain.CheckPassability(P, tpWalk) then
   begin
     L := gTerrain.CheckPassability(KMPointLeft(P), tpWalk);
