@@ -2447,8 +2447,38 @@ end;
 
 
 function TKMHouseWFlagPoint.GetValidPoint(aPoint: TKMPoint): TKMPoint;
+var
+  L, R: Boolean;
+  P: TKMPoint;
+  Off: Integer;
 begin
-  Result := gTerrain.GetPassablePointWithinSegment(PointBelowEntrance, aPoint, tpWalk, MaxDistanceToPoint);
+  P := PointBelowEntrance;
+  L := False;
+  R := False;
+  if not gTerrain.CheckPassability(P, tpWalk) then
+  begin
+    L := gTerrain.CheckPassability(KMPointLeft(P), tpWalk);
+    R := gTerrain.CheckPassability(KMPointRight(P), tpWalk);
+    //Choose random between Left and Right
+    if L and R then
+    begin
+      Off := 2*KaMRandom(2, 'TKMHouseWFlagPoint.GetValidPoint') - 1; // +1 or -1
+      P := KMPoint(P.X + Off, P.Y);
+    end
+    else
+    if L then
+      P := KMPointLeft(P)
+    else
+    if R then
+      P := KMPointRight(P)
+    else
+    begin
+      Result := KMPOINT_ZERO;
+      Exit;
+    end;
+  end;
+
+  Result := gTerrain.GetPassablePointWithinSegment(P, aPoint, tpWalk, MaxDistanceToPoint);
 end;
 
 
