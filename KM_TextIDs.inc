@@ -163,7 +163,7 @@ TX_HOUSE_BARRACKS_TRAIN_HINT = 149; //Equip current soldier type
 TX_HOUSE_BARRACKS_TRAIN_DISABLED_HINT = 706; //This soldier type is not available
 TX_HOUSE_SCHOOL_NEXT_HINT = 150; //Next profession
 TX_HOUSE_SCHOOL_PREV_HINT = 151; //Previous profession
-TX_HOUSE_SCHOOL_TRAIN_HINT = 152; //Add to queue
+TX_HOUSE_SCHOOL_TRAIN_HINT = 152; //Add to queue. Use RMB, Shift or Ctrl to modify the queue
 TX_HOUSE_SCHOOL_TRAIN_DISABLED_HINT = 707; //This unit type is not available
 TX_HOUSE_TOGGLE_DELIVERS_HINT = 153; //Switch between delivery modes of wares: demand / closed / offer. Use LMB/RMB to switch forward/backward
 
