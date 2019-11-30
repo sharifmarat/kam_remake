@@ -50,7 +50,7 @@ type
 implementation
 uses
   KM_HandsCollection, KM_Resource, KM_Terrain, KM_UnitActionStay, KM_UnitActionWalkTo,
-  KM_HouseBarracks, KM_ResHouses, KM_ResUnits;
+  KM_HouseBarracks, KM_ResHouses, KM_ResUnits, KM_CommonUtils;
 
 
 { TUnitActionGoInOut }
@@ -160,40 +160,54 @@ end;
 function TKMUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TKMBestExit;
 var
   U: TKMUnit;
+  L, R: Boolean;
 begin
   if fUnit.CanStepTo(aLoc.X, aLoc.Y, tpWalk) then
     Result := beCenter
   else
-  if fUnit.CanStepTo(aLoc.X-1, aLoc.Y, tpWalk) then
-    Result := beLeft
-  else
-  if fUnit.CanStepTo(aLoc.X+1, aLoc.Y, tpWalk) then
-    Result := beRight
-  else
   begin
-    //U could be nil if tile is unwalkable for some reason
-    U := TileHasIdleUnit(aLoc.X, aLoc.Y);
-    if U <> nil then
-      Result := beCenter
-    else
+    L := fUnit.CanStepTo(aLoc.X-1, aLoc.Y, tpWalk);
+    R := fUnit.CanStepTo(aLoc.X+1, aLoc.Y, tpWalk);
+    //Choose randomly between left and right
+    if (L and R) then
     begin
-      U := TileHasIdleUnit(aLoc.X-1, aLoc.Y);
-      if U <> nil then
+      if KaMRandom(2, 'TKMUnitActionGoInOut.FindBestExit') = 0 then
         Result := beLeft
       else
-      begin
-        U := TileHasIdleUnit(aLoc.X+1, aLoc.Y);
-        if U <> nil then
-          Result := beRight
-        else
-          Result := beNone;
-      end;
-    end;
-
-    if U <> nil then
+        Result := beRight;
+    end
+    else
+    if L then
+      Result := beLeft
+    else
+    if R then
+      Result := beRight
+    else
     begin
-      fPushedUnit := U.GetUnitPointer;
-      fPushedUnit.SetActionWalkPushed(gTerrain.GetOutOfTheWay(U, KMPOINT_ZERO, tpWalk));
+      //U could be nil if tile is unwalkable for some reason
+      U := TileHasIdleUnit(aLoc.X, aLoc.Y);
+      if U <> nil then
+        Result := beCenter
+      else
+      begin
+        U := TileHasIdleUnit(aLoc.X-1, aLoc.Y);
+        if U <> nil then
+          Result := beLeft
+        else
+        begin
+          U := TileHasIdleUnit(aLoc.X+1, aLoc.Y);
+          if U <> nil then
+            Result := beRight
+          else
+            Result := beNone;
+        end;
+      end;
+
+      if U <> nil then
+      begin
+        fPushedUnit := U.GetUnitPointer;
+        fPushedUnit.SetActionWalkPushed(gTerrain.GetOutOfTheWay(U, KMPOINT_ZERO, tpWalk));
+      end;
     end;
   end;
 end;
