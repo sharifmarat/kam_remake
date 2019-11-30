@@ -610,7 +610,7 @@
 621:Game time:|%s
 622:Halt troop
 623:Link up troop
-624:Separate troop
+624:Separate troop (%s). Separate one unit from troop (Ctrl + %s)
 625:Replay Viewer
 626:View Replay
 627:Unsupported format %s
