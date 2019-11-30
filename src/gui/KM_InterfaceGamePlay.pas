@@ -3716,7 +3716,7 @@ end;
 
 procedure TKMGamePlayInterface.MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 var
-  P: TKMPoint;
+  P, P2: TKMPoint;
   Obj: TObject;
   H: TKMHouse;
   Group, Group2: TKMUnitGroup;
@@ -3909,7 +3909,10 @@ begin
           and (fUIMode in [umSP, umMP])
           and not HasLostMPGame then
         begin
-          if gTerrain.Route_CanBeMade(TKMHouse(gMySpectator.Selected).PointBelowEntrance, P, tpWalk, 0) then
+          P2 := TKMHouse(gMySpectator.Selected).PointBelowEntrance;
+          if gTerrain.Route_CanBeMade(P2, P, tpWalk, 0)
+            or gTerrain.Route_CanBeMade(KMPointLeft(P2), P, tpWalk, 0)
+            or gTerrain.Route_CanBeMade(KMPointRight(P2), P, tpWalk, 0) then
           begin
             if gMySpectator.Selected is TKMHouseBarracks then
               gGame.GameInputProcess.CmdHouse(gicHouseBarracksRally, TKMHouse(gMySpectator.Selected), P)
