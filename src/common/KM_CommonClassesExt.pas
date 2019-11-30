@@ -60,7 +60,7 @@ var
 begin
   Result := '';
 
-  BaseType := GetTypeData(TypeInfo).CompType{$IFDEF WDC}^{$ENDIF}; //Todo check how does this line works on Lazarus
+  BaseType := GetTypeData(TypeInfo).CompType{$IFDEF WDC}^{$ENDIF}; //FPC has PTypeInfo here, while WDC has PPTypeInfo
 
   for I := 0 to SizeOfSet - 1 do
     for J := 0 to 7 do
@@ -68,7 +68,15 @@ begin
       begin
         if Result <> '' then
           Result := Result + ', ';
+        {$IFDEF WDC}
         Result := Result + GetEnumName(BaseType, J + I*8);
+        {$ENDIF}
+        {$IFDEF FPC}
+        if BaseType^.Kind = tkInteger then //For some reason FPC can't return EnumName, at least for tkInteger values
+          Result := Result + IntToStr(J + I*8)
+        else
+          Result := Result + GetEnumName(BaseType, J + I*8);
+        {$ENDIF}
       end;
   Result := '[' + Result + ']';
 end;
