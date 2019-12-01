@@ -195,7 +195,6 @@ begin
     if Result = beNone then
     begin
       U := nil;
-      UC := nil;
       UL := nil;
       UR := nil;
       //U could be nil if tile is unwalkable for some reason
