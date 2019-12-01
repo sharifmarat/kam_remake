@@ -15,6 +15,7 @@ type
     // Get count of parameters
     function GetParCnt_TestParRun(): Word;
     function GetParCnt_HandLogistics(): Word;
+    function GetParCnt_Manager(): Word;
     function GetParCnt_CityBuilder(): Word;
     function GetParCnt_Farm(): Word;
     function GetParCnt_Quarry(): Word;
@@ -23,6 +24,7 @@ type
     function GetParCnt_CityPlanner(): Word;
     // Set global parameters
     procedure SetPar_HandLogistics(aIdv: TGAIndividual; aLogIt: Boolean = False);
+    procedure SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False);
     procedure SetPar_CityBuilder(aIdv: TGAIndividual; aLogIt: Boolean = False);
     procedure SetPar_Farm(aIdv: TGAIndividual; aLogIt: Boolean = False);
     procedure SetPar_Quarry(aIdv: TGAIndividual; aLogIt: Boolean = False);
@@ -80,6 +82,7 @@ begin
   else if (CompareStr(fClass, 'TKMRunnerGA_Farm'         ) = 0) then Result := GetParCnt_Farm
   else if (CompareStr(fClass, 'TKMRunnerGA_Forest'       ) = 0) then Result := GetParCnt_Forest
   else if (CompareStr(fClass, 'TKMRunnerGA_HandLogistics') = 0) then Result := GetParCnt_HandLogistics
+  else if (CompareStr(fClass, 'TKMRunnerGA_Manager'      ) = 0) then Result := GetParCnt_Manager
   else if (CompareStr(fClass, 'TKMRunnerGA_Quarry'       ) = 0) then Result := GetParCnt_Quarry
   else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then Result := GetParCnt_RoadPlanner
   else if (CompareStr(fClass, 'TKMRunnerGA_TestParRun'   ) = 0) then Result := GetParCnt_TestParRun
@@ -93,6 +96,7 @@ begin
   else if (CompareStr(fClass, 'TKMRunnerGA_Farm'         ) = 0) then SetPar_Farm(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Forest'       ) = 0) then SetPar_Forest(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_HandLogistics') = 0) then SetPar_HandLogistics(aIdv, aLogIt)
+  else if (CompareStr(fClass, 'TKMRunnerGA_Manager'      ) = 0) then SetPar_Manager(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Quarry'       ) = 0) then SetPar_Quarry(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then SetPar_RoadPlanner(aIdv, aLogIt);
 end;
@@ -102,6 +106,8 @@ function TGAParameterization.GetParCnt_TestParRun(): Word;
 begin
   Result := 10;
 end;
+
+
 
 
 function TGAParameterization.GetParCnt_HandLogistics(): Word;
@@ -131,6 +137,42 @@ begin
   //  fLogPar.AddTime('GA_TCBB_NormPwr     : Integer = ' + IntToStr( GA_TCBB_NormPwr   ) + ';');
   //  fLogPar.AddTime('GA_TCBB_Rnd         : Integer = ' + IntToStr( GA_TCBB_Rnd       ) + ';');
   //end;
+end;
+
+
+function TGAParameterization.GetParCnt_Manager(): Word;
+begin
+  Result := 2+6;
+end;
+
+procedure TGAParameterization.SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False);
+var
+  K: Integer;
+begin
+  K := 0;
+
+  GA_PREDICTOR_WareNeedPerAWorker_Stone              := aIdv.Gene[Incr(K)];
+  GA_PREDICTOR_WareNeedPerAWorker_Wood               := aIdv.Gene[Incr(K)];
+
+  GA_MANAGEMENT_GoldShortage                         :=  0 + Round( aIdv.Gene[Incr(K)] * 25);
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit1            :=  0 + Round( aIdv.Gene[Incr(K)] * 30);
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit2            := 20 + Round( aIdv.Gene[Incr(K)] * 30);
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit3            := 40 + Round( aIdv.Gene[Incr(K)] * 30);
+  GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef        := aIdv.Gene[Incr(K)] * 5;
+  GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef          := aIdv.Gene[Incr(K)] * 3;
+
+  if aLogIt AND (fLogPar <> nil) then
+  begin
+    fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Stone              : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Stone       ]));
+    fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Wood               : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Wood        ]));
+    fLogPar.AddTime(Format('GA_MANAGEMENT_GoldShortage                         : Word = %4d;',[ GA_MANAGEMENT_GoldShortage                  ]));
+    fLogPar.AddTime(Format('GA_MANAGEMENT_CheckUnitCount_SerfLimit1            : Word = %4d;',[ GA_MANAGEMENT_CheckUnitCount_SerfLimit1     ]));
+    fLogPar.AddTime(Format('GA_MANAGEMENT_CheckUnitCount_SerfLimit2            : Word = %4d;',[ GA_MANAGEMENT_CheckUnitCount_SerfLimit2     ]));
+    fLogPar.AddTime(Format('GA_MANAGEMENT_CheckUnitCount_SerfLimit3            : Word = %4d;',[ GA_MANAGEMENT_CheckUnitCount_SerfLimit3     ]));
+    fLogPar.AddTime(Format('GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef        : Single = %16.10f;',[ GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef ]));
+    fLogPar.AddTime(Format('GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef          : Single = %16.10f;',[ GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef   ]));
+  end;
+
 end;
 
 

@@ -123,8 +123,9 @@ end;
 procedure TParaller_Runner.LoadCfg();
 var
   K: Integer;
-begin  with fSim do
-  begin
+begin
+  with fSim do
+    begin
       for K := 0 to lbClasses.Items.Count - 1 do
         if (CompareStr(SIM_Class,lbClasses.Items[K]) = 0) then
           lbClasses.ItemIndex := K;
@@ -143,7 +144,7 @@ begin  with fSim do
       eEndGaussMut.Text       := FloatToStr(GA_FINAL_MUTATION_Gaussian);
       eStartVariance.Text     := FloatToStr(GA_START_MUTATION_Variance);
       eEndVariance.Text       := FloatToStr(GA_FINAL_MUTATION_Variance);
-  end;
+    end;
 end;
 
 

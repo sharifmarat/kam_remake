@@ -28,8 +28,6 @@ object Paraller_Runner: TParaller_Runner
     TabOrder = 1
     object tsFitness: TTabSheet
       Caption = 'Fitness'
-      ExplicitWidth = 1194
-      ExplicitHeight = 616
       DesignSize = (
         1201
         747)
@@ -46,8 +44,6 @@ object Paraller_Runner: TParaller_Runner
     object tsGenes: TTabSheet
       Caption = 'Genes'
       ImageIndex = 1
-      ExplicitWidth = 1194
-      ExplicitHeight = 616
       DesignSize = (
         1201
         747)
@@ -75,8 +71,6 @@ object Paraller_Runner: TParaller_Runner
     object TabSheet3: TTabSheet
       Caption = 'Times'
       ImageIndex = 2
-      ExplicitWidth = 1194
-      ExplicitHeight = 616
       DesignSize = (
         1201
         747)
@@ -92,8 +86,6 @@ object Paraller_Runner: TParaller_Runner
     object tsLog: TTabSheet
       Caption = 'Log'
       ImageIndex = 3
-      ExplicitWidth = 1194
-      ExplicitHeight = 616
       object mLog: TMemo
         Left = 0
         Top = 0
@@ -109,8 +101,6 @@ object Paraller_Runner: TParaller_Runner
         ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 0
-        ExplicitLeft = -4
-        ExplicitHeight = 742
       end
     end
   end
@@ -444,6 +434,7 @@ object Paraller_Runner: TParaller_Runner
         'TKMRunnerGA_Farm'
         'TKMRunnerGA_Forest'
         'TKMRunnerGA_HandLogistics'
+        'TKMRunnerGA_Manager'
         'TKMRunnerGA_Quarry'
         'TKMRunnerGA_RoadPlanner'
         'TKMRunnerGA_TestParRun')
