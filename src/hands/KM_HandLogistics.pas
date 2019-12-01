@@ -474,10 +474,14 @@ begin
       Item.Caption := IntToStr(Item.Index);
       Item.SubItems.Clear;
 
+      Item.SubItems.Add(IntToStr(fOwner));
       Item.SubItems.Add(gRes.Wares[Ware].Title);
 
       if Loc_House <> nil then
-        Item.SubItems.Add(gRes.Houses[Loc_House.HouseType].HouseName)
+      begin
+        Item.SubItems.Add(gRes.Houses[Loc_House.HouseType].HouseName);
+        Item.SubItems.Add(IntToStr(Loc_House.UID));
+      end
       else
         Item.SubItems.Add('nil');
 
@@ -505,12 +509,19 @@ begin
       Item.Caption := IntToStr(Item.Index);
       Item.SubItems.Clear;
 
+      Item.SubItems.Add(IntToStr(fOwner));
       Item.SubItems.Add(gRes.Wares[Ware].Title);
 
       if Loc_House <> nil then
-        Item.SubItems.Add('H: ' + gRes.Houses[Loc_House.HouseType].HouseName)
+      begin
+        Item.SubItems.Add('H: ' + gRes.Houses[Loc_House.HouseType].HouseName);
+        Item.SubItems.Add(IntToStr(Loc_House.UID));
+      end
       else if Loc_Unit <> nil then
-        Item.SubItems.Add('U: ' + gRes.Units[Loc_Unit.UnitType].GUIName)
+      begin
+        Item.SubItems.Add('U: ' + gRes.Units[Loc_Unit.UnitType].GUIName);
+        Item.SubItems.Add(IntToStr(Loc_Unit.UID));
+      end
       else
         Item.SubItems.Add('nil');
 
@@ -534,17 +545,31 @@ begin
 
       Item.Caption := IntToStr(Item.Index);
       Item.SubItems.Clear;
+
+      Item.SubItems.Add(IntToStr(fOwner));
       Item.SubItems.Add(gRes.Wares[fOffer[OfferID].Ware].Title);
 
       if fOffer[OfferID].Loc_House = nil then
         Item.SubItems.Add('nil')
       else
+      begin
         Item.SubItems.Add(gRes.Houses[fOffer[OfferID].Loc_House.HouseType].HouseName);
+        Item.SubItems.Add(IntToStr(fOffer[OfferID].Loc_House.UID));
+      end;
 
-      if fDemand[DemandID].Loc_House = nil then
-        Item.SubItems.Add('nil')
+      if fDemand[DemandID].Loc_House <> nil then
+      begin
+        Item.SubItems.Add('H: ' + gRes.Houses[fDemand[DemandID].Loc_House.HouseType].HouseName);
+        Item.SubItems.Add(IntToStr(fDemand[DemandID].Loc_House.UID));
+      end
       else
-        Item.SubItems.Add(gRes.Houses[fDemand[DemandID].Loc_House.HouseType].HouseName);
+      if fDemand[DemandID].Loc_Unit <> nil then
+      begin
+        Item.SubItems.Add('U: ' + gRes.Units[fDemand[DemandID].Loc_Unit.UnitType].GUIName);
+        Item.SubItems.Add(IntToStr(fDemand[DemandID].Loc_Unit.UID));
+      end
+      else
+        Item.SubItems.Add('nil');
 
       if Serf = nil then
         Item.SubItems.Add('nil')
