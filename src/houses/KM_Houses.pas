@@ -1555,7 +1555,22 @@ end;
 
 
 procedure TKMHouse.SetResIn(aI: Byte; aValue: Word);
+var
+  ResCnt: Integer;
+  Res: TKMWareType;
 begin
+  //In case we brought smth to house with TakeOut delivery mode,
+  //then we need to add it to offer
+  //Usually it can happens when we changed delivery mode while serf was going inside house
+  //and his delivery was not cancelled, but resource was not in the house yet
+  //then it was not offered to other houses
+  if fDeliveryMode = dmTakeOut then
+  begin
+    Res := gRes.Houses[fType].ResInput[aI];
+    ResCnt := aValue - fResourceIn[aI];
+    if not (Res in [wtNone, wtAll, wtWarfare]) and (ResCnt > 0) then
+      gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
+  end;
   fResourceIn[aI] := aValue;
 end;
 
