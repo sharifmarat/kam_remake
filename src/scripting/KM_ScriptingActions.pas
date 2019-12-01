@@ -627,7 +627,10 @@ end;
 procedure TKMScriptActions.StopLoopedWAV(aSoundIndex: Integer);
 begin
   try
-    gScriptSounds.RemoveLoopSound(aSoundIndex);
+    if aSoundIndex > 0 then
+      gScriptSounds.RemoveLoopSoundByUID(aSoundIndex)
+    else
+      LogParamWarning('Actions.StopLoopedWAV', [aSoundIndex]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -651,7 +654,7 @@ begin
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
-      LogParamWarning('Actions.PlayWAV: ' + UnicodeString(aFileName), []);
+      LogParamWarning('Actions.PlayOGG: ' + UnicodeString(aFileName), []);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -673,7 +676,7 @@ begin
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
-      LogParamWarning('Actions.PlayWAVFadeMusic: ' + UnicodeString(aFileName), []);
+      LogParamWarning('Actions.PlayOGGFadeMusic: ' + UnicodeString(aFileName), []);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -701,7 +704,7 @@ begin
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
-      LogParamWarning('Actions.PlayWAVAtLocation: ' + UnicodeString(aFileName), [aX, aY]);
+      LogParamWarning('Actions.PlayOGGAtLocation: ' + UnicodeString(aFileName), [aX, aY]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -724,7 +727,7 @@ begin
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, False, True)
     else
-      LogParamWarning('Actions.PlayWAVLooped: ' + UnicodeString(aFileName), []);
+      LogParamWarning('Actions.PlayOGGLooped: ' + UnicodeString(aFileName), []);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -751,7 +754,7 @@ begin
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPoint(aX,aY), True, aVolume, aRadius, False, True)
     else
-      LogParamWarning('Actions.PlayWAVAtLocationLooped: ' + UnicodeString(aFileName), [aX, aY]);
+      LogParamWarning('Actions.PlayOGGAtLocationLooped: ' + UnicodeString(aFileName), [aX, aY]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -765,7 +768,10 @@ end;
 procedure TKMScriptActions.StopLoopedOGG(aSoundIndex: Integer);
 begin
   try
-    gScriptSounds.RemoveLoopSound(aSoundIndex);
+    if aSoundIndex > 0 then
+      gScriptSounds.RemoveLoopSoundByUID(aSoundIndex)
+    else
+      LogParamWarning('Actions.StopLoopedOGG', [aSoundIndex]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -838,7 +844,10 @@ end;
 procedure TKMScriptActions.StopSound(aSoundIndex: Integer);
 begin
   try
-    gScriptSounds.RemoveSound(aSoundIndex);
+    if aSoundIndex > 0 then
+      gScriptSounds.RemoveSoundByUID(aSoundIndex)
+    else
+      LogParamWarning('Actions.StopSound', [aSoundIndex]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
