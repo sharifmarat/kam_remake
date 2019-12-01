@@ -385,7 +385,7 @@ begin
 
     Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit,attClosestBuildingFromArmy,attClosestBuildingFromStartPos,attCustomPosition)');
 
-    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone,mdEasy,mdNormal,mdHard)');
+    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone,mdEasy3,mdEasy2,mdEasy1,mdNormal,mdHard1,mdHard2,mdHard3)');
     Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
 
     // Register classes and methods to the script engine.
