@@ -166,7 +166,7 @@ type
     function GetFieldToHouse(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
     function GetTreesInHousePlan(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList): Byte;
     function FindForestAround(const aPoint: TKMPoint; aCountByInfluence: Boolean = False): Boolean;
-    procedure CheckStoneReserves(aForceToPlaceQuarry: Boolean = False);
+    procedure CheckStoneReserves(aForceToPlaceQuarry: Boolean; aReqQuarryCnt: Integer);
     function CheckFields(var aFieldType: TKMFieldType; var aNodeList: TKMPointList): Boolean;
 
     procedure LogStatus(var aBalanceText: UnicodeString);
@@ -176,36 +176,36 @@ type
 
 const
   HOUSE_DEPENDENCE: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (  // This array is sorted by priority
-    {htArmorSmithy}    [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
-    {htArmorWorkshop}  [ htTannery,        htBarracks,       htSawmill,        htArmorWorkshop  ],
-    {htBakery}         [ htInn,            htMill,           htStore,          htBakery         ],
-    {htBarracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop ],
-    {htButchers}       [ htInn,            htSwine,          htStore,          htButchers       ],
-    {htCoalMine}       [ htCoalMine,       htGoldMine,       htIronMine,       htStore          ],
-    {htFarm}           [ htFarm,           htSwine,          htMill,           htStables        ],
-    {htFisherHut}      [ htStore                                                                ],
-    {htGoldMine}       [ htMetallurgists,  htStore                                              ],
-    {htInn}            [ htButchers,       htBakery,         htStore,          htWineyard       ],
-    {htIronMine}       [ htStore                                                                ],
-    {htIronSmithy}     [ htCoalMine,       htIronMine,       htWeaponSmithy,   htIronSmithy     ],
-    {htMarketplace}    [ htStore,          htMetallurgists,  htBarracks,       htMarketplace    ],
+    {htArmorSmithy}    [ htCoalMine,       htIronMine,       htIronSmithy,     htBarracks                       ],
+    {htArmorWorkshop}  [ htSawmill,        htTannery,        htArmorWorkshop,  htBarracks                       ],
+    {htBakery}         [ htInn,            htMill,           htStore,          htBakery                         ],
+    {htBarracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop                 ],
+    {htButchers}       [ htInn,            htSwine,          htStore,          htButchers                       ],
+    {htCoalMine}       [ htCoalMine,       htGoldMine,       htIronMine,       htStore,         htMetallurgists ],
+    {htFarm}           [ htFarm,           htSwine,          htMill,           htStables                        ],
+    {htFisherHut}      [ htStore                                                                                ],
+    {htGoldMine}       [ htMetallurgists,  htStore                                                              ],
+    {htInn}            [ htButchers,       htBakery,         htStore,          htWineyard                       ],
+    {htIronMine}       [ htStore                                                                                ],
+    {htIronSmithy}     [ htCoalMine,       htIronMine,       htWeaponSmithy,   htIronSmithy                     ],
+    {htMarketplace}    [ htStore,          htMetallurgists,  htMarketplace,    htBarracks                       ],
     // Metallurgist must be only close to coal / gold because serfs are not able to support this extremely critical resources
-    {htMetallurgists}  [ htCoalMine,       htGoldMine                                           ],// htSchool, htStore
-    {htMill}           [ htBakery,         htInn,            htMill                             ],
-    {htQuary}          [ htStore                                                                ],
-    {htSawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                   ],
-    {htSchool}         [ htMetallurgists,  htStore,          htSchool                           ],
-    {htSiegeWorkshop}  [ htIronSmithy,     htSawmill,        htStore,          htSiegeWorkshop  ],
-    {htStables}        [ htFarm,           htBarracks,       htStables                          ],
-    {htStore}          [ htInn,            htBarracks,       htSchool                           ],
-    {htSwine}          [ htFarm,           htButchers,       htSwine                            ],
-    {htTannery}        [ htArmorWorkshop,  htTannery,        htBarracks                         ],
-    {htTownHall}       [ htMetallurgists,  htStore,          htTownHall                         ],
-    {htWatchTower}     [ htStore                                                                ],
-    {htWeaponSmithy}   [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
-    {htWeaponWorkshop} [ htSawmill,        htBarracks,       htWeaponWorkshop                   ],
-    {htWineyard}       [ htInn,            htQuary                                              ],
-    {htWoodcutters}    [ htStore                                                                ]
+    {htMetallurgists}  [ htCoalMine,       htGoldMine                                                           ],// htSchool, htStore
+    {htMill}           [ htBakery,         htInn,            htMill                                             ],
+    {htQuary}          [ htStore                                                                                ],
+    {htSawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                                   ],
+    {htSchool}         [ htMetallurgists,  htStore,          htSchool                                           ],
+    {htSiegeWorkshop}  [ htIronSmithy,     htSawmill,        htStore,          htSiegeWorkshop                  ],
+    {htStables}        [ htFarm,           htStables,        htBarracks                                         ],
+    {htStore}          [ htInn,            htSchool,         htBarracks                                         ],
+    {htSwine}          [ htFarm,           htButchers,       htSwine                                            ],
+    {htTannery}        [ htArmorWorkshop,  htTannery,        htBarracks                                         ],
+    {htTownHall}       [ htMetallurgists,  htStore,          htTownHall                                         ],
+    {htWatchTower}     [ htStore                                                                                ],
+    {htWeaponSmithy}   [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine                       ],
+    {htWeaponWorkshop} [ htSawmill,        htWeaponWorkshop, htBarracks                                         ],
+    {htWineyard}       [ htInn,            htQuary,          htCoalMine                                         ],
+    {htWoodcutters}    [ htStore                                                                                ]
   );
 
 implementation
@@ -801,7 +801,7 @@ begin
       end;
       htQuary:
       begin
-        CheckStoneReserves(True);
+        CheckStoneReserves(True,0);
       end;
       htWatchTower:
       begin
@@ -1905,7 +1905,7 @@ begin
 end;
 
 
-procedure TKMCityPlanner.CheckStoneReserves(aForceToPlaceQuarry: Boolean = False);
+procedure TKMCityPlanner.CheckStoneReserves(aForceToPlaceQuarry: Boolean; aReqQuarryCnt: Integer);
 const
   HT = htQuary;
   MAX_DIST = 15;
@@ -1940,11 +1940,11 @@ begin
               end;
         // Find the most depleted house
         LowestIdx := 0;
-        for I := Low(CanMineCnt) to High(CanMineCnt) do
-          if (CanMineCnt[LowestIdx] > CanMineCnt[I])
+        for I := High(CanMineCnt) downto Low(CanMineCnt) do
+          if (CanMineCnt[LowestIdx] >= CanMineCnt[I])
             AND (fPlannedHouses[HT].Plans[I].House <> nil)
             AND not fPlannedHouses[HT].Plans[I].House.IsDestroyed then
-            LowestIdx := I;
+              LowestIdx := I;
         // Try to remove 1 quarry
         if (CanMineCnt[LowestIdx] < MIN_CNT) then
         begin
@@ -1961,21 +1961,22 @@ begin
                 StoneLocs.Delete(I);
           if CanBeReplaced then
           begin
+            // Copy stone locs
             CopySL := TKMPointTagList.Create();
             for I := 0 to StoneLocs.Count - 1 do
               CopySL.Add(StoneLocs.Items[I], StoneLocs.Tag[I]);
-            K := fPlannedHouses[HT].Count;
-            FindPlaceForQuary(CopySL);
-            // Demolish quarry only in case that new can be placed
-            if not aForceToPlaceQuarry then
+            // Try to place new quarry
+            if (aReqQuarryCnt >= 0) AND FindPlaceForQuary(CopySL) then
               with fPlannedHouses[HT] do
-                if (K < Count) then
-                begin
-                  Plans[ Count-1 ].HouseReservation := True; // Reserve houses so builder will init road
-                  if (Plans[LowestIdx].House <> nil) then
-                    Plans[LowestIdx].House.DemolishHouse(fOwner);
-                  RemovePlan(HT, LowestIdx);
-                end;
+                Plans[ Count-1 ].HouseReservation := True; // Reserve houses so builder will init road
+            // Demolish old quarry (in case that alternative is completed)
+            if not aForceToPlaceQuarry AND (aReqQuarryCnt < 0) then
+              with fPlannedHouses[HT] do
+              begin
+                if (Plans[LowestIdx].House <> nil) then
+                  Plans[LowestIdx].House.DemolishHouse(fOwner);
+                RemovePlan(HT, LowestIdx);
+              end;
           end
           else if aForceToPlaceQuarry then
             FindPlaceForQuary(StoneLocs);

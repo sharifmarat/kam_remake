@@ -41,13 +41,13 @@ var
 
 
 { KM_CityManagement }
-//{
-  GA_MANAGEMENT_CheckUnitCount_SerfCoef              : Single = 0.300717055797576;
-  GA_MANAGEMENT_CheckUnitCount_SerfLimit             : Single = 0.709280669689178;
-//}
-{
-  GA_MANAGEMENT_CheckUnitCount_SerfCoef              : Single = 0.393;
-  GA_MANAGEMENT_CheckUnitCount_SerfLimit             : Single = 0.825;
+//{ 2019-11-30
+  GA_MANAGEMENT_GoldShortage                         : Word =    8;
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit1            : Word =    9;
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit2            : Word =   35;
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit3            : Word =   50;
+  GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef        : Single =  2.9055855274;
+  GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef          : Single =  1.5343497992;
 //}
 
 
@@ -196,8 +196,8 @@ var
 
 { KM_CityPredictor }
 //{ 2019_11_20
-  GA_PREDICTOR_WareNeedPerAWorker_Stone              : Single = 0.65;
-  GA_PREDICTOR_WareNeedPerAWorker_Wood               : Single = 0.28;
+  GA_PREDICTOR_WareNeedPerAWorker_Stone              : Single = 0.7038065791;
+  GA_PREDICTOR_WareNeedPerAWorker_Wood               : Single = 0.2908146679;
 //}
 
 
