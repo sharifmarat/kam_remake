@@ -81,13 +81,16 @@ uses
   procedure KMSwapInt(var A,B: Smallint); overload;
   procedure KMSwapInt(var A,B: Word); overload;
   procedure KMSwapInt(var A,B: Integer); overload;
-  procedure KMSwapInt(var A,B: Cardinal); overload;
+  procedure KMSwapInt(var A,B: LongWord); overload;
 
   procedure KMSwapFloat(var A,B: Single); overload;
   procedure KMSwapFloat(var A,B: Double); overload;
-  // Extended == Double, so already declared error
+
+  //Extended == Double, so already declared error
   //https://forum.lazarus.freepascal.org/index.php?topic=29678.0
-  //procedure KMSwapFloat(var A,B: Extended); overload;
+  {$IFDEF WDC}
+  procedure KMSwapFloat(var A,B: Extended); overload;
+  {$ENDIF}
 
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
@@ -205,7 +208,7 @@ begin
   S:=A; A:=B; B:=S;
 end;
 
-procedure KMSwapInt(var A,B: Cardinal);
+procedure KMSwapInt(var A,B: LongWord);
 var S: cardinal;
 begin
   S:=A; A:=B; B:=S;
@@ -224,11 +227,13 @@ begin
   S:=A; A:=B; B:=S;
 end;
 
-//procedure KMSwapFloat(var A,B: Extended);
-//var S: Extended;
-//begin
-//  S:=A; A:=B; B:=S;
-//end;
+{$IFDEF WDC}
+procedure KMSwapFloat(var A,B: Extended);
+var S: Extended;
+begin
+  S:=A; A:=B; B:=S;
+end;
+{$ENDIF}
 
 
 procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
@@ -357,10 +362,16 @@ var
   newTime: Int64;
   factor: Double;
 begin
+  {$IFDEF FPC}
+  //Stub for now
+  Result := Int64(Trunc(Now * 24 * 60 * 60 * 1000000) mod High(Int64));
+  {$ENDIF}
+  {$IFDEF WDC}
   QueryPerformanceFrequency(freq);
   QueryPerformanceCounter(newTime);
   factor := 1000000 / freq; // Separate calculation to avoid "big Int64 * 1 000 000" overflow
   Result := Round(newTime * factor);
+  {$ENDIF}
 end;
 
 
