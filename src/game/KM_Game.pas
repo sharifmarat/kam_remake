@@ -102,6 +102,8 @@ type
     function PlayNextTick: Boolean;
     procedure UserAction(aActionType: TKMUserActionType);
     function GetReplayAutosaveEffectiveFrequency: Integer;
+
+    function DoSaveRandomChecks: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -1790,7 +1792,7 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
-  if gGameApp.GameSettings.DebugSaveRandomChecks and (gRandomCheckLogger <> nil) then
+  if DoSaveRandomChecks then
     gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
 
   gLog.AddTime('Saving game', True);
@@ -1970,6 +1972,9 @@ begin
     end;
 
     // SetSeed was there, I dont know the dependencies so please check if it is ok to include it in LoadGameStream
+
+    if DoSaveRandomChecks then
+      gRandomCheckLogger.LoadFromPath(ChangeFileExt(aPathName, EXT_SAVE_RNG_LOG_DOT));
 
     gLog.AddTime('Loading game', True);
   finally
@@ -2379,6 +2384,14 @@ begin
   finally
     fBlockGetPointer := True;
   end;
+end;
+
+
+function TKMGame.DoSaveRandomChecks: Boolean;
+begin
+  Result := gGameApp.GameSettings.DebugSaveRandomChecks
+            and SAVE_RANDOM_CHECKS
+            and (gRandomCheckLogger <> nil);
 end;
 
 
