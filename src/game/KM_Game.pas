@@ -102,6 +102,8 @@ type
     function PlayNextTick: Boolean;
     procedure UserAction(aActionType: TKMUserActionType);
     function GetReplayAutosaveEffectiveFrequency: Integer;
+
+    function DoSaveRandomChecks: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -850,6 +852,7 @@ begin
     begin
       Save('crashreport', UTCNow);
       AttachFile(SaveName('crashreport', EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('crashreport', EXT_SAVE_MAIN_TXT, IsMultiPlayerOrSpec)); //Todo Debug. remove before release
       AttachFile(SaveName('crashreport', EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
@@ -887,6 +890,7 @@ begin
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT));
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_REPLAY_DOT));
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_MAIN_DOT));
+    AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_MAIN_TXT_DOT)); //Todo Debug. remove before release
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_MP_LOCAL_DOT));
   end else if (fGameMode <> gmMapEd) then // no need autosaves for MapEd error...
     //For other game modes attach last autosaves
@@ -895,6 +899,7 @@ begin
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN_TXT, IsMultiPlayerOrSpec)); //Todo Debug. remove before release
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_RNG_LOG, IsMultiPlayerOrSpec));
     end;
@@ -1700,9 +1705,10 @@ end;
 
 
 //Saves the game in all its glory
-procedure TKMGame.SaveGameToFile(const aPathName: String; aTimestamp: TDateTime; const aMPLocalDataPathName: String = '');
+procedure TKMGame.SaveGameToFile(const aPathName: String; aTimestamp: TDateTime;
+                                 const aMPLocalDataPathName: String = '');
 var
-  SaveStream: TKMemoryStream;
+  SaveStream, SaveStreamTxt: TKMemoryStream;
   GameMPLocalData: TKMGameMPLocalData;
 begin
   if BLOCK_SAVE then // This must be here because of paraller Runner
@@ -1711,10 +1717,11 @@ begin
 
   Assert((fGameMode <> gmMapEd) and (ALLOW_SAVE_IN_REPLAY or not IsReplay), 'Saving from wrong state');
 
+  SaveStreamTxt := nil;
   if SAVE_GAME_AS_TEXT then
-    SaveStream := TKMemoryStreamText.Create
-  else
-    SaveStream := TKMemoryStreamBinary.Create;
+    SaveStreamTxt := TKMemoryStreamText.Create;
+
+  SaveStream := TKMemoryStreamBinary.Create;
 
   try
     SaveGameToStream(aTimestamp, SaveStream);
@@ -1743,10 +1750,16 @@ begin
             );
       end
     end;
-
     SaveStream.SaveToFile(aPathName); //Some 70ms for TPR7 map
+    if SAVE_GAME_AS_TEXT then
+    begin
+      SaveGameToStream(aTimestamp, SaveStreamTxt);
+      SaveStreamTxt.SaveToFile(aPathName + EXT_SAVE_TXT_DOT);
+    end;
   finally
     FreeAndNil(SaveStream);
+    if SAVE_GAME_AS_TEXT then
+      FreeAndNil(SaveStreamTxt);
   end;
 
   gLog.AddTime('Saving game end: ' + aPathName);
@@ -1779,7 +1792,7 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
-  if gGameApp.GameSettings.DebugSaveRandomChecks and (gRandomCheckLogger <> nil) then
+  if DoSaveRandomChecks then
     gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
 
   gLog.AddTime('Saving game', True);
@@ -1959,6 +1972,9 @@ begin
     end;
 
     // SetSeed was there, I dont know the dependencies so please check if it is ok to include it in LoadGameStream
+
+    if DoSaveRandomChecks then
+      gRandomCheckLogger.LoadFromPath(ChangeFileExt(aPathName, EXT_SAVE_RNG_LOG_DOT));
 
     gLog.AddTime('Loading game', True);
   finally
@@ -2368,6 +2384,14 @@ begin
   finally
     fBlockGetPointer := True;
   end;
+end;
+
+
+function TKMGame.DoSaveRandomChecks: Boolean;
+begin
+  Result := gGameApp.GameSettings.DebugSaveRandomChecks
+            and SAVE_RANDOM_CHECKS
+            and (gRandomCheckLogger <> nil);
 end;
 
 

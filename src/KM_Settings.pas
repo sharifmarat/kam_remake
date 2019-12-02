@@ -696,7 +696,7 @@ begin
     fMenu_SPSaveFileName    := F.ReadString('Menu', 'SPSaveFileName', '');
     fMenu_LobbyMapType      := F.ReadInteger('Menu', 'LobbyMapType', 0);
 
-    fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks',False);
+    fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks', True);
   finally
     F.Free;
   end;
