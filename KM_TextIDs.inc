@@ -165,7 +165,7 @@ TX_HOUSE_SCHOOL_NEXT_HINT = 150; //Next profession
 TX_HOUSE_SCHOOL_PREV_HINT = 151; //Previous profession
 TX_HOUSE_SCHOOL_TRAIN_HINT = 152; //Add to queue. Use RMB, Shift or Ctrl to modify the queue
 TX_HOUSE_SCHOOL_TRAIN_DISABLED_HINT = 707; //This unit type is not available
-TX_HOUSE_TOGGLE_DELIVERS_HINT = 153; //Switch between delivery modes of wares: demand / closed / offer. Use LMB/RMB to switch forward/backward
+TX_HOUSE_TOGGLE_DELIVERS_HINT = 153; //Switch between delivery modes of wares: demand / closed / offer. Use LMB / RMB to switch forward/backward
 
 TX_HOUSE_WARE_COSTS = 154; //Cost:
 TX_HOUSE_TOGGLE_REPAIR_HINT = 155; //Switch on/off house repair
@@ -307,7 +307,7 @@ TX_RESOURCES_ALL = 276; //All wares
 TX_RESOURCES_WARFARE = 277; //Warfare
 TX_RESOURCES_FOOD = 278; //Food
 
-TX_CREDITS_TEXT = 279; //JOYMANIA ENTERTAINMENT||PROGRAMMING:|Peter Ohlmann||GAME GRAPHICS:|Adam Sprys||LEVEL DESIGN:|Adam Sprys|Andrï¿½ Quaï¿½||SOUND EDITING AND MIXING:|Tonstudio Mannheim||MUSIC:|Gerd Hofmann|Joachim Schï¿½fer|Jï¿½rgen Rebhann|Klaus Staendike|Steffen Schï¿½ngel||ILLUSTRATIONS:|Boleslaw Kasza|Christoph Werner||TRANSLATION:|Ronnie Shankland|Patricia Bellantuono|Andrea Rumpelt|||ZUXXEZ ENTERTAINMENT AG||PRODUCER:|Uwe Schï¿½fer||MANUAL:|Peter Ohlmann|Uwe Schï¿½fer||BETA TESTING:|Peter Ohlmann|Adam Sprys|Alexandra Constandache|Dirk P. Hassinger|Achim Heidelauf|Uwe Schï¿½fer|Ingrid Schï¿½fer|Dirk U. Jantz|Ion Constandache|Yaman Egeli|Roman Eich|Iris Mocsnek|Anke Jantz|Paul Hassinger|Liza Hassinger||GAMES DIRECTOR:|Achim Heidelauf||PUBLISHED BY:|TopWare Interactive||CUTSCENES:||DIRECTION:|Slawomir Jedrzejewski||Kajetan Czarnecki|Wojciech Drazek|Daniel Duplaga|Rafal Januszkiewicz|Andrzej Rams|Piotr Rulka|Krzysztof Rybczynski|Grzegorz Wisniewski||VOICES:|Claus Boyen (Storyteller)||Tim Timmermann|Peter Houska|Dirk Mï¿½hlbach|Ralf Ditze|Gerhard Piske|Gernot Wassmann||ARTWORK:|Boleslaw Kasza|Adam Sprys||OPENING ANIMATION:|Uwe Schï¿½fer|Christian Bigalk|Additional 3D-Modelling:|Niels Horstmann||SPECIAL THANKS TO:|Tadeusz Zuber|Dieter Ohlmann|Alexandra Constandache|Ingrid Schï¿½fer
+TX_CREDITS_TEXT = 279; //JOYMANIA ENTERTAINMENT||PROGRAMMING:|Peter Ohlmann||GAME GRAPHICS:|Adam Sprys||LEVEL DESIGN:|Adam Sprys|AndrA© QuaAY||SOUND EDITING AND MIXING:|Tonstudio Mannheim||MUSIC:|Gerd Hofmann|Joachim SchA¤fer|JA?rgen Rebhann|Klaus Staendike|Steffen SchA?ngel||ILLUSTRATIONS:|Boleslaw Kasza|Christoph Werner||TRANSLATION:|Ronnie Shankland|Patricia Bellantuono|Andrea Rumpelt|||ZUXXEZ ENTERTAINMENT AG||PRODUCER:|Uwe SchA¤fer||MANUAL:|Peter Ohlmann|Uwe SchA¤fer||BETA TESTING:|Peter Ohlmann|Adam Sprys|Alexandra Constandache|Dirk P. Hassinger|Achim Heidelauf|Uwe SchA¤fer|Ingrid SchA¤fer|Dirk U. Jantz|Ion Constandache|Yaman Egeli|Roman Eich|Iris Mocsnek|Anke Jantz|Paul Hassinger|Liza Hassinger||GAMES DIRECTOR:|Achim Heidelauf||PUBLISHED BY:|TopWare Interactive||CUTSCENES:||DIRECTION:|Slawomir Jedrzejewski||Kajetan Czarnecki|Wojciech Drazek|Daniel Duplaga|Rafal Januszkiewicz|Andrzej Rams|Piotr Rulka|Krzysztof Rybczynski|Grzegorz Wisniewski||VOICES:|Claus Boyen (Storyteller)||Tim Timmermann|Peter Houska|Dirk MA?hlbach|Ralf Ditze|Gerhard Piske|Gernot Wassmann||ARTWORK:|Boleslaw Kasza|Adam Sprys||OPENING ANIMATION:|Uwe SchA¤fer|Christian Bigalk|Additional 3D-Modelling:|Niels Horstmann||SPECIAL THANKS TO:|Tadeusz Zuber|Dieter Ohlmann|Alexandra Constandache|Ingrid SchA¤fer
 
 TX_MENU_MISSION_CANCELED = 280; //Mission canceled
 TX_MENU_REPLAY_ENDED = 281; //Replay ended
@@ -459,7 +459,7 @@ TX_MAPED_TERRAIN_MAGIC_WATER_HINT = 671; //Magic water - sets the direction for 
 TX_MAPED_TERRAIN_EYEDROPPER_HINT = 965; //Eyedropper - select the type of tile under the cursor
 TX_MAPED_TERRAIN_FORCE_PAINT = 1197; //Force paint
 TX_MAPED_TERRAIN_FORCE_PAINT_HINT = 1198; //Force to override manually set tiles from tiles table while painting with brushes (if possible)
-TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT = 1199; //Magic brush - automatically fix all generated or missing tile transitions with chosen mask
+TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT = 1199; //Magic brush - using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
 TX_MAPED_TERRAIN_NO_MASK_HINT = 1200; //No mask - use exiting tiles for transitions
 TX_MAPED_TERRAIN_MASK_1_HINT = 1201; //Softest mask - use automatically created transitions
 TX_MAPED_TERRAIN_MASK_2_HINT = 1202; //Soft mask - use automatically created transitions
@@ -913,7 +913,7 @@ TX_KEY_FUNC_ERASE_PLAN = 1006; //Remove building/highlights
 TX_KEY_FUNC_SEL_NXT_BLD_UNIT_SAME_TYPE = 1007; //Select next house/unit with same type
 TX_KEY_FUNC_DBG_WINDOW = 1008; //Debug window
 TX_KEY_FUNC_SPECPANEL_DROPBOX_OPEN_CLOSE = 1258; //Open/Close spectator stats panel
-TX_KEY_FUNC_REPLAY_PLAY_NEXT_TICK = 1312; //
+TX_KEY_FUNC_REPLAY_PLAY_NEXT_TICK = 1312; //Play next tick in replay
 TX_KEY_FUNC_SPECTATE_PLAYER_1 = 1009; //Spectate player 1
 TX_KEY_FUNC_SPECTATE_PLAYER_2 = 1010; //Spectate player 2
 TX_KEY_FUNC_SPECTATE_PLAYER_3 = 1011; //Spectate player 3
@@ -954,7 +954,7 @@ TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_5 = 1133; //Sub-menu action 5
 TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_6 = 1134; //Sub-menu action 6
 TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_7 = 1135; //Sub-menu action 7
 TX_KEY_FUNC_MAPEDIT_OBJ_PALETTE = 1020; //Objects palette
-TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR = 1021; //Universal erasor
+TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR = 1021; //Universal eraser
 TX_KEY_FUNC_MAPEDIT_PAINT_BUCKET = 1136; //Paint bucket (change owner)
 TX_KEY_FUNC_UNKNOWN = 903; //~~~ Unknown value
 TX_KEY_UNASSIGNABLE = 902; //Ctrl and Shift are unassignable
@@ -1105,7 +1105,7 @@ TX_MAPED_MAP_RESIZE = 1068; //Resize Map
 TX_MAPED_MAP_RESIZE_MOVE_BORDERS = 1069; //Move borders:
 TX_MAPED_MAP_RESIZE_AND_SAVE = 1070; //Resize and Save
 TX_MAPED_MAP_RESIZE_AND_SAVE_HINT = 1071; //Resize map and then save it
-TX_MAPED_MAP_RESIZE_CONFIRM_TITLE = 1072; //
+TX_MAPED_MAP_RESIZE_CONFIRM_TITLE = 1072; //Map resize
 TX_MAPED_MAP_RESIZE_CONFIRM = 1073; //Are you sure want to resize the map?||It will automatically override current map
 TX_MAPED_MAP_RESIZE_NOT_AVAIL = 1074; //Resize is not available||You need to save new map first
 TX_MAPED_MAP_RESIZE_CURR_MAP_SIZE = 1110; //Current map size:
@@ -1127,11 +1127,11 @@ TX_MAPED_MAP_QUICK_PLAY_SAVE_AND_START_HINT = 1083; //Save map and start game fo
 TX_MAPED_BLOCK_UNITS_IN_BARRACKS = 1084; //In Barracks:
 TX_MAPED_BLOCK_UNITS_IN_TOWNHALL = 1085; //In TownHall:
 
-TX_MAPED_TERRAIN_ROTATE_TILE = 1086; //Rotate tile
+TX_MAPED_TERRAIN_ROTATE_TILE = 1086; //Rotate tile on map
 TX_MAPED_TERRAIN_OBJECTS_PALETTE = 1087; //Objects palette
 TX_MAPED_TERRAIN_CLOSE_PALETTE = 1088; //Close palette
 TX_MAPED_UNITS_REMOVE_HINT = 1089; //Remove units/groups
-TX_MAPED_TERRAIN_TILE_ID_EDIT_HINT = 1262; //Enter tile ID to select it
+TX_MAPED_TERRAIN_TILE_ID_EDIT_HINT = 1262; //Search tile by ID 
 
 TX_GAME_SETTINGS_REPLAY_AUTOPAUSE = 1090; //Replay|autopause
 TX_GAME_SETTINGS_REPLAY_AUTOPAUSE_HINT = 1091; //Automatically pause replay when peacetime ends
@@ -1172,7 +1172,7 @@ TX_MAPED_MISSION_PARAMETERS_BTN_HINT = 1146; //Modify mission parameters
 TX_MAPED_MISSION_PARAMETERS_TITLE = 1147; //Mission parameters
 TX_MAPED_MISSION_AUTHOR = 1148; //Author
 TX_MAPED_MISSION_SMALL_DESC = 1149; //Small description
-TX_MAPED_MISSION_BIG_DESC = 1150; //Big description
+TX_MAPED_MISSION_BIG_DESC = 1150; //Long description
 TX_MAPED_MISSION_LIBX_TEXT_ID = 1151; //Libx text ID
 TX_MAPED_MISSION_PLAYABLE_AS_SP_HINT = 1152; //This map will be always visible in singleplayer maps list
 TX_MAPED_MISSION_BLOCK_TEAM_SEL = 1153; //Block team selection
@@ -1203,7 +1203,7 @@ TX_MISSION_DIFFICULTY_EASY3 = 1314; //Very easy
 TX_MISSION_DIFFICULTY_NORMAL = 1175; //Normal
 TX_MISSION_DIFFICULTY_HARD1 = 1176; //Hard
 TX_MISSION_DIFFICULTY_HARD2 = 1315; //Harder
-TX_MISSION_DIFFICULTY_HARD3 = 1316; //Very ard
+TX_MISSION_DIFFICULTY_HARD3 = 1316; //Very hard
 
 TX_MAPED_MISSION_DIFFICULTY_LEVELS = 1177; //Difficulty levels
 TX_MAPED_MISSION_DIFFICULTY_LEVELS_HINT = 1178; //Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty
@@ -1223,9 +1223,9 @@ TX_PLAYERS_COLOR_MODE_CAPTION = 1248; //Players colors:
 TX_PLAYERS_COLOR_MODE_DEFAULT = 1249; //Default
 TX_PLAYERS_COLOR_MODE_ALLY_ENEMY = 1250; //Ally / Enemy
 TX_PLAYERS_COLOR_MODE_TEAMS = 1251; //Teams
-TX_PLAYERS_COLOR_MODE_DEFAULT_HINT = 1252; //Show initial players colors
-TX_PLAYERS_COLOR_MODE_ALLY_ENEMY_HINT = 1253; //Show self / ally / enemy players colors
-TX_PLAYERS_COLOR_MODE_TEAMS_HINT = 1254; //Show teams colors
+TX_PLAYERS_COLOR_MODE_DEFAULT_HINT = 1252; //Show player colors according to their choice in lobby
+TX_PLAYERS_COLOR_MODE_ALLY_ENEMY_HINT = 1253; //Show 3 different colors (yours, allied, hostile) for citizens and buildings
+TX_PLAYERS_COLOR_MODE_TEAMS_HINT = 1254; //Show colors according to team membership
 
 TX_LOBBY_ALERT_NOT_READY = 1189; //[$404040]Host is ready to start. Please press '[][$0707FF]%s[][$404040]'[]
 TX_LOBBY_ALERT_READY_BTN = 1190; //Ask to press Ready
@@ -1245,7 +1245,7 @@ TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1208; //Additional brush options
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN = 1209; //Fix terrain brushes
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1210; //Try to repair internal terrain information to make brushes work
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE = 1211; //Fix terrain brushes
-TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|in spots where manual tiles were used
 
 TX_MAPED_PLAYERS_DEFAULT_SHORT = 1213; //Def.
 
@@ -1277,17 +1277,17 @@ TX_UNIT_TASK_DISMISS_HUNGRY_HINT = 1228; //Dismiss is not available for hungry u
 TX_PLAYER_AFK_MESSAGE = 1234; //%s is away from keyboard for last %s [$00B0FF]minutes[]
 
 TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND = 1236; //The procedure [ %s ] declared for the script console command /%s was not found
-TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE = 1237; //Wrong parameter type for script command /%s: [%s]
-TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1238; //Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s]
-TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS = 1239; //Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
+TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE = 1237; //Wrong parameter type for script console command /%s: [%s]
+TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1238; //Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ]
+TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS = 1239; //Too many parameters for script command /%s: [ %s ]. Max number of parameters is [ %s ] (including mandatory HandID parameter)
 
-TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1240; //Wrong parameters for script command /%s. Expected parameters types are: [%s]
+TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1240; //Wrong parameters for script command /%s. Expected parameters types are: [ %s ]
 TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS = 1241; //Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
 TX_SCRIPT_CONSOLE_CMD_CALLED = 1242; //Command called: /%s(%s)
 TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR = 1243; //Error while calling script command /%s(%s)
 TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 
-TX_CHAT_ACTIONS_ALLOWED_HINT = 1245; //Enable/Disable copy-paste from chat window and chat history
+TX_CHAT_ACTIONS_ALLOWED_HINT = 1245; //Enable/Disable chat history and copy from chat window
 
 TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
 
@@ -1297,7 +1297,7 @@ TX_SPECTATOR_PANEL_CITIZENS_HOUSE_WORKERS = 1257; //Citizens (Others)
 TX_MULTIPLAYER_WAITING_DC_PLAYERS_DATA = 964; //Waiting for disconnected players data:
 
 TX_HOUSE_DELIVERY_PROHIBITED_HINT = 1259; //Deliver %s is prohibited
-TX_HOUSE_TAKEOUT_PROHIBITED_HINT = 1260; //Take out %s is prohibited while in the "offer" delivery mode
+TX_HOUSE_TAKEOUT_PROHIBITED_HINT = 1260; //Take out '%s' is prohibited while in the 'offer' delivery mode
 TX_HOUSE_BARRACKS_NOT_ACCEPT_RECRUIT_HINT = 1261; //Recruit is not allowed to get into Barracks
 
 TX_MAPED_RMG_BUTTON_TITLE = 1263; //RMG Settings
@@ -1348,5 +1348,5 @@ TX_MAPED_RMG_SETTINGS_BASIC_TILES = 1307; //Basic tiles
 TX_MAPED_RMG_SETTINGS_CELLULAR_AUTOMATON = 1308; //Cellular automaton
 TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED = 1309; //New Random Seed
 TX_MAPED_RMG_SETTINGS_GENERATE_MAP = 1310; //Generate map
-TX_MAPED_RMG_SETTINGS_MAP_SIZE = 1311; //Map size
+TX_MAPED_RMG_SETTINGS_MAP_SIZE = 1311; //Map size:
 

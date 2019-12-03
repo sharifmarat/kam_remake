@@ -149,7 +149,7 @@
 150:Next profession
 151:Previous profession
 152:Add to queue. Use RMB, Shift or Ctrl to modify the queue
-153:Switch between delivery modes of wares: demand / closed / offer. Use LMB/RMB to switch forward/backward
+153:Switch between delivery modes of wares: demand / closed / offer. Use LMB / RMB to switch forward/backward
 154:Cost:
 155:Switch on/off house repair
 156:Building not available at this time
@@ -1020,6 +1020,7 @@
 1069:Move borders:
 1070:Resize and Save
 1071:Resize map and then save it
+1072:Map resize
 1073:Are you sure want to resize the map?||It will automatically override current map
 1074:Resize is not available||You need to save new map first
 1075:Change owner for object
@@ -1184,15 +1185,15 @@
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
 1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
 1236:The procedure [ %s ] declared for the script console command /%s was not found
-1237:Wrong parameter type for script command /%s: [%s]
-1238:Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s]
-1239:Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
-1240:Wrong parameters for script command /%s. Expected parameters types are: [%s]
+1237:Wrong parameter type for script console command /%s: [%s]
+1238:Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ]
+1239:Too many parameters for script command /%s: [ %s ]. Max number of parameters is [ %s ] (including mandatory HandID parameter)
+1240:Wrong parameters for script command /%s. Expected parameters types are: [ %s ]
 1241:Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
 1242:Command called: /%s(%s)
 1243:Error while calling script command /%s(%s)
 1244:Script console command /%s not found
-1245:Enable/Disable copy-paste from chat window and chat history
+1245:Enable/Disable chat history and copy from chat window
 1246:Save replay state to be able to load while watching this replay
 1247:Load replay at %s
 1248:Players colors:
@@ -1207,9 +1208,9 @@
 1257:Citizens (Others)
 1258:Open/Close spectator stats panel
 1259:Deliver %s is prohibited
-1260:Take out %s is prohibited while in the "offer" delivery mode
+1260:Take out '%s' is prohibited while in the 'offer' delivery mode
 1261:Recruit is not allowed to get into Barracks
-1262:Enter tile ID to select it
+1262:Search tile by ID 
 1263:RMG Settings
 1264:Random map generator settings
 1265:Random Map Generator - Settings
