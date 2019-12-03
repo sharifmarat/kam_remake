@@ -288,6 +288,7 @@ const
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
 
+  SERVER_DEFAULT_UDP_SCAN_PORT = 56788;
   EMPTY_ROOM_DEFAULT_GAME_REVISION = 0; //Placeholder for game revision in room
 
   LOC_RANDOM = 0;

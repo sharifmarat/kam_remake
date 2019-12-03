@@ -136,6 +136,7 @@ type
 
     //Server
     fServerPort: string;
+    fServerUDPScanPort: Word;
     fMasterServerAddress: string;
     fServerName: AnsiString;
     fMasterAnnounceInterval: Integer;
@@ -228,6 +229,7 @@ type
     procedure SetMasterServerAddress(const aValue: string);
     procedure SetServerName(const aValue: AnsiString);
     procedure SetServerPort(const aValue: string);
+    procedure SetServerUDPScanPort(const aValue: Word);
     procedure SetServerWelcomeMessage(const aValue: UnicodeString);
     procedure SetAnnounceServer(aValue: Boolean);
     procedure SetAutoKickTimeout(aValue: Integer);
@@ -325,6 +327,7 @@ type
 
     //Server
     property ServerPort: string read fServerPort write SetServerPort;
+    property ServerUDPScanPort: Word read fServerUDPScanPort write SetServerUDPScanPort;
     property MasterServerAddress: string read fMasterServerAddress write SetMasterServerAddress;
     property ServerName: AnsiString read fServerName write SetServerName;
     property MasterAnnounceInterval: Integer read fMasterAnnounceInterval write SetMasterAnnounceInterval;
@@ -648,6 +651,8 @@ begin
     fFlashOnMessage         := F.ReadBool   ('Multiplayer','FlashOnMessage',True);
 
     fServerPort             := F.ReadString ('Server','ServerPort','56789');
+    fServerUDPScanPort      := F.ReadInteger('Server','ServerUDPScanPort',SERVER_DEFAULT_UDP_SCAN_PORT);
+
     //We call it MasterServerAddressNew to force it to update in everyone's .ini file when we changed address.
     //If the key stayed the same then everyone would still be using the old value from their settings.
     fMasterServerAddress    := F.ReadString ('Server','MasterServerAddressNew','http://kam.hodgman.id.au/');
@@ -771,6 +776,7 @@ begin
     F.WriteString ('Server','ServerName',                   '''' + UnicodeString(fServerName) + ''''); //Add single quotes for server name
     F.WriteString ('Server','WelcomeMessage',               {$IFDEF FPC} UTF8Encode {$ENDIF}(fServerWelcomeMessage));
     F.WriteString ('Server','ServerPort',                   fServerPort);
+    F.WriteInteger('Server','ServerUDPScanPort',            fServerUDPScanPort);
     F.WriteBool   ('Server','AnnounceDedicatedServer',      fAnnounceServer);
     F.WriteInteger('Server','MaxRooms',                     fMaxRooms);
     F.WriteInteger('Server','PacketsAccumulatingDelay',     fServerPacketsAccumulatingDelay);
@@ -1191,6 +1197,12 @@ end;
 procedure TKMGameSettings.SetServerPort(const aValue: string);
 begin
   fServerPort := aValue;
+  Changed;
+end;
+
+procedure TKMGameSettings.SetServerUDPScanPort(const aValue: Word);
+begin
+  fServerUDPScanPort := aValue;
   Changed;
 end;
 

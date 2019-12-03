@@ -61,6 +61,7 @@ begin
                                                 fSettings.AutoKickTimeout,
                                                 fSettings.PingInterval,
                                                 fSettings.MasterAnnounceInterval,
+                                                fSettings.ServerUDPScanPort,
                                                 fSettings.MasterServerAddress,
                                                 fSettings.HTMLStatusFile,
                                                 fSettings.ServerWelcomeMessage,

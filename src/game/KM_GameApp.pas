@@ -972,6 +972,7 @@ begin
                                         fGameSettings.AutoKickTimeout,
                                         fGameSettings.PingInterval,
                                         fGameSettings.MasterAnnounceInterval,
+                                        fGameSettings.ServerUDPScanPort,
                                         fGameSettings.ServerDynamicFOW,
                                         fGameSettings.ServerMapsRosterEnabled,
                                         fGameSettings.ServerMapsRosterStr,

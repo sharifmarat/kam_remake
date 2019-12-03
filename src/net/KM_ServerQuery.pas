@@ -122,7 +122,7 @@ type
 
     function ActiveQueryCount: Integer;
   public
-    constructor Create(const aMasterServerAddress: String);
+    constructor Create(const aMasterServerAddress: String; aServerUDPScanPort: Word);
     destructor Destroy; override;
 
     property OnListUpdated: TNotifyEvent read fOnListUpdated write fOnListUpdated;
@@ -397,7 +397,7 @@ end;
 
 
 { TKMServerQuery }
-constructor TKMServerQuery.Create(const aMasterServerAddress: string);
+constructor TKMServerQuery.Create(const aMasterServerAddress: String; aServerUDPScanPort: Word);
 var
   I: Integer;
 begin
@@ -406,7 +406,7 @@ begin
   fMasterServer.OnServerList := ReceiveServerList;
   fMasterServer.OnAnnouncements := ReceiveAnnouncements;
 
-  fUDPScanner := TKMNetUDPScan.Create;
+  fUDPScanner := TKMNetUDPScan.Create(aServerUDPScanPort);
   fUDPScanner.OnServerDetected := DetectUDPServer;
 
   fSortMethod := ssmByStateAsc; //Default sorting is by state
