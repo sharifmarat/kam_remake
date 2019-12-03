@@ -707,7 +707,9 @@ begin
       gSoundPlayer.PlayWarrior(Group.UnitType, spMove);
     end;
   end;
-  if ((gMySpectator.Selected is TKMHouseBarracks) or (gMySpectator.Selected is TKMHouseWoodcutters)) and not fPlacingBeacon
+  if  ((gMySpectator.Selected is TKMHouseBarracks)
+    or (gMySpectator.Selected is TKMHouseTownHall)
+    or (gMySpectator.Selected is TKMHouseWoodcutters)) and not fPlacingBeacon
     and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
   begin
     if gTerrain.Route_CanBeMade(TKMHouse(gMySpectator.Selected).PointBelowEntrance, Loc, tpWalk, 0) then
