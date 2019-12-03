@@ -112,13 +112,13 @@ type
     fServerName: AnsiString;
     fKickTimeout: Word;
     fRoomCount: Integer;
-    fEmptyGameInfo: TMPGameInfo;
+    fEmptyGameInfo: TKMPGameInfo;
     fGameFilter: TKMPGameFilter;
     fRoomInfo: array of record
                          HostHandle: TKMNetHandleIndex;
                          Password: AnsiString;
                          BannedIPs: array of String;
-                         GameInfo: TMPGameInfo;
+                         GameInfo: TKMPGameInfo;
                        end;
 
     fOnStatusMessage: TGetStrProc;
@@ -226,7 +226,7 @@ end;
 
 function TKMClientsList.GetItem(Index: TKMNetHandleIndex): TKMServerClient;
 begin
-  Assert(InRange(Index,0,fCount-1),'Tried to access invalid client index');
+  Assert(InRange(Index, 0, fCount - 1),'Tried to access invalid client index');
   Result := fItems[Index];
 end;
 
@@ -235,23 +235,24 @@ procedure TKMClientsList.AddPlayer(aHandle: TKMNetHandleIndex; aRoom: Integer);
 begin
   inc(fCount);
   SetLength(fItems, fCount);
-  fItems[fCount-1] := TKMServerClient.Create(aHandle, aRoom);
+  fItems[fCount - 1] := TKMServerClient.Create(aHandle, aRoom);
 end;
 
 
 procedure TKMClientsList.RemPlayer(aHandle: TKMNetHandleIndex);
-var i,ID:integer;
+var
+  I,ID: Integer;
 begin
   ID := -1; //Convert Handle to Index
-  for i:=0 to fCount-1 do
-    if fItems[i].Handle = aHandle then
-      ID := i;
+  for I := 0 to fCount - 1 do
+    if fItems[I].Handle = aHandle then
+      ID := I;
 
   Assert(ID <> -1, 'TKMClientsList. Can not remove player');
 
   fItems[ID].Free;
-  for i:=ID to fCount-2 do
-    fItems[i] := fItems[i+1]; //Shift only pointers
+  for I := ID to fCount - 2 do
+    fItems[I] := fItems[I+1]; //Shift only pointers
 
   dec(fCount);
   SetLength(fItems, fCount);
@@ -259,10 +260,11 @@ end;
 
 
 procedure TKMClientsList.Clear;
-var i:integer;
+var
+  I: Integer;
 begin
-  for i:=0 to fCount-1 do
-    FreeAndNil(fItems[i]);
+  for I := 0 to fCount - 1 do
+    FreeAndNil(fItems[I]);
   fCount := 0;
 end;
 
@@ -286,7 +288,7 @@ constructor TKMNetServer.Create(aMaxRooms, aKickTimeout: Word; const aHTMLStatus
                                 aPacketsAccDelay: Integer = -1);
 begin
   inherited Create;
-  fEmptyGameInfo := TMPGameInfo.Create;
+  fEmptyGameInfo := TKMPGameInfo.Create;
   fEmptyGameInfo.GameTime := -1;
 
   fGameFilter := TKMPGameFilter.Create;
@@ -352,7 +354,7 @@ end;
 //There's an error in fServer, perhaps fatal for multiplayer.
 procedure TKMNetServer.Status(const S: string);
 begin
-  if Assigned(fOnStatusMessage) then fOnStatusMessage('Server: '+S);
+  if Assigned(fOnStatusMessage) then fOnStatusMessage('Server: ' + S);
 end;
 
 
@@ -426,7 +428,7 @@ begin
       //If they don't respond within a reasonable time, kick them
       if GetTimeSince(fClientList[I].fPingStarted) > fKickTimeout*1000 then
       begin
-        Status('Client timed out '+inttostr(fClientList[I].fHandle));
+        Status('Client timed out ' + inttostr(fClientList[I].fHandle));
         SendMessage(fClientList[I].fHandle, mkKicked, TX_NET_KICK_TIMEOUT, True);
         fServer.Kick(fClientList[I].fHandle);
       end;
@@ -516,7 +518,7 @@ begin
     end
     else
       //If the room is outside the valid range
-      if not InRange(aRoom,0,fRoomCount-1) then
+      if not InRange(aRoom, 0, fRoomCount - 1) then
       begin
         SendMessage(aHandle, mkRefuseToJoin, TX_NET_INVALID_ROOM, True);
         fServer.Kick(aHandle);
@@ -524,7 +526,7 @@ begin
       end;
 
   //Make sure the client is not banned by host from this room
-  for I:=0 to Length(fRoomInfo[aRoom].BannedIPs)-1 do
+  for I := 0 to Length(fRoomInfo[aRoom].BannedIPs) - 1 do
     if fRoomInfo[aRoom].BannedIPs[I] = fServer.GetIP(aHandle) then
     begin
       SendMessage(aHandle, mkRefuseToJoin, TX_NET_BANNED_BY_HOST, True);
@@ -532,14 +534,14 @@ begin
       Exit;
     end;
 
-  Status('Client '+inttostr(aHandle)+' has connected to room '+inttostr(aRoom));
+  Status('Client ' + inttostr(aHandle) + ' has connected to room ' + inttostr(aRoom));
   fClientList.GetByHandle(aHandle).Room := aRoom;
 
   //Let the first client be a Host
   if fRoomInfo[aRoom].HostHandle = NET_ADDRESS_EMPTY then
   begin
     fRoomInfo[aRoom].HostHandle := aHandle;
-    Status('Host rights assigned to '+IntToStr(fRoomInfo[aRoom].HostHandle));
+    Status('Host rights assigned to ' + IntToStr(fRoomInfo[aRoom].HostHandle));
   end;
 
   M := TKMemoryStreamBinary.Create;
@@ -555,8 +557,8 @@ end;
 
 procedure TKMNetServer.BanPlayerFromRoom(aHandle: TKMNetHandleIndex; aRoom:integer);
 begin
-  SetLength(fRoomInfo[aRoom].BannedIPs, Length(fRoomInfo[aRoom].BannedIPs)+1);
-  fRoomInfo[aRoom].BannedIPs[Length(fRoomInfo[aRoom].BannedIPs)-1] := fServer.GetIP(aHandle);
+  SetLength(fRoomInfo[aRoom].BannedIPs, Length(fRoomInfo[aRoom].BannedIPs) + 1);
+  fRoomInfo[aRoom].BannedIPs[Length(fRoomInfo[aRoom].BannedIPs) - 1] := fServer.GetIP(aHandle);
 end;
 
 
@@ -570,7 +572,7 @@ begin
   Client := fClientList.GetByHandle(aHandle);
   if Client = nil then
   begin
-    Status('Warning: Client '+inttostr(aHandle)+' was already disconnected');
+    Status('Warning: Client ' + inttostr(aHandle) + ' was already disconnected');
     exit;
   end;
   Room := Client.Room;
@@ -591,7 +593,7 @@ begin
       fRoomInfo[Room].HostHandle := NET_ADDRESS_EMPTY; //Room is now empty so we don't need a new host
       fRoomInfo[Room].Password := '';
       fRoomInfo[Room].GameInfo.Free;
-      fRoomInfo[Room].GameInfo := TMPGameInfo.Create;
+      fRoomInfo[Room].GameInfo := TKMPGameInfo.Create;
       SetLength(fRoomInfo[Room].BannedIPs, 0);
     end
     else
@@ -606,7 +608,7 @@ begin
       SendMessageToRoom(mkReassignHost, Room, M);
       M.Free;
 
-      Status('Reassigned hosting rights for room '+inttostr(Room)+' to '+inttostr(fRoomInfo[Room].HostHandle));
+      Status('Reassigned hosting rights for room ' + inttostr(Room) + ' to ' + inttostr(fRoomInfo[Room].HostHandle));
     end;
   end;
   SaveHTMLStatus;
@@ -682,7 +684,7 @@ procedure TKMNetServer.SendMessageToRoom(aKind: TKMessageKind; aRoom: Integer; a
 var I: Integer;
 begin
   //Iterate backwards because sometimes calling Send results in ClientDisconnect (LNet only?)
-  for I := fClientList.Count-1 downto 0 do
+  for I := fClientList.Count - 1 downto 0 do
     if fClientList[i].Room = aRoom then
       SendMessage(fClientList[i].Handle, aKind, aStream);
 end;
@@ -1040,35 +1042,35 @@ end;
 
 procedure TKMNetServer.SaveToStream(aStream: TKMemoryStreamBinary);
 var
-  i, RoomsNeeded, EmptyRoomID: integer;
+  I, RoomsNeeded, EmptyRoomID: Integer;
   NeedEmptyRoom: boolean;
 begin
   RoomsNeeded := 0;
-  for i:=0 to fRoomCount-1 do
-    if GetRoomClientsCount(i) > 0 then
-      inc(RoomsNeeded);
+  for I := 0 to fRoomCount - 1 do
+    if GetRoomClientsCount(I) > 0 then
+      Inc(RoomsNeeded);
 
   if RoomsNeeded < fMaxRooms then
   begin
-    inc(RoomsNeeded); //Need 1 empty room at the end, if there is space
-    NeedEmptyRoom := true;
+    Inc(RoomsNeeded); //Need 1 empty room at the end, if there is space
+    NeedEmptyRoom := True;
   end
   else
-    NeedEmptyRoom := false;
+    NeedEmptyRoom := False;
 
   aStream.Write(RoomsNeeded);
   EmptyRoomID := fRoomCount;
-  for i:=0 to fRoomCount-1 do
+  for I := 0 to fRoomCount - 1 do
   begin
-    if GetRoomClientsCount(i) = 0 then
+    if GetRoomClientsCount(I) = 0 then
     begin
       if EmptyRoomID = fRoomCount then
-        EmptyRoomID := i;
+        EmptyRoomID := I;
     end
     else
     begin
-      aStream.Write(i); //RoomID
-      fRoomInfo[i].GameInfo.SaveToStream(aStream);
+      aStream.Write(I); //RoomID
+      fRoomInfo[I].GameInfo.SaveToStream(aStream);
     end;
   end;
   //Write out the empty room at the end
@@ -1089,7 +1091,7 @@ begin
 end;
 
 
-function TKMNetServer.AddNewRoom:boolean;
+function TKMNetServer.AddNewRoom: Boolean;
 begin
   if fRoomCount = fMaxRooms then
   begin
@@ -1101,7 +1103,7 @@ begin
   SetLength(fRoomInfo,fRoomCount);
   fRoomInfo[fRoomCount-1].HostHandle := NET_ADDRESS_EMPTY;
   fRoomInfo[fRoomCount-1].Password := '';
-  fRoomInfo[fRoomCount-1].GameInfo := TMPGameInfo.Create;
+  fRoomInfo[fRoomCount-1].GameInfo := TKMPGameInfo.Create;
   SetLength(fRoomInfo[fRoomCount-1].BannedIPs, 0);
 end;
 

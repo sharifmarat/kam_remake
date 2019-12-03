@@ -165,6 +165,7 @@ type
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind); overload;
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aStream: TKMemoryStreamBinary); overload;
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aParam: Integer); overload;
+//    procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aParams: array of Integer);
     procedure PacketSendInd(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aIndexOnServer: TKMNetHandleIndex);
     procedure PacketSendA(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aText: AnsiString);
     procedure PacketSendW(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aText: UnicodeString);
@@ -2352,6 +2353,26 @@ begin
 end;
 
 
+//procedure TKMNetworking.PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aParams: array of Integer);
+//var
+//  I: Integer;
+//  M: TKMemoryStreamBinary;
+//begin
+//  Assert(NetPacketType[aKind] = pfBinary); //Several numbers are considered as binary
+//
+//  LogPacket(True, aKind, aRecipient);
+//
+//  M := TKMemoryStreamBinary.Create;
+//  M.Write(aKind, SizeOf(TKMessageKind));
+//
+//  for I := 0 to Length(aParams) - 1 do
+//    M.Write(aParams[I]);
+//
+//  fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
+//  M.Free;
+//end;
+
+
 procedure TKMNetworking.PacketSendInd(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aIndexOnServer: TKMNetHandleIndex);
 var
   M: TKMemoryStreamBinary;
@@ -2494,14 +2515,14 @@ end;
 //Tell the server what we know about the game
 procedure TKMNetworking.AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 var
-  MPGameInfo: TMPGameInfo;
+  MPGameInfo: TKMPGameInfo;
   M: TKMemoryStreamBinary;
   I: Integer;
 begin
   //Only one player per game should send the info - Host
   if not IsHost then Exit;
 
-  MPGameInfo := TMPGameInfo.Create;
+  MPGameInfo := TKMPGameInfo.Create;
   try
     if (fNetGameState in [lgsLobby, lgsLoading]) then
     begin

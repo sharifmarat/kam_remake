@@ -232,7 +232,7 @@ end;
 
 procedure TFormMain.FillPlayersList;
 var i:           Integer;
-    RowInfo:    String;
+    RowInfo:     String;
 
 begin
   Players := TList.Create;
@@ -242,9 +242,9 @@ begin
   PlayersList.Items.Clear;
 
   //then we read each row and add to list
-  for i:=0 to Players.Count-1 do
+  for i := 0 to Players.Count - 1 do
   begin
-    RowInfo := TMPGameInfo(Players[i]).GetFormattedTime;// + IntToStr(TKMGameInfo(Players[i]).PlayerCount);
+    RowInfo := TKMPGameInfo(Players[i]).GetFormattedTime;// + IntToStr(TKMGameInfo(Players[i]).PlayerCount);
     PlayersList.Items.Add(RowInfo);
   end;
 

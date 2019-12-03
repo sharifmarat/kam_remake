@@ -96,8 +96,8 @@ type
 
   TKMPlayerColorMode = (pcmNone, pcmDefault, pcmAllyEnemy, pcmTeams);
 
-  const
-    WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');
+const
+  WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');
 
 implementation
 
