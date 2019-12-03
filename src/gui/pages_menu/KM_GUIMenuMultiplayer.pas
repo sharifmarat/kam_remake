@@ -530,9 +530,9 @@ begin
 
       //if server was selected, we need to select it again, because TKMColumnListBox was cleared
       if fServerSelected
-      and (R.RoomID = fSelectedRoomInfo.RoomID)
-      and (S.IP = fSelectedServerInfo.IP)
-      and (S.Port = fSelectedServerInfo.Port) then
+        and (R.RoomID = fSelectedRoomInfo.RoomID)
+        and (S.IP = fSelectedServerInfo.IP)
+        and (S.Port = fSelectedServerInfo.Port) then
       begin
         ColumnBox_Servers.ItemIndex := I;
         MP_ServersClick(nil); //Shows info about this selected server
