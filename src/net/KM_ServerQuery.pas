@@ -23,6 +23,7 @@ type
 
   TKMRoomInfo = record
     ServerIndex: Integer; //Points to some TKMServerInfo in TKMServerList
+    GameRevision: TKMGameRevision;
     RoomID: Integer;
     OnlyRoom: Boolean; //Is this the only room in the server?
     GameInfo: TKMPGameInfo;
@@ -65,7 +66,7 @@ type
   private
     fCount: Integer;
     fRooms: array of TKMRoomInfo;
-    procedure AddRoom(aServerIndex, aRoomID: Integer; aOnlyRoom: Boolean; aGameInfoStream: TKMemoryStreamBinary);
+    procedure AddRoom(aServerIndex, aRoomID: Integer; aOnlyRoom: Boolean; aGameRev: TKMGameRevision; aGameInfoStream: TKMemoryStreamBinary);
     function GetRoom(aIndex: Integer): TKMRoomInfo;
     procedure SetRoom(aIndex: Integer; aValue: TKMRoomInfo);
     procedure Clear;
@@ -114,7 +115,7 @@ type
     procedure ReceiveAnnouncements(const S: String);
 
     procedure ServerDataReceive(aServerID: Integer; aStream: TKMemoryStreamBinary; aPingStarted: Cardinal);
-    procedure QueryDone(Sender:TObject);
+    procedure QueryDone(Sender: TObject);
 
     procedure Sort;
     procedure SetSortMethod(aMethod: TServerSortMethod);
@@ -153,10 +154,12 @@ begin
 end;
 
 
-procedure TKMRoomList.AddRoom(aServerIndex, aRoomID: Integer; aOnlyRoom: Boolean; aGameInfoStream: TKMemoryStreamBinary);
+procedure TKMRoomList.AddRoom(aServerIndex, aRoomID: Integer; aOnlyRoom: Boolean; aGameRev: TKMGameRevision;
+                              aGameInfoStream: TKMemoryStreamBinary);
 begin
   if Length(fRooms) <= fCount then SetLength(fRooms, fCount+16);
   fRooms[fCount].ServerIndex := aServerIndex;
+  fRooms[fCount].GameRevision := aGameRev;
   fRooms[fCount].RoomID := aRoomID;
   fRooms[fCount].OnlyRoom := aOnlyRoom;
   fRooms[fCount].GameInfo := TKMPGameInfo.Create;
@@ -191,12 +194,14 @@ end;
 procedure TKMRoomList.LoadData(aServerID: Integer; aStream: TKMemoryStreamBinary);
 var
   I, RoomCount, RoomID: Integer;
+  GameRev: TKMGameRevision;
 begin
   aStream.Read(RoomCount);
   for I := 0 to RoomCount - 1 do //We don't actually use i as the server sends us RoomID (rooms might not be in order)
   begin
     aStream.Read(RoomID);
-    AddRoom(aServerID, RoomID, (RoomCount = 1), aStream);
+    aStream.Read(GameRev);
+    AddRoom(aServerID, RoomID, (RoomCount = 1), GameRev, aStream);
   end;
 end;
 

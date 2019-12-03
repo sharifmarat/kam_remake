@@ -96,6 +96,8 @@ type
 
   TKMPlayerColorMode = (pcmNone, pcmDefault, pcmAllyEnemy, pcmTeams);
 
+  TKMGameRevision = Word; //Word looks enought for now...
+
 const
   WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');
 

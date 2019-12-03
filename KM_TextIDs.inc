@@ -757,6 +757,7 @@ TX_NET_VOTE_PASSED = 799; //%s voted to return to the lobby (vote passed)
 TX_NET_VOTE_FAILED = 800; //The vote to return to the lobby failed
 TX_NET_PROMOTE_LOCAL_SERVER = 809; //You cannot change host when the server is running in your client
 TX_NET_MUTED = 1019; //%s has muted you. You can no longer send messages or beacons to him
+TX_NET_HOST_GAME_VERSION_DONT_MATCH = 1317; //Host game version doesn't match your game version
 
 TX_CREDITS = 580; //KaM Remake Credits
 TX_CREDITS_ORIGINAL = 581; //Original Knights & Merchants Credits

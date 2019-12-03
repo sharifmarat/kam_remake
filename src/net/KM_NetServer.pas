@@ -6,7 +6,8 @@ uses
    {$IFDEF WDC}KM_NetServerOverbyte, {$ENDIF}
    {$IFDEF FPC}KM_NetServerLNet, {$ENDIF}
   Classes, SysUtils, Math, VerySimpleXML,
-  KM_CommonClasses, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_CommonUtils, KM_Points,
+  KM_CommonClasses, KM_NetworkClasses, KM_NetworkTypes,
+  KM_Defaults, KM_CommonUtils, KM_Points, KM_CommonTypes,
   {$IFDEF WDC}
     {$IFDEF CONSOLE}
       KM_ConsoleTimer
@@ -116,6 +117,7 @@ type
     fGameFilter: TKMPGameFilter;
     fRoomInfo: array of record
                          HostHandle: TKMNetHandleIndex;
+                         GameRevision: TKMGameRevision;
                          Password: AnsiString;
                          BannedIPs: array of String;
                          GameInfo: TKMPGameInfo;
@@ -145,7 +147,7 @@ type
     function GetFirstAvailableRoom: Integer;
     function GetRoomClientsCount(aRoom: Integer): Integer;
     function GetFirstRoomClient(aRoom: Integer): Integer;
-    procedure AddClientToRoom(aHandle: TKMNetHandleIndex; aRoom: Integer);
+    procedure AddClientToRoom(aHandle: TKMNetHandleIndex; aRoom: Integer; aGameRevision: TKMGameRevision);
     procedure BanPlayerFromRoom(aHandle: TKMNetHandleIndex; aRoom: Integer);
     procedure SaveHTMLStatus;
     procedure SetPacketsAccumulatingDelay(aValue: Integer);
@@ -171,9 +173,8 @@ type
 
 
 implementation
-uses
-  //TypInfo, KM_Log,
-  KM_CommonTypes;
+//uses
+  //TypInfo, KM_Log;
 
 const
   //Server needs to use some text constants locally but can't know about gResTexts
@@ -489,7 +490,7 @@ begin
 end;
 
 
-procedure TKMNetServer.AddClientToRoom(aHandle: TKMNetHandleIndex; aRoom: Integer);
+procedure TKMNetServer.AddClientToRoom(aHandle: TKMNetHandleIndex; aRoom: Integer; aGameRevision: TKMGameRevision);
 var
   I: Integer;
   M: TKMemoryStreamBinary;
@@ -534,15 +535,25 @@ begin
       Exit;
     end;
 
-  Status('Client ' + inttostr(aHandle) + ' has connected to room ' + inttostr(aRoom));
-  fClientList.GetByHandle(aHandle).Room := aRoom;
-
   //Let the first client be a Host
   if fRoomInfo[aRoom].HostHandle = NET_ADDRESS_EMPTY then
   begin
     fRoomInfo[aRoom].HostHandle := aHandle;
+    //Setup revision for room on first host connection
+    //other players should not be able to override it due to exe-CRC check
+    fRoomInfo[aRoom].GameRevision := aGameRevision;
     Status('Host rights assigned to ' + IntToStr(fRoomInfo[aRoom].HostHandle));
+  end
+  else
+  if fRoomInfo[aRoom].GameRevision <> aGameRevision then //Usually should never happen
+  begin
+    SendMessage(aHandle, mkRefuseToJoin, TX_NET_HOST_GAME_VERSION_DONT_MATCH, True);
+    fServer.Kick(aHandle);
+    Exit;
   end;
+
+  Status('Client ' + IntToStr(aHandle) + ' has connected to room ' + IntToStr(aRoom));
+  fClientList.GetByHandle(aHandle).Room := aRoom;
 
   M := TKMemoryStreamBinary.Create;
   M.Write(fRoomInfo[aRoom].HostHandle);
@@ -810,8 +821,9 @@ procedure TKMNetServer.RecieveMessage(aSenderHandle: TKMNetHandleIndex; aData: P
 var
   Kind: TKMessageKind;
   M, M2: TKMemoryStreamBinary;
-  tmpInteger: Integer;
-  tmpSmallInt: SmallInt;
+  tmpInt: Integer;
+  gameRev: TKMGameRevision;
+  tmpSmallInt: TKMNetHandleIndex;
   tmpStringA: AnsiString;
   Client: TKMServerClient;
   SenderIsHost: Boolean;
@@ -838,24 +850,26 @@ begin
   case Kind of
     mkJoinRoom:
             begin
-              M.Read(tmpInteger); //Room to join
-              if InRange(tmpInteger, 0, Length(fRoomInfo)-1)
-              and (fRoomInfo[tmpInteger].HostHandle <> NET_ADDRESS_EMPTY)
-              //Once game has started don't ask for passwords so clients can reconnect
-              and (fRoomInfo[tmpInteger].GameInfo.GameState = mgsLobby)
-              and (fRoomInfo[tmpInteger].Password <> '') then
+              M.Read(tmpInt); //Room to join
+              M.Read(gameRev);
+              if InRange(tmpInt, 0, Length(fRoomInfo)-1)
+                and (fRoomInfo[tmpInt].HostHandle <> NET_ADDRESS_EMPTY)
+                //Once game has started don't ask for passwords so clients can reconnect
+                and (fRoomInfo[tmpInt].GameInfo.GameState = mgsLobby)
+                and (fRoomInfo[tmpInt].Password <> '') then
                 SendMessage(aSenderHandle, mkReqPassword)
               else
-                AddClientToRoom(aSenderHandle, tmpInteger);
+                AddClientToRoom(aSenderHandle, tmpInt, gameRev);
             end;
     mkPassword:
             begin
-              M.Read(tmpInteger); //Room to join
+              M.Read(tmpInt); //Room to join
+              M.Read(gameRev);
               M.ReadA(tmpStringA); //Password
-              if InRange(tmpInteger, 0, Length(fRoomInfo)-1)
-              and (fRoomInfo[tmpInteger].HostHandle <> NET_ADDRESS_EMPTY)
-              and (fRoomInfo[tmpInteger].Password = tmpStringA) then
-                AddClientToRoom(aSenderHandle, tmpInteger)
+              if InRange(tmpInt, 0, Length(fRoomInfo)-1)
+                and (fRoomInfo[tmpInt].HostHandle <> NET_ADDRESS_EMPTY)
+                and (fRoomInfo[tmpInt].Password = tmpStringA) then
+                AddClientToRoom(aSenderHandle, tmpInt, gameRev)
               else
                 SendMessage(aSenderHandle, mkReqPassword);
             end;
@@ -922,8 +936,8 @@ begin
             end;
     mkFPS: begin
               Client := fClientList.GetByHandle(aSenderHandle);
-              M.Read(tmpInteger);
-              Client.FPS := tmpInteger;
+              M.Read(tmpInt);
+              Client.FPS := tmpInt;
             end;
     mkPong:
             begin
@@ -1070,6 +1084,7 @@ begin
     else
     begin
       aStream.Write(I); //RoomID
+      aStream.Write(fRoomInfo[I].GameRevision);
       fRoomInfo[I].GameInfo.SaveToStream(aStream);
     end;
   end;
@@ -1077,6 +1092,7 @@ begin
   if NeedEmptyRoom then
   begin
     aStream.Write(EmptyRoomID); //RoomID
+    aStream.Write(TKMGameRevision(EMPTY_ROOM_DEFAULT_GAME_REVISION)); //no game revision was set yet
     fEmptyGameInfo.SaveToStream(aStream);
   end;
 end;
@@ -1102,6 +1118,7 @@ begin
   Inc(fRoomCount);
   SetLength(fRoomInfo,fRoomCount);
   fRoomInfo[fRoomCount-1].HostHandle := NET_ADDRESS_EMPTY;
+  fRoomInfo[fRoomCount-1].GameRevision := 0;
   fRoomInfo[fRoomCount-1].Password := '';
   fRoomInfo[fRoomCount-1].GameInfo := TKMPGameInfo.Create;
   SetLength(fRoomInfo[fRoomCount-1].BannedIPs, 0);
@@ -1206,7 +1223,9 @@ begin
         inc(PlayerCount, fRoomInfo[i].GameInfo.PlayerCount);
         inc(ClientCount, fRoomInfo[i].GameInfo.ConnectedPlayerCount);
         //HTML room info
-        HTML := HTML + '<TR><TD>'+IntToStr(i)+'</TD><TD>'+XMLEscape(GameStateText[fRoomInfo[i].GameInfo.GameState])+
+        HTML := HTML + '<TR><TD>'+IntToStr(i)+
+                       '</TD><TD>r'+ IntToStr(fRoomInfo[i].GameRevision) +
+                       '</TD><TD>'+XMLEscape(GameStateText[fRoomInfo[i].GameInfo.GameState])+
                        '</TD><TD>'+IntToStr(fRoomInfo[i].GameInfo.ConnectedPlayerCount)+
                        '</TD><TD>'+XMLEscape(fRoomInfo[i].GameInfo.Map)+
                        '&nbsp;</TD><TD>'+XMLEscape(fRoomInfo[i].GameInfo.GetFormattedTime)+

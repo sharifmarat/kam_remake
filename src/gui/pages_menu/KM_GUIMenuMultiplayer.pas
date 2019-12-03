@@ -512,6 +512,12 @@ begin
     for I := 0 to gGameApp.Networking.ServerQuery.Rooms.Count - 1 do
     begin
       R := gGameApp.Networking.ServerQuery.Rooms[I];
+
+      //Check room game revision
+      if (R.GameRevision <> EMPTY_ROOM_DEFAULT_GAME_REVISION)
+        and (R.GameRevision <> GAME_REVISION_NUM) then //Room game revision differs from ours, skip it
+        Continue;
+
       S := gGameApp.Networking.ServerQuery.Servers[R.ServerIndex];
 
       //Only show # if Server has more than 1 Room

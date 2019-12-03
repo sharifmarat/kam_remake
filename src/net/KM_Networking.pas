@@ -173,6 +173,8 @@ type
 
     function GetPacketsReceived(aKind: TKMessageKind): Cardinal;
     function GetPacketsSent(aKind: TKMessageKind): Cardinal;
+
+    procedure WriteInfoToJoinRoom(aM: TKMemoryStream);
   public
     constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
                        aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
@@ -880,12 +882,21 @@ begin
 end;
 
 
+procedure TKMNetworking.WriteInfoToJoinRoom(aM: TKMemoryStream);
+begin
+  aM.Write(fRoomToJoin);
+  aM.Write(TKMGameRevision(GAME_REVISION_NUM));
+end;
+
+
 procedure TKMNetworking.SendPassword(const aPassword: AnsiString);
 var
   M: TKMemoryStreamBinary;
 begin
   M := TKMemoryStreamBinary.Create;
-  M.Write(fRoomToJoin);
+
+  WriteInfoToJoinRoom(M);
+
   M.WriteA(aPassword);
   PacketSend(NET_ADDRESS_SERVER, mkPassword, M);
   M.Free;
@@ -1650,7 +1661,11 @@ begin
                 fMyIndexOnServer := tmpHandleIndex;
                 //PostLocalMessage('Index on Server - ' + inttostr(fMyIndexOnServer));
                 //Now join the room we planned to
-                PacketSend(NET_ADDRESS_SERVER, mkJoinRoom, fRoomToJoin);
+                M2 := TKMemoryStreamBinary.Create;
+                WriteInfoToJoinRoom(M2);
+
+                PacketSend(NET_ADDRESS_SERVER, mkJoinRoom, M2);
+                M2.Free;
               end;
 
       mkConnectedToRoom:

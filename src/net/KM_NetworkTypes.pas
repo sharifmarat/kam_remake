@@ -121,7 +121,7 @@ const
     pfStringA,  //mkGameVersion
     pfStringW,  //mkWelcomeMessage
     pfStringA,  //mkServerName
-    pfNumber,   //mkJoinRoom
+    pfBinary,   //mkJoinRoom
     pfNumber,   //mkConnectedToRoom
     pfBinary,   //mkSetGameInfo
     pfNumber,   //mkKickPlayer

@@ -24,6 +24,7 @@ const
   MIN_RESOLUTION_WIDTH  = 1024;         //Lowest supported resolution X
   MIN_RESOLUTION_HEIGHT = 576;          //Lowest supported resolution Y
   {$I KM_Revision.inc};
+  {$I KM_NetProtocolRevision.inc};
   {$IFDEF USESECUREAUTH}
     GAME_VERSION_POSTFIX  = '';
   {$ELSE}
@@ -286,6 +287,8 @@ const
 
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
+
+  EMPTY_ROOM_DEFAULT_GAME_REVISION = 0; //Placeholder for game revision in room
 
   LOC_RANDOM = 0;
   LOC_SPECTATE = -1;
@@ -906,7 +909,8 @@ initialization
 begin
   GAME_REVISION := AnsiString('r' + IntToStr(GAME_REVISION_NUM));
   GAME_VERSION := GAME_VERSION_PREFIX + GAME_REVISION + GAME_VERSION_POSTFIX;
-  NET_PROTOCOL_REVISON := GAME_REVISION;     //Clients of this version may connect to the dedicated server
+  //Clients of this net protocol version may connect to the dedicated server
+  NET_PROTOCOL_REVISON := AnsiString('r' + IntToStr(NET_PROTOCOL_REVISION_NUM));
 end;
 
 end.
