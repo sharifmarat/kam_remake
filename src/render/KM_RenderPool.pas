@@ -83,7 +83,8 @@ type
     function PaintBucket_UnitToRender(aUnit: TObject): Boolean;
     function PaintBucket_GroupToRender(aGroup: TObject): Boolean;
 
-    procedure RenderSprite(aRX: TRXType; aId: Word; pX,pY: Single; Col: TColor4; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+    procedure RenderSprite(aRX: TRXType; aId: Word; pX,pY: Single; Col: TColor4; DoHighlight: Boolean = False;
+                           HighlightColor: TColor4 = 0; aForced: Boolean = False);
     procedure RenderSpriteAlphaTest(aRX: TRXType; aId: Word; aWoodProgress: Single; pX, pY: Single; aId2: Word = 0; aStoneProgress: Single = 0; X2: Single = 0; Y2: Single = 0);
     procedure RenderMapElement1(aIndex: Word; AnimStep: Cardinal; LocX,LocY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
     procedure RenderMapElement4(aIndex: Word; AnimStep: Cardinal; pX,pY: Integer; IsDouble: Boolean; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
@@ -126,7 +127,7 @@ type
 
     procedure RenderMapElement(aIndex: Word; AnimStep,pX,pY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
     procedure RenderSpriteOnTile(const aLoc: TKMPoint; aId: Word; aFlagColor: TColor4 = $FFFFFFFF);
-    procedure RenderSpriteOnTerrain(const aLoc: TKMPointF; aId: Word; aFlagColor: TColor4 = $FFFFFFFF);
+    procedure RenderSpriteOnTerrain(const aLoc: TKMPointF; aId: Word; aFlagColor: TColor4 = $FFFFFFFF; aForced: Boolean = False);
     procedure RenderTile(aTerrainId: Word; pX,pY,Rot: Integer);
     procedure RenderWireTile(const P: TKMPoint; Col: TColor4; aInset: Single = 0.0; aLineWidth: Single = -1);
 
@@ -415,12 +416,12 @@ begin
   P := KMPointF(aRallyPoint.X - 0.5, aRallyPoint.Y - 0.5);
   if not aDoImmediateRender then
     case aPass of
-      0: begin
-           AddAlert(P, aTexId, aColor);
-           RenderLineToPoint(P);
-         end;
-      1: if gMySpectator.FogOfWar.CheckRevelation(P) < FOG_OF_WAR_MAX then
-         RenderSpriteOnTerrain(P, aTexId, aColor);
+      0:  begin
+            AddAlert(P, aTexId, aColor);
+            RenderLineToPoint(P);
+          end;
+      1:  if gMySpectator.FogOfWar.CheckRevelation(P) < FOG_OF_WAR_MAX then
+            RenderSpriteOnTerrain(P, aTexId, aColor, True); //Force to paint, even under FOW
     end
   else begin
     RenderSpriteOnTile(aRallyPoint, aTexId, aColor);
@@ -433,9 +434,9 @@ procedure TRenderPool.PaintRallyPoints(aPass: Byte);
 var
   HWFP: TKMHouseWFlagPoint;
 begin
-  if not (gMySpectator.Selected is TKMHouseBarracks) and
-     not (gMySpectator.Selected is TKMHouseTownHall) and
-     not (gMySpectator.Selected is TKMHouseWoodcutters) then
+  if not ((gMySpectator.Selected is TKMHouseBarracks)
+    or (gMySpectator.Selected is TKMHouseTownHall)
+    or (gMySpectator.Selected is TKMHouseWoodcutters)) then
     Exit;
 
   if gMySpectator.Selected is TKMHouseWFlagPoint then
@@ -1096,13 +1097,16 @@ begin
   glPopMatrix;
 end;}
 
-procedure TRenderPool.RenderSprite(aRX: TRXType; aId: Word; pX,pY: Single; Col: TColor4; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.RenderSprite(aRX: TRXType; aId: Word; pX,pY: Single; Col: TColor4; DoHighlight: Boolean = False;
+                                   HighlightColor: TColor4 = 0; aForced: Boolean = False);
 var
   X,Y: Integer;
 begin
   X := EnsureRange(Round(pX),1,gTerrain.MapX);
   Y := EnsureRange(Round(pY),1,gTerrain.MapY);
-  if (gMySpectator.FogOfWar.CheckTileRenderRev(X,Y) <= FOG_OF_WAR_MIN) then Exit;
+  //Do not render if sprite is under FOW
+  if not aForced and (gMySpectator.FogOfWar.CheckTileRenderRev(X,Y) <= FOG_OF_WAR_MIN) then
+    Exit;
 
   with gGFXData[aRX, aId] do
   begin
@@ -1337,7 +1341,7 @@ begin
 end;
 
 
-procedure TRenderPool.RenderSpriteOnTerrain(const aLoc: TKMPointF; aId: Word; aFlagColor: TColor4 = $FFFFFFFF);
+procedure TRenderPool.RenderSpriteOnTerrain(const aLoc: TKMPointF; aId: Word; aFlagColor: TColor4 = $FFFFFFFF; aForced: Boolean = False);
 var
   pX, pY: Single;
 begin
@@ -1345,7 +1349,7 @@ begin
   pX := aLoc.X + fRXData[rxGui].Pivot[aId].X / CELL_SIZE_PX;
   pY := gTerrain.FlatToHeight(aLoc.X, aLoc.Y) +
         fRXData[rxGui].Pivot[aId].Y / CELL_SIZE_PX;
-  RenderSprite(rxGui, aId, pX, pY, aFlagColor);
+  RenderSprite(rxGui, aId, pX, pY, aFlagColor, False, 0, aForced);
 end;
 
 
