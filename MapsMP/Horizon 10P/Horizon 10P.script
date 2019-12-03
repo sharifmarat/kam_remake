@@ -3,7 +3,7 @@
 procedure OnMissionStart;
 var I, P: Integer;
 begin
-  for P := 0 to 7 do
+  for P := 0 to 9 do
     if States.PlayerEnabled(P) then
     begin
         Actions.HouseAllow(P, 27, False);  //inn
@@ -16,7 +16,7 @@ procedure OnHouseBuilt(aHouse: Integer);
 begin
   if States.HouseType(aHouse) = 13 then //unlock inn after school
     Actions.HouseAllow(States.HouseOwner(aHouse), 27, True);
-  if States.HouseType(aHouse) = 27 then //unlock quarry
+  if States.HouseType(aHouse) = 13 then //unlock quarry
     Actions.HouseAllow(States.HouseOwner(aHouse), 14, True);
   if States.HouseType(aHouse) = 14 then //unlock cutter
     Actions.HouseAllow(States.HouseOwner(aHouse), 9, True);

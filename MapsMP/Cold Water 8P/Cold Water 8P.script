@@ -1,9 +1,9 @@
-//script by Ben modified by sado
-
+//ThundEEr version where School unlock only quarry immediately.
 procedure OnMissionStart;
-var I, P: Integer;
+var P: Integer;
 begin
-  for P := 0 to 5 do
+//set the regular building openings
+  for P := 0 to 7 do
     if States.PlayerEnabled(P) then
     begin
         Actions.HouseAllow(P, 27, False);  //inn
@@ -12,12 +12,17 @@ begin
    end;     
 end;
 
-procedure OnHouseBuilt(aHouse: Integer);
+//-----------------------------------------------------------------------------------------------------------------
+procedure OnHouseBuilt(aHouse: Integer);   //Building unlock order
 begin
   if States.HouseType(aHouse) = 13 then //unlock inn after school
     Actions.HouseAllow(States.HouseOwner(aHouse), 27, True);
+  if States.HouseType(aHouse) = 13 then //!!!unlock quarry-->skipping the inn is possible. Original value was 27
+	Actions.HouseAllow(States.HouseOwner(aHouse), 14, True);
   if States.HouseType(aHouse) = 27 then //unlock quarry
     Actions.HouseAllow(States.HouseOwner(aHouse), 14, True);
   if States.HouseType(aHouse) = 14 then //unlock cutter
     Actions.HouseAllow(States.HouseOwner(aHouse), 9, True);
 end;
+//-----------------------------------------------------------------------------------------------------------------
+
