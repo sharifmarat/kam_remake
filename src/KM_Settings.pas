@@ -177,6 +177,7 @@ type
     fMenu_LobbyMapType: Byte;
 
     fDebug_SaveRandomChecks: Boolean;
+    fDebug_SaveGameAsText: Boolean;
 
     fFavouriteMaps: TKMMapsCRCList;
 
@@ -262,6 +263,7 @@ type
 
     //Debug
     procedure SetDebugSaveRandomChecks(aValue: Boolean);
+    procedure SetDebugSaveGameAsText(aValue: Boolean);
   protected
     function LoadFromINI(const FileName: UnicodeString): Boolean;
     procedure SaveToINI(const FileName: UnicodeString);
@@ -370,7 +372,9 @@ type
     property MenuSPSaveFileName: UnicodeString read fMenu_SPSaveFileName write SetMenuSPSaveFileName;
     property MenuLobbyMapType: Byte read fMenu_LobbyMapType write SetMenuLobbyMapType;
 
+    //Debug
     property DebugSaveRandomChecks: Boolean read fDebug_SaveRandomChecks write SetDebugSaveRandomChecks;
+    property DebugSaveGameAsText: Boolean read fDebug_SaveGameAsText write SetDebugSaveGameAsText;
 
     property FavouriteMaps: TKMMapsCRCList read fFavouriteMaps;
   end;
@@ -702,6 +706,7 @@ begin
     fMenu_LobbyMapType      := F.ReadInteger('Menu', 'LobbyMapType', 0);
 
     fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks', True);
+    fDebug_SaveGameAsText   := F.ReadBool('Debug','SaveGameAsText', True);
   finally
     F.Free;
   end;
@@ -817,6 +822,7 @@ begin
     F.WriteInteger('Menu',  'LobbyMapType',       fMenu_LobbyMapType);
 
     F.WriteBool   ('Debug','SaveRandomChecks',    fDebug_SaveRandomChecks);
+    F.WriteBool   ('Debug','SaveGameAsText',      fDebug_SaveGameAsText);
 
     F.UpdateFile; //Write changes to file
   finally
@@ -986,6 +992,13 @@ end;
 procedure TKMGameSettings.SetDebugSaveRandomChecks(aValue: Boolean);
 begin
   fDebug_SaveRandomChecks := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetDebugSaveGameAsText(aValue: Boolean);
+begin
+  fDebug_SaveGameAsText := aValue;
   Changed;
 end;
 
