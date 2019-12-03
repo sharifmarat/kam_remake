@@ -705,8 +705,10 @@ begin
     fMenu_SPSaveFileName    := F.ReadString('Menu', 'SPSaveFileName', '');
     fMenu_LobbyMapType      := F.ReadInteger('Menu', 'LobbyMapType', 0);
 
-    fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks', True);
-    fDebug_SaveGameAsText   := F.ReadBool('Debug','SaveGameAsText', True);
+    if SAVE_RANDOM_CHECKS then
+      fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks', True);
+    if SAVE_GAME_AS_TEXT then
+      fDebug_SaveGameAsText   := F.ReadBool('Debug','SaveGameAsText', True);
   finally
     F.Free;
   end;
@@ -821,8 +823,10 @@ begin
     F.WriteString ('Menu',  'SPSaveFileName',     fMenu_SPSaveFileName);
     F.WriteInteger('Menu',  'LobbyMapType',       fMenu_LobbyMapType);
 
-    F.WriteBool   ('Debug','SaveRandomChecks',    fDebug_SaveRandomChecks);
-    F.WriteBool   ('Debug','SaveGameAsText',      fDebug_SaveGameAsText);
+    if SAVE_RANDOM_CHECKS then
+      F.WriteBool   ('Debug','SaveRandomChecks',    fDebug_SaveRandomChecks);
+    if SAVE_GAME_AS_TEXT then
+      F.WriteBool   ('Debug','SaveGameAsText',      fDebug_SaveGameAsText);
 
     F.UpdateFile; //Write changes to file
   finally
