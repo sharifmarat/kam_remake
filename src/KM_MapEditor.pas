@@ -768,8 +768,7 @@ const
 
   procedure PaintMiningPoints(aPoints: TKMPointList; Color: Cardinal; aHighlight: Boolean = False; aDeepCl: Boolean = False);
   var
-    I, K, L: Integer;
-    Color2: Cardinal;
+    I: Integer;
     Coef: Single;
   begin
     Coef := 0.15;

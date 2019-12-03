@@ -146,7 +146,7 @@ begin
                                        Dif_W, 20, gResTexts[DIFFICULTY_LEVELS_TX[MD]], fntMetal);
     CheckBox_Difficulty[mdNormal] := TKMCheckBox.Create(Panel_MissionParams,
                                        5 + Dif_W + 5, Top + 20, Dif_W, 20,
-                                       gResTexts[DIFFICULTY_LEVELS_TX[MD]], fntMetal);
+                                       gResTexts[DIFFICULTY_LEVELS_TX[mdNormal]], fntMetal);
 
     for MD := mdHard1 to MISSION_DIFFICULTY_MAX do
       CheckBox_Difficulty[MD] := TKMCheckBox.Create(Panel_MissionParams,
