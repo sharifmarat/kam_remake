@@ -93,8 +93,9 @@ type
     // Terrain rendering sub-class
     procedure CollectPlans(const aRect: TKMRect);
     procedure CollectTerrainObjects(const aRect: TKMRect; aAnimStep: Cardinal);
-    procedure PaintRallyPoint(const aHouseEntrance, aRallyPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aPass: Byte; aDoImmediateRender: Boolean = False);
-    procedure PaintRallyPoints(aPass: Byte);
+    procedure PaintFlagPoint(const aHouseEntrance, aFlagPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aFirstPass: Boolean;
+                             aDoImmediateRender: Boolean = False);
+    procedure PaintFlagPoints(aFirstPass: Boolean);
 
     procedure RenderWireHousePlan(const P: TKMPoint; aHouseType: TKMHouseType);
     procedure RenderMapEdLayers(const aRect: TKMRect);
@@ -286,7 +287,7 @@ begin
     // Sprites are added by Terrain/Players/Projectiles, then sorted by position
     fRenderList.Clear;
     CollectTerrainObjects(ClipRect, gTerrain.AnimStep);
-    PaintRallyPoints(0);
+    PaintFlagPoints(True);
 
     gHands.Paint(ClipRect); // Units and houses
     gProjectiles.Paint;
@@ -300,7 +301,7 @@ begin
     fRenderTerrain.RenderFOW(gMySpectator.FogOfWar);
 
     // Alerts/rally second pass is rendered after FOW
-    PaintRallyPoints(1);
+    PaintFlagPoints(False);
     if gGame.GamePlayInterface <> nil then
       gGame.GamePlayInterface.Alerts.Paint(1);
 
@@ -404,7 +405,8 @@ begin
 end;
 
 
-procedure TRenderPool.PaintRallyPoint(const aHouseEntrance, aRallyPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aPass: Byte; aDoImmediateRender: Boolean = False);
+procedure TRenderPool.PaintFlagPoint(const aHouseEntrance, aFlagPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aFirstPass: Boolean;
+                                     aDoImmediateRender: Boolean = False);
 
   procedure RenderLineToPoint(const aP: TKMPointF);
   begin
@@ -413,37 +415,38 @@ procedure TRenderPool.PaintRallyPoint(const aHouseEntrance, aRallyPoint: TKMPoin
 
 var P: TKMPointF;
 begin
-  P := KMPointF(aRallyPoint.X - 0.5, aRallyPoint.Y - 0.5);
+  P := KMPointF(aFlagPoint.X - 0.5, aFlagPoint.Y - 0.5);
   if not aDoImmediateRender then
-    case aPass of
-      0:  begin
-            AddAlert(P, aTexId, aColor);
-            RenderLineToPoint(P);
-          end;
-      1:  if gMySpectator.FogOfWar.CheckRevelation(P) < FOG_OF_WAR_MAX then
-            RenderSpriteOnTerrain(P, aTexId, aColor, True); //Force to paint, even under FOW
+  begin
+    if aFirstPass then
+    begin
+      AddAlert(P, aTexId, aColor);
+      RenderLineToPoint(P);
     end
+    else
+    if gMySpectator.FogOfWar.CheckRevelation(P) < FOG_OF_WAR_MAX then
+      RenderSpriteOnTerrain(P, aTexId, aColor, True); //Force to paint, even under FOW
+  end
   else begin
-    RenderSpriteOnTile(aRallyPoint, aTexId, aColor);
+    RenderSpriteOnTile(aFlagPoint, aTexId, aColor);
     RenderLineToPoint(P);
   end;
 end;
 
 
-procedure TRenderPool.PaintRallyPoints(aPass: Byte);
+procedure TRenderPool.PaintFlagPoints(aFirstPass: Boolean);
 var
   HWFP: TKMHouseWFlagPoint;
 begin
-  if not ((gMySpectator.Selected is TKMHouseBarracks)
-    or (gMySpectator.Selected is TKMHouseTownHall)
-    or (gMySpectator.Selected is TKMHouseWoodcutters)) then
+  //Skip render if no house with flagpoint is chosen
+  if  not (gMySpectator.Selected is TKMHouseWFlagPoint) then
     Exit;
 
   if gMySpectator.Selected is TKMHouseWFlagPoint then
   begin
     HWFP := TKMHouseWFlagPoint(gMySpectator.Selected);
     if HWFP.IsFlagPointSet then
-      PaintRallyPoint(HWFP.Entrance, HWFP.FlagPoint, gHands[HWFP.Owner].GameFlagColor, HWFP.FlagPointTexId, aPass);
+      PaintFlagPoint(HWFP.Entrance, HWFP.FlagPoint, gHands[HWFP.Owner].GameFlagColor, HWFP.FlagPointTexId, aFirstPass);
   end;
 end;
 
@@ -1391,7 +1394,7 @@ begin
     MARKER_RALLY_POINT:   if gMySpectator.Selected is TKMHouseWFlagPoint then
                           begin
                             HWFP := TKMHouseWFlagPoint(gMySpectator.Selected);
-                            PaintRallyPoint(HWFP.Entrance, P, gMySpectator.Hand.FlagColor, HWFP.FlagPointTexId, 0, True);
+                            PaintFlagPoint(HWFP.Entrance, P, gMySpectator.Hand.FlagColor, HWFP.FlagPointTexId, True, True);
                           end;
   end;
 end;
