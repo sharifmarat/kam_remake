@@ -130,6 +130,9 @@ type
     function IsAttackingUnit: Boolean;
     function IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
     function IsPositioned(const aLoc: TKMPoint; Dir: TKMDirection): Boolean;
+    function IsAllyTo(aUnit: TKMUnit): Boolean; overload;
+    function IsAllyTo(aUnitGroup: TKMUnitGroup): Boolean; overload;
+    function IsAllyTo(aHouse: TKMHouse): Boolean; overload;
     function CanTakeOrders: Boolean;
     function CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
     function FightMaxRange: Single;
@@ -791,14 +794,15 @@ var
 begin
   //Verify we still have foes
   for I := fOffenders.Count - 1 downto 0 do
-  if TKMUnitWarrior(fOffenders[I]).IsDeadOrDying then
-  begin
-    U := fOffenders[I]; //Need to pass var
-    gHands.CleanUpUnitPointer(U);
-    fOffenders.Delete(I);
-    if fOffenders.Count = 0 then
-      OrderRepeat;
-  end;
+    if TKMUnitWarrior(fOffenders[I]).IsDeadOrDying
+      or IsAllyTo(TKMUnitWarrior(fOffenders[I])) then //Offender could become an ally from script
+    begin
+      U := fOffenders[I]; //Need to pass var
+      gHands.CleanUpUnitPointer(U);
+      fOffenders.Delete(I);
+      if fOffenders.Count = 0 then
+        OrderRepeat;
+    end;
 
   //Fight is over
   if fOffenders.Count = 0 then Exit;
@@ -878,14 +882,14 @@ begin
                     end;
     goAttackHouse:  begin
                       //It is TaskAttackHouse responsibility to execute it
-                      OrderExecuted := (OrderTargetHouse = nil);
+                      OrderExecuted := (OrderTargetHouse = nil) or IsAllyTo(OrderTargetHouse); //Target could become ally from script
                     end;
     goAttackUnit:   begin
                       if IsRanged then
                       begin
                         //Ranged units must kill target unit only
                         //Then they will attack anything within their reach by themselves
-                        OrderExecuted := (OrderTargetUnit = nil);
+                        OrderExecuted := (OrderTargetUnit = nil) or IsAllyTo(OrderTargetUnit); //Target could become ally from script
 
                         if not OrderExecuted then
                           //If our leader is out of range (enemy has walked away) we need to walk closer
@@ -918,9 +922,12 @@ begin
                       else
                       begin
                         //Melee units must kill target unit and its Group
-                        OrderExecuted := (OrderTargetUnit = nil) and (OrderTargetGroup = nil);
+                        OrderExecuted :=
+                              //Target could become ally from script
+                              ((OrderTargetUnit = nil)  or IsAllyTo(OrderTargetUnit))
+                          and ((OrderTargetGroup = nil) or IsAllyTo(OrderTargetGroup));
 
-                        if OrderTargetUnit <> nil then
+                        if (OrderTargetUnit <> nil) and not IsAllyTo(OrderTargetUnit) then //Target could become ally from script
                         begin
                           //See if target is escaping
                           if not KMSamePoint(OrderTargetUnit.NextPosition, fOrderLoc.Loc) then
@@ -942,7 +949,8 @@ begin
 
 
                         //If Enemy was killed, but target Group still exists
-                        if (OrderTargetUnit = nil) and (OrderTargetGroup <> nil) then
+                        //Group could become an ally from script
+                        if (OrderTargetUnit = nil) and ((OrderTargetGroup <> nil) and not IsAllyTo(OrderTargetGroup)) then
                         begin
                           //Old enemy has died, change target to his comrades
                           U := OrderTargetGroup.GetNearestMember(Members[0].CurrPosition);
@@ -1085,6 +1093,24 @@ begin
     Result := U.IsIdle and KMSamePoint(U.CurrPosition, P.Loc) and (U.Direction = Dir);
     if not Result then Exit;
   end;
+end;
+
+
+function TKMUnitGroup.IsAllyTo(aUnit: TKMUnit): Boolean;
+begin
+  Result := gHands[fOwner].Alliances[aUnit.Owner] = atAlly;
+end;
+
+
+function TKMUnitGroup.IsAllyTo(aUnitGroup: TKMUnitGroup): Boolean;
+begin
+  Result := gHands[fOwner].Alliances[aUnitGroup.Owner] = atAlly;
+end;
+
+
+function TKMUnitGroup.IsAllyTo(aHouse: TKMHouse): Boolean;
+begin
+  Result := gHands[fOwner].Alliances[aHouse.Owner] = atAlly;
 end;
 
 
