@@ -144,10 +144,14 @@ end;
 //TestViewportClipInset is for debug, allows to see if everything gets clipped correct
 function TKMViewport.GetClip: TKMRect;
 begin
-  Result.Left   := Math.max(Round(fPosition.X-(fViewportClip.X/2-fViewRect.Left+TOOLBAR_WIDTH)/CELL_SIZE_PX/fZoom), 1);
-  Result.Right  := Math.min(Round(fPosition.X+(fViewportClip.X/2+fViewRect.Left-TOOLBAR_WIDTH)/CELL_SIZE_PX/fZoom)+1, fMapX-1);
-  Result.Top    := Math.max(Round(fPosition.Y-fViewportClip.Y/2/CELL_SIZE_PX/fZoom), 1);
-  Result.Bottom := Math.min(Round(fPosition.Y+fViewportClip.Y/2/CELL_SIZE_PX/fZoom)+4, fMapY-1);
+  Result.Left   := Math.Max(Round(fPosition.X
+                         - (fViewportClip.X/2 - fViewRect.Left + TOOLBAR_WIDTH) / CELL_SIZE_PX / fZoom), 1);
+  Result.Right  := Math.Min(Round(fPosition.X
+                         + (fViewportClip.X/2 + fViewRect.Left - TOOLBAR_WIDTH) / CELL_SIZE_PX / fZoom) + 1, fMapX - 1);
+  Result.Top    := Math.Max(Round(fPosition.Y
+                         - fViewportClip.Y/2 / CELL_SIZE_PX / fZoom), 1);
+  Result.Bottom := Math.Min(Round(fPosition.Y
+                         + fViewportClip.Y/2 / CELL_SIZE_PX / fZoom) + 4, fMapY - 1);
 
   if TEST_VIEW_CLIP_INSET then
     Result := KMRectGrow(Result, -5);
