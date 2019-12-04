@@ -151,7 +151,7 @@ begin
   Result.Top    := Math.Max(Round(fPosition.Y
                          - fViewportClip.Y/2 / CELL_SIZE_PX / fZoom), 1);
   Result.Bottom := Math.Min(Round(fPosition.Y
-                         + fViewportClip.Y/2 / CELL_SIZE_PX / fZoom) + 4, fMapY - 1);
+                         + fViewportClip.Y/2 / CELL_SIZE_PX / fZoom) + 5, fMapY - 1); // + 5 for high trees
 
   if TEST_VIEW_CLIP_INSET then
     Result := KMRectGrow(Result, -5);
