@@ -89,6 +89,9 @@ uses
   KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses, KM_ResWares, KM_Resource,
   KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor, KM_CommonUtils, KM_Utils;
 
+const
+  DEFAULT_DEFENCE_POSITION_RADIUS = 20;
+
 
 { TKMMapEditor }
 constructor TKMMapEditor.Create;
@@ -573,7 +576,7 @@ begin
                 cmUnits:      ProceedUnitsCursorMode;
                 cmMarkers:    case gGameCursor.Tag1 of
                                 MARKER_REVEAL:        fRevealers[gMySpectator.HandID].Add(P, gGameCursor.MapEdSize);
-                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dirN), gtMelee, 10, adtFrontLine);
+                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dirN), gtMelee, DEFAULT_DEFENCE_POSITION_RADIUS, adtFrontLine);
                                 MARKER_CENTERSCREEN:  begin
                                                         gMySpectator.Hand.CenterScreen := P;
                                                         //Updating XY display is done in InterfaceMapEd
