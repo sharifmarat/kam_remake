@@ -1,10 +1,10 @@
-object FormMain: TFormMain
+object Form4: TForm4
   Left = 431
   Top = 181
-  Width = 833
-  Height = 554
   Anchors = [akTop]
   Caption = 'KaM Dedicated Server'
+  ClientHeight = 516
+  ClientWidth = 817
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,26 +16,26 @@ object FormMain: TFormMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    815
-    507)
+    817
+    516)
   PixelsPerInch = 120
   TextHeight = 16
-  object Label1: TLabel
-    Left = 606
-    Top = 16
-    Width = 81
-    Height = 16
-    Anchors = [akTop, akRight]
-    Caption = 'Server status:'
-    Color = clBtnFace
-    ParentColor = False
-  end
   object Splitter1: TSplitter
     Left = 603
     Top = 152
     Width = 9
     Height = 355
     Align = alCustom
+  end
+  object Label1: TLabel
+    Left = 624
+    Top = 8
+    Width = 81
+    Height = 16
+    Anchors = [akTop, akRight]
+    Caption = 'Server status:'
+    Color = clBtnFace
+    ParentColor = False
   end
   object StartStopButton: TButton
     Left = 624
@@ -66,7 +66,6 @@ object FormMain: TFormMain
       Width = 202
       Height = 353
       Align = alClient
-      ItemHeight = 16
       Items.Strings = (
         'Player1'
         'Player2'
@@ -123,7 +122,7 @@ object FormMain: TFormMain
   object PageControl1: TPageControl
     Left = 0
     Top = 0
-    Width = 616
+    Width = 606
     Height = 152
     ActivePage = Basic
     Anchors = [akLeft, akTop, akRight]
@@ -131,7 +130,7 @@ object FormMain: TFormMain
     object Basic: TTabSheet
       Caption = 'Basic'
       DesignSize = (
-        608
+        598
         121)
       object Label9: TLabel
         Left = 8
@@ -160,10 +159,10 @@ object FormMain: TFormMain
         Color = clBtnFace
         ParentColor = False
       end
-			object Label12: TLabel
+      object Label12: TLabel
         Left = 430
         Top = 64
-        Width = 128
+        Width = 163
         Height = 16
         Caption = 'Packets Accumulating Delay:'
         Color = clBtnFace
@@ -173,17 +172,17 @@ object FormMain: TFormMain
         Tag = 1
         Left = 8
         Top = 88
-        Width = 530
+        Width = 520
         Height = 24
         Anchors = [akLeft, akTop, akRight]
-        TabOrder = 0
+        TabOrder = 4
         OnChange = ControlChange
       end
-			object cServerPacketsAccDelay: TEdit
+      object cServerPacketsAccDelay: TEdit
         Tag = 1
         Left = 550
         Top = 88
-        Width = 40
+        Width = 30
         Height = 24
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
@@ -210,8 +209,8 @@ object FormMain: TFormMain
         OnChange = ControlChange
       end
       object cAnnounceServer: TCheckBox
-        Left = 484
-        Top = 35
+        Left = 466
+        Top = 34
         Width = 135
         Height = 24
         Caption = 'Announce Server'
@@ -266,11 +265,20 @@ object FormMain: TFormMain
         ParentColor = False
       end
       object Label11: TLabel
-        Left = 324
+        Left = 268
         Top = 8
         Width = 65
         Height = 16
         Caption = 'Server Port'
+        Color = clBtnFace
+        ParentColor = False
+      end
+      object Label3: TLabel
+        Left = 351
+        Top = 8
+        Width = 80
+        Height = 16
+        Caption = 'UDP scan port'
         Color = clBtnFace
         ParentColor = False
       end
@@ -279,7 +287,7 @@ object FormMain: TFormMain
         Left = 10
         Top = 88
         Width = 104
-        Height = 23
+        Height = 26
         MaxValue = 0
         MinValue = 0
         TabOrder = 0
@@ -290,7 +298,7 @@ object FormMain: TFormMain
         Left = 204
         Top = 88
         Width = 112
-        Height = 23
+        Height = 26
         MaxValue = 0
         MinValue = 0
         TabOrder = 1
@@ -301,7 +309,7 @@ object FormMain: TFormMain
         Left = 12
         Top = 32
         Width = 250
-        Height = 23
+        Height = 24
         TabOrder = 2
         OnChange = ControlChange
       end
@@ -309,7 +317,7 @@ object FormMain: TFormMain
         Left = 444
         Top = 32
         Width = 144
-        Height = 23
+        Height = 26
         MaxValue = 0
         MinValue = 0
         TabOrder = 3
@@ -321,16 +329,24 @@ object FormMain: TFormMain
         Left = 404
         Top = 88
         Width = 184
-        Height = 23
+        Height = 24
         TabOrder = 4
         OnChange = ControlChange
       end
       object cServerPort: TEdit
-        Left = 324
+        Left = 268
         Top = 32
-        Width = 88
-        Height = 23
+        Width = 77
+        Height = 24
         TabOrder = 5
+        OnChange = ControlChange
+      end
+      object cUDPScanPort: TEdit
+        Left = 351
+        Top = 32
+        Width = 76
+        Height = 24
+        TabOrder = 6
         OnChange = ControlChange
       end
     end

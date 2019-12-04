@@ -1,4 +1,4 @@
-unit UnitMain;
+unit Unit4;
 {$I ..\..\KaM_Remake.inc}
 interface
 uses
@@ -15,7 +15,7 @@ type
   //Distinct states for the server
   TKMServerStatus = (ssOffline, ssOnline);
 
-  TFormMain = class(TForm)
+  TForm4 = class(TForm)
     ButtonApply: TButton;
     cAnnounceServer: TCheckBox;
     cAutoKickTimeout: TSpinEdit;
@@ -50,6 +50,8 @@ type
     StartStopButton: TButton;
     Basic: TTabSheet;
     Advanced: TTabSheet;
+    cUDPScanPort: TEdit;
+    Label3: TLabel;
 
     //saveing setting to file and update (it will do it only if server is online)
     procedure ButtonApplyClick(Sender: TObject);
@@ -84,7 +86,7 @@ type
 
 
 var
-  FormMain: TFormMain;
+  FormMain4: TForm4;
 
 
 implementation
@@ -100,8 +102,8 @@ uses
 {$ENDIF}
 
 
-{ TFormMain }
-procedure TFormMain.FormCreate(Sender: TObject);
+{ TForm4 }
+procedure TForm4.FormCreate(Sender: TObject);
 begin
   fServerStatus := ssOffline;
   ChangeEnableStateOfApplyButton(False);
@@ -118,8 +120,9 @@ begin
   ServerStatusMessageNoTime('');
   ServerStatusMessage      ('Settings file: ' + ExeDir + SETTINGS_FILE);
   ServerStatusMessage      ('Log file: ' + gLog.LogPath);
-  ServerStatusMessageNoTime('-.- .- -- / .-. . -- .- -.- . / .. ... / - .... . / -... . ... -');
-  ServerStatusMessageNoTime('');
+//  ServerStatusMessageNoTime('-.- .- -- / .-. . -- .- -.- . / .. ... / - .... . / -... . ... -');
+//  ServerStatusMessageNoTime('');
+  ServerStatusMessage('Using protocol for clients running ' + NET_PROTOCOL_REVISON);
 
   fSettings := TKMGameSettings.Create;
   fSettings.SaveSettings(true);
@@ -132,7 +135,7 @@ begin
 end;
 
 
-procedure TFormMain.FormDestroy(Sender: TObject);
+procedure TForm4.FormDestroy(Sender: TObject);
 begin
   //Terminate online server on exit
   if fServerStatus = ssOnline then
@@ -143,40 +146,41 @@ begin
 end;
 
 
-procedure TFormMain.ServerStatusMessage(const aData: UnicodeString);
+procedure TForm4.ServerStatusMessage(const aData: UnicodeString);
 begin
   LogsMemo.Lines.Add(FormatDateTime('yyyy-mm-dd hh-nn-ss ', Now) + aData);
   gLog.AddNoTime(aData);
 end;
 
 
-procedure TFormMain.ServerStatusMessageNoTime(const aData: UnicodeString);
+procedure TForm4.ServerStatusMessageNoTime(const aData: UnicodeString);
 begin
   LogsMemo.Lines.Add(aData);
   gLog.AddNoTime(aData);
 end;
 
 
-procedure TFormMain.StartStopButtonClick(Sender: TObject);
+procedure TForm4.StartStopButtonClick(Sender: TObject);
 begin
   ButtonApply.Enabled := True;
 
   //turn off server when it was on and vice-versa
   case fServerStatus of
-    ssOffline: FormMain.ChangeServerStatus(ssOnline);
-    ssOnline:  FormMain.ChangeServerStatus(ssOffline);
+    ssOffline: FormMain4.ChangeServerStatus(ssOnline);
+    ssOnline:  FormMain4.ChangeServerStatus(ssOffline);
   end;
 end;
 
 
-procedure TFormMain.ChangeEnableStateOfControls(state: Boolean);
+procedure TForm4.ChangeEnableStateOfControls(state: Boolean);
 begin
   cMaxRooms.Enabled   := state;
   cServerPort.Enabled := state;
+  cUDPScanPort.Enabled := state;
 end;
 
 
-procedure TFormMain.ChangeServerStatus(aStatus: TKMServerStatus);
+procedure TForm4.ChangeServerStatus(aStatus: TKMServerStatus);
 var
   GameFilter: TKMPGameFilter;
 begin
@@ -225,13 +229,13 @@ begin
 end;
 
 
-procedure TFormMain.ChangeEnableStateOfApplyButton(state: Boolean);
+procedure TForm4.ChangeEnableStateOfApplyButton(state: Boolean);
 begin
   ButtonApply.Enabled := state;
 end;
 
 
-procedure TFormMain.FillPlayersList;
+procedure TForm4.FillPlayersList;
 var i:           Integer;
     RowInfo:     String;
 
@@ -252,7 +256,7 @@ begin
   Players.Free;
 end;
 
-procedure TFormMain.ApplicationIdle(Sender: TObject; var Done: Boolean);
+procedure TForm4.ApplicationIdle(Sender: TObject; var Done: Boolean);
 begin
   if fServerStatus = ssOnline then
   begin
@@ -266,15 +270,15 @@ end;
 
 
 //one event for each control
-procedure TFormMain.ControlChange(Sender: TObject);
+procedure TForm4.ControlChange(Sender: TObject);
 begin
   ChangeEnableStateOfApplyButton(True);
 end;
 
 
-procedure TFormMain.ButtonApplyClick(Sender: TObject);
+procedure TForm4.ButtonApplyClick(Sender: TObject);
 var
-  ServerPacketsAccDelay: Integer;
+  ServerPacketsAccDelay, UDPScanPort: Integer;
 begin
   //Disable the button asap to indicate we are at it
   ChangeEnableStateOfApplyButton(False);
@@ -296,6 +300,14 @@ begin
   fSettings.MasterServerAddress     := cMasterServerAddress.Text;
   fSettings.HTMLStatusFile          := cHTMLStatusFile.Text;
   fSettings.ServerPort              := cServerPort.Text;
+
+  if TryStrToInt(cUDPScanPort.Text, UDPScanPort) then
+    fSettings.ServerUDPScanPort := UDPScanPort
+  else begin
+    UDPScanPort := fSettings.ServerUDPScanPort;
+    cServerPacketsAccDelay.Text := IntToStr(fSettings.ServerUDPScanPort);
+  end;
+
   fSettings.MaxRooms                := cMaxRooms.Value;
 
   fSettings.SaveSettings(True);
@@ -318,7 +330,7 @@ begin
 end;
 
 
-procedure TFormMain.LoadSettings;
+procedure TForm4.LoadSettings;
 begin
   fSettings.ReloadSettings;
 
@@ -332,6 +344,7 @@ begin
   cMasterServerAddress.Text     := fSettings.MasterServerAddress;
   cHTMLStatusFile.Text          := fSettings.HTMLStatusFile;
   cServerPort.Text              := fSettings.ServerPort;
+  cUDPScanPort.Text             := IntToStr(fSettings.ServerUDPScanPort);
   cMaxRooms.Value               := fSettings.MaxRooms;
 
   ServerStatusMessageNoTime('');
