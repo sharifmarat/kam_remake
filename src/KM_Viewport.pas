@@ -42,6 +42,7 @@ type
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function MapToScreen(const aMapLoc: TKMPointF): TKMPoint;
     procedure PanTo(const aLoc: TKMPointF; aTicksCnt: Cardinal);
+    procedure CinematicReset;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -65,6 +66,8 @@ begin
 
   fMapX := 1; //Avoid division by 0
   fMapY := 1; //Avoid division by 0
+
+  CinematicReset;
 
   fZoom := 1;
   ReleaseScrollKeys;
@@ -207,6 +210,13 @@ begin
 end;
 
 
+procedure TKMViewport.CinematicReset;
+begin
+  fPanFrom := KMPOINTF_INVALID_TILE;
+  fPanTo := KMPOINTF_INVALID_TILE;
+end;
+
+
 //Here we must test each edge to see if we need to scroll in that direction
 //We scroll at SCROLLSPEED per 100 ms. That constant is defined in KM_Defaults
 procedure TKMViewport.UpdateStateIdle(aFrameTime: Cardinal; aAllowMouseScrolling: Boolean; aInCinematic: Boolean);
@@ -218,6 +228,13 @@ const
     kmcScroll2, kmcDefault, kmcScroll1, kmcDefault,
     kmcScroll4, kmcScroll5, kmcDefault, kmcDefault,
     kmcScroll3, kmcDefault, kmcDefault, kmcDefault);
+
+  function PanPointsAreValid: Boolean;
+  begin
+    Result := (fPanFrom <> KMPOINTF_INVALID_TILE)
+          and (fPanTo   <> KMPOINTF_INVALID_TILE);
+  end;
+
 var
   TimeSinceStarted: Cardinal;
   ScrollAdv, ZoomAdv: Single;
@@ -229,7 +246,7 @@ begin
   //Cinematics do not allow normal scrolling. The camera will be set and panned with script commands
   if aInCinematic then
   begin
-    if not fPanImmidiately then
+    if not fPanImmidiately and PanPointsAreValid then //Do not move viewport if pan points are not valid
     begin
       Inc(fPanProgress, aFrameTime);
       if fPanProgress >= fPanDuration then

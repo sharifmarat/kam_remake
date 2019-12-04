@@ -1441,7 +1441,8 @@ end;
 
 
 procedure TKMGamePlayInterface.CinematicUpdate;
-var I: Integer;
+var
+  I: Integer;
 begin
   if gMySpectator.Hand.InCinematic then
   begin
@@ -1467,6 +1468,8 @@ begin
   else
   begin
     SetMenuState(gGame.MissionMode = mmTactic); // Enable main buttons
+
+    Viewport.CinematicReset; //Reset Pan points for future cinematics
 
     MinimapView.Enable;
     Sidebar_Top.Enable;
