@@ -148,8 +148,11 @@ begin
                          - (fViewportClip.X/2 - fViewRect.Left + TOOLBAR_WIDTH) / CELL_SIZE_PX / fZoom), 1);
   Result.Right  := Math.Min(Round(fPosition.X
                          + (fViewportClip.X/2 + fViewRect.Left - TOOLBAR_WIDTH) / CELL_SIZE_PX / fZoom) + 1, fMapX - 1);
+  //Small render problem could be encountered at the top of clip rect
+  //This small problem could be seen with reshade app (with displaydepth filter ON)
+  //Enlarge clip viewport by 1 to fix it
   Result.Top    := Math.Max(Round(fPosition.Y
-                         - fViewportClip.Y/2 / CELL_SIZE_PX / fZoom), 1);
+                         - fViewportClip.Y/2 / CELL_SIZE_PX / fZoom) - 1, 1); // - 1 to update clip rect to the top on scroll
   Result.Bottom := Math.Min(Round(fPosition.Y
                          + fViewportClip.Y/2 / CELL_SIZE_PX / fZoom) + 5, fMapY - 1); // + 5 for high trees
 
