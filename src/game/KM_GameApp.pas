@@ -478,6 +478,8 @@ begin
       fCampaigns.ActiveCampaign.ScriptData.Clear;
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
+//@Rey: Inconsistency here. We SaveCampaignScriptData for every outcome, but it gets saved to the HDD only on grWin in the clause below
+
       if aMsg = grWin then
       begin
         fCampaigns.UnlockNextMap;
