@@ -216,7 +216,7 @@ const
   MAX_WOODCUTTER_CUT_PNT_DISTANCE = 5; //Max distance for woodcutter new cutting point from his house
 
 const
-  MAX_HANDS            = 12; //Maximum players (human or AI) per map
+  MAX_HANDS            = 18; //Maximum players (human or AI) per map
   MAX_LOBBY_PLAYERS    = 12;  //Maximum number of players (not spectators) allowed in the lobby. Map can have additional AI locations up to MAX_HANDS (for co-op).
   MAX_LOBBY_SPECTATORS = 2;  //Slots available in lobby. Additional slots can be used by spectators
   MAX_LOBBY_SLOTS      = MAX_LOBBY_PLAYERS + MAX_LOBBY_SPECTATORS;
@@ -802,6 +802,12 @@ const
   $FFFF0707, //Blue
   $FF0BE73F, //Light green
   $FF720468, //Purple
+  $FF22B3EE, //Yellowish
+  $FF668ACC, //Peach
+  $FF1A50B2, //Brownish
+  $FFB2611A, //Blueish
+  $FF60CC00, //Greenish + blue
+  $FF4F1AB2, //Purpleish
   $FFFFFFFF, //White
   $FF000000  //Black
   );
