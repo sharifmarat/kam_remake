@@ -1554,7 +1554,7 @@ type
   end;
 
 
-  TKMPopUpBGImageType = (pubgit_Gray, pubgit_Yellowish);
+  TKMPopUpBGImageType = (pubgitGray, pubgitYellowish);
 
   TKMPopUpPanel = class(TKMPanel)
   private
@@ -1569,7 +1569,7 @@ type
     Caption: UnicodeString;
     Font: TKMFont;
     FontColor: TColor4;
-    constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgit_Yellowish);
+    constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgitYellowish);
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
@@ -7728,7 +7728,7 @@ end;
 
 
 { TKMPopUpPanel }
-constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgit_Yellowish);
+constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgitYellowish);
 var
   BGImageID: Integer;
 begin
@@ -7744,8 +7744,8 @@ begin
 
   BGImageID := 0;
   case fBGImageType of
-    pubgit_Gray:      BGImageID := 15;
-    pubgit_Yellowish: BGImageID := 3;
+    pubgitGray:      BGImageID := 15;
+    pubgitYellowish: BGImageID := 3;
   end;
 
   ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70, BGImageID, rxGuiMain);
