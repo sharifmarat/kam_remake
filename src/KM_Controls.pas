@@ -661,22 +661,32 @@ type
   end;
 
 
+  TKMCheckBoxState = (cbsChecked, cbsSemiChecked, cbsUnchecked);
+
   { Checkbox }
   TKMCheckBox = class(TKMControl)
   private
     fCaption: UnicodeString;
-    fChecked: Boolean;
+    fState: TKMCheckBoxState;
+    fHasSemiState: Boolean;
     fFont: TKMFont;
+
+    function GetCheckedBool: Boolean;
   public
     DrawOutline: Boolean;
     LineColor: TColor4; //color of outline
     LineWidth: Byte;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aFont: TKMFont); overload;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
+                       aFont: TKMFont; aHasSemiState: Boolean = False); overload;
     property Caption: UnicodeString read fCaption write fCaption;
-    property Checked: Boolean read fChecked write fChecked;
+    procedure SetChecked(aChecked: Boolean);
+    property Checked: Boolean read GetCheckedBool write SetChecked;
+    property CheckState: TKMCheckBoxState read fState write fState;
+    function IsSemiChecked: Boolean;
     procedure Check;
     procedure Uncheck;
-    procedure SwitchCheck;
+    procedure SemiCheck;
+    procedure SwitchCheck(aForward: Boolean = True);
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure Paint; override;
   end;
@@ -1569,7 +1579,8 @@ type
     Caption: UnicodeString;
     Font: TKMFont;
     FontColor: TColor4;
-    constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgitYellowish);
+    constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '';
+                       aImageType: TKMPopUpBGImageType = pubgitYellowish; aShowBevel: Boolean = True);
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
@@ -3970,38 +3981,79 @@ end;
 
 
 { TKMCheckBox }
-constructor TKMCheckBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aFont: TKMFont);
+constructor TKMCheckBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
+                               aFont: TKMFont; aHasSemiState: Boolean = False);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   fFont     := aFont;
   fCaption  := aCaption;
+  fHasSemiState := aHasSemiState;
   LineWidth := 1;
   LineColor := clChkboxOutline;
 end;
 
 
+procedure TKMCheckBox.SetChecked(aChecked: Boolean);
+begin
+  if aChecked then
+    fState := cbsChecked
+  else
+    fState := cbsUnchecked;
+end;
+
+
+function TKMCheckBox.GetCheckedBool: Boolean;
+begin
+  Result := fState = cbsChecked;
+end;
+
+
+function TKMCheckBox.IsSemiChecked: Boolean;
+begin
+  Result := fState = cbsSemiChecked;
+end;
+
+
 procedure TKMCheckBox.Check;
 begin
-  fChecked := True;
+  fState := cbsChecked;
+end;
+
+
+procedure TKMCheckBox.SemiCheck;
+begin
+  fState := cbsSemiChecked;
 end;
 
 
 procedure TKMCheckBox.Uncheck;
 begin
-  fChecked := False;
+  fState := cbsUnchecked;
 end;
 
 
-procedure TKMCheckBox.SwitchCheck;
+procedure TKMCheckBox.SwitchCheck(aForward: Boolean = True);
 begin
-  fChecked := not fChecked;
+  if fHasSemiState then
+    fState := TKMCheckBoxState((Byte(fState) + 3 + 2*Byte(aForward) - 1) mod 3)
+  else
+  begin
+    if Checked then
+      Uncheck
+    else
+      Check;
+  end;
 end;
 
 
 procedure TKMCheckBox.MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
 begin
   if (csDown in State) and (Button = mbLeft) then
-    fChecked := not fChecked;
+    case fState of
+      cbsSemiChecked,
+      cbsUnchecked:   Check; //Let's assume we prefer check for now
+      cbsChecked:     Uncheck;
+    end;
   inherited; //There are OnMouseUp and OnClick events there
 end;
 
@@ -4010,20 +4062,36 @@ end;
 //Might need additional graphics to be added to gui.rx
 //Some kind of box with an outline, darkened background and shadow maybe, similar to other controls.
 procedure TKMCheckBox.Paint;
-var Col: TColor4; CheckSize: Integer;
+var
+  Col, SemiCol: TColor4;
+  CheckSize: Integer;
 begin
   inherited;
-  if fEnabled then Col := icWhite else Col := $FF888888;
+
+  if fEnabled then
+  begin
+    Col := icWhite;
+    SemiCol := $FFCCCCCC;
+  end
+  else
+  begin
+    Col := icGray2;
+    SemiCol := $FF888888;
+  end;
 
   CheckSize := gRes.Fonts[fFont].GetTextSize('x').Y + 1;
 
-  TKMRenderUI.WriteBevel(AbsLeft, AbsTop, CheckSize - 4, CheckSize-4, 1, 0.3);
+  TKMRenderUI.WriteBevel(AbsLeft, AbsTop, CheckSize - 4, CheckSize-4, 1, {0.35 - }Byte(not IsSemiChecked)*0.35);
 
   if DrawOutline then
     TKMRenderUI.WriteOutline(AbsLeft, AbsTop, CheckSize - 4, CheckSize - 4, LineWidth, LineColor);
 
-  if fChecked then
-    TKMRenderUI.WriteText(AbsLeft + (CheckSize-4) div 2, AbsTop - 1, 0, 'x', fFont, taCenter, Col);
+  case fState of
+    cbsChecked:     TKMRenderUI.WriteText(AbsLeft + (CheckSize-4) div 2, AbsTop - 1, 0, 'x', fFont, taCenter, Col);
+    cbsSemiChecked: TKMRenderUI.WriteText(AbsLeft + (CheckSize-4) div 2, AbsTop - 1, 0, 'x', fFont, taCenter, SemiCol);
+    cbsUnchecked: ; //Do not draw anything
+  end;
+
 
   TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop, Width - Height, fCaption, fFont, taLeft, Col);
 end;
@@ -7728,7 +7796,8 @@ end;
 
 
 { TKMPopUpPanel }
-constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgitYellowish);
+constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '';
+                                 aImageType: TKMPopUpBGImageType = pubgitYellowish; aShowBevel: Boolean = True);
 var
   BGImageID: Integer;
 begin
@@ -7751,7 +7820,9 @@ begin
   ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70, BGImageID, rxGuiMain);
   ImageBG.ImageStretch;
 
-  BevelBG := TKMBevel.Create(Self, 0, 0, aWidth, aHeight);
+  BevelBG := nil;
+  if aShowBevel then
+    BevelBG := TKMBevel.Create(Self, 0, 0, aWidth, aHeight);
 
   AnchorsCenter;
   Hide;
@@ -7784,8 +7855,11 @@ procedure TKMPopUpPanel.UpdateSizes;
 begin
   ImageBG.Width := Width + 40;
   ImageBG.Height := Height + 60;
-  BevelBG.Width := Width;
-  BevelBG.Height := Height;
+  if BevelBG <> nil then
+  begin
+    BevelBG.Width := Width;
+    BevelBG.Height := Height;
+  end;
 end;
 
 
