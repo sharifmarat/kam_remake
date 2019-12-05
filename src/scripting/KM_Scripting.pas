@@ -378,7 +378,7 @@ begin
 
     Sender.AddTypeS('TKMGroupOrder', '(goNone, goWalkTo, goAttackHouse, goAttackUnit, goStorm)');
 
-    Sender.AddTypeS('TKMAudioFormat', '(afWav,afOgg)'); //Needed for PlaySound
+    Sender.AddTypeS('TKMAudioFormat', '(afWav, afOgg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X,Y:Byte;Terrain:Word;Rotation:Byte;Height:Byte;Obj:Word;UpdateTerrain,UpdateRotation,UpdateHeight,UpdateObject:Boolean;end');
@@ -887,8 +887,8 @@ procedure TKMScripting.CompileScript;
 var
   I: Integer;
   Compiler: TPSPascalCompiler;
+  compileSuccess: Boolean;
   Msg: TPSPascalCompilerMessage;
-  Success: Boolean;
 begin
   Compiler := TPSPascalCompiler.Create; // create an instance of the compiler
   try
@@ -899,16 +899,15 @@ begin
     Compiler.AllowNoEnd := True; //Scripts only use event handlers now, main section is unused
     Compiler.BooleanShortCircuit := True; //Like unchecking "Complete booolean evaluation" in Delphi compiler options
 
-    Success := Compiler.Compile(fScriptCode); // Compile the Pascal script into bytecode
+    compileSuccess := Compiler.Compile(fScriptCode); // Compile the Pascal script into bytecode
 
     for I := 0 to Compiler.MsgCount - 1 do
     begin
       Msg := Compiler.Msg[I];
 
       if Msg.ErrorType = 'Hint' then
-      begin
-        fValidationIssues.AddHint(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
-      end else if Msg.ErrorType = 'Warning' then
+        fValidationIssues.AddHint(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString)
+      else if Msg.ErrorType = 'Warning' then
       begin
         fErrorHandler.AppendWarning(GetErrorMessage(Msg));
         fValidationIssues.AddWarning(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
@@ -916,7 +915,7 @@ begin
         AddError(Msg);
     end;
 
-    if not Success then
+    if not compileSuccess then
       Exit;
 
     Compiler.GetOutput(fByteCode);            // Save the output of the compiler in the string Data.
