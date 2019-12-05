@@ -1274,7 +1274,7 @@ end;
 //Does the player has any assets (without assets player is harmless)
 function TKMHand.HasAssets: Boolean;
 begin
-  Result := (GetFieldsCount > 0) or (Units.Count > 0) or (Houses.Count > 0);
+  Result := (Houses.Count > 0) or (Units.Count > 0) or (GetFieldsCount > 0);
 end;
 
 
@@ -1554,10 +1554,10 @@ var
   I,K: Integer;
 begin
   Result := 0;
-  for I := 1 to gTerrain.MapY do
-  for K := 1 to gTerrain.MapX do
-    if gTerrain.Land[I,K].TileOwner = fID then
-      Inc(Result);
+    for I := 1 to gTerrain.MapY do
+      for K := 1 to gTerrain.MapX do
+        if gTerrain.Land[I,K].TileOwner = fID then
+          Inc(Result);
 end;
 
 
