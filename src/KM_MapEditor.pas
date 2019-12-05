@@ -383,8 +383,8 @@ end;
 procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandID);
 begin
   if gHands = nil then Exit;
-
   if gHands.Count = 0 then Exit;
+  if not InRange(aIndex, 0, gHands.Count - 1) then Exit;
 
   Revealers[aIndex].Clear;
 

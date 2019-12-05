@@ -407,7 +407,7 @@
 410:Overwrite
 411:Map already exists
 412:Players:
-413:Default
+413:Default human player
 414:Player types
 415:Symmetrical
 416:Alliances
@@ -1266,3 +1266,6 @@
 1315:Harder
 1316:Very hard
 1317:Host game version doesn't match your game version
+1318:All
+1319:Allow '%s' for all available locs
+1320:Prohibit '%s' for all available locs

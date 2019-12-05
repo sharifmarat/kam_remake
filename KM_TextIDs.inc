@@ -489,7 +489,7 @@ TX_MAPED_SAVE_TITLE = 668; //Save Map
 TX_MAPED_SAVE_OVERWRITE = 410; //Overwrite
 TX_MAPED_SAVE_EXISTS = 411; //Map already exists
 TX_MAPED_PLAYERS = 412; //Players:
-TX_MAPED_PLAYERS_DEFAULT = 413; //Default
+TX_MAPED_PLAYERS_DEFAULT = 413; //Default human player
 TX_MAPED_PLAYERS_TYPE = 414; //Player types
 TX_MAPED_ALLIANCE_SYMMETRIC = 415; //Symmetrical
 TX_MAPED_ALLIANCE = 416; //Alliances
@@ -1155,6 +1155,9 @@ TX_WORD_CLOSE = 1117; //Close
 TX_WORD_TEXT = 1159; //Text
 
 TX_MAPED_PLAYER_DELETE = 1114; //Delete Player %d
+TX_MAPED_PLAYER_TYPE_ALLOW_ALL = 1318; //All
+TX_MAPED_PLAYER_TYPE_ALLOW_ALL_HINT = 1319; //Allow '%s' for all available locs
+TX_MAPED_PLAYER_TYPE_DISALLOW_ALL_HINT = 1320; //Prohibit '%s' for all available locs
 
 TX_MAPED_PLAYER_DELETE_TITLE = 1115; //Deleting Player %d
 TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the player?|All his data will be erased!

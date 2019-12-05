@@ -529,7 +529,7 @@ var
   I: Integer;
 begin
   gMySpectator.HandID := aIndex;
-  fGuiMission.GuiMissionPlayers.UpdatePlayer;
+  fGuiMission.GuiMissionPlayers.UpdatePlayer(aIndex);
 
   for I := 0 to MAX_HANDS - 1 do
     Button_PlayerSelect[I].Down := (I = gMySpectator.HandID);
