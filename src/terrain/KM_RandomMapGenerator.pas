@@ -950,6 +950,7 @@ begin
     SearchSimilarBiome.SearchArr := Shape2Arr;
     FillBiome.SearchArr := Shape2Arr;
     ShapeNum := -10;
+    RandBiom := 0;
 	  for Y := 1 to High(A) do
 		  for X := 1 to High(A[Y]) do
 			  if (Shape2Arr[Y,X] = -1) OR (Shape2Arr[Y,X] = -2) then begin
