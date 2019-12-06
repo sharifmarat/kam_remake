@@ -32,12 +32,11 @@ type
   private
     fGamePort: Word;
     fServerName: AnsiString;
-    procedure Receive(const aAddress: string; aData:pointer; aLength:cardinal); override;
     procedure Receive(const aAddress: string; aData: Pointer; aLength: Cardinal); override;
   public
-    procedure StartAnnouncing(const aGamePort: Word; const aName: AnsiString);
+    procedure StartAnnouncing(const aGamePort: Word; const aName: AnsiString; aAnnounce: Boolean);
     procedure StopAnnouncing;
-    procedure UpdateSettings(const aName: AnsiString);
+    procedure UpdateSettings(const aName: AnsiString; aScanPort: Word);
   end;
 
   TKMNetUDPScan = class(TKMNetUDP)
@@ -72,7 +71,7 @@ begin
 end;
 
 
-procedure TKMNetUDP.Error(const msg: string);
+procedure TKMNetUDP.Error(const Msg: String);
 begin
   if Assigned(fOnError) then fOnError(msg);
 end;
@@ -85,11 +84,12 @@ end;
 
 
 { TKMNetUDPAnnounce }
-procedure TKMNetUDPAnnounce.StartAnnouncing(const aGamePort: Word; const aName: AnsiString);
+procedure TKMNetUDPAnnounce.StartAnnouncing(const aGamePort: Word; const aName: AnsiString; aAnnounce: Boolean);
 begin
   fGamePort := aGamePort;
   fServerName := aName;
   fUDP.StopListening;
+  if aAnnounce then
     try
       fUDP.Listen(SERVER_DEFAULT_UDP_ANNOUNCE_PORT);
     except
@@ -106,10 +106,10 @@ begin
 end;
 
 
-procedure TKMNetUDPAnnounce.UpdateSettings(const aName: AnsiString);
+procedure TKMNetUDPAnnounce.UpdateSettings(const aName: AnsiString; aScanPort: Word);
 begin
   fServerName := aName;
-  fAnnounce := aAnnounce;
+  fScanPort := aScanPort;
 end;
 
 

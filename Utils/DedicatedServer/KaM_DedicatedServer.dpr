@@ -74,7 +74,7 @@ begin
                                       KMRange(fSettings.ServerLimitSpeedAfterPTFrom, fSettings.ServerLimitSpeedAfterPTTo));
   fDedicatedServer.Server.GameFilter := GameFilter;
   fDedicatedServer.OnMessage := fEventHandler.ServerStatusMessage;
-  fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer);
+  fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer, fSettings.ServerAnnounceUDP);
 
   while fDedicatedServer <> nil do
   begin

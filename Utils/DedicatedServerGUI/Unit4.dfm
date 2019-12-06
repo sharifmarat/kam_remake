@@ -229,7 +229,7 @@ object Form4: TForm4
         ParentColor = False
       end
       object Label5: TLabel
-        Left = 204
+        Left = 134
         Top = 64
         Width = 70
         Height = 16
@@ -295,7 +295,7 @@ object Form4: TForm4
         OnChange = ControlChange
       end
       object cPingInterval: TSpinEdit
-        Left = 204
+        Left = 134
         Top = 88
         Width = 112
         Height = 26
@@ -304,6 +304,15 @@ object Form4: TForm4
         TabOrder = 1
         Value = 10
         OnChange = ControlChange
+      end
+      object cAnnounceUDP: TCheckBox
+        Left = 268
+        Top = 88
+        Height = 24
+        Width = 112
+        Caption = 'Announce UDP'
+        TabOrder = 12
+        OnClick = ControlChange
       end
       object cMasterServerAddress: TEdit
         Left = 12

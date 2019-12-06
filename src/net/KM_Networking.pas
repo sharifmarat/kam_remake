@@ -203,7 +203,7 @@ type
 
     //Lobby
     property ServerQuery: TKMServerQuery read fServerQuery;
-    procedure Host(const aServerName: AnsiString; aPort: Word; const aNikname: AnsiString; aAnnounceServer: Boolean);
+    procedure Host(const aServerName: AnsiString; aPort: Word; const aNikname: AnsiString; aAnnounceServer, aAnnounceUDP: Boolean);
     procedure Join(const aServerAddress: string; aPort: Word; const aNikname: AnsiString; aRoom: Integer; aIsReconnection: Boolean = False);
     procedure AnnounceDisconnect(aLastSentCmdsTick: Cardinal = LAST_SENT_COMMANDS_TICK_NONE);
     procedure Disconnect;
@@ -378,7 +378,8 @@ end;
 
 
 //Startup a local server and connect to it as ordinary client
-procedure TKMNetworking.Host(const aServerName: AnsiString; aPort: Word; const aNikname: AnsiString; aAnnounceServer: Boolean);
+procedure TKMNetworking.Host(const aServerName: AnsiString; aPort: Word; const aNikname: AnsiString;
+                             aAnnounceServer, aAnnounceUDP: Boolean);
 begin
   fWelcomeMessage := '';
   fPassword := '';
@@ -388,7 +389,7 @@ begin
 
   fNetServer.OnMessage := gLog.AddTime; //Log server messages in case there is a problem, but hide from user
   try
-    fNetServer.Start(aServerName, aPort, aAnnounceServer);
+    fNetServer.Start(aServerName, aPort, aAnnounceServer, aAnnounceUDP);
   except
     on E : Exception do
     begin
