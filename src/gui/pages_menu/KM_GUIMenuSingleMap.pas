@@ -127,10 +127,11 @@ end;
 procedure TKMMenuSingleMap.Create_SingleMap(aParent: TKMPanel);
 const
   PAD_VERT = 44; //Padding from top/bottom
-  PAD_SIDE = 44; //Padding from sides
+  PAD_SIDE = 40; //Padding from sides
+  BUTTON_DIST = 6;
 var
   I: Integer;
-  Half: Word; //Half width for panes
+  Half, ButtonW: Word; //Half width for panes
   L: TKMLabel;
   B: TKMBevel;
 begin
@@ -259,18 +260,21 @@ begin
       B.Anchors := [anLeft, anBottom];
       L := TKMLabel.Create(Panel_Desc, 4, 614, 190, 20, gResTexts[TX_MENU_ENEMIES], fntMetal, taLeft);
       L.Anchors := [anLeft, anBottom];
-      for I := 0 to MAX_HANDS - 1 do
+      for I := MAX_HANDS - 1 downto 0 do
       begin
-        Image_Allies[I] := TKMImage.Create(Panel_Desc, 200 + I*22, 593, 50, 20, 81, rxGuiMain);
+        Image_Allies[I] := TKMImage.Create(Panel_Desc, Half - 1 - (I + 1)*22, 593, 50, 20, 81, rxGuiMain);
         Image_Allies[I].Anchors := [anLeft, anBottom];
-        Image_Enemies[I] := TKMImage.Create(Panel_Desc, 200 + I*22, 613, 50, 20, 81, rxGuiMain);
+        Image_Enemies[I] := TKMImage.Create(Panel_Desc, Half - 1 - (I + 1)*22, 613, 50, 20, 81, rxGuiMain);
         Image_Enemies[I].Anchors := [anLeft, anBottom];
       end;
 
-    Button_Back := TKMButton.Create(Panel_Single, 45, aParent.Height - PAD_VERT - 30, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
+    ButtonW := (Half - BUTTON_DIST) div 2;
+    Button_Back := TKMButton.Create(Panel_Single, PAD_SIDE, aParent.Height - PAD_VERT - 30,
+                                    ButtonW, 30, gResTexts[TX_MENU_BACK], bsMenu);
     Button_Back.Anchors := [anLeft, anBottom];
     Button_Back.OnClick := BackClick;
-    Button_Start := TKMButton.Create(Panel_Single, 270, aParent.Height - PAD_VERT - 30, 220, 30, gResTexts[TX_MENU_SINGLE_START_MAP], bsMenu);
+    Button_Start := TKMButton.Create(Panel_Single, PAD_SIDE + BUTTON_DIST + ButtonW, aParent.Height - PAD_VERT - 30,
+                                     ButtonW, 30, gResTexts[TX_MENU_SINGLE_START_MAP], bsMenu);
     Button_Start.Anchors := [anLeft, anBottom];
     Button_Start.OnClick := StartClick;
 end;

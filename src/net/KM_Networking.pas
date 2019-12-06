@@ -165,6 +165,7 @@ type
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind); overload;
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aStream: TKMemoryStreamBinary); overload;
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aParam: Integer); overload;
+//    procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aParams: array of Integer);
     procedure PacketSendInd(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aIndexOnServer: TKMNetHandleIndex);
     procedure PacketSendA(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aText: AnsiString);
     procedure PacketSendW(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aText: UnicodeString);
@@ -172,8 +173,10 @@ type
 
     function GetPacketsReceived(aKind: TKMessageKind): Cardinal;
     function GetPacketsSent(aKind: TKMessageKind): Cardinal;
+
+    procedure WriteInfoToJoinRoom(aM: TKMemoryStream);
   public
-    constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+    constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
                        aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                        const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
     destructor Destroy; override;
@@ -310,7 +313,7 @@ uses
 
 
 { TKMNetworking }
-constructor TKMNetworking.Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+constructor TKMNetworking.Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
                                  aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                                  const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
 var
@@ -320,7 +323,7 @@ begin
 
   SetGameState(lgsNone);
 
-  fNetServer := TKMDedicatedServer.Create(1, aKickTimeout, aPingInterval, aAnnounceInterval, aMasterServerAddress, '', '', False);
+  fNetServer := TKMDedicatedServer.Create(1, aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort, aMasterServerAddress, '', '', False);
   GameFilter := TKMPGameFilter.Create(aDynamicFOW, aMapsFilterEnabled, aMapsCRCListStr, aPeacetimeRng, aSpeedRng, aSpeedRngAfterPT);
   fNetServer.Server.GameFilter := GameFilter;
 
@@ -328,7 +331,7 @@ begin
 
   fNetClient := TKMNetClient.Create;
   fNetPlayers := TKMNetPlayersList.Create;
-  fServerQuery := TKMServerQuery.Create(aMasterServerAddress);
+  fServerQuery := TKMServerQuery.Create(aMasterServerAddress, aServerUDPScanPort);
   fNetGameOptions := TKMGameOptions.Create;
   fFileSenderManager := TKMFileSenderManager.Create;
   fMutedPlayersList := TList.Create;
@@ -879,12 +882,21 @@ begin
 end;
 
 
+procedure TKMNetworking.WriteInfoToJoinRoom(aM: TKMemoryStream);
+begin
+  aM.Write(fRoomToJoin);
+  aM.Write(TKMGameRevision(GAME_REVISION_NUM));
+end;
+
+
 procedure TKMNetworking.SendPassword(const aPassword: AnsiString);
 var
   M: TKMemoryStreamBinary;
 begin
   M := TKMemoryStreamBinary.Create;
-  M.Write(fRoomToJoin);
+
+  WriteInfoToJoinRoom(M);
+
   M.WriteA(aPassword);
   PacketSend(NET_ADDRESS_SERVER, mkPassword, M);
   M.Free;
@@ -1649,7 +1661,11 @@ begin
                 fMyIndexOnServer := tmpHandleIndex;
                 //PostLocalMessage('Index on Server - ' + inttostr(fMyIndexOnServer));
                 //Now join the room we planned to
-                PacketSend(NET_ADDRESS_SERVER, mkJoinRoom, fRoomToJoin);
+                M2 := TKMemoryStreamBinary.Create;
+                WriteInfoToJoinRoom(M2);
+
+                PacketSend(NET_ADDRESS_SERVER, mkJoinRoom, M2);
+                M2.Free;
               end;
 
       mkConnectedToRoom:
@@ -2352,6 +2368,26 @@ begin
 end;
 
 
+//procedure TKMNetworking.PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aParams: array of Integer);
+//var
+//  I: Integer;
+//  M: TKMemoryStreamBinary;
+//begin
+//  Assert(NetPacketType[aKind] = pfBinary); //Several numbers are considered as binary
+//
+//  LogPacket(True, aKind, aRecipient);
+//
+//  M := TKMemoryStreamBinary.Create;
+//  M.Write(aKind, SizeOf(TKMessageKind));
+//
+//  for I := 0 to Length(aParams) - 1 do
+//    M.Write(aParams[I]);
+//
+//  fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
+//  M.Free;
+//end;
+
+
 procedure TKMNetworking.PacketSendInd(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aIndexOnServer: TKMNetHandleIndex);
 var
   M: TKMemoryStreamBinary;
@@ -2494,14 +2530,14 @@ end;
 //Tell the server what we know about the game
 procedure TKMNetworking.AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 var
-  MPGameInfo: TMPGameInfo;
+  MPGameInfo: TKMPGameInfo;
   M: TKMemoryStreamBinary;
   I: Integer;
 begin
   //Only one player per game should send the info - Host
   if not IsHost then Exit;
 
-  MPGameInfo := TMPGameInfo.Create;
+  MPGameInfo := TKMPGameInfo.Create;
   try
     if (fNetGameState in [lgsLobby, lgsLoading]) then
     begin

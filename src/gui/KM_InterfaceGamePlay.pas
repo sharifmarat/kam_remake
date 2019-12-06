@@ -90,7 +90,7 @@ type
     procedure Beacon_Cancel;
     procedure Beacon_Place(const aLoc: TKMPointF);
     procedure Chat_Click(Sender: TObject);
-    procedure House_Demolish;
+    procedure House_Demolish(Sender: TObject; Shift: TShiftState);
     procedure Reset_Menu;
     function ArmyCanTakeOrder(aObject: TObject): Boolean;
     function IsSelectingTroopDirection(aObject: TObject): Boolean;
@@ -707,7 +707,9 @@ begin
       gSoundPlayer.PlayWarrior(Group.UnitType, spMove);
     end;
   end;
-  if ((gMySpectator.Selected is TKMHouseBarracks) or (gMySpectator.Selected is TKMHouseWoodcutters)) and not fPlacingBeacon
+  if  ((gMySpectator.Selected is TKMHouseBarracks)
+    or (gMySpectator.Selected is TKMHouseTownHall)
+    or (gMySpectator.Selected is TKMHouseWoodcutters)) and not fPlacingBeacon
     and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
   begin
     if gTerrain.Route_CanBeMade(TKMHouse(gMySpectator.Selected).PointBelowEntrance, Loc, tpWalk, 0) then
@@ -1439,7 +1441,8 @@ end;
 
 
 procedure TKMGamePlayInterface.CinematicUpdate;
-var I: Integer;
+var
+  I: Integer;
 begin
   if gMySpectator.Hand.InCinematic then
   begin
@@ -1465,6 +1468,8 @@ begin
   else
   begin
     SetMenuState(gGame.MissionMode = mmTactic); // Enable main buttons
+
+    Viewport.CinematicReset; //Reset Pan points for future cinematics
 
     MinimapView.Enable;
     Sidebar_Top.Enable;
@@ -1503,9 +1508,11 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.House_Demolish;
+procedure TKMGamePlayInterface.House_Demolish(Sender: TObject; Shift: TShiftState);
 begin
   SwitchPage(Button_Main[tbBuild]);
+  if ssShift in Shift then
+    fGuiGameBuild.ErasePlan; //Enable Delete mode again
 end;
 
 

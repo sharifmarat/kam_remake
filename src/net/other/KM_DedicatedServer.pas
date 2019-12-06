@@ -22,7 +22,7 @@ type
     procedure StatusMessage(const aData: string);
     procedure MasterServerError(const aData: string);
   public
-    constructor Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+    constructor Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
                        const aMasterServerAddress: String; const aHTMLStatusFile: String;
                        const aWelcomeMessage: UnicodeString; aDedicated: Boolean);
     destructor Destroy; override;
@@ -52,7 +52,7 @@ const
 
 
 //Announce interval of -1 means the server will not be published (LAN)
-constructor TKMDedicatedServer.Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+constructor TKMDedicatedServer.Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
                                       const aMasterServerAddress: String; const aHTMLStatusFile: String;
                                       const aWelcomeMessage: UnicodeString; aDedicated: Boolean);
 begin
@@ -60,7 +60,7 @@ begin
   fNetServer := TKMNetServer.Create(aMaxRooms, aKickTimeout, aHTMLStatusFile, aWelcomeMessage);
   fMasterServer := TKMMasterServer.Create(aMasterServerAddress, aDedicated);
   fMasterServer.OnError := MasterServerError;
-  fUDPAnnounce := TKMNetUDPAnnounce.Create;
+  fUDPAnnounce := TKMNetUDPAnnounce.Create(aServerUDPScanPort);
   fUDPAnnounce.OnError := StatusMessage;
 
   fAnnounceInterval := Max(MINIMUM_ANNOUNCE_INTERVAL, aAnnounceInterval);

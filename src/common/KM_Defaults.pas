@@ -24,6 +24,7 @@ const
   MIN_RESOLUTION_WIDTH  = 1024;         //Lowest supported resolution X
   MIN_RESOLUTION_HEIGHT = 576;          //Lowest supported resolution Y
   {$I KM_Revision.inc};
+  {$I KM_NetProtocolRevision.inc};
   {$IFDEF USESECUREAUTH}
     GAME_VERSION_POSTFIX  = '';
   {$ELSE}
@@ -215,7 +216,7 @@ const
   MAX_WOODCUTTER_CUT_PNT_DISTANCE = 5; //Max distance for woodcutter new cutting point from his house
 
 const
-  MAX_HANDS            = 12; //Maximum players (human or AI) per map
+  MAX_HANDS            = 18; //Maximum players (human or AI) per map
   MAX_LOBBY_PLAYERS    = 12;  //Maximum number of players (not spectators) allowed in the lobby. Map can have additional AI locations up to MAX_HANDS (for co-op).
   MAX_LOBBY_SPECTATORS = 2;  //Slots available in lobby. Additional slots can be used by spectators
   MAX_LOBBY_SLOTS      = MAX_LOBBY_PLAYERS + MAX_LOBBY_SPECTATORS;
@@ -286,6 +287,9 @@ const
 
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
+
+  SERVER_DEFAULT_UDP_SCAN_PORT = 56788;
+  EMPTY_ROOM_DEFAULT_GAME_REVISION = 0; //Placeholder for game revision in room
 
   LOC_RANDOM = 0;
   LOC_SPECTATE = -1;
@@ -798,6 +802,12 @@ const
   $FFFF0707, //Blue
   $FF0BE73F, //Light green
   $FF720468, //Purple
+  $FF22B3EE, //Yellowish
+  $FF668ACC, //Peach
+  $FF1A50B2, //Brownish
+  $FFB2611A, //Blueish
+  $FF60CC00, //Greenish + blue
+  $FF4F1AB2, //Purpleish
   $FFFFFFFF, //White
   $FF000000  //Black
   );
@@ -906,7 +916,8 @@ initialization
 begin
   GAME_REVISION := AnsiString('r' + IntToStr(GAME_REVISION_NUM));
   GAME_VERSION := GAME_VERSION_PREFIX + GAME_REVISION + GAME_VERSION_POSTFIX;
-  NET_PROTOCOL_REVISON := GAME_REVISION;     //Clients of this version may connect to the dedicated server
+  //Clients of this net protocol version may connect to the dedicated server
+  NET_PROTOCOL_REVISON := AnsiString('r' + IntToStr(NET_PROTOCOL_REVISION_NUM));
 end;
 
 end.

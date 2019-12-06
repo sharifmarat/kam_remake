@@ -104,6 +104,7 @@ type
     function GetReplayAutosaveEffectiveFrequency: Integer;
 
     function DoSaveRandomChecks: Boolean;
+    function DoSaveGameAsText: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -1718,7 +1719,7 @@ begin
   Assert((fGameMode <> gmMapEd) and (ALLOW_SAVE_IN_REPLAY or not IsReplay), 'Saving from wrong state');
 
   SaveStreamTxt := nil;
-  if SAVE_GAME_AS_TEXT then
+  if DoSaveGameAsText then
     SaveStreamTxt := TKMemoryStreamText.Create;
 
   SaveStream := TKMemoryStreamBinary.Create;
@@ -1751,14 +1752,14 @@ begin
       end
     end;
     SaveStream.SaveToFile(aPathName); //Some 70ms for TPR7 map
-    if SAVE_GAME_AS_TEXT then
+    if DoSaveGameAsText then
     begin
       SaveGameToStream(aTimestamp, SaveStreamTxt);
       SaveStreamTxt.SaveToFile(aPathName + EXT_SAVE_TXT_DOT);
     end;
   finally
     FreeAndNil(SaveStream);
-    if SAVE_GAME_AS_TEXT then
+    if DoSaveGameAsText then
       FreeAndNil(SaveStreamTxt);
   end;
 
@@ -2392,6 +2393,13 @@ begin
   Result := gGameApp.GameSettings.DebugSaveRandomChecks
             and SAVE_RANDOM_CHECKS
             and (gRandomCheckLogger <> nil);
+end;
+
+
+function TKMGame.DoSaveGameAsText: Boolean;
+begin
+  Result := gGameApp.GameSettings.DebugSaveGameAsText
+            and SAVE_GAME_AS_TEXT;
 end;
 
 

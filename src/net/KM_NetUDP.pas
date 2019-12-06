@@ -19,11 +19,13 @@ type
     fOnError: TGetStrProc;
     procedure Receive(const aAddress: string; aData:pointer; aLength:cardinal); virtual; abstract;
     procedure Error(const msg: string);
+  protected
+    fPort: Word;
   public
-    constructor Create;
+    constructor Create(aPort: Word);
     destructor Destroy; override;
     procedure UpdateStateIdle;
-    property OnError:TGetStrProc write fOnError;
+    property OnError: TGetStrProc write fOnError;
   end;
 
   TKMNetUDPAnnounce = class(TKMNetUDP)
@@ -51,11 +53,12 @@ type
 implementation
 
 
-constructor TKMNetUDP.Create;
+constructor TKMNetUDP.Create(aPort: Word);
 begin
   Inherited Create;
   {$IFDEF WDC} fUDP := TKMNetUDPOverbyte.Create; {$ENDIF}
   {$IFDEF FPC} fUDP := TKMNetUDPLNet.Create;     {$ENDIF}
+  fPort := aPort;
   fUDP.OnError := Error;
   fUDP.OnRecieveData := Receive;
 end;
@@ -137,7 +140,7 @@ begin
     M.Write(fGamePort);
     M.WriteA(fServerName);
 
-    fUDP.SendPacket(aAddress, 56788, M.Memory, M.Size);
+    fUDP.SendPacket(aAddress, fPort, M.Memory, M.Size);
   finally
     M.Free;
   end;
@@ -152,7 +155,7 @@ begin
   //Prepare to receive responses
   fUDP.StopListening;
   try
-    fUDP.Listen(56788);
+    fUDP.Listen(fPort);
   except
     //UDP scan is not that important, and could fail during debugging if running two KaM Remake instances
     on E: Exception do

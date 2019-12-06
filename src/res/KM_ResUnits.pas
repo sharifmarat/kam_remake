@@ -429,7 +429,7 @@ begin
     fItems[U] := TKMUnitSpec.Create(U);
 
   fCRC := LoadUnitsDat(ExeDir+'data' + PathDelim + 'defines' + PathDelim + 'unit.dat');
-  fItems[utHorseScout].fUnitDat.Sight := 16;
+  fItems[utHorseScout].fUnitDat.Sight := 13;
   fItems[utHorseman].fUnitDat.Attack := 35;
   fItems[utPeasant].fUnitDat.AttackHorse := 50;
   fItems[utPikeman].fUnitDat.AttackHorse := 60;

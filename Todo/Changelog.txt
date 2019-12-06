@@ -1,7 +1,7 @@
 ﻿Since r6720:
 <===================================================================================>
 Todo:
-  Update translation for labels: 152, 153, 270, 276, 457, 537, 548, 549, 624, 642, 775, 802. Remove 964, 671
+  Update translation for labels: 152, 153, 270, 276, 413, 457, 537, 548, 549, 624, 642, 775, 802, 964
 Bugs:
  +  Lobby map list should show 8 locations at most, since only 8 locations can be used by humans at once
  +  Armour smithy has iron as 1st input, weapon smithy has iron as 2nd input (iron/coal swapped). Would make sense to match them (note: simpply swapping in KM_ResourceHouses causes game logic to be swapped with GUI)
@@ -89,12 +89,19 @@ Bugs to fix in future:
 
 
 Improvements: 
+ Balance changes:
+ +    Scout vision increased from 9 to 13
+ +    Rebel attack horse bonus reduced to 50
+ +    Lancer (pikeman)  attack horse bonus increased to 60
+ +    Slightly reduced bows fire rate
  Network:
  +  H  Server network code improvement, packing all of the packets to destination player for short period of time (~20ms) into one packet. It significantly reduces network traffik and allow scale of the lobby
  +  H  Fixed situation, when 1 player lags cause all players to lag
+ +     Allow 1 server works for many game versions. 1 server can handle clients with same network protocol revision 
  +     Added ability to setup server as 'standart' - limit map roster and set range limits for peacetime and game speeds
  +     Allow to setup Server name with leading spaces in settings.ini
  +     Added server ini setting to set it up only for games with Demo version of DynamicFOW
+ +     Added server setting to setup server UDP scan port
  Graphics:
  +  M  Terrain render improvement. Use openGL VBO to render tiles and animated tiles (water/falls/swamp). FPS increased up to 2 times
  +     Render optimisation: do not render anything under the FOW
@@ -104,9 +111,12 @@ Improvements:
  +    Select area to work in for woodcutters
  +    Woodcutter's house new woodcutter mode - Plant only
  +    New house delivery mode (ability to take ware out of the house, using house same as storage)
+ +    Added ability to specify what wares has to stay in the Barracks during evacuation (new "red triangle" on right mouse click was added there)
  +    Ability to dismiss citizens. They will go to school and leave town forever
  +    Redispatch serf with ware when delivery target was destroyed (house demolished or warrior died)
+ +    Woodcutter now prefers trees and places to plant which are closer to Cutting Point
  +    Serfs delivery optimisations. Including situation, when serf inside house could overtake task for that house, that is already taken by other serf.
+ +    Delivery TakeOut: allow to block takeOut of certain wares. Allow takeout from barracks/storehouses/markets
  +    Serfs if hungry will start eat food in the Inn immidiately after bringing it in
  +    Ability to select ally's house/unit (without control on it)
  +    Ability to set players color to self / ally / enemy mode. Those color could be set in the settings.ini file (PlayerColorSelf/PlayerColorAlly/PlayerColorEnemy)
@@ -115,6 +125,7 @@ Improvements:
  +    Slight route optimization for warriors attacking house
  +    Ability to forbid recruits to enter the barracks
  +    Change unit training order in School on Ctrl+click, Shift+click
+ +    Holding shift while destroy house will keep destroy mode on
  +  L Pressing LMB over placed plans and dragging it - will remove plans
  +    Do not show owner of corn/wine tile on minimap
  +  L Unit group: Splitting one soldier from the group by pressing Ctrl+Separate warrior order
@@ -133,6 +144,7 @@ Improvements:
  +    Enlarge troops direction selector change dir from 15 to 20 pixels
  +    Limit number of units appeared after house destroy to 50 (was 255)
  +    Limit max number of equpped units at once to 100
+ +    Reduce AttackAlert 'Fight distance' from 24 to 12 and duration from 6 to 5 sec (to avoid markers at locs, where battle is over for a long time already)
  +    Game statistics:
         Ability to see stats while watching replay / spectating. Or allied players stats while playing
         Army: Separate statistics for different warrior types with filters (total/instantenious/lost/defeated)
@@ -151,7 +163,7 @@ Improvements:
  +    New ability to mute annoying player in chat (both lobby chat and game chat) - text and also beacons
  +    Show message in chat for AFK players
  +    Added game chat enter history (console-like)
- +  L Save wares distribution ratios between games
+ +  L Save wares distribution ratios between games (also possible to enable/disable in settings.ini)
  +  L House not occupied message mentions which house it is ("This farm is not occupied")
  +  L Do switching of main game menu tabs with F1-F4 even if settings/save/load sub-menus are open
  +    Game stats 'Weapons produced' now contains horses as well
@@ -215,6 +227,7 @@ Improvements:
  +    In menu is possible to focus next edit controls with Tab hotkey
  +    'Center alert' hotkey (space by default) jump not only to active alerts on minimap, but also to the unread located messages (hungry units/unused houses etc)
  +    Added Ctrl + F11 hotkey to open debug menu with hidden panel. Convinient to make screenshots in FullScreen mode
+ +    Added hotkey to go to next tick in the replay
  
  Spectating/watching replay:
  +    Added panel with game stats for all players
@@ -293,7 +306,7 @@ Improvements:
           + Can Build without house/tree passability - show tiles, where it will be possible to build, after tree or house is removed
         New layers:
           + Show tile overlays (road/field/corn)
-          + Show mining ranges - show mining ranges for cola/iron/gold mines
+          + Show mining ranges - show mining ranges for cola/iron/gold mines/woodcutter/quarry/fisherhut/farm/wineyard
           + Show towers attack radius
           + Show units attack radius - for ranged units only
           + Show tile owner
@@ -316,6 +329,7 @@ Improvements:
  +    Added new script module Utils
  +    Added shortcuts for Actions/States/Utils as A/S/U
  +    Added functions to check if group or warrior is in fight
+ +    Added action HouseTownHallEquip
  
  Other: 
  +  L Saving and restoring games window position on restart

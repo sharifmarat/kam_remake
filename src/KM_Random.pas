@@ -57,7 +57,7 @@ var
 
 implementation
 uses
-  Classes, SysUtils, KromUtils, KM_Defaults{, KM_Game};
+  KM_Log, Classes, SysUtils, KromUtils, KM_Defaults{, KM_Game};
 
 //const
 //  MAX_LOG_LENGTH = 200000;
@@ -173,6 +173,12 @@ var
   CallerName: AnsiString;
   Tick: Cardinal;
 begin
+  if not FileExists(aPath) then
+  begin
+    gLog.AddTime('RandomsChecks file ''' + aPath + ''' was not found. Skip load rng');
+    Exit;
+  end;
+
   Clear;
   LoadStream := TKMemoryStreamBinary.Create;
   try
