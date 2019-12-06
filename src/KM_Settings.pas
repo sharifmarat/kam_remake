@@ -137,7 +137,7 @@ type
     //Server
     fServerPort: string;
     fServerUDPScanPort: Word;
-    fServerAnnounceUDP: Boolean;
+    fServerUDPAnnounce: Boolean;
     fMasterServerAddress: string;
     fServerName: AnsiString;
     fMasterAnnounceInterval: Integer;
@@ -231,7 +231,7 @@ type
     procedure SetMasterServerAddress(const aValue: string);
     procedure SetServerName(const aValue: AnsiString);
     procedure SetServerPort(const aValue: string);
-    procedure SetServerAnnounceUDP(aValue: Boolean);
+    procedure SetServerUDPAnnounce(aValue: Boolean);
     procedure SetServerUDPScanPort(const aValue: Word);
     procedure SetServerWelcomeMessage(const aValue: UnicodeString);
     procedure SetAnnounceServer(aValue: Boolean);
@@ -331,7 +331,7 @@ type
 
     //Server
     property ServerPort: string read fServerPort write SetServerPort;
-    property ServerAnnounceUDP: Boolean read fServerAnnounceUDP write SetServerAnnounceUDP;
+    property ServerUDPAnnounce: Boolean read fServerUDPAnnounce write SetServerUDPAnnounce;
     property ServerUDPScanPort: Word read fServerUDPScanPort write SetServerUDPScanPort;
     property MasterServerAddress: string read fMasterServerAddress write SetMasterServerAddress;
     property ServerName: AnsiString read fServerName write SetServerName;
@@ -658,8 +658,8 @@ begin
     fFlashOnMessage         := F.ReadBool   ('Multiplayer','FlashOnMessage',True);
 
     fServerPort             := F.ReadString ('Server','ServerPort','56789');
-    fServerUDPScanPort      := F.ReadInteger('Server','ServerUDPScanPort',SERVER_DEFAULT_UDP_SCAN_PORT);
-    fServerAnnounceUDP      := F.ReadBool   ('Server','AnnounceUDP',True);
+    fServerUDPScanPort      := F.ReadInteger('Server','UDPScanPort',SERVER_DEFAULT_UDP_SCAN_PORT);
+    fServerUDPAnnounce      := F.ReadBool   ('Server','UDPAnnounce',True);
 
     //We call it MasterServerAddressNew to force it to update in everyone's .ini file when we changed address.
     //If the key stayed the same then everyone would still be using the old value from their settings.
@@ -787,8 +787,8 @@ begin
     F.WriteString ('Server','ServerName',                   '''' + UnicodeString(fServerName) + ''''); //Add single quotes for server name
     F.WriteString ('Server','WelcomeMessage',               {$IFDEF FPC} UTF8Encode {$ENDIF}(fServerWelcomeMessage));
     F.WriteString ('Server','ServerPort',                   fServerPort);
-    F.WriteInteger('Server','ServerUDPScanPort',            fServerUDPScanPort);
-    F.WriteBool   ('Server','AnnounceUDP',                  fServerAnnounceUDP);
+    F.WriteInteger('Server','UDPScanPort',                  fServerUDPScanPort);
+    F.WriteBool   ('Server','UDPAnnounce',                  fServerUDPAnnounce);
     F.WriteBool   ('Server','AnnounceDedicatedServer',      fAnnounceServer);
     F.WriteInteger('Server','MaxRooms',                     fMaxRooms);
     F.WriteInteger('Server','PacketsAccumulatingDelay',     fServerPacketsAccumulatingDelay);
@@ -1223,9 +1223,9 @@ begin
 end;
 
 
-procedure TKMGameSettings.SetServerAnnounceUDP(aValue: Boolean);
+procedure TKMGameSettings.SetServerUDPAnnounce(aValue: Boolean);
 begin
-  fServerAnnounceUDP := aValue;
+  fServerUDPAnnounce := aValue;
   Changed;
 end;
 
