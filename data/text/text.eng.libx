@@ -1211,61 +1211,106 @@
 1260:Take out '%s' is prohibited while in the 'offer' delivery mode
 1261:Recruit is not allowed to get into Barracks
 1262:Search tile by ID 
-1263:RMG Settings
+1263:Random Map Generator - Settings
 1264:Random map generator settings
-1265:Random Map Generator - Settings
-1266:Locs
-1267:Active
-1268:Layout
-1269:Rectangle
-1270:Vertical
-1271:Horizontal
-1272:Random
-1273:Center Screen
-1274:Loc radius
-1275:Resources
-1276:Connect Locs
-1277:Mine fix
-1278:Obstacles
-1279:Swamp
-1280:Wetland
-1281:Water
-1282:Density
-1283:Size
-1284:Variance
-1285:Walk textures
-1286:Biomes
-1287:Grass
-1288:Ground
-1289:Snow
-1290:Sand
-1291:First layer
-1292:Second layer
-1293:Step
-1294:Limit
-1295:Height
-1296:H_N-S_T
-1297:Inaccesible places
-1298:NoGo Zones
-1299:Replace mountains terrain
-1300:Objects
-1301:Animals
-1302:Forests
-1303:Trees
-1304:Empty gold
-1305:Empty iron
-1306:Seed
-1307:Basic tiles
-1308:Cellular automaton
-1309:New Random Seed
-1310:Generate map
-1311:Map size:
-1312:Play next tick in replay
-1313:Easier
-1314:Very easy
-1315:Harder
-1316:Very hard
-1317:Host game version doesn't match your game version
-1318:All
-1319:Allow '%s' for all available locs
-1320:Prohibit '%s' for all available locs
+1265:RMG Settings
+1266:Map size:
+1267:Locations
+1268:Enable locations with resources
+1269:Number of locations
+1270:Set number of locations
+1271:Protected radius
+1272:Specify the size of the protected area. It secures the buildable area around each location.
+1273:Connect locations
+1274:Create walking paths between locations
+1275:Layout
+1276:The layout of the locations
+1277:Rectangle
+1278:Vertical
+1279:Horizontal
+1280:Random
+1281:Center Screen
+1282:Resources
+1283:Enable resources in each location (coal is computed automatically)
+1284:Mine fix
+1285:Secure that resources are mineable (gold mine and iron mine)
+1286:Resource quantity: stones
+1287:Resource quantity: gold
+1288:Resource quantity: iron
+1289:Obstacles
+1290:Enable obstacles (mountains, rivers, swamps, etc.)
+1291:Size
+1292:The average size of generated obstacles
+1293:Density
+1294:The density of generated obstacles
+1295:Variance
+1296:The variance in size of generated obstacles
+1297:Ratio
+1298:Type and ratio of generated obstacles
+1299:Empty gold
+1300:Empty gold ratio
+1301:Empty iron
+1302:Empty iron ratio
+1303:Swamp
+1304:Swamp ratio
+1305:Wetland
+1306:Wetland ratio
+1307:Water
+1308:Water ratio
+1309:Biomes
+1310:Enable biomes
+1311:Type of biome
+1312:Select required biomes
+1313:Grass
+1314:The grass is default biome and cannot be removed
+1315:Ground
+1316:Enable ground
+1317:Snow
+1318:Enable snow
+1319:Sand
+1320:Enable sand
+1321:First layer
+1322:The first layer of biome (properties of the primary texture)
+1323:Second layer
+1324:The second layer of biome (properties of secondary textures)
+1325:Step
+1326:Step of the primary texture (higher value = larger biome)
+1327:Step of secondary textures (higher value = larger biome)
+1328:Limit
+1329:Limitation of biome borders (higher value = larger biome)
+1330:Height
+1331:Enable height
+1332:Hide jagged edges
+1333:Adjust terrain height so rough texture transitions are hidden
+1334:Inaccesible places
+1335:Treatment of inaccessible places
+1336:Block walking
+1337:Block walking (improves game pathfinding and generation of the navigation mesh)
+1338:Change texture
+1339:Replace terrain with special biomes
+1340:Objects
+1341:Enable objects
+1342:Animals
+1343:Enable animals
+1344:Object density
+1345:Forests
+1346:Number of forests
+1347:Trees
+1348:Number of trees in the forest
+1349:Seed
+1350:A number that is used as an identifier to generate a map with a specific configuration
+1351:New Random Seed
+1352:Generate map with new Seed
+1353:Generate map
+1354:Generate map with current Seed
+1355:Close Random Map Generator
+1356:Map size:
+1357:Play next tick in replay
+1358:Easier
+1359:Very easy
+1360:Harder
+1361:Very hard
+1362:Host game version doesn't match your game version
+1363:All
+1364:Allow '%s' for all available locs
+1365:Prohibit '%s' for all available locs
