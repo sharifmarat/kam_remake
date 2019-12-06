@@ -14,9 +14,9 @@ type
     fMasterServer: TKMMasterServer;
     fUDPAnnounce: TKMNetUDPAnnounce;
     fOnMessage: TUnicodeStringEvent;
-    fPublishServer: boolean;
-    fAnnounceInterval: word;
-    fPingInterval: word;
+    fPublishServer: Boolean;
+    fAnnounceInterval: Word;
+    fPingInterval: Word;
     fPort: Word;
     fServerName: AnsiString;
     procedure StatusMessage(const aData: string);
