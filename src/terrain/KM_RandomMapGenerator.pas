@@ -897,8 +897,6 @@ const
   Tr_Sand: array[0..2] of TBiomeType = (btGrassSand1,btGrassSand2,btGrassSand3);
   Tr_GroundSnow: array[0..2] of TBiomeType = (btGround,btGroundSnow,btSnow1);
 begin
-  // Declare variable to have peace with compiler
-//  RandBiom := 0;
   // Create Shapes (multiple layers)
   ShapeArr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 4),1000);
   Shape2Arr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 2),1000);
@@ -963,10 +961,10 @@ begin
     SearchSimilarBiome.SearchArr := Shape2Arr;
     FillBiome.SearchArr := Shape2Arr;
     ShapeNum := -10;
-    RandBiom := 0;
 	  for Y := 1 to High(A) do
 		  for X := 1 to High(A[Y]) do
-			  if (Shape2Arr[Y,X] = -1) OR (Shape2Arr[Y,X] = -2) then begin
+			  if (Shape2Arr[Y,X] = -1) OR (Shape2Arr[Y,X] = -2) then
+        begin
           case A[Y,X-1] of
             Byte(btGrass):      RandBiom := Byte(  Tr_Grass[ fRNG.RandomI(length(Tr_BigGrass)) ]           );
             Byte(btBigGrass):   RandBiom := Byte(  Tr_BigGrass[ fRNG.RandomI(length(Tr_BigGrass)) ]        );
