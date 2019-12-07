@@ -14,11 +14,12 @@ type
     fMasterServer: TKMMasterServer;
     fUDPAnnounce: TKMNetUDPAnnounce;
     fOnMessage: TUnicodeStringEvent;
-    fPublishServer: boolean;
-    fAnnounceInterval: word;
-    fPingInterval: word;
+    fPublishServer: Boolean;
+    fAnnounceInterval: Word;
+    fPingInterval: Word;
     fPort: Word;
     fServerName: AnsiString;
+    fAnnounceUDP: Boolean;
     procedure StatusMessage(const aData: string);
     procedure MasterServerError(const aData: string);
   public
@@ -27,12 +28,13 @@ type
                        const aWelcomeMessage: UnicodeString; aDedicated: Boolean);
     destructor Destroy; override;
 
-    procedure Start(const aServerName: AnsiString; const aPort: Word; aPublishServer:boolean);
+    procedure Start(const aServerName: AnsiString; const aPort: Word; aPublishServer, aAnnounceUDP: Boolean);
     procedure Stop;
     procedure UpdateState;
-    procedure UpdateSettings(const aServerName: AnsiString; aPublishServer: Boolean; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
-                             const aMasterServerAddress: string; const aHTMLStatusFile: string; const aWelcomeMessage: UnicodeString;
-                             const aServerPacketsAccDelay: Integer);
+    procedure UpdateSettings(const aServerName: AnsiString; aPublishServer, aAnnounceUDP: Boolean;
+                             aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
+                             const aMasterServerAddress: string; const aHTMLStatusFile: string;
+                             const aWelcomeMessage: UnicodeString; const aServerPacketsAccDelay: Integer);
     property OnMessage: TUnicodeStringEvent write fOnMessage;
     
     procedure GetServerInfo(var aList: TList);
@@ -80,14 +82,15 @@ begin
 end;
 
 
-procedure TKMDedicatedServer.Start(const aServerName: AnsiString; const aPort: Word; aPublishServer:boolean);
+procedure TKMDedicatedServer.Start(const aServerName: AnsiString; const aPort: Word; aPublishServer, aAnnounceUDP: Boolean);
 begin
   fPort := aPort;
   fServerName := aServerName;
   fPublishServer := aPublishServer;
+  fAnnounceUDP := aAnnounceUDP;
   fNetServer.OnStatusMessage := StatusMessage;
   fNetServer.StartListening(fPort, fServerName);
-  fUDPAnnounce.StartAnnouncing(fPort, fServerName);
+  fUDPAnnounce.StartAnnouncing(fPort, fServerName, fAnnounceUDP);
 end;
 
 
@@ -124,8 +127,10 @@ begin
 end;
 
 
-procedure TKMDedicatedServer.UpdateSettings(const aServerName: AnsiString; aPublishServer:boolean; aKickTimeout, aPingInterval, aAnnounceInterval:word;
-                                            const aMasterServerAddress:string; const aHTMLStatusFile:string; const aWelcomeMessage: UnicodeString;
+procedure TKMDedicatedServer.UpdateSettings(const aServerName: AnsiString; aPublishServer, aAnnounceUDP: Boolean;
+                                            aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
+                                            const aMasterServerAddress: String; const aHTMLStatusFile: String;
+                                            const aWelcomeMessage: UnicodeString;
                                             const aServerPacketsAccDelay: Integer);
 begin
   fAnnounceInterval := Max(MINIMUM_ANNOUNCE_INTERVAL, aAnnounceInterval);
@@ -133,9 +138,10 @@ begin
   fMasterServer.MasterServerAddress := aMasterServerAddress;
   fServerName := aServerName;
   fPublishServer := aPublishServer;
+  fAnnounceUDP := aAnnounceUDP;
 
   fNetServer.UpdateSettings(aKickTimeout, aHTMLStatusFile, aWelcomeMessage, aServerName, aServerPacketsAccDelay);
-  fUDPAnnounce.UpdateSettings(aServerName);
+  fUDPAnnounce.UpdateSettings(aServerName, aServerUDPScanPort);
 
   fLastAnnounce := 0; //Make the server announce itself next update so the changes are sent to the master server ASAP
 end;

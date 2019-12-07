@@ -289,6 +289,7 @@ const
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
 
   SERVER_DEFAULT_UDP_SCAN_PORT = 56788;
+  SERVER_DEFAULT_UDP_ANNOUNCE_PORT = 56789;
   EMPTY_ROOM_DEFAULT_GAME_REVISION = 0; //Placeholder for game revision in room
 
   LOC_RANDOM = 0;
@@ -835,8 +836,10 @@ const
   icLightOrange = $FF80CCFF;
   icLightRed   = $FF7070FF;
   icLight2Red   = $FFB0B0FF;
+  icDarkOrange = $FF0060FF;
   icDarkCyan   = $FFB0B000;
   icLightGreen = $FF00F000;
+  icGreenYellow = $FF00FFBB;
 
   icPink = $FFFF00FF;
   icDarkPink = $FFAA00AA;

@@ -203,6 +203,8 @@ type
     property MissionMode: TKMissionMode read fMissionMode write fMissionMode;
     property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty write fMissionDifficulty;
     property GameLockedMutex: Boolean read fGameLockedMutex write fGameLockedMutex;
+
+    function HasMissionDifficulty: Boolean;
     function GetNewUID: Integer;
     function GetNormalGameSpeed: Single;
     procedure StepOneFrame;
@@ -1468,6 +1470,12 @@ begin
 
   fUIDTracker := (fUIDTracker + step) mod max_value + 1; //1..N range, 0 is nothing for colorpicker
   Result := fUIDTracker;
+end;
+
+
+function TKMGame.HasMissionDifficulty: Boolean;
+begin
+  Result := fMissionDifficulty <> mdNone;
 end;
 
 

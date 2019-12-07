@@ -18,6 +18,7 @@ type
   TForm4 = class(TForm)
     ButtonApply: TButton;
     cAnnounceServer: TCheckBox;
+    cAnnounceUDP: TCheckBox;
     cAutoKickTimeout: TSpinEdit;
     cHTMLStatusFile: TEdit;
     cMasterAnnounceInterval: TSpinEdit;
@@ -177,6 +178,7 @@ begin
   cMaxRooms.Enabled   := state;
   cServerPort.Enabled := state;
   cUDPScanPort.Enabled := state;
+  cAnnounceUDP.Enabled := state;
 end;
 
 
@@ -206,7 +208,8 @@ begin
                                             KMRange(fSettings.ServerLimitSpeedAfterPTFrom, fSettings.ServerLimitSpeedAfterPTTo));
         fDedicatedServer.Server.GameFilter := GameFilter;
         fDedicatedServer.OnMessage := ServerStatusMessage;
-        fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer);
+        fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer,
+                               fSettings.ServerUDPAnnounce);
 
         fServerStatus := aStatus;
         StartStopButton.Caption := 'Server is ONLINE';
@@ -294,6 +297,7 @@ begin
   end;
 
   fSettings.AnnounceServer          := cAnnounceServer.Checked;
+  fSettings.ServerUDPAnnounce       := cAnnounceUDP.Checked;
   fSettings.AutoKickTimeout         := cAutoKickTimeout.Value;
   fSettings.PingInterval            := cPingInterval.Value;
   fSettings.MasterAnnounceInterval  := cMasterAnnounceInterval.Value;
@@ -305,7 +309,7 @@ begin
     fSettings.ServerUDPScanPort := UDPScanPort
   else begin
     UDPScanPort := fSettings.ServerUDPScanPort;
-    cServerPacketsAccDelay.Text := IntToStr(fSettings.ServerUDPScanPort);
+    cUDPScanPort.Text := IntToStr(fSettings.ServerUDPScanPort);
   end;
 
   fSettings.MaxRooms                := cMaxRooms.Value;
@@ -318,9 +322,11 @@ begin
 
     fDedicatedServer.UpdateSettings(cServerName.Text,
                                     cAnnounceServer.Checked,
+                                    cAnnounceUDP.Checked,
                                     cAutoKickTimeout.Value,
                                     cPingInterval.Value,
                                     cMasterAnnounceInterval.Value,
+                                    UDPScanPort,
                                     cMasterServerAddress.Text,
                                     cHTMLStatusFile.Text,
                                     cServerWelcomeMessage.Text,
@@ -338,6 +344,7 @@ begin
   cServerWelcomeMessage.Text    := fSettings.ServerWelcomeMessage;
   cServerPacketsAccDelay.Text   := IntToStr(fSettings.ServerPacketsAccumulatingDelay);
   cAnnounceServer.Checked       := fSettings.AnnounceServer;
+  cAnnounceUDP.Checked          := fSettings.ServerUDPAnnounce;
   cAutoKickTimeout.Value        := fSettings.AutoKickTimeout;
   cPingInterval.Value           := fSettings.PingInterval;
   cMasterAnnounceInterval.Value := fSettings.MasterAnnounceInterval;

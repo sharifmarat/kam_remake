@@ -793,7 +793,8 @@ begin
 
   gGameApp.Networking.OnHostFail := MP_HostFail;
   gGameApp.Networking.Host(AnsiString(Edit_MP_ServerName.Text), serverPort,
-                           AnsiString(Edit_MP_PlayerName.Text), (Sender = Button_MP_CreateWAN));
+                           AnsiString(Edit_MP_PlayerName.Text), (Sender = Button_MP_CreateWAN),
+                           gGameApp.GameSettings.ServerUDPAnnounce);
 end;
 
 

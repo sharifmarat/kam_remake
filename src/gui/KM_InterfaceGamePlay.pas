@@ -272,8 +272,11 @@ type
           Button_NetConfirmYes,Button_NetConfirmNo: TKMButton;
     Panel_Menu: TKMPanel;
       Button_Menu_Save, Button_Menu_Load, Button_Menu_ReturnLobby, Button_Menu_Settings, Button_Menu_Quit,
-      Button_Menu_TrackUp, Button_Menu_TrackDown, Button_ShowStats: TKMButton;
-      Label_Menu_Track, Label_GameTime, Label_MapName: TKMLabel;
+      Button_ShowStats: TKMButton;
+      Label_GameTime, Label_MapName: TKMLabel;
+      Panel_Track: TKMPanel;
+        Label_Menu_Track: TKMLabel;
+        Button_Menu_TrackUp, Button_Menu_TrackDown: TKMButton;
 
       Panel_Save: TKMPanel;
         ListBox_Save: TKMListBox;
@@ -353,12 +356,13 @@ uses
   KM_Utils, KM_ScriptingEvents,
   KM_CommonUtils, KM_ResLocales, KM_ResSound, KM_Resource, KM_Log, KM_ResCursors, KM_ResFonts, KM_ResKeys,
   KM_ResSprites, KM_ResUnits, KM_ResWares, KM_FogOfWar, KM_Sound, KM_NetPlayersList, KM_MessageLog, KM_NetworkTypes,
-  KM_InterfaceMapEditor, KM_HouseWoodcutters,
+  KM_InterfaceMapEditor, KM_HouseWoodcutters, KM_MapTypes,
   KM_GameTypes;
 
 const
   ALLIES_ROWS = 7;
   PANEL_ALLIES_WIDTH = 840;
+  PANEL_TRACK_TOP = 285;
 
 
 procedure TKMGamePlayInterface.Menu_Save_ListChange(Sender: TObject);
@@ -1346,19 +1350,24 @@ begin
   Button_Menu_Quit.Hint := gResTexts[TX_MENU_QUIT_MISSION];
   Button_Menu_Quit.OnClick := SwitchPage;
 
-  Button_Menu_TrackUp := TKMButton.Create(Panel_Menu, 160, 300, 20, 30, '>', bsGame);
-  Button_Menu_TrackDown := TKMButton.Create(Panel_Menu, 0, 300, 20, 30, '<', bsGame);
-  Button_Menu_TrackUp.Hint := gResTexts[TX_MUSIC_NEXT_HINT];
-  Button_Menu_TrackDown.Hint := gResTexts[TX_MUSIC_PREV_HINT];
-  Button_Menu_TrackUp.OnClick := Menu_NextTrack;
-  Button_Menu_TrackDown.OnClick := Menu_PreviousTrack;
-  TKMLabel.Create(Panel_Menu, 0, 285, TB_WIDTH, 30, gResTexts[TX_MUSIC_PLAYER], fntOutline, taCenter);
-  Label_Menu_Track := TKMLabel.Create(Panel_Menu, 23, 306, TB_WIDTH - 46, 30, '', fntGrey, taCenter);
-  Label_Menu_Track.Hitable := False; // It can block hits for the track Up/Down buttons as they overlap
   TKMLabel.Create(Panel_Menu, 0, 198, TB_WIDTH, 30, gResTexts[TX_GAMEPLAY_GAME_TIME] + ':', fntOutline, taCenter);
   Label_GameTime := TKMLabel.Create(Panel_Menu, 0, 218, TB_WIDTH, 20, '', fntGrey, taCenter);
   TKMLabel.Create(Panel_Menu, 0, 240, TB_WIDTH, 30, gResTexts[TX_WORD_MAP] + ':', fntOutline, taCenter);
   Label_MapName := TKMLabel.Create(Panel_Menu, -3, 260, TB_WIDTH + 3, 20, '', fntGrey, taCenter);
+
+  Panel_Track := TKMPanel.Create(Panel_Menu, 0, PANEL_TRACK_TOP, TB_WIDTH, 60);
+  TKMLabel.Create(Panel_Track, 0, 0, TB_WIDTH, 30, gResTexts[TX_MUSIC_PLAYER], fntOutline, taCenter);
+  Label_Menu_Track := TKMLabel.Create(Panel_Track, 23, 21, TB_WIDTH - 46, 30, '', fntGrey, taCenter);
+  Label_Menu_Track.Hitable := False; // It can block hits for the track Up/Down buttons as they overlap
+
+  Button_Menu_TrackUp := TKMButton.Create(Panel_Track, 160, 15, 20, 30, '>', bsGame);
+  Button_Menu_TrackDown := TKMButton.Create(Panel_Track, 0, 15, 20, 30, '<', bsGame);
+  Button_Menu_TrackUp.Hint := gResTexts[TX_MUSIC_NEXT_HINT];
+  Button_Menu_TrackDown.Hint := gResTexts[TX_MUSIC_PREV_HINT];
+  Button_Menu_TrackUp.OnClick := Menu_NextTrack;
+  Button_Menu_TrackDown.OnClick := Menu_PreviousTrack;
+
+
 end;
 
 
@@ -2168,6 +2177,14 @@ begin
 
   Label_GameTime.Caption := TimeToString(gGame.MissionTime);
   Label_MapName.Caption := Copy(gGame.GameName, 0, EnsureRange(Length(gGame.GameName), 1, MAX_MAPNAME_LENGTH));
+  if gGame.HasMissionDifficulty then
+  begin
+    Label_MapName.Caption := Format('%s|[$%s]( %s )[]', [Label_MapName.Caption,
+                                    IntToHex(DIFFICULTY_LEVELS_COLOR[gGame.MissionDifficulty] and $00FFFFFF, 6),
+                                    gResTexts[DIFFICULTY_LEVELS_TX[gGame.MissionDifficulty]]]);
+    Panel_Track.Top := PANEL_TRACK_TOP + 15;
+  end else
+    Panel_Track.Top := PANEL_TRACK_TOP;
 
   Label_Menu_Track.Enabled      := not gGameApp.GameSettings.MusicOff;
   Button_Menu_TrackUp.Enabled   := not gGameApp.GameSettings.MusicOff;
