@@ -2971,6 +2971,21 @@ procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPa
         end;
   end;
 
+  procedure RandomSelector(aStep: Word; var ShapePoints: TKMPointArray);
+  var
+    K, Cnt: Integer;
+  begin
+    K := 0;
+    Cnt := 0;
+    while (K < Length(ShapePoints)) do
+    begin
+      ShapePoints[Cnt] := ShapePoints[K];
+      Cnt := Cnt + 1;
+      K := K + Max(1,fRNG.RandomI(aStep));
+    end;
+    SetLength(ShapePoints,Cnt);
+  end;
+
 const
   //HeightMix: array [0..23] of Byte = (
   //  //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
@@ -3009,6 +3024,7 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
   );
   DECREASE_HEIGHT_SET: set of Byte = [Byte(btWater),Byte(btWetland),Byte(btSwamp)];
+  CHANGE_HEIGHT_SET: set of Byte = [Byte(btBigGrass), Byte(btGrassGround), Byte(btTreeGrass), Byte(btGroundSnow), Byte(btSnow1), Byte(btSnow2), Byte(btGrassSand2), Byte(btSand)];
 var
   X_0,Y_0,X_1,Y_1,X_2,Y_2,X1,X2,Y1,Y2,sum: Integer;
   H1,H2,H3: TInteger2Array;
@@ -3035,13 +3051,31 @@ begin
     try
       for Y1 := Low(VisitedArr) to High(VisitedArr) do
         for X1 := Low(VisitedArr[Y1]) to High(VisitedArr[Y1]) do
-          if (VisitedArr[Y1,X1] = 0) AND (A[Y1,X1] in DECREASE_HEIGHT_SET) then
+          if (VisitedArr[Y1,X1] = 0) AND ((A[Y1,X1] in CHANGE_HEIGHT_SET) OR (A[Y1,X1] in CHANGE_HEIGHT_SET)) then
           begin
             SPE.QuickFlood(X1,Y1,A[Y1,X1],1, ShapePoints);
             case A[Y1,X1] of
-              Byte(btWater):   HFWA.ExpandHeight(ShapePoints, -10 -fRNG.RandomI(5), 6 + fRNG.RandomI(3));
-              Byte(btWetland): HFWA.ExpandHeight(ShapePoints, -3 -fRNG.RandomI(3),  5 + fRNG.RandomI(3));
-              Byte(btSwamp):   HFWA.ExpandHeight(ShapePoints, -3 -fRNG.RandomI(3),  5 + fRNG.RandomI(3));
+              Byte(btBigGrass):    RandomSelector(1+fRNG.RandomI(5),ShapePoints);
+              Byte(btGrassGround): RandomSelector(1+fRNG.RandomI(3),ShapePoints);
+              Byte(btTreeGrass):   RandomSelector(1+fRNG.RandomI(5),ShapePoints);
+              Byte(btGroundSnow):  RandomSelector(3+fRNG.RandomI(3),ShapePoints);
+              Byte(btSnow1):       RandomSelector(5+fRNG.RandomI(10),ShapePoints);
+              Byte(btSnow2):       RandomSelector(5+fRNG.RandomI(10),ShapePoints);
+              Byte(btGrassSand2):  RandomSelector(5+fRNG.RandomI(3),ShapePoints);
+              Byte(btSand):        RandomSelector(5+fRNG.RandomI(10),ShapePoints);
+            end;
+            case A[Y1,X1] of
+              Byte(btWater):       HFWA.ExpandHeight(ShapePoints, -10- fRNG.RandomI(5),   6 + fRNG.RandomI(3));
+              Byte(btWetland):     HFWA.ExpandHeight(ShapePoints, -3 - fRNG.RandomI(3),   5 + fRNG.RandomI(3));
+              Byte(btSwamp):       HFWA.ExpandHeight(ShapePoints, -3 - fRNG.RandomI(3),   5 + fRNG.RandomI(3));
+              Byte(btBigGrass):    HFWA.ExpandHeight(ShapePoints, 10 + fRNG.RandomI(15),  3 + fRNG.RandomI(3));
+              Byte(btGrassGround): HFWA.ExpandHeight(ShapePoints, 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(4));
+              Byte(btTreeGrass):   HFWA.ExpandHeight(ShapePoints, 10 + fRNG.RandomI(15),  3 + fRNG.RandomI(3));
+              Byte(btGroundSnow):  HFWA.ExpandHeight(ShapePoints, 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(4));
+              Byte(btSnow1):       HFWA.ExpandHeight(ShapePoints, 20 + fRNG.RandomI(15),  5 + fRNG.RandomI(3));
+              Byte(btSnow2):       HFWA.ExpandHeight(ShapePoints, 20 + fRNG.RandomI(15),  5 + fRNG.RandomI(3));
+              Byte(btGrassSand2):  HFWA.ExpandHeight(ShapePoints, 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(3));
+              Byte(btSand):        HFWA.ExpandHeight(ShapePoints, 20 + fRNG.RandomI(5),   3 + fRNG.RandomI(3));
             end;
           end;
     finally
