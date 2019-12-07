@@ -238,20 +238,26 @@ begin
     Check_MineFix := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_MINE_FIX], fntMetal);
       Check_MineFix.Checked := True;
       Check_MineFix.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_MINE_FIX_HINT];
-    Label_Res_Stones := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_STONES] + ' (x200)', fntMetal, taLeft);
+    // Stones
+    Label_Res_Stones := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_STONES], fntMetal, taLeft);
       Label_Res_Stones.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_STONE_HINT];
-      TBar_Res_Stone := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0, 10);
-      TBar_Res_Stone.Position := 5;
+      TBar_Res_Stone := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0, 2000);
+      TBar_Res_Stone.Position := 1000;
+      TBar_Res_Stone.Step := 200;
       TBar_Res_Stone.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_STONE_HINT];
-    Label_Res_Gold := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_GOLD] + ' (x50)', fntMetal, taLeft);
+    // Gold
+    Label_Res_Gold := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_GOLD], fntMetal, taLeft);
       Label_Res_Gold.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_GOLD_HINT];
-      TBar_Res_Gold := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0, 10);
-      TBar_Res_Gold.Position := 5;
+      TBar_Res_Gold := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0, 500);
+      TBar_Res_Gold.Position := 300;
+      TBar_Res_Gold.Step := 50;
       TBar_Res_Gold.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_GOLD_HINT];
-    Label_Res_Iron := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_IRON] + ' (x50)', fntMetal, taLeft);
+    // Iron
+    Label_Res_Iron := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_IRON], fntMetal, taLeft);
       Label_Res_Iron.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_IRON_HINT];
-      TBar_Res_Iron := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0, 10);
-      TBar_Res_Iron.Position := 5;
+      TBar_Res_Iron := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0, 500);
+      TBar_Res_Iron.Position := 250;
+      TBar_Res_Iron.Step := 50;
       TBar_Res_Iron.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_IRON_HINT];
 
 
@@ -395,8 +401,9 @@ begin
   // Forests
   Label_Forests := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS] + ' (x5)', fntMetal, taLeft);
     Label_Forests.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_HINT];
-    TBar_Forests := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 20);
+    TBar_Forests := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 100);
     TBar_Forests.Position := 10;
+    TBar_Forests.Step := 5;
     TBar_Forests.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_HINT];
   // Trees in forest
   Label_Trees := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_TREES], fntMetal, taLeft);

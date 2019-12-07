@@ -666,18 +666,19 @@ function TKMRandomMapGenerator.RandomPlayerLocs(): TKMPointArray;
 
   // Random locs selected from group of generated points (brute force algorithm but for 1-12 locs it is fine)
   procedure Random(var Locs: TKMPointArray; const Minimum,Maximum: TKMPoint);
-    var
-      I,K,L, min_idx_overall, min_dist, sum_dist, min_dist_overall, sum_dist_overall: Integer;
-      Size: TKMPoint;
-      Distances: TInteger2Array;
-      Points: TKMPointArray;
-      Used: TBooleanArray;
-    const
-      POINTS_PER_A_LOC = 5;
+  const
+    POINTS_PER_A_LOC = 20;
+  var
+    Change, PointSelected: Boolean;
+    I,K,L, RemIdx, overflow: Integer;
+    distNew, distOld: Single;
+    Size: TKMPoint;
+    LocIdx: TIntegerArray;
+    Distances: TSingle2Array;
+    Points: TKMPointArray;
   begin
-    min_idx_overall := 0;
+    SetLength(LocIdx, Length(Locs));
     SetLength(Points, POINTS_PER_A_LOC*Length(Locs));
-    SetLength(Used, Length(Points));
     SetLength(Distances, Length(Points), Length(Points));
 
   // Generate points
@@ -687,47 +688,59 @@ function TKMRandomMapGenerator.RandomPlayerLocs(): TKMPointArray;
       Points[I] := KMPoint(fRNG.RandomI(Size.X), fRNG.RandomI(Size.Y));
       for K := I-1 downto Low(Points) do
       begin
-        Distances[I,K] := KMDistanceAbs(Points[I], Points[K]); // Abs is faster than Euclidean space
+        Distances[I,K] := KMDistanceSqr(Points[I], Points[K]);
         Distances[K,I] := Distances[I,K];
       end;
-      //Distances[i,i] := High(Integer);
-      Used[I] := False;
     end;
 
-  // Find points with max distance
-    for I := 1 to (Length(Points) - Length(Locs)) do
+  // Select first set of indexes (points)
+  for I := Low(LocIdx) to High(LocIdx) do
+    LocIdx[I] := I;
+
+  // Try to remove every selected point and replace it with different point with max distance
+  overflow := 0;
+  repeat
+    overflow := overflow + 1;
+    // Get distances
+    Change := False;
+    // Try to find better point
+    for I := Low(Points) to High(Points) do
     begin
-      min_dist_overall := High(Integer);
-      sum_dist_overall := High(Integer);
-      for K := Low(Points) to High(Points) do
-        if not Used[K] then
+      // Check if point is already selected
+      PointSelected := False;
+      for K := Low(LocIdx) to High(LocIdx) do
+        if (I = LocIdx[K]) then
         begin
-          min_dist := High(Integer);
-          sum_dist := 0;
-          for L := Low(Points) to High(Points) do
-            if not Used[L] AND (K <> L) then
-            begin
-              if (Distances[K,L] < min_dist) then
-                min_dist := Distances[K,L];
-              sum_dist := sum_dist + Distances[K,L];
-            end;
-          if (min_dist_overall > min_dist) OR ( (min_dist_overall = min_dist) AND (sum_dist_overall > sum_dist) ) then
-          begin
-            min_idx_overall := K;
-            min_dist_overall := min_dist;
-            sum_dist_overall := sum_dist;
-          end;
+          PointSelected := True;
+          break;
         end;
-      Used[min_idx_overall] := True;
-    end;
-
-    I := Low(Locs);
-    for K := Low(Points) to High(Points) do
-      if not Used[K] then
+      if PointSelected then
+        continue;
+      // Try to replace the point
+      for RemIdx := Low(LocIdx) to High(LocIdx) do
       begin
-        Locs[I] := KMPoint(Minimum.X + Points[K].X, Minimum.Y + Points[K].Y);
-        I := I + 1;
+        // Compute the new best distances
+        distNew := 1e10;
+        distOld := 1e10;
+        for K := Low(LocIdx) to High(LocIdx) do
+          if (K <> RemIdx) then
+          begin
+            distNew := Min(distNew, Distances[LocIdx[K],I]);
+            distOld := Min(distOld, Distances[LocIdx[K],LocIdx[RemIdx]]);
+          end;
+        if (distNew > distOld) then
+        begin
+          Change := True;
+          LocIdx[RemIdx] := I;
+          break;
+        end;
       end;
+    end;
+  until not Change OR (overflow > 10000);
+
+  // Convert locs to real coords
+  for I := Low(LocIdx) to High(LocIdx) do
+    Locs[I] := KMPointAdd(Minimum,Points[ LocIdx[I] ]);
   end;
 
   // Get locs from center screen position
@@ -750,7 +763,7 @@ var
   MinOffset, MaxOffset: TKMPoint;
   Output: TKMPointArray;
 const
-  EDGE_DIST = 0.1; // in %, must be > 0 !!!
+  EDGE_DIST = 0.08; // in %, must be > 0 !!!
 begin
   SetLength(Output, RMGSettings.Locs.Players);
 
@@ -992,7 +1005,7 @@ const
   VORONOI_STEP = 3;
   RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.15,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
-  RES_AMOUNT: array[0..4] of Integer = (50, 50, 200, 100, 50);
+  RES_AMOUNT: array[0..4] of Integer = (1, 1, 1, 2, 1);
   RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.25, 0.25);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
@@ -1179,7 +1192,7 @@ begin
       else
         MinesCnt[I] := 0;
     end;
-    ALL_RES_RADIUS := Round(((Iron*3 + Gold*2 + Stone) shr 1) / VORONOI_STEP);
+    ALL_RES_RADIUS := Round(((ResAmount[1]*3 + ResAmount[2]*2 + ResAmount[3]) shr 1) / VORONOI_STEP);
     //CENTER_RES := Round(ALL_RES_RADIUS / 2);
   end;
 
