@@ -1,3 +1,8 @@
+{
+NavMesh generator
+@author: Martin Toupal
+@e-mail: poznamenany@gmail.com
+}
 unit KM_NavMeshGenerator;
 {$I KaM_Remake.inc}
 //{$DEFINE DEBUG_NavMesh}
