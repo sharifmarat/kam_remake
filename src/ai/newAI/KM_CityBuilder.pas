@@ -1,3 +1,8 @@
+{
+Artificial intelligence
+@author: Martin Toupal
+@e-mail: poznamenany@gmail.com
+}
 unit KM_CityBuilder;
 {$I KaM_Remake.inc}
 interface
