@@ -2008,7 +2008,8 @@ begin
         SetActionStay(0, uaWalk); //Free the current action and give the unit a temporary one
       end;
       //If we were idle abandon our action so we look for a new house immediately (rather than after 20 seconds for the fisherman)
-      if (Task = nil) and (Action is TKMUnitActionStay) and not TKMUnitActionStay(Action).Locked then
+      //Reset task even if tile is locked, otherwise unit will wait till the end of his old ActionStayLocked...
+      if (Task = nil) and (Action is TKMUnitActionStay) then
         SetActionStay(0, uaWalk); //Free the current action and give the unit a temporary one
     end;
     SetInHouse(nil); //Can't be in a destroyed house
