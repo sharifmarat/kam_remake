@@ -826,7 +826,7 @@ begin
     //(archers should forget about out of range offenders since they won't walk to them like melee)
     if not FightWasOrdered and not InFight then
     begin
-      fOffenders.Clear;
+      ClearOffenders;
       OrderRepeat;
     end;
   end
