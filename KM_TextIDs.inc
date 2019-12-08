@@ -1396,4 +1396,6 @@ TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED_HINT = 1352; //Generate map with new Seed
 TX_MAPED_RMG_SETTINGS_GENERATE_MAP = 1353; //Generate map
 TX_MAPED_RMG_SETTINGS_GENERATE_MAP_HINT = 1354; //Generate map with current Seed
 TX_MAPED_RMG_SETTINGS_CLOSE_RMG_HINT = 1355; //Close Random Map Generator
-
+TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT = 1366; //Step of the height algorithm (1 = small, 10 = big)
+TX_MAPED_RMG_SETTINGS_HEIGHT_SLOPE_HINT = 1367; //Slope of the height evaluation (0 = plateau, 15 = peak)
+TX_MAPED_RMG_SETTINGS_HEIGHT_HEIGHTS_HINT = 1368; //Maximum height of walkable tiles

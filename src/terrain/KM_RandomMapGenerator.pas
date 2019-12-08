@@ -33,12 +33,12 @@ type
     Obstacle: record
       Active: Boolean;
       Ratio: array[TObstacleType] of Byte;
-      ProtectedRadius, Density, Size, Variance: Byte;
+      Density, Size, Variance: Byte;
     end;
     Locs: record
       Active: Boolean;
       Players: Byte;
-      LocsPosition: Byte;
+      LocsPosition, ProtectedRadius: Byte;
       Resource: record
         Active, ConnectLocs, MineFix: Boolean;
         Stone, Gold, Iron: Integer;
@@ -46,6 +46,7 @@ type
     end;
     Height: record
       Active, HideNonSmoothTransition: Boolean;
+      Step,Slope,Height: Integer;
     end;
     OnePath: record
       NoGoZones, ReplaceTerrain: Boolean;
@@ -224,12 +225,12 @@ begin
   //  Obstacle: record
   //    Active: Boolean;
   //    Ratio: array[TObstacleType] of Byte;
-  //    ProtectedRadius, Density, Size, Variance: Byte;
+  //    Density, Size, Variance: Byte;
   //  end;
   //  Locs: record
   //    Active: Boolean;
   //    Players: Byte;
-  //    LocsPosition: Byte;
+  //    LocsPosition, ProtectedRadius: Byte;
   //    Resource: record
   //      Active, ConnectLocs, MineFix: Boolean;
   //      Stone, Gold, Iron: Integer;
@@ -1494,7 +1495,7 @@ begin
 // Create protected radius = array with smaller chance to spawn obstacle near aLocs
   if RMGSettings.Locs.Resource.Active then
   begin
-    ProbabilityReducer := (11 - RMGSettings.Obstacle.ProtectedRadius) * 0.02;
+    ProbabilityReducer := (11 - RMGSettings.Locs.ProtectedRadius) * 0.02;
     MaxCnt := Round(1 / ProbabilityReducer);
     if RMGSettings.Locs.Resource.ConnectLocs then
       ConnectLocs(aLocs);
@@ -2973,14 +2974,26 @@ procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPa
 
   procedure RandomSelector(aStep: Word; var ShapePoints: TKMPointArray);
   var
-    K, Cnt: Integer;
+    Check: Boolean;
+    K,L, Cnt: Integer;
   begin
     K := 0;
     Cnt := 0;
     while (K < Length(ShapePoints)) do
     begin
-      ShapePoints[Cnt] := ShapePoints[K];
-      Cnt := Cnt + 1;
+      // Consider protected radius
+      Check := True;
+      for L := Low(aLocs) to High(aLocs) do
+        if (KMDistanceSqr(aLocs[L],ShapePoints[K]) < Sqr(RMGSettings.Locs.ProtectedRadius * 5) ) then
+        begin
+          Check := False;
+          break;
+        end;
+      if Check then
+      begin
+        ShapePoints[Cnt] := ShapePoints[K];
+        Cnt := Cnt + 1;
+      end;
       K := K + Max(1,fRNG.RandomI(aStep));
     end;
     SetLength(ShapePoints,Cnt);
@@ -2995,7 +3008,7 @@ const
   //10,15,0,0,0,10,5,0,15,15,20,20,10,5,btGrassSand1,btGrassSand2,btGrassSand3,btSand,btStone,btGold,btEgold,btIron,btEIron,btDark);
 
   HeightVariance: array [0..23] of Byte = (
-    10,10,5,5,3,5,10,10,10,10,20,20,0,5,10,10,15,20,10,20,20,0,0,0
+    10,10,5,5,3,5,10,10,10,10,15,15,0,5,10,10,15,20,10,20,20,0,0,0
   );
   HNST: array[0..23,0..23] of Byte = ( // Hide Non-Smooth Transition (height fix)
     (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
@@ -3041,7 +3054,7 @@ begin
   HFWA := TKMHeightFillWalkableAreas.Create(A,H3);
   try
    CreateCliffs(H3, HFWA);
-   // Decrease height of swamp / wetland / water
+   // Decrease height of swamp / wetland / water and change height of special biomes
     // Init VisitedArr
     SetLength(VisitedArr,Length(TilesPartsArr.Terrain), Length(TilesPartsArr.Terrain[0]));
     for Y1 := Low(VisitedArr) to High(VisitedArr) do
@@ -3051,53 +3064,58 @@ begin
     try
       for Y1 := Low(VisitedArr) to High(VisitedArr) do
         for X1 := Low(VisitedArr[Y1]) to High(VisitedArr[Y1]) do
-          if (VisitedArr[Y1,X1] = 0) AND ((A[Y1,X1] in CHANGE_HEIGHT_SET) OR (A[Y1,X1] in CHANGE_HEIGHT_SET)) then
+          if (VisitedArr[Y1,X1] = 0) AND ((A[Y1,X1] in DECREASE_HEIGHT_SET) OR (A[Y1,X1] in CHANGE_HEIGHT_SET)) then
           begin
             SPE.QuickFlood(X1,Y1,A[Y1,X1],1, ShapePoints);
+            {
             case A[Y1,X1] of
-              Byte(btBigGrass):    RandomSelector(1+fRNG.RandomI(5),ShapePoints);
-              Byte(btGrassGround): RandomSelector(1+fRNG.RandomI(3),ShapePoints);
-              Byte(btTreeGrass):   RandomSelector(1+fRNG.RandomI(5),ShapePoints);
-              Byte(btGroundSnow):  RandomSelector(3+fRNG.RandomI(3),ShapePoints);
-              Byte(btSnow1):       RandomSelector(5+fRNG.RandomI(10),ShapePoints);
-              Byte(btSnow2):       RandomSelector(5+fRNG.RandomI(10),ShapePoints);
-              Byte(btGrassSand2):  RandomSelector(5+fRNG.RandomI(3),ShapePoints);
-              Byte(btSand):        RandomSelector(5+fRNG.RandomI(10),ShapePoints);
+              Byte(btBigGrass):    RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(5),ShapePoints);
+              Byte(btGrassGround): RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(3),ShapePoints);
+              Byte(btTreeGrass):   RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(5),ShapePoints);
+              Byte(btGroundSnow):  RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(3),ShapePoints);
+              Byte(btSnow1):       RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(10),ShapePoints);
+              Byte(btSnow2):       RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(10),ShapePoints);
+              Byte(btGrassSand2):  RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(3),ShapePoints);
+              Byte(btSand):        RandomSelector(RMGSettings.Height.H1+fRNG.RandomI(10),ShapePoints);
             end;
+            //}
             case A[Y1,X1] of
-              Byte(btWater):       HFWA.ExpandHeight(ShapePoints, -10- fRNG.RandomI(5),   6 + fRNG.RandomI(3));
-              Byte(btWetland):     HFWA.ExpandHeight(ShapePoints, -3 - fRNG.RandomI(3),   5 + fRNG.RandomI(3));
-              Byte(btSwamp):       HFWA.ExpandHeight(ShapePoints, -3 - fRNG.RandomI(3),   5 + fRNG.RandomI(3));
-              Byte(btBigGrass):    HFWA.ExpandHeight(ShapePoints, 10 + fRNG.RandomI(15),  3 + fRNG.RandomI(3));
-              Byte(btGrassGround): HFWA.ExpandHeight(ShapePoints, 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(4));
-              Byte(btTreeGrass):   HFWA.ExpandHeight(ShapePoints, 10 + fRNG.RandomI(15),  3 + fRNG.RandomI(3));
-              Byte(btGroundSnow):  HFWA.ExpandHeight(ShapePoints, 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(4));
-              Byte(btSnow1):       HFWA.ExpandHeight(ShapePoints, 20 + fRNG.RandomI(15),  5 + fRNG.RandomI(3));
-              Byte(btSnow2):       HFWA.ExpandHeight(ShapePoints, 20 + fRNG.RandomI(15),  5 + fRNG.RandomI(3));
-              Byte(btGrassSand2):  HFWA.ExpandHeight(ShapePoints, 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(3));
-              Byte(btSand):        HFWA.ExpandHeight(ShapePoints, 20 + fRNG.RandomI(5),   3 + fRNG.RandomI(3));
+              Byte(btWater):       HFWA.ExpandHeight(ShapePoints, -40 - fRNG.RandomI(5), 10 + fRNG.RandomI(3));
+              Byte(btWetland):     HFWA.ExpandHeight(ShapePoints, -10 - fRNG.RandomI(3), 5 + fRNG.RandomI(3));
+              Byte(btSwamp):       HFWA.ExpandHeight(ShapePoints, -10 - fRNG.RandomI(3), 5 + fRNG.RandomI(3));
+              {
+              Byte(btBigGrass):    HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 10 + fRNG.RandomI(15),  3 + fRNG.RandomI(3));
+              Byte(btGrassGround): HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(4));
+              Byte(btTreeGrass):   HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 10 + fRNG.RandomI(15),  3 + fRNG.RandomI(3));
+              Byte(btGroundSnow):  HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(4));
+              Byte(btSnow1):       HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 20 + fRNG.RandomI(15),  5 + fRNG.RandomI(3));
+              Byte(btSnow2):       HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 20 + fRNG.RandomI(15),  5 + fRNG.RandomI(3));
+              Byte(btGrassSand2):  HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 15 + fRNG.RandomI(10),  3 + fRNG.RandomI(3));
+              Byte(btSand):        HFWA.ExpandHeight(ShapePoints, RMGSettings.Height.H2 + 20 + fRNG.RandomI(5),   3 + fRNG.RandomI(3));
+              //}
             end;
           end;
     finally
       SPE.Free;
     end;
 
+    // Protected radius
+    if RMGSettings.Locs.Active AND (Length(aLocs) > 0) then
+    begin
+      for Y1 := Low(VisitedArr) to High(VisitedArr) do
+        FillChar(VisitedArr[Y1,0], SizeOf(VisitedArr[Y1,0]) * Length(VisitedArr[Y1]), #0);
+      HFWA.ExpandHeight(aLocs, -100, 15 / RMGSettings.Locs.ProtectedRadius, True);
+    end;
+
   finally
     HFWA.Free();
   end;
 
-  H1 := LinearInterpolation(7,30);
-  H2 := LinearInterpolation(4,45);
-  //H2 := LinearInterpolation(2,10);
+  H1 := LinearInterpolation(Max(1, 5 - Trunc(RMGSettings.Height.Step / 2)),RMGSettings.Height.Slope);
+  H2 := LinearInterpolation(Max(1, 6 + Round(RMGSettings.Height.Step / 2)),RMGSettings.Height.Height);
 	for Y1 := 1 to fMapY-1 do
     for X1 := 1 to fMapX-1 do
-    begin
-      //TilesPartsArr.Height[Y1,X1] := Min(100, Max(0, 50 + H3[Y1,X1]) );
-
       TilesPartsArr.Height[Y1,X1] := Min(100, Min(90,Max(0, -H1[Y1,X1] + H2[Y1,X1] + H3[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
-      //TilesPartsArr.Height[Y1,X1] := Min(100, Min(93,Max(0, H2[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
-      //TilesPartsArr.Height[Y1,X1] := Min(100, Min(93,Max(0, H1[Y1,X1] + H2[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
-    end;
 
   for Y_1 := 1 to fMapY-1 do
   begin

@@ -32,9 +32,9 @@ type
     Label_NonWalk_Size, Label_NonWalk_Density, Label_NonWalk_Variance,
     Label_NonWalk_Ratio, Label_NonWalk_EGold, Label_NonWalk_EIron, Label_NonWalk_Swamp, Label_NonWalk_Wetland, Label_NonWalk_Water,
     Label_Biomes, Label_FirstLayer, Label_FirstLayer_Step, Label_FirstLayer_Limit, Label_SecondLayer, Label_SecondLayer_Step, Label_SecondLayer_Limit,
-    Label_InacessiblePlaces,
+    Label_HeightStep, Label_HeightSlope, Label_HeightHeight, Label_InacessiblePlaces,
     Label_Density, Label_Forests, Label_Trees,
-    Label_Seed: TKMLabel;
+    Label_Seed, Label_MapSize: TKMLabel;
 
     Check_Biomes, Check_Ground,Check_Snow,Check_Sand,
     Check_Obstacles,
@@ -43,11 +43,11 @@ type
     Check_NoGo, Check_ReplaceTerrain,
     Check_Objects, Check_Animals: TKMCheckBox;
 
+    TBar_Players, TBar_ProtectedRadius, TBar_Res_Stone, TBar_Res_Gold, TBar_Res_Iron,
+    TBar_NonWalk_Size, TBar_NonWalk_Density, TBar_NonWalk_Variance, TBar_NonWalk_EGold, TBar_NonWalk_EIron, TBar_NonWalk_Swamp, TBar_NonWalk_Wetland, TBar_NonWalk_Water,
     TBar_Biomes1_Step, TBar_Biomes1_Limit, TBar_Biomes2_Step, TBar_Biomes2_Limit,
-    TBar_NonWalk_EGold, TBar_NonWalk_EIron, TBar_NonWalk_Swamp, TBar_NonWalk_Wetland, TBar_NonWalk_Water, TBar_ProtectedRadius, TBar_NonWalk_Density, TBar_NonWalk_Size, TBar_NonWalk_Variance,
-    TBar_ObjectDensity, TBar_Forests, TBar_Trees,
-    TBar_Res_Stone, TBar_Res_Gold, TBar_Res_Iron,
-    TBar_Players: TKMTrackBar;
+    TBar_HeightStep, TBar_HeightSlope, TBar_HeightHeight,
+    TBar_Height1, TBar_Height2, TBar_Height3, TBar_Height4, TBar_ObjectDensity, TBar_Forests, TBar_Trees: TKMTrackBar;
 
     {$IFDEF DEBUG_RMG}
     Check_BasicTiles,Check_CA: TKMCheckBox;
@@ -80,29 +80,30 @@ constructor TKMMapEdRMG.Create(aParent: TKMPanel);
   begin
     // COLUMN 1: Locs + Resources
       Check_Locs.Checked := False;
-      CheckGroup_LocPosition.ItemIndex := 0;
+      TBar_Players.Position := 1;
       TBar_ProtectedRadius.Position := 6;
+      CheckGroup_LocPosition.ItemIndex := 0;
       Check_Resources.Checked := True;
-      Check_ConnectLocs.Checked := True;
-      Check_MineFix.Checked := True;
-      TBar_Res_Stone.Position := 5;
-      TBar_Res_Gold.Position := 5;
-      TBar_Res_Iron.Position := 5;
+        Check_ConnectLocs.Checked := True;
+        Check_MineFix.Checked := True;
+        TBar_Res_Stone.Position := 1000;
+        TBar_Res_Gold.Position := 0;
+        TBar_Res_Iron.Position := 0;
 
     // COLUMN 2: NonWalk textures column
-      Check_Obstacles.Checked := True;
+      Check_Obstacles.Checked := False;
+      TBar_NonWalk_Size.Position := 20;
+      TBar_NonWalk_Density.Position := 10;
+      TBar_NonWalk_Variance.Position := 10;
       // Ratio of biomes
       TBar_NonWalk_EGold.Position := 8;
       TBar_NonWalk_EIron.Position := 7;
       TBar_NonWalk_Swamp.Position := 0;
       TBar_NonWalk_Wetland.Position := 0;
       TBar_NonWalk_Water.Position := 0;
-      TBar_NonWalk_Density.Position := 1;
-      TBar_NonWalk_Size.Position := 20;
-      TBar_NonWalk_Variance.Position := 5;
 
     // COLUMN 3: Walk textures
-      Check_Biomes.Checked := False;
+      Check_Biomes.Checked := True;
       Check_Ground.Checked := True;
       Check_Snow.Checked := True;
       Check_Sand.Checked := True;
@@ -115,21 +116,22 @@ constructor TKMMapEdRMG.Create(aParent: TKMPanel);
 
     // COLUMN 4: Height
       Check_Height.Checked := True;
+      TBar_HeightStep.Position := 4;
+      TBar_HeightSlope.Position := 40;
+      TBar_HeightHeight.Step := 10;
       Check_HideNonSmoothTransition.Checked := True;
     // COLUMN 4: One path fix (it gives no-walk object to islands and create only 1 walkable area - in KaM is possible to have max 255 separated areas and RMG sometimes makes more which cause crash of the game)
-      Check_NoGo.Checked := False;
-      Check_ReplaceTerrain.Checked := False;
+      Check_NoGo.Checked := True;
+      Check_ReplaceTerrain.Checked := True;
     // COLUMN 4: Objects
       Check_Objects.Checked := False;
-      Check_Animals.Checked := False;
+      Check_Animals.Checked := True;
       TBar_ObjectDensity.Position := 6;
       TBar_Forests.Position := 10;
       TBar_Trees.Position := 20;
 
     // COLUMN 4: Seed
       NumSeed.Value := 417;
-    // COLUMN 4: Players
-      TBar_Players.Position := 1;
 
     // DEBUG (COLUMN 4)
     {$IFDEF DEBUG_RMG}
@@ -138,13 +140,8 @@ constructor TKMMapEdRMG.Create(aParent: TKMPanel);
     {$ENDIF}
   end;
 const
-  POS_X = 300;
-  POS_Y = 0;
-  LINE_HEIGHT = 20;
-  PARAGRAPH_HEIGHT = 30;
   OFFSET_1 = 10;
   OFFSET_2 = 20;
-  OFFSET_3 = 30;
   OFFSET_Column = 10;
   WIDTH_Column = 200;
   WIDTH_TrackBar = WIDTH_Column - OFFSET_Column;
@@ -154,14 +151,15 @@ const
   Column_4_X = OFFSET_Column + Column_3_X + WIDTH_Column;
   // Background
   SIZE_X = WIDTH_Column * 4 + 40;
-  SIZE_Y = 600;
+  SIZE_Y = 560;
   // Boxes
   BOX_X = WIDTH_Column - OFFSET_Column;
-  BOX_Y = LINE_HEIGHT;
+  BOX_Y = 20; // LINE_HEIGHT
+  PARAGRAPH_HEIGHT = 30;
   // Bevel
   INDENTATION_Bevel = 5;
   SIZE_Bevel_X = WIDTH_Column;
-  SIZE_Bevel_Y = SIZE_Y - 160;
+  SIZE_Bevel_Y = SIZE_Y - 140;
 var
   Img: TKMImage;
   Column_X,Column_Y: Integer;
@@ -169,6 +167,7 @@ var
 begin
   inherited Create;
 
+  fRMG := TKMRandomMapGenerator.Create;
   fMapSizeIndicator := False;
 
   Panel_RMG := TKMPanel.Create(aParent, (aParent.Width - SIZE_X) div 2, (aParent.Height - SIZE_Y) div 2, SIZE_X, SIZE_Y);
@@ -183,14 +182,12 @@ begin
   TKMBevel.Create(Panel_RMG, Column_1_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
   TKMBevel.Create(Panel_RMG, Column_2_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
   TKMBevel.Create(Panel_RMG, Column_3_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
-  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, 100);
-  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 190, SIZE_Bevel_X, 160);
+  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, 220);
+  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60+220+30, SIZE_Bevel_X, 170);
 
-  //TKMBevel.Create(Panel_RMG, 0, 50, SIZE_X, SIZE_Y - 110);
+// Title
   TKMLabel.Create(Panel_RMG, SIZE_X div 2, -20, gResTexts[TX_MAPED_RMG_SETTINGS_TITLE], fntOutline, taCenter);
-  TKMLabel.Create(Panel_RMG, 10, (Panel_RMG.Height - 100), gResTexts[TX_MAPED_RMG_SETTINGS_MAP_SIZE], fntMetal, taLeft);
 
-  fRMG := TKMRandomMapGenerator.Create;
 
 // RMG panel
   Panel_Settings := TKMPanel.Create(Panel_RMG, 0,  40, SIZE_X, SIZE_Y - 110);
@@ -217,7 +214,7 @@ begin
   // Connect locs
   Check_ConnectLocs := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_CONNECT_LOCATIONS], fntMetal);
     Check_ConnectLocs.Checked := True;
-    Check_ConnectLocs.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_CONNECT_LOCATIONS];
+    Check_ConnectLocs.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_CONNECT_LOCATIONS_HINT];
   // Layout (Locs)
   Label_LocLayout := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,PARAGRAPH_HEIGHT), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_LAYOUT], fntMetal, taLeft);
     Label_LocLayout.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_LAYOUT_HINT];
@@ -363,6 +360,14 @@ begin
       TBar_Biomes2_Limit.Position := 6;
       TBar_Biomes2_Limit.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_LIMIT_HINT];
 
+// DEBUG (COLUMN 3)
+  {$IFDEF DEBUG_RMG}
+    Check_BasicTiles := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y,40), BOX_X, BOX_Y, 'Basic tiles', fntMetal);
+    Check_BasicTiles.Checked := False;
+    Check_CA := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, 'Cellular automaton', fntMetal);
+    Check_CA.Checked := True;
+  {$ENDIF}
+
 
 // COLUMN 4: Height
   Column_X := Column_4_X;
@@ -374,7 +379,27 @@ begin
   Check_HideNonSmoothTransition := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y,PARAGRAPH_HEIGHT), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_HIDE_ROUGHT_TRANSITIONS], fntMetal);
     Check_HideNonSmoothTransition.Checked := True;
     Check_HideNonSmoothTransition.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HIDE_ROUGHT_TRANSITIONS_HINT];
-// COLUMN 4: One path fix (it gives no-walk object to islands and create only 1 walkable area - in KaM is possible to have max 255 separated areas and RMG sometimes makes more which cause crash of the game)
+  // Step
+  Label_HeightStep := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_STEP], fntMetal, taLeft);
+    Label_HeightStep.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT];
+  TBar_HeightStep := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 1, 7);
+    TBar_HeightStep.Position := 4;
+    TBar_HeightStep.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT];
+  // Slope
+  Label_HeightSlope := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_TERRAIN_HEIGHTS_SLOPE], fntMetal, taLeft);
+    Label_HeightSlope.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_SLOPE_HINT];
+  TBar_HeightSlope := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 100);
+    TBar_HeightSlope.Position := 30;
+    TBar_HeightSlope.Step := 10;
+    TBar_HeightSlope.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_SLOPE_HINT];
+  // Height
+  Label_HeightHeight := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_TERRAIN_HEIGHTS], fntMetal, taLeft);
+    Label_HeightHeight.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_HEIGHTS_HINT];
+  TBar_HeightHeight := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 100);
+    TBar_HeightHeight.Position := 60;
+    TBar_HeightHeight.Step := 10;
+    TBar_HeightHeight.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_HEIGHTS_HINT];
+  // One path fix (it gives no-walk object to islands and create only 1 walkable area - in KaM is possible to have max 255 separated areas and RMG sometimes makes more which cause crash of the game)
   Label_InacessiblePlaces := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_INACCESIBLE_PLACES], fntMetal, taLeft);
     Label_InacessiblePlaces.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_INACCESIBLE_PLACES_HINT];
     Check_NoGo := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_BLOCK_WALKING], fntMetal);
@@ -412,26 +437,26 @@ begin
     TBar_Trees.Position := 20;
     TBar_Trees.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_TREES_HINT];
 
-// COLUMN 4: Seed
-	Label_Seed := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,40), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_SEED], fntMetal, taLeft);
+
+// Map size
+  Column_X := Column_1_X;
+  Column_Y := SIZE_Y - 100;
+  TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,0), gResTexts[TX_MAPED_RMG_SETTINGS_MAP_SIZE], fntMetal, taLeft);
+  TKMBevel.Create(Panel_Settings, Column_X, Column_Y+15, 130, 20);
+  Label_MapSize := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, ' ', fntMetal, taLeft);
+
+
+// Seed
+  Column_X := Column_1_X + 150;
+  Column_Y := SIZE_Y - 100;
+	Label_Seed := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,0), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_SEED], fntMetal, taLeft);
     Label_Seed.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_SEED_HINT];
-    NumSeed := TKMNumericEdit.Create(Panel_Settings, Column_X, NextLine(Column_Y), Low( Integer ), High( Integer ));
+  NumSeed := TKMNumericEdit.Create(Panel_Settings, Column_X, NextLine(Column_Y,15), Low( Integer ), High( Integer ));
     NumSeed.OnChange := RMG_Change;
-    NumSeed.Value := Random(32000);
+    NumSeed.Value := Random( High(Integer) );
     NumSeed.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_SEED_HINT];
 
-
-// DEBUG (COLUMN 4)
-  {$IFDEF DEBUG_RMG}
-    NextLine(Column_Y);
-    NextLine(Column_Y);
-    Check_BasicTiles := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, 'Basic tiles', fntMetal);
-    Check_BasicTiles.Checked := False;
-    Check_CA := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, 'Cellular automaton', fntMetal);
-    Check_CA.Checked := True;
-  {$ENDIF}
-
-
+// Buttons
   Button_RMG_Generate_New_Seed := TKMButton.Create(Panel_RMG, SIZE_X-480-60, SIZE_Y - 50, 200, 30, gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED], bsMenu);
   Button_RMG_Generate_New_Seed.OnClick := RMG_Generate_New_Seed;
   Button_RMG_Generate_New_Seed.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED_HINT];
@@ -444,7 +469,7 @@ begin
 
 
   {$IFDEF DEBUG_RMG}
-    SetDebugSettings();
+    //SetDebugSettings();
   {$ENDIF}
 end;
 
@@ -475,7 +500,9 @@ end;
 
 procedure TKMMapEdRMG.RMG_Generate_New_Seed(Sender: TObject);
 begin
-  NumSeed.Value := Round(1000*KaMRandom('TKMMapEdRMG.RMG_Generate_New_Seed'));
+  //NumSeed.Value := Round(1000*KaMRandom('TKMMapEdRMG.RMG_Generate_New_Seed'));
+  // PLEASE USE Random() function - this have no effect to game synchronization
+  NumSeed.Value := Random( High(Integer) );
   RMG_Generate_Map(Sender);
 end;
 
@@ -509,13 +536,13 @@ begin
       Density := TBar_NonWalk_Density.Position;
       Size := TBar_NonWalk_Size.Position;
       Variance := TBar_NonWalk_Variance.Position;
-      ProtectedRadius := TBar_ProtectedRadius.Position;
     end;
     with Locs do
     begin
       Active := Check_Locs.Checked;
       Players := TBar_Players.Position;
       LocsPosition := CheckGroup_LocPosition.ItemIndex;
+      ProtectedRadius := TBar_ProtectedRadius.Position;
       with Resource do
       begin
         Active := Check_Resources.Checked;
@@ -533,6 +560,9 @@ begin
     end;
     with Height do
     begin
+      Step := TBar_HeightStep.Position;
+      Slope := TBar_HeightSlope.Position;
+      Height := TBar_HeightHeight.Position;
       Active := Check_Height.Checked;
       HideNonSmoothTransition := Check_HideNonSmoothTransition.Checked;
     end;
@@ -579,7 +609,7 @@ begin
   if not fMapSizeIndicator then
   begin
     fMapSizeIndicator := True;
-    TKMLabel.Create(Panel_RMG, 10, (Panel_RMG.Height - 80), 200, 20, 'X: '+IntToStr(gTerrain.MapX)+', Y: '+IntToStr(gTerrain.MapY), fntMetal, taLeft);
+    Label_MapSize.Caption := Format('X: %d, Y: %d',[gTerrain.MapX,gTerrain.MapY]);
   end;
 end;
 

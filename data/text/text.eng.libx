@@ -1314,3 +1314,6 @@
 1363:All
 1364:Allow '%s' for all available locs
 1365:Prohibit '%s' for all available locs
+1366:Step of the height algorithm (1 = small, 10 = big)
+1367:Slope of the height evaluation (0 = plateau, 15 = peak)
+1368:Maximum height of walkable tiles
