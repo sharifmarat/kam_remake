@@ -31,6 +31,8 @@ type
     fDifficulty: TKMMissionDifficulty;
     fAIType: TKMAIType;
 
+    function GetPanelHalf: Integer;
+
     procedure Create_SingleMap(aParent: TKMPanel);
     procedure MapTypeChanged(Sender: TObject);
 
@@ -53,7 +55,7 @@ type
 
     procedure BackClick(Sender: TObject);
   protected
-    Panel_Single:TKMPanel;
+    Panel_Single: TKMPanel;
       Label_MapType: TKMLabel;
       Radio_MapType: TKMRadioGroup;
       Panel_Desc: TKMPanel;
@@ -88,6 +90,12 @@ type
 implementation
 uses
   KM_ResTexts, KM_GameApp, KM_CommonUtils, KM_RenderUI, KM_ResFonts;
+
+const
+  PAD_VERT = 44; //Padding from top/bottom
+  PAD_SIDE = 40; //Padding from sides
+  BUTTON_DIST = 6;
+  FLAG_W = 22;
 
 
 { TKMGUIMenuSingleMap }
@@ -124,13 +132,16 @@ begin
 end;
 
 
+function TKMMenuSingleMap.GetPanelHalf: Integer;
+begin
+  Result := (Panel_Single.Width - PAD_SIDE) div 2 - PAD_SIDE;
+end;
+
+
+
 procedure TKMMenuSingleMap.Create_SingleMap(aParent: TKMPanel);
-const
-  PAD_VERT = 44; //Padding from top/bottom
-  PAD_SIDE = 40; //Padding from sides
-  BUTTON_DIST = 6;
 var
-  I: Integer;
+  I, Left: Integer;
   Half, ButtonW: Word; //Half width for panes
   L: TKMLabel;
   B: TKMBevel;
@@ -138,7 +149,7 @@ begin
   Panel_Single := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_Single.AnchorsStretch;
 
-    Half := (aParent.Width - PAD_SIDE) div 2 - PAD_SIDE;
+    Half := GetPanelHalf;
 
     TKMBevel.Create(Panel_Single, (aParent.Width + PAD_SIDE) div 2, PAD_VERT + 20, Half, 70);
 
@@ -260,11 +271,14 @@ begin
       B.Anchors := [anLeft, anBottom];
       L := TKMLabel.Create(Panel_Desc, 4, 614, 190, 20, gResTexts[TX_MENU_ENEMIES], fntMetal, taLeft);
       L.Anchors := [anLeft, anBottom];
-      for I := MAX_HANDS - 1 downto 0 do
+
+
+      Left := Min(200, Half - 1 - MAX_HANDS*FLAG_W);
+      for I := 0 to MAX_HANDS - 1 do
       begin
-        Image_Allies[I] := TKMImage.Create(Panel_Desc, Half - 1 - (I + 1)*22, 593, 50, 20, 81, rxGuiMain);
+        Image_Allies[I] := TKMImage.Create(Panel_Desc, 200 + I*FLAG_W, 593, 50, 20, 81, rxGuiMain);
         Image_Allies[I].Anchors := [anLeft, anBottom];
-        Image_Enemies[I] := TKMImage.Create(Panel_Desc, Half - 1 - (I + 1)*22, 613, 50, 20, 81, rxGuiMain);
+        Image_Enemies[I] := TKMImage.Create(Panel_Desc, 200 + I*FLAG_W, 613, 50, 20, 81, rxGuiMain);
         Image_Enemies[I].Anchors := [anLeft, anBottom];
       end;
 
@@ -650,6 +664,15 @@ begin
                         Inc(K);
                       end;
           end;
+        end;
+
+        for I := 0 to MAX_HANDS - 1 do
+        begin
+          if Image_Allies[I].Right > GetPanelHalf then
+            Image_Allies[I].Hide;
+
+          if Image_Enemies[I].Right > GetPanelHalf then
+            Image_Enemies[I].Hide;
         end;
       finally
         fMaps.Unlock;
