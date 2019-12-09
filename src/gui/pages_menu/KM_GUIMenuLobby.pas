@@ -63,6 +63,7 @@ type
 
     procedure PlayersSetupChange(Sender: TObject);
     procedure MapColumnClick(aValue: Integer);
+    procedure CallRMG(); //RMG
     procedure MapTypeChanged(Sender: TObject);
     procedure InitDropColMapsList;
     procedure MapList_OnShow(Sender: TObject);
@@ -211,7 +212,8 @@ var
 implementation
 uses
   KM_CommonTypes, KM_ResLocales, KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI,
-  KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points, KM_MapTypes;
+  KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points, KM_MapTypes,
+  KM_Game, KM_GameTypes, KM_RandomMapGenerator; //RMG
 
 const
   PANEL_SETUP_OPTIONS_TOP = 548;
@@ -547,6 +549,7 @@ begin
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_COOP]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_SPECIAL]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_SAVED]);
+      Radio_MapType.Add('Random map'); //RMG
       Radio_MapType.ItemIndex := 0;
       Radio_MapType.OnChange := MapTypeChanged;
 
@@ -1874,6 +1877,22 @@ begin
           DropCol_Maps.DefaultCaption := gResTexts[TX_LOBBY_MAP_SELECT_SAVED];
           DropCol_Maps.SetColumns(fntOutline, [gResTexts[TX_MENU_LOAD_FILE], '#', gResTexts[TX_MENU_SAVE_TIME], gResTexts[TX_MENU_LOAD_DATE]], [0, 290, 320, 430]);
         end;
+    5:  //RMG
+        begin
+          fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
+          DropCol_Maps.DefaultCaption := MAPS_RMG_NAME;
+          InitDropColMapsList;
+          CallRMG();
+        //{
+          fMapsMP.Lock;
+          try
+            fNetworking.SelectMap(MAPS_RMG_NAME, mfMP);
+          finally
+            fMapsMP.Unlock;
+          end;
+          GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
+        //}
+        end;
     else
         begin
           DropCol_Maps.DefaultCaption := NO_TEXT;
@@ -1883,11 +1902,40 @@ begin
 end;
 
 
-procedure TKMMenuLobby.MapTypeChanged(Sender: TObject);
+procedure TKMMenuLobby.CallRMG(); //RMG
+var
+  RMG: TKMRandomMapGenerator;
 begin
+  // Use gGame to create new empty map on background and call RMG
+  gGame := TKMGame.Create(gmMapEd, nil, nil, nil);
+  try
+    // Get RMG config
+    // ... use default configuration for now
+    // Create empty map
+    gGame.MapEdStartEmptyMap(192, 192);
+    // Call RMG
+    RMG := TKMRandomMapGenerator.Create;
+    RMG.GenerateMap();
+    RMG.Free;
+    // Save map
+    gGame.SaveMapEditor(Format('%s\%s\%s\%s.dat',[ExtractFilePath(ParamStr(0)), MAPS_MP_FOLDER_NAME, MAPS_RMG_NAME, MAPS_RMG_NAME]));
+  finally
+    gGame.Free;
+    gGame := nil;
+    //FreeThenNil(gGame);
+  end;
+end;
+
+
+procedure TKMMenuLobby.MapTypeChanged(Sender: TObject);
+var
+  RMG: Boolean; //RMG
+begin
+  RMG := Radio_MapType.ItemIndex = 5; //RMG
   UpdateMapList;
   gGameApp.GameSettings.MenuLobbyMapType := Radio_MapType.ItemIndex;
-  fNetworking.SelectNoMap('');
+  if not RMG then //RMG
+    fNetworking.SelectNoMap('');
 end;
 
 

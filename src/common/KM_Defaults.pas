@@ -416,6 +416,7 @@ const
   MAPS_FOLDER_NAME = 'Maps';
   MAPS_MP_FOLDER_NAME = 'MapsMP';
   MAPS_DL_FOLDER_NAME = 'MapsDL';
+  MAPS_RMG_NAME = 'Randomly generated map';
   TUTORIALS_FOLDER_NAME = 'Tutorials';
   CAMPAIGNS_FOLDER_NAME = 'Campaigns';
   SAVES_FOLDER_NAME = 'Saves';

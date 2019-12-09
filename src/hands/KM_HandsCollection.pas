@@ -188,7 +188,7 @@ var
   I: Integer;
 begin
   for I := Count - 1 downto 0 do
-    if fHandsList[I].HasAssets then
+    if not KMSamePoint(fHandsList[I].CenterScreen, KMPoint(gTerrain.MapX div 2, gTerrain.MapY div 2)) OR fHandsList[I].HasAssets then //RMG - added Center screen option as a valid player
       Exit //Exit as soon as we find a player with assets
     else
       RemoveEmptyPlayer(I);

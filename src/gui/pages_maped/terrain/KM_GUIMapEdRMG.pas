@@ -16,7 +16,6 @@ type
     fMapSizeIndicator: Boolean;
     fRMG: TKMRandomMapGenerator;
 
-    function NextLine(var Line: Integer; const LINE_Y: Byte = 20): Integer;
     procedure RMG_Change(Sender: TObject);
     procedure RMG_Close(Sender: TObject);
     procedure RMG_Generate_Map(Sender: TObject);
@@ -139,6 +138,13 @@ constructor TKMMapEdRMG.Create(aParent: TKMPanel);
       Check_CA.Checked := True;
     {$ENDIF}
   end;
+
+  function NextLine(var Line: Integer; const LINE_Y: Byte = 20): Integer;
+  begin
+    Line := Line + LINE_Y;
+    Result := Line;
+  end;
+
 const
   OFFSET_1 = 10;
   OFFSET_2 = 20;
@@ -482,14 +488,6 @@ begin
 end;
 
 
-
-function TKMMapEdRMG.NextLine(var Line: Integer; const LINE_Y: Byte = 20): Integer;
-begin
-  Line := Line + LINE_Y;
-  Result := Line;
-end;
-
-
 procedure TKMMapEdRMG.RMG_Change(Sender: TObject);
 begin
   //Settings get saved on close, now we just toggle fields
@@ -508,8 +506,6 @@ end;
 
 
 procedure TKMMapEdRMG.RMG_Generate_Map(Sender: TObject);
-var Tiles: TKMTerrainTileBriefArray;
-    Errors: TKMTerrainTileChangeErrorArray;
 begin
   with fRMG.RMGSettings do
   begin
@@ -584,10 +580,7 @@ begin
       CA := True;
     {$ENDIF}
   end;
-  SetLength(Tiles, 16);
-  fRMG.GenerateMap(Tiles);
-  SetLength(Errors, 16);
-  gTerrain.ScriptTrySetTilesArray(Tiles, False, Errors);
+  fRMG.GenerateMap();
 end;
 
 
