@@ -478,13 +478,14 @@ begin
       fCampaigns.ActiveCampaign.ScriptData.Clear;
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
-//@Rey: Inconsistency here. We SaveCampaignScriptData for every outcome, but it gets saved to the HDD only on grWin in the clause below
+      //Always save Campaigns progress after mission
+      //We always save script data with SaveCampaignScriptData
+      //then campaign progress should be saved always as well on any outcome (win or lose)
+      //otherwise we will get inconsistency
+      SaveCampaignsProgress;
 
       if aMsg = grWin then
-      begin
         fCampaigns.UnlockNextMap;
-        SaveCampaignsProgress; //Always save Campaigns progress after mission has been won. In case future game crash
-      end;
     end;
   end;
 
