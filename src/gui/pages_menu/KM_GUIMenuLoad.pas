@@ -157,6 +157,8 @@ end;
 
 procedure TKMMenuLoad.LoadMinimap;
 begin
+  if not Panel_Load.Visible then Exit;
+
   MinimapView_Load.Hide; //Hide by default, then show it if we load the map successfully
   if CanLoadSave and fSaves[ColumnBox_Load.ItemIndex].LoadMinimap(fMinimap) then
   begin
@@ -168,6 +170,8 @@ end;
 
 procedure TKMMenuLoad.Load_ListClick(Sender: TObject);
 begin
+  if not Panel_Load.Visible then Exit;
+
   fSaves.Lock;
   try
     //Hide delete confirmation if player has selected a different savegame item
@@ -326,6 +330,8 @@ end;
 //Shortcut to choose if DeleteConfirmation should be displayed or hid
 procedure TKMMenuLoad.Load_DeleteConfirmation(aVisible: Boolean);
 begin
+  if not Panel_Load.Visible then Exit;
+
   if aVisible then
   begin
     PopUp_Delete.Show;
@@ -368,6 +374,8 @@ end;
 
 procedure TKMMenuLoad.Show;
 begin
+  Panel_Load.Show;
+
   //Stop current scan so it can't add a save after we clear the list
   fSaves.TerminateScan;
   ColumnBox_Load.Clear; //clear the list
@@ -381,7 +389,7 @@ begin
   //Apply sorting from last time we were on this page
   Load_Sort(ColumnBox_Load.SortIndex);
 
-  Panel_Load.Show;
+
 end;
 
 

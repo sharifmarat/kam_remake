@@ -47,7 +47,7 @@ type
     procedure KeyDown(Key: Word; Shift: TShiftState);
 
   protected
-    Panel_Replays:TKMPanel;
+    Panel_Replays: TKMPanel;
       Radio_Replays_Type: TKMRadioGroup;
       ColumnBox_Replays: TKMColumnBox;
       Button_ReplaysPlay: TKMButton;
@@ -249,6 +249,8 @@ end;
 
 procedure TKMMenuReplays.LoadMinimap(aID: Integer = -1);
 begin
+  if not Panel_Replays.Visible then Exit;
+
   if (aID <> -1) and IsSaveValid(aID) then
   begin
     if fMinimapLastListId = aID then
@@ -446,6 +448,8 @@ end;
 
 procedure TKMMenuReplays.DeleteConfirm(aVisible: Boolean);
 begin
+  if not Panel_Replays.Visible then Exit;
+
   if aVisible then
   begin
     PopUp_Delete.Show;
@@ -491,6 +495,8 @@ end;
 
 procedure TKMMenuReplays.RenameConfirm(aVisible: Boolean);
 begin
+  if not Panel_Replays.Visible then Exit;
+
   if aVisible then
   begin
     Edit_Rename.Text := fSaves[ColumnBox_Replays.ItemIndex].FileName;
@@ -541,12 +547,12 @@ end;
 
 procedure TKMMenuReplays.Show;
 begin
+  Panel_Replays.Show;
   //Copy/Pasted from SwitchPage for now (needed that for ResultsMP BackClick)
   //Probably needs some cleanup when we have GUIMenuReplays
   Radio_Replays_Type.ItemIndex := gGameApp.GameSettings.MenuReplaysType;
   Replay_TypeChange(nil); //Select SP as this will refresh everything
   Replays_Sort(ColumnBox_Replays.SortIndex); //Apply sorting from last time we were on this page
-  Panel_Replays.Show;
 end;
 
 
