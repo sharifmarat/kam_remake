@@ -603,7 +603,6 @@ end;
 function GetStackTrace(aLinesCnt: Integer): UnicodeString;
 var
   I: Integer;
-  S: UnicodeString;
   SList: TStringList;
 begin
   Result := '';
