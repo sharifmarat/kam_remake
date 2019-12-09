@@ -347,6 +347,9 @@ begin
       R.Tag := I;
       ColumnBox_Maps.AddItem(R);
 
+      //This will cause some jumps on slow load machines, when select manually item in list during map list load
+      //Probably because of desynchronisation of fLastMapCRC for main thread and map scanner thread
+      //Small issue, will fix sometime later
       if (fMaps[I].CRC = fLastMapCRC) then
       begin
         ColumnBox_Maps.ItemIndex := ListI;
@@ -377,6 +380,12 @@ var
   LastColor: Integer;
   MD: TKMMissionDifficulty;
 begin
+  //Do not update UI if this page is not visible
+  //It could be called by still running map scanner threads
+  //because we do not terminate them now, because of possible deadlocks
+  if not Panel_Single.Visible then
+    Exit;
+
   fMaps.Lock;
   try
     if ColumnBox_Maps.IsSelected then
@@ -604,7 +613,13 @@ var
   M: TKMapInfo;
   G: TKMMapGoalInfo;
 begin
-   if (fSingleLoc <> -1) and (ColumnBox_Maps.IsSelected) then
+  //Do not update UI if this page is not visible
+  //It could be called by still running map scanner threads
+  //because we do not terminate them now, because of possible deadlocks
+  if not Panel_Single.Visible then
+    Exit;
+
+  if (fSingleLoc <> -1) and (ColumnBox_Maps.IsSelected) then
   begin
     MapId := ColumnBox_Maps.SelectedItem.Tag;
     //Do not update same item several times
@@ -757,6 +772,10 @@ procedure TKMMenuSingleMap.Show;
 begin
   Radio_MapType.ItemIndex := gGameApp.GameSettings.MenuMapSPType;
 
+  //Show panel first!
+  //Otherwise list update will be not be applied
+  Panel_Single.Show;
+
   ResetUI;
   //Terminate all
   fMaps.TerminateScan;
@@ -768,8 +787,6 @@ begin
   ListUpdate;
 
   fMaps.Refresh(ScanUpdate, ScanTerminate);
-
-  Panel_Single.Show;
 end;
 
 
