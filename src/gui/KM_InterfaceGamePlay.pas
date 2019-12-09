@@ -4328,7 +4328,9 @@ begin
     begin
       if ObjToShowInfo is TKMUnit then
         S := S + TKMUnit(ObjToShowInfo).ObjToString
-      else if ObjToShowInfo is TKMUnitGroup then
+      else if (ObjToShowInfo is TKMUnitGroup)
+        and not TKMUnitGroup(ObjToShowInfo).IsDead
+        and (TKMUnitGroup(ObjToShowInfo).SelectedUnit <> nil) then
         S := S + TKMUnitGroup(ObjToShowInfo).SelectedUnit.ObjToString
       else if ObjToShowInfo is TKMHouse then
         S := S + TKMHouse(ObjToShowInfo).ObjToString;

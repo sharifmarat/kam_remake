@@ -617,7 +617,7 @@ end;
 
 function TKMUnitGroup.GetSelected: TKMUnitWarrior;
 begin
-  if fSelected = nil then
+  if (fSelected = nil) and (Count > 0) then
     fSelected := FlagBearer;
   Result := fSelected;
 end;
