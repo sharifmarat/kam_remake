@@ -28,6 +28,8 @@ uses
   function Max4(const A,B,C,D: Integer): Integer;
   function Min4(const A,B,C,D: Integer): Integer;
 
+  function GetStackTrace(aLinesCnt: Integer): UnicodeString;
+
   function RGB2BGR(aRGB: Cardinal): Cardinal;
   function BGR2RGB(aRGB: Cardinal): Cardinal;
   function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
@@ -595,6 +597,31 @@ end;
 function Min4(const A,B,C,D: Integer): Integer;
 begin
   Result := Min(Min(A, B), Min(C, D));
+end;
+
+
+function GetStackTrace(aLinesCnt: Integer): UnicodeString;
+var
+  I: Integer;
+  S: UnicodeString;
+  SList: TStringList;
+begin
+  Result := '';
+
+  try
+    raise Exception.Create('');
+  except
+    on E: Exception do
+    begin
+      SList := TStringList.Create;
+      SList.Text := E.StackTrace;
+
+      for I := 1 to aLinesCnt do //Do not print last line (its this method line)
+        Result := Result + SList[I] + sLineBreak;
+
+      SList.Free;
+    end;
+  end;
 end;
 
 
