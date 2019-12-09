@@ -461,6 +461,8 @@ end;
 
 
 procedure TKMGameApp.PrepageStopGame(aMsg: TKMGameResultMsg);
+var
+  LastSentCmdsTick: Integer;
 begin
   if (gGame = nil) or gGame.ReadyToStop then Exit;
 
@@ -492,7 +494,13 @@ begin
   if gGame.IsMultiPlayerOrSpec then
   begin
     if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect(TKMGameInputProcess_Multi(gGame.GameInputProcess).LastSentCmdsTick);
+    begin
+      if TKMGameInputProcess_Multi(gGame.GameInputProcess) <> nil then
+        LastSentCmdsTick := TKMGameInputProcess_Multi(gGame.GameInputProcess).LastSentCmdsTick
+      else
+        LastSentCmdsTick := LAST_SENT_COMMANDS_TICK_NONE;
+      fNetworking.AnnounceDisconnect(LastSentCmdsTick);
+    end;
     fNetworking.Disconnect;
   end;
 
