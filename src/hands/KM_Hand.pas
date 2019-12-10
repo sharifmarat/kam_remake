@@ -7,13 +7,19 @@ uses
   KM_Houses, KM_HouseCollection, KM_HouseInn,
   KM_HandLogistics, KM_HandLocks, KM_HandStats,
   KM_FogOfWar, KM_BuildList, KM_MessageLog, KM_ResHouses,
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_ResWares, KM_Points;
 
 
 type
   TKMHandType = (
         hndHuman,
         hndComputer);
+
+  TKMChooseLoc = record
+    Allowed, Placed: Boolean;
+    Resources: array[WARE_MIN..WARE_MAX] of Word;
+    Units: array[CITIZEN_MIN..CITIZEN_MAX] of Byte;
+  end;
 
   //Player manages its assets
   TKMHandCommon = class
@@ -60,6 +66,7 @@ type
     fFlagColor: Cardinal;
     fTeamColor: Cardinal;
     fCenterScreen: TKMPoint;
+    fChooseLocation: TKMChooseLoc;
     fAlliances: array [0 .. MAX_HANDS - 1] of TKMAllianceType;
     fShareFOW: array [0 .. MAX_HANDS - 1] of Boolean;
     fShareBeacons: array [0 .. MAX_HANDS - 1] of Boolean;
@@ -87,6 +94,7 @@ type
     function LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
     function GetGameFlagColor: Cardinal;
     function GetOwnerNiknameU: UnicodeString;
+    procedure PlaceFirstStorehouse();
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -128,6 +136,7 @@ type
     property ShareFOW[aIndex: Integer]: Boolean read GetShareFOW write SetShareFOW;
     property ShareBeacons[aIndex: Integer]: Boolean read GetShareBeacons write SetShareBeacons;
     property CenterScreen: TKMPoint read fCenterScreen write fCenterScreen;
+    property ChooseLocation: TKMChooseLoc read fChooseLocation write fChooseLocation;
 
     procedure AddAIType(aHandAIType: TKMAIType);
 
@@ -166,7 +175,7 @@ type
     procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
     procedure ToggleFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
     procedure ToggleFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType);
-    function AddHouse(aHouseType: TKMHouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
+    function AddHouse(aHouseType: TKMHouseType; PosX, PosY: Word; RelativeEntrace: Boolean): TKMHouse;
     procedure AddHousePlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
     function AddHouseWIP(aHouseType: TKMHouseType; const aLoc: TKMPoint): TKMHouse;
     procedure RemGroup(const Position: TKMPoint);
@@ -212,7 +221,7 @@ type
 implementation
 uses
   Classes, SysUtils, KromUtils, Math, TypInfo,
-  KM_GameApp, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
+  KM_GameApp, KM_GameCursor, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
   KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
   KM_GameTypes, KM_CommonUtils;
@@ -338,6 +347,9 @@ begin
   fHSketch := TKMHouseSketchEdit.Create;
   fFirstHSketch := TKMHouseSketchEdit.Create;
   fFoundHSketch := TKMHouseSketchEdit.Create;
+
+  fChooseLocation.Allowed := False;
+  fChooseLocation.Placed := False;
 end;
 
 
@@ -1113,7 +1125,7 @@ begin
 end;}
 
 
-function TKMHand.AddHouse(aHouseType: TKMHouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
+function TKMHand.AddHouse(aHouseType: TKMHouseType; PosX, PosY: Word; RelativeEntrace: Boolean): TKMHouse;
 begin
   Result := fHouses.AddHouse(aHouseType, PosX, PosY, fID, RelativeEntrace);
   Result.OnDestroyed := HouseDestroyed;
@@ -1692,6 +1704,7 @@ begin
   SaveStream.Write(fCenterScreen);
   SaveStream.Write(fFlagColor);
   SaveStream.Write(SelectionHotkeys, SizeOf(SelectionHotkeys));
+  SaveStream.Write(fChooseLocation, SizeOf(TKMChooseLoc));
 end;
 
 
@@ -1724,6 +1737,7 @@ begin
   LoadStream.Read(fCenterScreen);
   LoadStream.Read(fFlagColor);
   LoadStream.Read(SelectionHotkeys, SizeOf(SelectionHotkeys));
+  LoadStream.Read(fChooseLocation, SizeOf(TKMChooseLoc));
 end;
 
 
@@ -1826,6 +1840,68 @@ begin
 
   if CanDoStatsUpdate(aTick) then
     fStats.UpdateState;
+
+  if fChooseLocation.Allowed AND not fChooseLocation.Placed then
+    PlaceFirstStorehouse();
+end;
+
+
+procedure TKMHand.PlaceFirstStorehouse();
+  // Place road and return true if it is possible
+  function AddRoad(aPoint: TKMPoint): Boolean;
+  begin
+    Result := CanAddFieldPlan(KMPoint(aPoint.X, aPoint.Y), ftRoad);
+    if Result then
+    begin
+      gTerrain.SetRoad(aPoint, fID);
+      //Terrain under roads is flattened (fields are not)
+      gTerrain.FlattenTerrain(aPoint);
+      if gMapElements[gTerrain.Land[aPoint.Y,aPoint.X].Obj].WineOrCorn then
+        gTerrain.RemoveObject(aPoint);
+    end;
+  end;
+var
+  K, L: Integer;
+  Entrance: TKMPoint;
+  H: TKMHouse;
+  WT: TKMWareType;
+  UT: TKMUnitType;
+begin
+  // Check if storehouse has been selected
+  if (Stats.GetHouseTotal(htStore) > 0) then
+  begin
+    for K := 0 to BuildList.HousePlanList.Count - 1 do
+      with BuildList.HousePlanList.Plans[K] do
+        if (HouseType = htStore) then
+        begin
+          Entrance := KMPointAdd( Loc, KMPoint(gRes.Houses[HouseType].EntranceOffsetX,0) );
+          RemHousePlan(Entrance);
+          if AddRoad( KMPoint(Entrance.X,Entrance.Y+1) ) then
+          begin
+            // Add Storehouse
+            H := AddHouse(htStore, Entrance.X, Entrance.Y, True);
+            for WT := Low(fChooseLocation.Resources) to High(fChooseLocation.Resources) do
+              if H.ResCanAddToIn(WT) OR H.ResCanAddToOut(WT) then
+                H.ResAddToEitherFromScript(WT, fChooseLocation.Resources[WT]);
+            // Add Roads
+            AddRoad( KMPoint(Entrance.X-1,Entrance.Y+1) );
+            AddRoad( KMPoint(Entrance.X+1,Entrance.Y+1) );
+            // Add Units
+            for UT := Low(fChooseLocation.Units) to High(fChooseLocation.Units) do
+              for L := 0 to fChooseLocation.Units[UT] - 1 do
+                AddUnit(UT, KMPoint(Entrance.X,Entrance.Y+1));
+            // Finish action
+            fChooseLocation.Placed := True;
+            gGameCursor.Mode := cmNone;
+          end;
+        end;
+  end;
+  // Preselect storehouse
+  if not fChooseLocation.Placed then
+  begin
+    gGameCursor.Mode := cmHouses;
+    gGameCursor.Tag1 := Byte(htStore);
+  end;
 end;
 
 

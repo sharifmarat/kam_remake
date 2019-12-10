@@ -190,7 +190,7 @@ type
 implementation
 
 uses
-  SysUtils, KM_HandsCollection, KM_CommonClasses, KM_Game, KM_Hand, Dialogs, KM_Log;
+  SysUtils, KM_HandsCollection, KM_CommonClasses, KM_Game, KM_Hand, KM_ResWares, Dialogs, KM_Log;
 
 
 
@@ -329,6 +329,7 @@ var
   S: TInteger2Array;
   TilesPartsArr: TTileParts;
   Locs: TKMPointArray;
+  LocProperty: TKMChooseLoc;
   Revealers: TKMPointTagList;
   Tiles: TKMTerrainTileBriefArray;
   Errors: TKMTerrainTileChangeErrorArray;
@@ -436,9 +437,25 @@ begin
            // gMySpectator.Hand.AddUnit(TKMUnitType(gGameCursor.Tag1), P, False)
 
   // Update Center screen option
+  FillChar(LocProperty, SizeOf(LocProperty), #0);
+  with LocProperty do
+  begin
+    Allowed := True;
+    Placed := False;
+    Resources[wtStone] := 70;
+    Resources[wtWood] := 50;
+    Resources[wtGold] := 60;
+    Resources[wtWine] := 60;
+    Resources[wtBread] := 35;
+    Resources[wtSausages] := 15;
+    Resources[wtFish] := 30;
+    Units[utSerf] := 4;
+    Units[utWorker] := 3;
+  end;
   for K := 0 to Length(Locs) - 1 do
   begin
     gHands[K].CenterScreen := Locs[K];
+    gHands[K].ChooseLocation := LocProperty;
     Revealers := gGame.MapEditor.Revealers[K];
     Revealers.Clear;
     Revealers.Add(Locs[K], 15);
