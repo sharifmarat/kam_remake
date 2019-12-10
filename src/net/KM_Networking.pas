@@ -226,7 +226,7 @@ type
     property Password: AnsiString read fPassword;
     property Description: UnicodeString read fDescription write SetDescription;
     function ReadyToStart: Boolean;
-    function CanStart: Boolean;
+    function CanStart: TKMGameStartMode;
     function CanTakeLocation(aPlayer, aLoc: Integer; AllowSwapping: Boolean): Boolean;
     procedure StartClick; //All required arguments are in our class
     procedure SendPlayerListAndRefreshPlayersSetup(aPlayerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
@@ -722,7 +722,7 @@ begin
 
   if not fSaveInfo.IsValid then
   begin
-    Error := fSaveInfo.GameInfo.Title; //Make a copy since fSaveInfo is freed in SelectNoMap
+    Error := WrapColor(fSaveInfo.SaveError.ErrorString, clSaveLoadError); //Make a copy since fSaveInfo is freed in SelectNoMap
     SelectNoMap(Error); //State the error, e.g. wrong version
     Exit;
   end;
@@ -950,28 +950,54 @@ begin
 end;
 
 
-function TKMNetworking.CanStart: Boolean;
+function TKMNetworking.CanStart: TKMGameStartMode;
+
+  function BoolToGameStartMode(aAllowed: Boolean): TKMGameStartMode;
+  begin
+    if not aAllowed then
+    begin
+      //Check if we can't start unsupported save
+      if (fSelectGameKind = ngkSave)
+        and fSaveInfo.IsValid
+        and not fSaveInfo.IsValidStrictly then
+        Result := gsmNoStartWithWarn
+      else
+        Result := gsmNoStart;
+    end
+    else
+    begin
+      if (fSelectGameKind = ngkSave)
+        and not fSaveInfo.IsValidStrictly then //Save detected as non-strict valid already at that point
+        Result := gsmStartWithWarn
+      else
+        Result := gsmStart;
+    end;
+  end;
+
 var
   I: Integer;
+  StartAllowed: Boolean;
 begin
   case fSelectGameKind of
-    ngkMap:  Result := fNetPlayers.AllReady and fMapInfo.IsValid;
-    ngkSave: begin
-                Result := fNetPlayers.AllReady and fSaveInfo.IsValid;
-                for i:=1 to fNetPlayers.Count do //In saves everyone must chose a location
-                  Result := Result and ((fNetPlayers[i].StartLocation <> LOC_RANDOM) or fNetPlayers[i].IsClosed);
+    ngkMap:   StartAllowed := fNetPlayers.AllReady and fMapInfo.IsValid;
+    ngkSave:  begin
+                StartAllowed := fNetPlayers.AllReady and fSaveInfo.IsValid;
+                for I := 1 to fNetPlayers.Count do //In saves everyone must chose a location
+                  StartAllowed := StartAllowed and ((fNetPlayers[i].StartLocation <> LOC_RANDOM) or fNetPlayers[i].IsClosed);
               end;
-    else      Result := False;
+    else      StartAllowed := False;
   end;
   //At least one player must NOT be a spectator or closed
   for I := 1 to fNetPlayers.Count do
     if not fNetPlayers[i].IsSpectator and not fNetPlayers[i].IsClosed then
-      Exit; //Exit with result from above
+      Exit(BoolToGameStartMode(StartAllowed)); //Exit with result from above
 
   //If we reached here then all players are spectators so only saves can be started,
   //unless this map has AI-only locations (spectators can watch the AIs)
   if (fSelectGameKind = ngkMap) and (fMapInfo.AIOnlyLocCount = 0) then
-    Result := False;
+    StartAllowed := False;
+
+  Result := BoolToGameStartMode(StartAllowed);
 end;
 
 
@@ -984,7 +1010,7 @@ var
   CheckMapInfo: TKMapInfo;
 begin
   Assert(IsHost, 'Only host can start the game');
-  Assert(CanStart, 'Can''t start the game now');
+  Assert(IsGameStartAllowed(CanStart), 'Can''t start the game now');
   Assert(fNetGameState = lgsLobby, 'Can only start from lobby');
 
   //Define random parameters (start locations and flag colors)
@@ -2051,8 +2077,8 @@ begin
                                         ' Save FileExists %s: %s; fSaveError = %s; fInfo.IsValid(True) = %s',
                                         [gResTexts[TX_PAUSED_FILE_MISMATCH], BoolToStr(fSaveInfo.IsValid),
                                          BoolToStr(fSaveInfo.CRC <> tmpCardinal), fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT,
-                                         BoolToStr(FileExists(fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT)), fSaveInfo.SaveError,
-                                         fSaveInfo.GameInfo.IsValid(True)]));
+                                         BoolToStr(FileExists(fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT)),
+                                         fSaveInfo.SaveError.ErrorString, fSaveInfo.GameInfo.IsValid(True)]));
                     fSelectGameKind := ngkNone;
                     FreeAndNil(fSaveInfo);
                     if Assigned(fOnMapName) then fOnMapName('');

@@ -67,6 +67,9 @@ uses
   function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: String): Integer; overload;
   function KaMRandomS2(Range_Both_Directions: Single; const aCaller: String): Single; overload;
 
+  function IsGameStartAllowed(aGameStartMode: TKMGameStartMode): Boolean;
+  function GetGameVersionNum(const aGameVersionStr: UnicodeString): Integer;
+
   function TimeGet: Cardinal;
   function TimeGetUsec: Int64;
   function GetTimeSince(aTime: Cardinal): Cardinal;
@@ -341,6 +344,25 @@ begin
   aByte2 := (aInt and $FF0000) shr 16;
   aByte3 := (aInt and $FF00) shr 8;
   aByte4 := aInt and $FF;
+end;
+
+
+function IsGameStartAllowed(aGameStartMode: TKMGameStartMode): Boolean;
+begin
+  Result := not (aGameStartMode in [gsmNoStart, gsmNoStartWithWarn]);
+end;
+
+
+function GetGameVersionNum(const aGameVersionStr: UnicodeString): Integer;
+var
+  Rev: Integer;
+begin
+  Result := 0;
+  if Copy(aGameVersionStr, 1, 1) <> 'r' then
+    Exit;
+
+  if TryStrToInt(Copy(aGameVersionStr, 2, Length(aGameVersionStr) - 1), Rev) then
+    Result := Rev;
 end;
 
 

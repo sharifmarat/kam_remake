@@ -372,6 +372,9 @@ TX_MENU_LOAD_DELETE = 321; //Delete
 TX_MENU_LOAD_DELETE_CONFIRM = 322; //Are you sure you want to delete this save?
 TX_MENU_LOAD_DELETE_DELETE = 323; //Delete
 TX_MENU_LOAD_DELETE_CANCEL = 324; //Cancel
+TX_MENU_LOAD_MAP_NAME = 1382; //Map name
+TX_MENU_LOAD_TIME = 1383; //Time
+TX_MENU_LOAD_GAME_VERSION = 1384; //Vers.
 TX_MENU_REPLAY_DELETE_TITLE = 834; //Delete this Replay
 TX_MENU_REPLAY_DELETE_CONFIRM = 801; //Deleting a replay also deletes the associated save. Are you sure you want to delete this save?
 TX_MENU_REPLAY_DELETE = 804; //Delete Replay
@@ -816,6 +819,7 @@ TX_MENU_REPLAYS = 625; //Replay Viewer
 TX_MENU_VIEW_REPLAY = 626; //View Replay
 TX_SAVE_UNSUPPORTED_FORMAT = 627; //Unsupported format %s
 TX_SAVE_UNSUPPORTED_VERSION = 628; //Unsupported version %s
+TX_SAVE_UNSUPPORTED_VERSION_SHORT = 1386; //Unsupported version
 TX_SAVE_UNSUPPORTED_MODS = 629; //Unsupported modifications
 TX_MENU_PARSE_ERROR = 630; //An error has occurred while parsing the file %s
 TX_MENU_LOADING_INITIALIZING = 631; //initializing
@@ -1399,3 +1403,10 @@ TX_MAPED_RMG_SETTINGS_CLOSE_RMG_HINT = 1355; //Close Random Map Generator
 TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT = 1366; //Step of the height algorithm (1 = small, 10 = big)
 TX_MAPED_RMG_SETTINGS_HEIGHT_SLOPE_HINT = 1367; //Slope of the height evaluation (0 = plateau, 15 = peak)
 TX_MAPED_RMG_SETTINGS_HEIGHT_HEIGHTS_HINT = 1368; //Maximum height of walkable tiles
+
+TX_MENU_LOBBY_TRY_TO_START = 1377; //Try to start 
+TX_MENU_SAVE_TRY_TO_LOAD = 1378; //Try to load save
+TX_MENU_REPLAY_TRY_TO_VIEW = 1379; //Try to view replay
+TX_UNSUPPORTED_SAVE_LOAD_ERROR_MSG = 1380; //Error loading unsupported version %s save from %s
+TX_UNSUPPORTED_REPLAY_LOAD_ERROR_MSG = 1381; //Error loading unsupported version %s replay from %s
+TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT = 1385; //Loading unsupported version could cause game not being properly loaded or even cause game crash

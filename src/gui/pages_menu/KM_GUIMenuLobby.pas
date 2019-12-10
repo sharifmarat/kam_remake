@@ -210,7 +210,7 @@ var
 
 implementation
 uses
-  KM_CommonTypes, KM_ResLocales, KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI,
+  KM_Log, KM_CommonTypes, KM_ResLocales, KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI,
   KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points, KM_MapTypes;
 
 const
@@ -1816,7 +1816,13 @@ begin
   CheckBox_RandomizeTeamLocations.Checked := fNetworking.NetPlayers.RandomizeTeamLocations;
   CheckBox_Spectators.Checked := fNetworking.NetPlayers.SpectatorsAllowed;
   if fNetworking.IsHost then
-    Button_Start.Enabled := fNetworking.CanStart;
+  begin
+    Button_Start.Enabled := IsGameStartAllowed(fNetworking.CanStart);
+    if fNetworking.CanStart in [gsmNoStartWithWarn, gsmStartWithWarn] then
+      Button_Start.Caption := gResTexts[TX_MENU_LOBBY_TRY_TO_START]
+    else
+      Button_Start.Caption := gResTexts[TX_LOBBY_START];
+  end;
 
   UpdateSpectatorDivide;
 end;
@@ -1870,9 +1876,12 @@ begin
     4:  //Saved Game
         begin
           fSavesMP.Refresh(MapList_ScanUpdate, True);
-          DropCol_Maps.DropWidth := 600;
+          DropCol_Maps.DropWidth := 800;
           DropCol_Maps.DefaultCaption := gResTexts[TX_LOBBY_MAP_SELECT_SAVED];
-          DropCol_Maps.SetColumns(fntOutline, [gResTexts[TX_MENU_LOAD_FILE], '#', gResTexts[TX_MENU_SAVE_TIME], gResTexts[TX_MENU_LOAD_DATE]], [0, 290, 320, 430]);
+          DropCol_Maps.SetColumns(fntOutline,
+                                  [gResTexts[TX_MENU_LOAD_FILE], '#', gResTexts[TX_MENU_SAVE_TIME], gResTexts[TX_MENU_LOAD_DATE],
+                                   gResTexts[TX_MENU_LOAD_MAP_NAME], gResTexts[TX_MENU_LOAD_GAME_VERSION]],
+                                  [0, 290, 320, 400, 540, 740]);
         end;
     else
         begin
@@ -1975,6 +1984,7 @@ var
   PrevMap: string;
   AddMap: Boolean;
   Row: TKMListRow;
+  LobbyCl: Cardinal;
 begin
   //Remember previous map selected
   if DropCol_Maps.ItemIndex <> -1 then
@@ -2000,8 +2010,10 @@ begin
 
       if AddMap and fNetworking.NetGameFilter.FilterMap(fMapsMP[I].CRC) then
       begin
+        LobbyCl := fMapsMP[I].GetLobbyColor;
+
         Row := MakeListRow(['', fMapsMP[I].FileName, IntToStr(fMapsMP[I].HumanPlayerCountMP), fMapsMP[I].SizeText], //Texts
-                           [fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor], //Colors
+                           [LobbyCl, LobbyCl, LobbyCl, LobbyCl], //Colors
                            I);
         Row.Cells[0].Pic := fMapsMP[I].FavouriteMapPic;
         Row.Cells[0].HighlightOnMouseOver := True;
@@ -2049,7 +2061,8 @@ procedure TKMMenuLobby.RefreshSaveList(aJumpToSelected: Boolean);
   end;
 var
   I, PrevTop: Integer;
-  PrevSave: string;
+  PrevSave, MapName: UnicodeString;
+  Color: Cardinal;
 begin
   //Remember previous save selected
   if DropCol_Maps.ItemIndex <> -1 then
@@ -2064,13 +2077,36 @@ begin
   fSavesMP.Lock;
   try
     for I := 0 to fSavesMP.Count - 1 do
-    if fSavesMP[I].IsValid then
-      DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName,
-                                         IntToStr(fSavesMP[I].GameInfo.PlayerCount),
-                                         fSavesMP[I].GameInfo.GetTimeText,
-                                         fSavesMP[I].GameInfo.GetSaveTimestamp], I))
-    else
-      DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName, '', '', ''], I));
+    begin
+      if fSavesMP[I].IsValidStrictly then
+      begin
+        Color := clSaveLoadOk;
+        MapName := fSavesMP[I].GameInfo.Title;
+      end
+      else
+      if fSavesMP[I].IsValid then
+      begin
+        Color := clSaveLoadTry;
+        MapName := gResTexts[TX_SAVE_UNSUPPORTED_VERSION_SHORT];
+      end
+      else
+      begin
+        Color := clSaveLoadError;
+        MapName := gResTexts[TX_SAVE_UNSUPPORTED_VERSION_SHORT];
+      end;
+
+      if Color = clSaveLoadError then
+        DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName, '', '', '', MapName, fSavesMP[I].GameInfo.Version],
+                                     [Color, Color, Color, Color, Color, Color], I))
+      else
+        DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName,
+                                      IntToStr(fSavesMP[I].GameInfo.PlayerCount),
+                                      fSavesMP[I].GameInfo.GetTimeText,
+                                      fSavesMP[I].GameInfo.GetSaveTimestamp,
+                                      MapName,
+                                      fSavesMP[I].GameInfo.Version],
+                                     [Color, Color, Color, Color, Color, Color], I));
+    end;
 
     //Restore previously selected save
     if PrevSave <> '' then
@@ -2147,25 +2183,33 @@ begin
   begin
     //Determine Sort method depending on which column user clicked
     with DropCol_Maps.List do
-    case SortIndex of
-      0:  if SortDirection = sdDown then
-            SSM := smByFileNameDesc
-          else
-            SSM := smByFileNameAsc;
-      1:  if SortDirection = sdDown then
-            SSM := smByPlayerCountDesc
-          else
-            SSM := smByPlayerCountAsc;
-      2:  if SortDirection = sdDown then
-            SSM := smByTimeDesc
-          else
-            SSM := smByTimeAsc;
-      3:  if SortDirection = sdDown then
-            SSM := smByDateDesc
-          else
-            SSM := smByDateAsc;
-      else SSM := smByFileNameAsc;
-    end;
+      case SortIndex of
+        0:  if SortDirection = sdDown then
+              SSM := smByFileNameDesc
+            else
+              SSM := smByFileNameAsc;
+        1:  if SortDirection = sdDown then
+              SSM := smByPlayerCountDesc
+            else
+              SSM := smByPlayerCountAsc;
+        2:  if SortDirection = sdDown then
+              SSM := smByTimeDesc
+            else
+              SSM := smByTimeAsc;
+        3:  if SortDirection = sdDown then
+              SSM := smByDateDesc
+            else
+              SSM := smByDateAsc;
+        4:  if SortDirection = sdDown then
+              SSM := smByMapNameDesc
+            else
+              SSM := smByMapNameAsc;
+        5:  if SortDirection = sdDown then
+              SSM := smByGameVersionDesc
+            else
+              SSM := smByGameVersionAsc;
+        else SSM := smByFileNameAsc;
+      end;
     fSavesMP.Sort(SSM, MapList_SortUpdate);
   end;
 end;
@@ -2212,12 +2256,16 @@ begin
       fMapsMP.Unlock;
     end;
     GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
+    Button_Start.Caption := gResTexts[TX_LOBBY_START];
   end
   else
   begin
     fSavesMP.Lock;
     try
       fNetworking.SelectSave(fSavesMP[I].FileName);
+//      if True then
+
+//      Button_Start.Caption := gResTexts[TX_MENU_LOBBY_TRY_TO_START];
     finally
       fSavesMP.Unlock;
     end;
@@ -2315,6 +2363,7 @@ procedure TKMMenuLobby.Lobby_OnMapName(const aData: UnicodeString);
 var
   M: TKMapInfo;
   S: TKMSaveInfo;
+  Txt: UnicodeString;
 begin
   //Common settings
   MinimapView.Visible := (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
@@ -2357,7 +2406,14 @@ begin
     ngkSave: begin
                 S := fNetworking.SaveInfo;
                 Label_MapName.Caption := aData; //Show save name on host (local is always "downloaded")
-                Memo_MapDesc.Text := S.GameInfo.GetTitleWithTime + '|' + S.GameInfo.GetSaveTimestamp;
+                Txt := S.GameInfo.GetTitleWithTime + '|' + S.GameInfo.GetSaveTimestamp;
+                if not S.IsValid then
+                  Txt := S.SaveError.ErrorString + '||' + Txt
+                else
+                if not S.IsValidStrictly then //Allow try Load unsupported saves
+                  Txt := WrapColor(S.SaveError.ErrorString, clSaveLoadTry) + '||' +
+                         WrapColor(gResTexts[TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT], clSaveLoadError) + '||' + Txt;
+                Memo_MapDesc.Text := Txt;
                 Lobby_OnUpdateMinimap(nil);
                 UpdateDifficultyLevels(S);
               end;
@@ -2624,9 +2680,37 @@ end;
 
 
 procedure TKMMenuLobby.StartClick(Sender: TObject);
+var
+  LoadError, Version, Path: UnicodeString;
 begin
   if fNetworking.IsHost then
-    fNetworking.StartClick
+  begin
+    if fNetworking.IsSave then
+    begin
+      Version := fNetworking.SaveInfo.GameInfo.Version;
+      Path := fNetworking.SaveInfo.Path;
+      if not fNetworking.SaveInfo.IsValidStrictly then //We are trying to load other version save
+      begin
+        try
+          fNetworking.StartClick;
+        except
+          on E: Exception do
+          begin
+            LoadError := Format(gResTexts[TX_UNSUPPORTED_SAVE_LOAD_ERROR_MSG], [Version, Path])
+                         + '||' + E.ClassName + ': ' + E.Message;
+            gLog.AddTime('Replay load Exception: ' + LoadError
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
+              );
+            fOnPageChange(gpError, LoadError);
+          end;
+        end;
+      end
+      else
+        fNetworking.StartClick;
+    end
+    else
+      fNetworking.StartClick;
+  end
   else
   begin
     if fNetworking.ReadyToStart then

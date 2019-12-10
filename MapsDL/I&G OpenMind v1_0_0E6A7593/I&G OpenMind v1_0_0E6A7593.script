@@ -1,0 +1,734 @@
+//Townhall New Era Script- written by ThundEEr
+
+//Buildorde script by Ben modified by sado and reordered by ThundEER;
+
+//BF -The BuilderFest Script developed and written by ThundEER
+//written by ThundEEr
+//Transforming maximum 25 builders to rebels. It is a more beauty solution then sending them to suicide action.
+//Enable houserepair on a market
+//1 Goldchest is 1 labourer's transformtion cost. 
+//If switching a labourer then wont get stone for the trade
+
+//ST-StoneTower Script developed and written by ThundEEr
+//The players can build and blocking few tiles around towers. 1tower maximum 3 bloackable tile around it.
+//Place a vine field next to a not built up tower. When the tower is built up then gives a blocked tile there. Only happening when removing vinefield and the tower is fully loaded.
+//Cost of it 5 STONE from the tower
+//destroying a tower will remove the added object from around.
+
+//TF -'The Fallen riders' script developed and written by ThundEEr
+//If a scout would die after it gives an axefighter to the exact same place where the rider fall down.
+//active only if the player traded gold for two horses in the market!
+
+//AS - Angry serfs script 
+//developed and written by ThundEER
+//when a serf who is carrying a wepon gets attach will transform for a TH unit. strengh is a kind of as the carried weapon
+
+//Tower Destroyers 
+//written by ThundEEr
+//each destroyed tower gives X amount of goldchest to your storehouse
+
+//The Last chance script 
+//written by ThundEEr
+//If a player lost his barrach doesn't have any anymore than can destroy buildings. Each occupant building will give th units from TH as a conversion.
+
+
+//const RAND=2;							//these has to be activated when want less chance to give axefighter afer a scout.
+//var aMax := Integer;
+
+
+
+const 
+MAXLB=25;	//it is the limit for the numbers of the LAbourers trade
+RAD =7;
+
+
+const
+MAP_TYPE = 0;
+BUILD_ORDER = 1;
+TOWER_LIMIT = 0; //doesn't work yet
+STATS_FOR_ALL = 0;
+INTERFACE_COLOR = 'aaaaaa';
+IRON_COLOR = 'ffffb3';
+LEATHER_COLOR = '3377ff';
+HORSE_COLOR = '003366';
+STAT_COLOR = 'ff6600';
+
+GREEN_COLOR = '00FF00';
+RED_COLOR = '0000FF';
+
+
+
+
+
+
+var D,Bx,By,Dx,Dy,UZ,Bd:Integer;						//BF script
+var GC: array [0..7] of integer;   						//BF script
+var BarracksList, Equipped, Lost, Defeated, DefeatedPoints: array [0..7] of Integer;
+var BarrackCounter, Store, THCounter, THx, THy: array [0..7] of Integer;
+var BuildOrderH: Integer;
+var UT,UX,UY,aGroupID : Integer;     //section OnTrade
+
+var X,Y,XT,YT,VC,Vx,Vy,F,K :integer;				//ST script VC-vinefield counter around the tower stoneplacement 
+var HD: array [0..7] of Integer;						//TF scrip traded horse counter
+var ID,aX,aY,CA,aOwner :Integer;					//AS script vars
+var HZ: array [0..7] of Integer;
+
+procedure OnMissionStart;			//Disable the fast start and some trades in the barrack.
+									// TH builds up
+var P: Integer;
+var Houses: array of Integer;
+
+begin
+	
+  for P := 0 to 7 do
+    if States.PlayerEnabled(P) then
+    begin
+		Actions.HouseAllow(P, 27, False);  //inn
+		Actions.HouseAllow(P, 14, False);  //quarry
+		Actions.HouseAllow(P, 9, False);  //cutter
+		BarracksList[P] := -1;
+		BarrackCounter[P] := 0;
+		Houses := States.PlayerGetAllHouses(P);
+        Store[P] := Houses[0];
+		THCounter[P] := 0 ;
+		THx[P] := -1;
+		THy[P] := -1;
+		HD[P] := 0;
+		HZ[P] := 0;
+		GC[P] := 0;
+   end;     
+end;
+
+
+Procedure OnHouseBuilt(aHouseID: Integer);
+var H: integer;
+Begin
+	
+			if States.HouseType(aHouseID) = 13 then //unlock inn after school
+				Actions.HouseAllow(States.HouseOwner(aHouseID), 27, True);
+			if States.HouseType(aHouseID) = 13 then //!!!unlock quarry-->skip the inn is possible. Original value was 27
+				Actions.HouseAllow(States.HouseOwner(aHouseID), 14, True);
+			if States.HouseType(aHouseID) = 14 then //unlock cutter
+				Actions.HouseAllow(States.HouseOwner(aHouseID), 9, True);
+			if States.HouseType(aHouseID) = 18 then begin		//TH as building
+				Actions.HouseDeliveryBlock(aHouseID, True);		//because gold can be taken into it...
+				THx[States.HouseOwner(aHouseID)] := States.HousePositionX(aHouseID);
+				THy[States.HouseOwner(aHouseID)] := States.HousePositionY(aHouseID);
+				inc(THCounter[H]);
+				end;
+			if States.HouseType(aHouseID) = 21 then begin		
+			//add the necesarry wares to the barrack, without these the players wuld have problem with training theTHunits without leather production
+				//BarracksList[States.HouseOwner(aHouseID)] := aHouseID;  	//Usng the full tags of the variables -
+				//Actions.HouseAddWaresTo(aHouseID, 16, WS);
+				//Actions.HouseAddWaresTo(aHouseID, 20, AX);
+				//Actions.HouseAddWaresTo(aHouseID, 18, LJ);
+				H := States.HouseOwner(aHouseID);
+				inc(BarrackCounter[H]);
+				//		if BarrackCounter[H] > 0 then
+				//			begin
+				//			Actions.SetTradeAllowed(H,20,false);
+				//			Actions.SetTradeAllowed(H,18,false);
+				//			Actions.SetTradeAllowed(H,16,false);
+								
+				//		end;
+			//end;
+end;
+end;
+
+
+
+
+
+
+//Buildng TH phisically placement. Only if barrack is avaiable.
+procedure OnHousePlanPlaced(P, X, Y, T: Integer);
+begin
+  if T = 21 then
+    if (States.HouseRepair(Store[P])) //then
+	 and (THCounter[P] = 0) then
+				//and (States.StatHouseTypeCount(P, 15) > 0) then
+    begin
+      Actions.PlanRemove(P, X, Y);
+      if States.IsRoadAt(P, X, Y + 1) then
+        Actions.PlanAddHouse(P, 18, X, Y);
+      if not States.IsRoadAt(P, X, Y + 1) then
+        Actions.PlanAddHouse(P, 18, X, Y - 1);
+      
+      Actions.HouseRepairEnable(Store[P], False);
+	  inc(THCounter[P]);
+    end;
+end;
+
+//remove placement and dec the counter
+procedure OnHousePlanRemoved(P, X, Y, T: Integer);
+begin
+  if T = 18 then 
+    dec(THCounter[P]);
+end;
+
+
+
+procedure OnPlanWineFieldRemoved(aPlayer,aX,aY:integer);
+begin
+	Vx:=aX;	//saving the coordinate of the vinefield
+	Vy:=aY; //saving the coordinate of the vinefield
+	F:=aplayer;
+	//only happen if there is a townhall
+	if (THCounter[F] > 0) and (THx[F] > 0)then begin 
+	//Stone object only next to the tower
+	if (States.HouseType(States.HouseAt(Vx,(Vy-1))) = 17) or (States.HouseType(States.HouseAt((Vx+1),(Vy-1))) = 17) or (States.HouseType(States.HouseAt((Vx+1),Vy)) = 17)  or  (States.HouseType(States.HouseAt((Vx+1),(Vy+1))) = 17 ) or (States.HouseType(States.HouseAt((Vx),(Vy+1))) = 17) or (States.HouseType(States.HouseAt((Vx-1),(Vy+1))) = 17) or (States.HouseType(States.HouseAt((Vx-1),(Vy))) = 17) or (States.HouseType(States.HouseAt((Vx-1),(Vy-1))) = 17) then begin
+		//2 tiles has to be between two stone objects. Diagonal is possible.
+		if	(States.MapTileObject(Vx,(Vy-1)) <> 9) and (States.MapTileObject(Vx,(Vy-2)) <> 9) and (States.MapTileObject(Vx,(Vy+1)) <> 9) and (States.MapTileObject(Vx,(Vy+2)) <> 9) and	(States.MapTileObject((Vx-1),Vy) <> 9) and (States.MapTileObject((Vx-2),Vy) <> 9) and (States.MapTileObject((Vx+1),Vy) <> 9) and (States.MapTileObject((Vx+2),Vy) <> 9) then begin
+			//cost is 10 mined and stored stone in the storehouse
+			if States.HouseResourceAmount((States.ClosestHouse(F,Vx,Vy,17)),1) > 4	then begin		//search the nearest tower
+				Actions.MapTileObjectSet(aX,aY,9);													//adding the unwalkable stone
+				Actions.HouseTakeWaresFrom((States.ClosestHouse(F,Vx,Vy,17)),1,10)					//remove 5piece stone from the signed tower
+	end;
+	end;			
+	end;
+	end;
+end;
+
+
+
+
+//this part is used for unit transformation and paying for the TH services
+procedure OnMarketTrade(aMarket, aFrom, aTo:Integer);
+
+begin
+D :=States.HouseOwner(aMarket);
+Dx := States.HousePositionX(aMarket);
+Dy := States.HousePositionX(aMarket);
+
+if (States.HouseRepair(aMarket) = true) and (THCounter[D] > 0) and (THx[D] > 0) then begin
+	if (aFrom = 7) and (aTo = 26) then begin							//trading goldchst for horses TF
+	inc(HD[D]);														//adding +1 to the horse trade counter 
+	Actions.HouseTakeWaresFrom(aMarket,26,1);	
+	end else
+	
+	if (aFrom = 7) and (aTo = 0 ) then begin							//trading goldchst for tree trunks AS
+	inc(HZ[D]);														//adding +1 to the horse trade counter 
+	Actions.HouseTakeWaresFrom(aMarket,0,1);
+	end else
+	
+	
+	if GC[D] < MAXLB then begin
+		if (aFrom = 7) and (aTo = 1) then begin				//this one is for transforming the labourers until MAXLB const limitating
+			UZ := States.ClosestUnit(D,Dx,Dy,9);
+				if (UZ <> -1) and (THx[D] > 0) then begin
+				Bx :=States.UnitPositionX(UZ);
+				By :=States.UnitPositionY(UZ);
+				Bd :=States.UnitDirection(UZ);
+				Actions.Unitkill(UZ,true);
+					//auto connection plus added theme start here
+					UT:= States.ClosestUnit(D, THx[D], THy[D], 24);
+					UX:= States.UnitPositionX(UT);
+					UY:= States.UnitPositionY(UT);
+							if (THx[D] - RAD  < UX) and (UX < THx[D] + RAD) and (THy[D] - RAD  < UY) and (UY < THy[D] + RAD ) then begin
+							aGroupID:= States.GroupAt(UX,UY);
+							end;
+				Actions.GroupOrderLink(Actions.GiveGroup(D, 24, THx[D], 1 + THy[D], 4,1,1), aGroupID);
+					//Actions.GiveGroup(D,24,THx[D],1+THy[D],Bd,1,1);			//the original line was withouth auto connection
+				
+				inc(GC[D]);
+				Actions.HouseTakeWaresFrom(aMarket,1,2);
+				end;
+		end;
+	end;	
+end;
+end;
+
+
+
+Procedure OnHouseDestroyed(aHouseID, aHouseDestroyerIndex: Integer);
+var B, K, XT, YT, H, X, Y: integer;   		//THCC-TH counter only for this block, more exact, calculate only witht the ready buildings
+J:Boolean;
+//var H, X, Y: Integer;
+
+begin
+	K:= States.HouseOwner(aHouseID);				//houseowner
+	XT:= States.HousePositionX(aHouseID);			//HOUSE X
+	YT:= States.HousePositionY(aHouseID);			//HOUSE y	
+		
+		
+							
+		
+		if States.HouseType(aHouseID) = 18 then begin
+			B := States.HouseOwner(aHouseID);
+			dec(THCounter[B]);
+				THx[States.HouseOwner(aHouseID)] := -1;
+				THy[States.HouseOwner(aHouseID)] := -1;
+				
+				//Relocate THx and THY
+				//THCC := States.HouseMultipleTypeCount(B, 18);
+				//If THCounter[B] > -1 then
+				//TXX:= States.HousePositionX(aHouseID);
+				//TYY:= States.HousePositionY(aHouseID);
+				//TID := States.ClosestHouse(B, THx[B], THy[B], 18);
+				//if TID <> -1 then
+				//THx[B] := States.HousepositionX(TID);
+				//THy[B] := States.HousepositionX(TID);
+			end;
+		
+		if States.HouseType(aHouseID) = 17 then begin				 	//destroyed tower gives to destroyer
+		Actions.GiveWares(aHouseDestroyerIndex,7,6);
+		end;
+		
+		if States.HouseType(aHouseID) = 11 then begin 					//a destroyed Storehouse gives something to the destroyer
+		Actions.GiveWares(aHouseDestroyerIndex,7,10);
+		end;
+	
+	if States.MapTileObject((XT+1),YT) = 9 then begin Actions.MapTileObjectSet((XT+1),YT,3); end;
+	if States.MapTileObject((XT+1),(YT-1)) = 9 then begin Actions.MapTileObjectSet((XT+1),(YT-1),3); end;
+	if States.MapTileObject((XT+1),(YT-2)) = 9 then begin Actions.MapTileObjectSet((XT+1),(YT-2),3); end;
+	if States.MapTileObject((XT),(YT-2)) = 9 then begin Actions.MapTileObjectSet((XT),(YT-2),3); end;
+	if States.MapTileObject((XT-1),(YT-2)) = 9 then begin Actions.MapTileObjectSet((XT-1),(YT-2),3); end;
+	if States.MapTileObject((XT-2),(YT-2)) = 9 then begin Actions.MapTileObjectSet((XT-2),(YT-2),3); end;
+	if States.MapTileObject((XT-2),(YT-1)) = 9 then begin Actions.MapTileObjectSet((XT-2),(YT-1),3); end;
+	if States.MapTileObject((XT-2),YT) = 9 then begin Actions.MapTileObjectSet((XT-2),YT,3); end;
+	if States.MapTileObject((XT-2),(YT+1)) = 9 then begin Actions.MapTileObjectSet((XT-2),(YT+1),3); end;
+	if States.MapTileObject((XT-1),(YT+1)) = 9 then begin Actions.MapTileObjectSet((XT-1),(YT+1),3); end;
+	if States.MapTileObject(XT,(YT+1)) = 9 then begin Actions.MapTileObjectSet(XT,(YT+1),3); end;
+	if States.MapTileObject((XT+1),(YT+1)) = 9 then begin Actions.MapTileObjectSet((XT+1),(YT+1),3); end;
+	
+//LC and TD start here
+
+	
+if (States.GameTime > States.PeaceTime) and (THCounter[K] > 0) and (THx[K] > 0) then begin			//only do these if the game is after PT
+
+K:= States.HouseOwner(aHouseID);				//houseowner
+X:= States.HousePositionX(aHouseID);			//hOUSE X
+Y:= States.HousePositionY(aHouseID);			//HOUSE y
+J:= States.HouseHasOccupant(aHouseID);			//is there house owner?
+H:= States.HouseTypeToOccupantType(aHouseID);	//what kind of units would need for the house?
+//L:= States.ClosestUnit(States.HouseOwner(aHouseID), States.HousePositionX(aHouseID), States.HousePositionY(aHouseID), States.HouseTypeToOccupantType(aHouseID));  //the closest unittype to the house, anykind of
+//cases of the destroyed houes:
+
+	
+	//if somebody lost his barrack or barracks, but still has lots of houses with citizens, then can destroy them and will get some rebels
+	if States.HouseType(aHouseID) = 6 then begin 					//fisher's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24, THx[K], THy[K], 1,1,1);
+				end;
+				
+				
+				Actions.GroupOrderWalk(States.ClosestUnit(K, X, Y, 8),X,Y+1,3);			//added line to solve a problem
+				
+				
+				
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 8), True);	//kill the nearest fisher, unfortunately kill only the otsiders 
+			end;
+		end;	
+		
+	end;
+	
+	if States.HouseType(aHouseID) = 24 then begin 					//Butcher's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 7), True);	//kill the nearest butcher
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 25 then begin 					//Tannery's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 7), True);	//kill the nearest butcher
+			end;
+		end;		
+	end;	
+	
+	if States.HouseType(aHouseID) = 7 then begin 					//Bakery's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 6), True);	//kill the nearest baker
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 22 then begin 					//Mill's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 6), True);	//kill the nearest baker
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 8 then begin 					//Farm's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 4), True);	//kill the nearest farmer
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 28 then begin 					//Vineyard's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 4), True);	//kill the nearest farmer
+			end;
+		end;		
+	end;	
+
+	if States.HouseType(aHouseID) = 12 then begin 					//Stable's house to vagabond
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 27,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 3), True);	//kill the nearest animalbreader
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 16 then begin 					//Swinefarm's house to rebel
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 24,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 3), True);	//kill the nearest animal breader
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 9 then begin 					//Woodcutter's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 1), True);	//kill the nearest woodcutter
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 0 then begin 					//sawmill's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 5), True);	//kill the nearest carpenter
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 19 then begin 					//carpenter's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 5), True);	//kill the nearest carpenter
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 15 then begin 					//metallurgist's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 12), True);	//kill the nearest metallurgist
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 5 then begin 					//Gmine's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 2), True);	//kill the nearest miner
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 4 then begin 					//Ironmines's house to barb
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 23,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 2), True);	//kill the nearest miner
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 3 then begin 					//Coalmine's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 2), True);	//kill the nearest miner
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 1 then begin 					//IronSmelllter's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 15), True);	//kill the nearest metallurgist
+			end;
+		end;		
+	end;	
+	
+	if States.HouseType(aHouseID) = 10 then begin 					//ArmorSmity's house to warriror
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 26, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 11), True);	//kill the nearestBlacksmithy
+			end;
+		end;		
+	end;
+
+	if States.HouseType(aHouseID) = 2 then begin 					//IronWeaponryWshop's house to barb
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 23, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 11), True);	//kill the nearestBlacksmithy
+			end;
+		end;		
+	end;	
+	
+	if States.HouseType(aHouseID) = 14 then begin 					//quarry's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 14,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 10), True);	//kill the nearestStonecutter
+			end;
+		end;		
+	end;
+
+if States.HouseType(aHouseID) = 17 then begin 					//watchtower's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 25, THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 13), True);	//kill the nearestrecruits
+			end;
+		end;		
+	end;	
+	
+	if States.HouseType(aHouseID) = 20 then begin 					//armoryWS's house to militie
+		if K > -1 then begin
+			if States.StatHouseTypeCount(K, 21) = 0 then begin 		//ONLY if there is not barrack for the player!
+				if J = true then begin								//only if the house has occupant
+					Actions.GiveGroup(K, 25,  THx[K], THy[K], 1,1,1);
+				end;
+				Actions.UnitKill(States.ClosestUnit(K, X, Y, 5), True);	//kill the nearest carpenter
+			end;
+		end;		
+	end;
+	
+	if States.HouseType(aHouseID) = 21 then begin
+			B := States.HouseOwner(aHouseID);
+			dec(BarrackCounter[B]);
+					//if BarrackCounter[B] <= 0 then  //deleted because if delete the empty barrack than can abuse the trades. Simply disable those trades after 2nd barrack
+					//		Actions.SetTradeAllowed(B,20,true);
+					//		Actions.SetTradeAllowed(B,18,true);
+					//		Actions.SetTradeAllowed(B,16,true);
+		//			end;	
+end;
+end;
+end;
+
+	
+
+	
+procedure OnUnitAfterDied(aUnitType:Integer; aOwner:Integer; aX:Integer; aY:Integer);
+begin
+	if aUnitType = 21 then begin
+			if (THCounter[aOwner] > 0) and (THx[aOwner] > 0) and (HD[aOwner] > 1) then begin	
+		
+	
+		//begin
+			//aMax := States.KamRandomI(RAND);					//30%chance to get the fallen rider,
+			//if aMax = 1 then begin						// if aMax lines are dectivated then it is happening at every scouts
+						
+			Actions.GiveGroup(aOwner,15,aX,aY,1,1,1);		//add the fallen rider 
+			//end;											//activate this line only when aMax is active too.	
+	end;
+end;
+end;
+
+
+procedure OnUnitAttacked(aUnitID,AttackerID: Integer);
+begin
+aOwner:=States.UnitOwner(aUnitID);  
+ID:= States.UnitType(aUnitID);
+aX:= States.UnitPositionX(aUnitID);
+aY:= States.UnitPositionY(aUnitID);
+if (THCounter[aOwner] > 0) and (HZ[aOwner] > 4) then begin
+	If ID = 0 then begin
+		CA:=States.UnitCarrying(aUnitID);
+			if CA = 20 then begin
+			Actions.UnitKill(aUnitID, True);
+			Actions.GiveGroup(aOwner,14,aX,aY,1,1,1);
+			end;
+			
+			if CA = 21 then begin
+			Actions.UnitKill(aUnitID, True);
+			Actions.GiveGroup(aOwner,23,aX,aY,1,1,1);
+			end;
+			
+			if CA = 22 then begin
+			Actions.UnitKill(aUnitID, True);
+			Actions.GiveGroup(aOwner,24,aX,aY,1,1,1);
+			end;
+			
+			if CA = 23 then begin
+			Actions.UnitKill(aUnitID, True);
+			Actions.GiveGroup(aOwner,24,aX,aY,1,1,1);
+			end;
+		
+			if CA = 24 then begin
+			Actions.UnitKill(aUnitID, True);
+			Actions.GiveGroup(aOwner,25,aX,aY,1,1,1);
+			end;
+			
+			if CA = 25 then begin
+			Actions.UnitKill(aUnitID, True);
+			Actions.GiveGroup(aOwner,25,aX,aY,1,1,1);
+			end;
+	end;
+
+
+end;
+end;
+
+
+
+
+procedure UpdateOverlay(Gametime, Player: Integer);
+var Time,P,B,Sec,Recruits,M: Integer;
+var ActivitColorBf: String;
+var ActivitColorTf: String;
+var ActivitColorAs: String;
+var ActivitColorBR: String;
+
+begin
+	Time := (States.PeaceTime - Gametime)/10;									//timer
+	Actions.OverlayTextSet(Player,'[$'+INTERFACE_COLOR+']Time: ');
+	if (States.PeaceTime > 0) and (States.PeaceTime > Gametime) then
+	begin
+		Actions.OverlayTextAppend(Player, IntToStr(Time /60) +':');
+		Sec := Time mod 60;
+		if (Sec < 10) then Actions.OverlayTextAppend(Player, '0'+IntToStr(Sec))
+		else Actions.OverlayTextAppend(Player, IntToStr(Sec));
+	end
+	else
+	begin
+		Actions.OverlayTextAppend(Player, IntToStr(Gametime /600) +':');
+		Sec := ((Gametime)/10) mod 60;
+		if (Sec < 10) then Actions.OverlayTextAppend(Player, '0'+IntToStr(Sec))
+		else Actions.OverlayTextAppend(Player, IntToStr(Sec));
+	//end;
+	end;
+
+	
+	
+	begin
+	
+	P:=Player
+	if (THCounter[P] > 0) and (THx[P] > 0) then begin
+	
+	Actions.OverlayTextAppend(P,'|');
+	Actions.OverlayTextAppend(P,'[$'+GREEN_COLOR+']'+ 'TowerDestroyer' + ', ');
+	ActivitColorBr := GREEN_COLOR;
+	if  BarrackCounter[P] > 0 then begin																//Barrack counter to here!!!
+	ActivitcolorBr := RED_COLOR;
+	end;
+    Actions.OverlayTextAppend(P,'[$'+ActivitColorBr+']'+ 'LastChance' + ', ');
+	Actions.OverlayTextAppend(P,'[$'+GREEN_COLOR+']'+ 'StoneTower' + ', ');
+	Actions.OverlayTextAppend(P,'|');
+		ActivitColorBf:= GREEN_COLOR;
+		ActivitColorTf:= RED_COLOR;
+		ActivitColorAs:= RED_COLOR;
+			if GC[P] > 24 then begin
+				ActivitColorBf:= RED_COLOR 
+				end ;
+			if HD[P] > 1 then begin
+				ActivitColorTf:= GREEN_COLOR 
+				end ;
+			if HZ[P] > 9 then begin
+				ActivitColorAs:= GREEN_COLOR; 
+				end;
+	Actions.OverlayTextAppend(P,'[$' +ActivitColorBf+']' + 'BuilderFEST ' + '(');
+	Actions.OverlayTextAppend(P,'[$' +ActivitColorBf+']' + IntToStr(GC[P]) + '/25 stones' + ', ');
+	Actions.OverlayTextAppend(P,'|');
+	Actions.OverlayTextAppend(P,'[$' +ActivitColorTf+']' + 'TheFallenRiders ' + '(');
+	Actions.OverlayTextAppend(P,'[$' +ActivitColorTf+']' + IntToStr(HD[P]) + '/2 horses)' + ', ');
+	Actions.OverlayTextAppend(P,'|');
+	Actions.OverlayTextAppend(P,'[$' +ActivitColorAs+']'+ 'AngrySers ' + '(');
+	Actions.OverlayTextAppend(P,'[$' +ActivitColorAs+']' + IntToStr(HZ[P]) + '/10 trunks)' + ', ');
+	end else
+	if (THCounter[P] = 0) or (THx[P] < 0) then begin
+	Actions.OverlayTextAppend(P,'|');
+	Actions.OverlayTextAppend(P,'[$' +RED_COLOR+']' + 'No TownHall available. ');
+	end;
+		end;
+end;
+
+
+
+
+
+procedure OnTick;
+var P: Integer;
+   begin
+ 
+        if States.GameTime = 200 then					//the messages and instructions sent to players. They don't use to read pdf.
+      Actions.ShowMsg(-1, '<$0>');						//welcome message  how  to f....p on the easiest way;)
+	   if States.GameTime = 210 then
+      Actions.ShowMsg(-1, '<$1>');
+	    if States.GameTime = 220 then
+      Actions.ShowMsg(-1, '<$2>');
+	  if States.GameTime = 230 then
+      Actions.ShowMsg(-1, '<$3>');
+	  
+	    for P := 0 to  7 do
+		if (States.GameTime + P*2) mod 10 = 0 then
+			UpdateOverlay(States.GameTime, P);
+				
+			//if States.StatResourceProducedCount(P,20) > 0 then   //if not enough produced AX are there
+			//Actions.SetTradeAllowed(P,20,false);
+				
+			//	if States.StatResourceProducedCount(P,20)-((BarrackCounter[P] * AX)) > 0 then 
+			//	Actions.SetTradeAllowed(P,20,true);
+			
+	end;
