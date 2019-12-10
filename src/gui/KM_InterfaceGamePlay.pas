@@ -463,7 +463,7 @@ begin
   try
     Button_Load.Enabled := InRange(ListBox_Load.ItemIndex, 0, fSaves.Count - 1)
                            and fSaves[ListBox_Load.ItemIndex].IsValid;
-    if InRange(ListBox_Load.ItemIndex,0,fSaves.Count-1) then
+    if InRange(ListBox_Load.ItemIndex, 0 ,fSaves.Count - 1) then
     begin
       Label_LoadDescription.Caption := fSaves[ListBox_Load.ItemIndex].GameInfo.GetTitleWithTime;
       fSave_Selected := ListBox_Load.ItemIndex;

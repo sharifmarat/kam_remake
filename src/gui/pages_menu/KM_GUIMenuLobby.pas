@@ -2199,7 +2199,8 @@ end;
 
 //Just pass FileName to Networking, it will check validity itself
 procedure TKMMenuLobby.MapChange(Sender: TObject);
-var I: Integer;
+var
+  I: Integer;
 begin
   I := DropCol_Maps.Item[DropCol_Maps.ItemIndex].Tag;
   if Radio_MapType.ItemIndex < 4 then

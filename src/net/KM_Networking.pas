@@ -710,7 +710,8 @@ end;
 //Tell other players which save we will be using
 //Players will reset their starting locations and "Ready" status on their own
 procedure TKMNetworking.SelectSave(const aName: UnicodeString);
-var Error: UnicodeString;
+var
+  Error: UnicodeString;
 begin
   Assert(IsHost, 'Only host can select saves');
 
@@ -832,7 +833,9 @@ end;
 procedure TKMNetworking.SelectColor(aIndex:integer; aPlayerIndex:integer);
 begin
   if not fNetPlayers.ColorAvailable(aIndex) then Exit;
-  if (fSelectGameKind = ngkSave) and SaveInfo.IsValid and SaveInfo.GameInfo.ColorUsed(aIndex) then Exit;
+  if (fSelectGameKind = ngkSave)
+    and SaveInfo.IsValid
+    and SaveInfo.GameInfo.ColorUsed(aIndex) then Exit;
 
   //Host makes rules, Joiner will get confirmation from Host
   fNetPlayers[aPlayerIndex].FlagColorID := aIndex; //Use aPlayerIndex not fMyIndex because it could be an AI
@@ -2545,7 +2548,7 @@ begin
       case fSelectGameKind of
         ngkSave: aMap := fSaveInfo.GameInfo.Title;
         ngkMap:  aMap := fMapInfo.FileName;
-        else      aMap := '';
+        else     aMap := '';
       end;
       aGameTime := -1;
     end;
