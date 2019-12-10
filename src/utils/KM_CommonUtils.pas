@@ -155,7 +155,7 @@ const
 implementation
 uses
   StrUtils, Types,
-  {$IFDEF WDC} KM_Random, {$ENDIF}
+  {$IFDEF WDC} KM_RandomChecks, {$ENDIF}
   KM_Log;
 
 const

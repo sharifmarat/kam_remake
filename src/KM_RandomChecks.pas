@@ -1,4 +1,4 @@
-unit KM_Random;
+unit KM_RandomChecks;
 {$I KaM_Remake.inc}
 interface
 uses
