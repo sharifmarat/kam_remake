@@ -191,8 +191,8 @@ begin
   TKMBevel.Create(Panel_RMG, Column_1_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
   TKMBevel.Create(Panel_RMG, Column_2_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
   TKMBevel.Create(Panel_RMG, Column_3_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
-  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, 220);
-  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60+220+30, SIZE_Bevel_X, 170);
+  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, 220 - 80*Byte(aMP));
+  TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60+220+30 - 80*Byte(aMP), SIZE_Bevel_X, 170 - 30*Byte(aMP));
 
 // Title
   TKMLabel.Create(Panel_RMG, SIZE_X div 2, -20, gResTexts[TX_MAPED_RMG_SETTINGS_TITLE], fntOutline, taCenter);
@@ -229,15 +229,16 @@ begin
   // Layout (Locs)
   Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,PARAGRAPH_HEIGHT-20*Byte(aMP)), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_LAYOUT], fntMetal, taLeft);
     Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_LAYOUT_HINT];
-    CheckGroup_LocPosition := TKMRadioGroup.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, 100, fntMetal);
+    CheckGroup_LocPosition := TKMRadioGroup.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, 80 + 20*Byte(not aMP), fntMetal);
     CheckGroup_LocPosition.Add(gResTexts[TX_MAPED_RMG_SETTINGS_RECTANGLE], True);
     CheckGroup_LocPosition.Add(gResTexts[TX_MAPED_RMG_SETTINGS_VERTICAL], True);
     CheckGroup_LocPosition.Add(gResTexts[TX_MAPED_RMG_SETTINGS_HORISONTAL], True);
     CheckGroup_LocPosition.Add(gResTexts[TX_MAPED_RMG_SETTINGS_RANDOM], True);
-    CheckGroup_LocPosition.Add(gResTexts[TX_MAPED_RMG_SETTINGS_CENTER_SCREEN], True);
+    if not aMP then
+      CheckGroup_LocPosition.Add(gResTexts[TX_MAPED_RMG_SETTINGS_CENTER_SCREEN], True);
     CheckGroup_LocPosition.ItemIndex := 0;
     CheckGroup_LocPosition.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_LAYOUT_HINT];
-  NextLine(Column_Y,80);
+  NextLine(Column_Y,60 + 20*Byte(not aMP));
   // Resources
   Check_Resources := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y,PARAGRAPH_HEIGHT), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_RESOURCES], fntMetal);
     Check_Resources.Checked := True;
@@ -248,20 +249,9 @@ begin
       Check_MineFix.Checked := True;
       Check_MineFix.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_MINE_FIX_HINT];
       Check_MineFix.Enabled := not aMP;
-      if aMP then Check_MineFix.Hide;
-  // Preselection of initial resources
-    Lab := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y,0), BOX_X, BOX_Y, 'Initial resources', fntMetal, taLeft);
-      Lab.Hint := 'Amount of initial resources';
-      if not aMP then Lab.Hide;
-    DList_InitRes := TKMDropList.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y,15), BOX_X-OFFSET_1, BOX_Y, fntMetal, '', bsMenu);
-      DList_InitRes.Add('Low', 0);
-      DList_InitRes.Add('Medium', 1);
-      DList_InitRes.Add('High', 2);
-      DList_InitRes.ItemIndex := 0;
-      DList_InitRes.Enabled := aMP;
-      if not aMP then DList_InitRes.Hide;
+      if aMP then begin Check_MineFix.Hide; NextLine(Column_Y,-20) end;
     // Stones
-    Lab := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y,20*Byte(aMP)), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_STONES], fntMetal, taLeft);
+    Lab := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_RESOURCES_STONES], fntMetal, taLeft);
       Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_STONE_HINT];
       TBar_Res_Stone := TKMTrackBar.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), WIDTH_TrackBar-OFFSET_1, 0+200*Byte(aMP), 2000);
       TBar_Res_Stone.Position := 1000;
@@ -281,6 +271,17 @@ begin
       TBar_Res_Iron.Position := 250;
       TBar_Res_Iron.Step := 50;
       TBar_Res_Iron.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_IRON_HINT];
+  // Preselection of initial resources
+    Lab := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, 'Initial resources', fntMetal, taLeft);
+      Lab.Hint := 'Amount of initial resources';
+      if not aMP then begin Lab.Hide; NextLine(Column_Y,-20) end;
+    DList_InitRes := TKMDropList.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X-OFFSET_1, BOX_Y, fntMetal, '', bsMenu);
+      DList_InitRes.Add('Low', 0);
+      DList_InitRes.Add('Medium', 1);
+      DList_InitRes.Add('High', 2);
+      DList_InitRes.ItemIndex := 0;
+      DList_InitRes.Enabled := aMP;
+      if not aMP then begin DList_InitRes.Hide; NextLine(Column_Y,-20) end;
 
 
 // COLUMN 2: NonWalk textures column
@@ -409,7 +410,7 @@ begin
   Check_HideNonSmoothTransition := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y,PARAGRAPH_HEIGHT), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_HIDE_ROUGHT_TRANSITIONS], fntMetal);
     Check_HideNonSmoothTransition.Checked := True;
     Check_HideNonSmoothTransition.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HIDE_ROUGHT_TRANSITIONS_HINT];
-    Check_HideNonSmoothTransition.Enabled := not aMP;
+    if aMP then begin Check_HideNonSmoothTransition.Hide; NextLine(Column_Y,-20) end;
   // Step
   Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_STEP], fntMetal, taLeft);
     Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT];
@@ -433,14 +434,15 @@ begin
   // One path fix (it gives no-walk object to islands and create only 1 walkable area - in KaM is possible to have max 255 separated areas and RMG sometimes makes more which cause crash of the game)
   Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_INACCESIBLE_PLACES], fntMetal, taLeft);
     Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_INACCESIBLE_PLACES_HINT];
+    if aMP then begin Lab.Hide; NextLine(Column_Y,-20) end;
     Check_NoGo := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_BLOCK_WALKING], fntMetal);
     Check_NoGo.Checked := True;
     Check_NoGo.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_BLOCK_WALKING_HINT];
-    Check_NoGo.Enabled := not aMP;
+    if aMP then begin Check_NoGo.Hide; NextLine(Column_Y,-20) end;
     Check_ReplaceTerrain := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_CHANGE_TEXTURE], fntMetal);
     Check_ReplaceTerrain.Checked := True;
     Check_ReplaceTerrain.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_CHANGE_TEXTURE_HINT];
-    Check_ReplaceTerrain.Enabled := not aMP;
+    if aMP then begin Check_ReplaceTerrain.Hide; NextLine(Column_Y,-20) end;
 
 // COLUMN 4: Objects
   Check_Objects := TKMCheckBox.Create(Panel_Settings, Column_X, NextLine(Column_Y,40), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_OBJECTS], fntMetal);
@@ -451,7 +453,7 @@ begin
   Check_Animals := TKMCheckBox.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y,PARAGRAPH_HEIGHT), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_ANIMALS], fntMetal);
     Check_Animals.Checked := True;
     Check_Animals.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_ANIMALS_HINT];
-    Check_Animals.Enabled := not aMP;
+    if aMP then begin Check_Animals.Hide; NextLine(Column_Y,-20) end;
   // Object density
   Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_DENSITY], fntMetal, taLeft);
     Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_OBJECTS_DENSITY_HINT];
@@ -574,7 +576,7 @@ procedure TKMMapEdRMG.RMG_Generate_Map(Sender: TObject);
       begin
         Active := Check_Locs.Checked;
         Players := TBar_Players.Position;
-        LocsPosition := CheckGroup_LocPosition.ItemIndex;
+        Layout := CheckGroup_LocPosition.ItemIndex;
         ProtectedRadius := TBar_ProtectedRadius.Position;
         with Resource do
         begin
@@ -586,44 +588,7 @@ procedure TKMMapEdRMG.RMG_Generate_Map(Sender: TObject);
           Iron := TBar_Res_Iron.Position;
         end;
         if (DList_InitRes <> nil) then
-          case DList_InitRes.ItemIndex of
-            0:
-              begin
-                Locs.Resources[wtStone] := 70;
-                Resources[wtWood] := 50;
-                Resources[wtGold] := 60;
-                Resources[wtWine] := 60;
-                Resources[wtBread] := 35;
-                Resources[wtSausages] := 15;
-                Resources[wtFish] := 30;
-                Units[utSerf] := 4;
-                Units[utWorker] := 3;
-              end;
-            1:
-              begin
-                Resources[wtStone] := 90;
-                Resources[wtWood] := 65;
-                Resources[wtGold] := 70;
-                Resources[wtWine] := 60;
-                Resources[wtBread] := 50;
-                Resources[wtSausages] := 25;
-                Resources[wtFish] := 30;
-                Units[utSerf] := 5;
-                Units[utWorker] := 4;
-              end;
-            2:
-              begin
-                Resources[wtStone] := 120;
-                Resources[wtWood] := 80;
-                Resources[wtGold] := 80;
-                Resources[wtWine] := 80;
-                Resources[wtBread] := 60;
-                Resources[wtSausages] := 35;
-                Resources[wtFish] := 40;
-                Units[utSerf] := 7;
-                Units[utWorker] := 5;
-              end;
-          end;
+          InitialResources := DList_InitRes.ItemIndex;
       end;
       with Obstacle do
       begin

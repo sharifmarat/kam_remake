@@ -29,13 +29,12 @@ type
     Locs: record
       Active: Boolean;
       Players: Byte;
-      LocsPosition, ProtectedRadius: Byte;
+      Layout, ProtectedRadius: Byte;
       Resource: record
         Active, ConnectLocs, MineFix: Boolean;
         Stone, Gold, Iron: Integer;
       end;
-      Resources: array[WARE_MIN..WARE_MAX] of Word;
-      Units: array[CITIZEN_MIN..CITIZEN_MAX] of Byte;
+      InitialResources: Word;
     end;
     Obstacle: record
       Active: Boolean;
@@ -209,7 +208,7 @@ begin
     begin
       Active := True;
       Players := 4;
-      LocsPosition := 0;
+      Layout := 0;
       ProtectedRadius := 6;
       with Resource do
       begin
@@ -301,7 +300,7 @@ begin
   //  Locs: record
   //    Active: Boolean;
   //    Players: Byte;
-  //    LocsPosition, ProtectedRadius: Byte;
+  //    Layout, ProtectedRadius: Byte;
   //    Resource: record
   //      Active, ConnectLocs, MineFix: Boolean;
   //      Stone, Gold, Iron: Integer;
@@ -335,6 +334,7 @@ var
   Revealers: TKMPointTagList;
   Tiles: TKMTerrainTileBriefArray;
   Errors: TKMTerrainTileChangeErrorArray;
+  InitResStr: String;
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
@@ -432,22 +432,61 @@ begin
     end;
   gTerrain.ScriptTrySetTilesArray(Tiles, False, Errors);
 
-  // Add units
-           //gHands[K].CanBeHuman := True;
-           // if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
-           // gHands.PlayerAnimals.AddUnit(TKMUnitType(gGameCursor.Tag1), P);
-           // gMySpectator.Hand.AddUnit(TKMUnitType(gGameCursor.Tag1), P, False)
+  // Add animals
+   //gHands[K].CanBeHuman := True;
+   // if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
+   // gHands.PlayerAnimals.AddUnit(TKMUnitType(gGameCursor.Tag1), P);
+   // gMySpectator.Hand.AddUnit(TKMUnitType(gGameCursor.Tag1), P, False)
 
-  // Update Center screen option
+  // Prepare init resources
   FillChar(LocProperty, SizeOf(LocProperty), #0);
   with LocProperty do
   begin
     Allowed := True;
     Placed := False;
-    // Copy resources and units
-    Move(RMGSettings.Locs.Resources[WARE_MIN], Resources[WARE_MIN], Length(Resources) * SizeOf(Resources[WARE_MIN]));
-    Move(RMGSettings.Locs.Units[CITIZEN_MIN], Units[CITIZEN_MIN], Length(Units) * SizeOf(Units[CITIZEN_MIN]));
+    case RMGSettings.Locs.InitialResources of
+      0:
+        begin
+          Resources[wtStone] := 70;
+          Resources[wtWood] := 50;
+          Resources[wtGold] := 60;
+          Resources[wtWine] := 60;
+          Resources[wtBread] := 35;
+          Resources[wtSausages] := 15;
+          Resources[wtFish] := 30;
+          Units[utSerf] := 4;
+          Units[utWorker] := 3;
+          InitResStr := 'Low';
+        end;
+      1:
+        begin
+          Resources[wtStone] := 90;
+          Resources[wtWood] := 65;
+          Resources[wtGold] := 70;
+          Resources[wtWine] := 60;
+          Resources[wtBread] := 50;
+          Resources[wtSausages] := 25;
+          Resources[wtFish] := 30;
+          Units[utSerf] := 5;
+          Units[utWorker] := 4;
+          InitResStr := 'Medium';
+        end;
+      2:
+        begin
+          Resources[wtStone] := 120;
+          Resources[wtWood] := 80;
+          Resources[wtGold] := 80;
+          Resources[wtWine] := 80;
+          Resources[wtBread] := 60;
+          Resources[wtSausages] := 35;
+          Resources[wtFish] := 40;
+          Units[utSerf] := 7;
+          Units[utWorker] := 5;
+          InitResStr := 'High';
+        end;
+    end;
   end;
+  // Hand properties
   for K := 0 to Length(Locs) - 1 do
   begin
     gHands[K].CenterScreen := Locs[K];
@@ -468,7 +507,10 @@ begin
       gGame.MapTxtInfo.SmallDesc := 'Randomly generated map';
     if (Length(gGame.MapTxtInfo.GetBigDesc) = 0) then
       with RMGSettings.Locs do
-        gGame.MapTxtInfo.SetBigDesc(Format('This is a randomly generated map for %d players|| Parameters:|| Stones = %d| Gold = %d| Iron = %d|',[Players, Resource.Stone, Resource.Gold, Resource.Iron]));
+        gGame.MapTxtInfo.SetBigDesc( Format(
+          'This is a randomly generated map [%dx%d] for %d players||Parameters:|| Stones = %d| Gold = %d| Iron = %d| Initial resources: %s',
+          [fMapX, fMapY, Players, Resource.Stone, Resource.Gold, Resource.Iron, InitResStr]
+        ));
 
     //gGame.MapTxtInfo.IsCoop := False;
     gGame.MapTxtInfo.IsSpecial := True;
@@ -896,7 +938,7 @@ begin
   MaxOffset.X := Min(fMapX - 1, fMapX - MinOffset.X);
   MaxOffset.Y := Min(fMapY - 1, fMapY - MinOffset.Y);
 
-  case RMGSettings.Locs.LocsPosition of
+  case RMGSettings.Locs.Layout of
     0: Rectangle(Output, MinOffset, MaxOffset);
     1: Vertical(Output, MinOffset, MaxOffset);
     2: Horizontal(Output, MinOffset, MaxOffset);
