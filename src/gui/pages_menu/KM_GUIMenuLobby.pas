@@ -6,7 +6,8 @@ uses
   {$IFDEF Unix} LCLType, {$ENDIF}
   Classes, Controls, Math, SysUtils,
   KM_Defaults, KM_NetworkTypes, KM_Console, KM_ResTexts,
-  KM_Controls, KM_Maps, KM_Saves, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_Networking;
+  KM_Controls, KM_Maps, KM_Saves, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_Networking,
+  KM_GUIMapEdRMG;
 
 
 type
@@ -15,6 +16,7 @@ type
   TKMMenuLobby = class (TKMMenuPageCommon)
   private
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
+    fGuiRMG: TKMMapEdRMG; //RMG
 
     fLastTimeResetBans: Cardinal;
     fLastTimeAskReady: Cardinal;
@@ -63,7 +65,8 @@ type
 
     procedure PlayersSetupChange(Sender: TObject);
     procedure MapColumnClick(aValue: Integer);
-    procedure CallRMG(); //RMG
+    procedure NewRMGMap(); //RMG
+    procedure CloseRMGGui(); //RMG
     procedure MapTypeChanged(Sender: TObject);
     procedure InitDropColMapsList;
     procedure MapList_OnShow(Sender: TObject);
@@ -213,7 +216,7 @@ implementation
 uses
   KM_CommonTypes, KM_ResLocales, KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI,
   KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points, KM_MapTypes,
-  KM_Game, KM_GameTypes, KM_RandomMapGenerator; //RMG
+  KM_Game, KM_RandomMapGenerator; //RMG
 
 const
   PANEL_SETUP_OPTIONS_TOP = 548;
@@ -641,6 +644,10 @@ begin
     Button_Start.Anchors := [anLeft, anBottom];
     Button_Start.OnClick := StartClick;
     Button_Start.OnChangeEnableStatus := StartBtnChangeEnabled;
+
+  fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby,True); //RMG
+  fGuiRMG.OnNewMap := NewRMGMap;
+  fGuiRMG.OnCloseGUI := CloseRMGGui;
 
   UpdateSpectatorDivide;
 end;
@@ -1882,16 +1889,7 @@ begin
           fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
           DropCol_Maps.DefaultCaption := MAPS_RMG_NAME;
           InitDropColMapsList;
-          CallRMG();
-        //{
-          fMapsMP.Lock;
-          try
-            fNetworking.SelectMap(MAPS_RMG_NAME, mfMP);
-          finally
-            fMapsMP.Unlock;
-          end;
-          GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
-        //}
+          fGuiRMG.Show;
         end;
     else
         begin
@@ -1902,29 +1900,25 @@ begin
 end;
 
 
-procedure TKMMenuLobby.CallRMG(); //RMG
-var
-  RMG: TKMRandomMapGenerator;
+procedure TKMMenuLobby.NewRMGMap(); //RMG
 begin
-  // Use gGame to create new empty map on background and call RMG
-  gGame := TKMGame.Create(gmMapEd, nil, nil, nil);
+//{
+  fMapsMP.Lock;
   try
-    // Get RMG config
-    // ... use default configuration for now
-    // Create empty map
-    gGame.MapEdStartEmptyMap(192, 192);
-    // Call RMG
-    RMG := TKMRandomMapGenerator.Create;
-    RMG.GenerateMap();
-    RMG.Free;
-    // Save map
-    gGame.SaveMapEditor(Format('%s\%s\%s\%s.dat',[ExtractFilePath(ParamStr(0)), MAPS_MP_FOLDER_NAME, MAPS_RMG_NAME, MAPS_RMG_NAME]));
+    fNetworking.SelectMap(MAPS_RMG_NAME, mfMP);
   finally
-    gGame.Free;
-    gGame := nil;
-    //FreeThenNil(gGame);
+    fMapsMP.Unlock;
   end;
+  GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
+//}
 end;
+
+
+procedure TKMMenuLobby.CloseRMGGui(); //RMG
+begin
+  NewRMGMap();
+end;
+
 
 
 procedure TKMMenuLobby.MapTypeChanged(Sender: TObject);

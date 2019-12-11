@@ -8,7 +8,7 @@ unit KM_RandomMapGenerator;
 interface
 uses
   KM_CommonTypes, KM_Terrain, KM_Utils, Math,  // KM_Utils = random number
-  KM_Points, KM_RMGUtils, KM_Defaults, KM_CommonUtils;
+  KM_Points, KM_RMGUtils, KM_Defaults, KM_ResWares, KM_CommonUtils;
 
 
 type
@@ -34,6 +34,8 @@ type
         Active, ConnectLocs, MineFix: Boolean;
         Stone, Gold, Iron: Integer;
       end;
+      Resources: array[WARE_MIN..WARE_MAX] of Word;
+      Units: array[CITIZEN_MIN..CITIZEN_MAX] of Byte;
     end;
     Obstacle: record
       Active: Boolean;
@@ -190,7 +192,7 @@ type
 implementation
 
 uses
-  SysUtils, KM_HandsCollection, KM_CommonClasses, KM_Game, KM_Hand, KM_ResWares, Dialogs, KM_Log;
+  SysUtils, KM_HandsCollection, KM_CommonClasses, KM_Game, KM_Hand, Dialogs, KM_Log;
 
 
 
@@ -442,15 +444,9 @@ begin
   begin
     Allowed := True;
     Placed := False;
-    Resources[wtStone] := 70;
-    Resources[wtWood] := 50;
-    Resources[wtGold] := 60;
-    Resources[wtWine] := 60;
-    Resources[wtBread] := 35;
-    Resources[wtSausages] := 15;
-    Resources[wtFish] := 30;
-    Units[utSerf] := 4;
-    Units[utWorker] := 3;
+    // Copy resources and units
+    Move(RMGSettings.Locs.Resources[WARE_MIN], Resources[WARE_MIN], Length(Resources) * SizeOf(Resources[WARE_MIN]));
+    Move(RMGSettings.Locs.Units[CITIZEN_MIN], Units[CITIZEN_MIN], Length(Units) * SizeOf(Units[CITIZEN_MIN]));
   end;
   for K := 0 to Length(Locs) - 1 do
   begin
