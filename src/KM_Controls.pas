@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -661,7 +661,7 @@ type
   end;
 
 
-  TKMCheckBoxState = (cbsChecked, cbsSemiChecked, cbsUnchecked);
+  TKMCheckBoxState = (cbsUnchecked, cbsSemiChecked, cbsChecked);
 
   { Checkbox }
   TKMCheckBox = class(TKMControl)
