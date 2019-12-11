@@ -188,7 +188,7 @@ var
   I: Integer;
 begin
   for I := Count - 1 downto 0 do
-    if fHandsList[I].ChooseLocation.Allowed OR fHandsList[I].HasAssets then //RMG - added ChooseLocation.Allowed option as a valid player
+    if fHandsList[I].HasAssets then
       Exit //Exit as soon as we find a player with assets
     else
       RemoveEmptyPlayer(I);
