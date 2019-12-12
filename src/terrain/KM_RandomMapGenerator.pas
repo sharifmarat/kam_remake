@@ -287,45 +287,14 @@ end;
 
 procedure TKMRandomMapGenerator.LoadSettings();
 begin
-  //TKMRMGSettings = record
-  //  Walkable: record
-  //    Active, Grass, Ground, Snow, Sand: Boolean;
-  //    FirstLayerStep, FirstLayerLimit, SecondLayerStep, SecondLayerLimit: Word;
-  //  end;
-  //  Obstacle: record
-  //    Active: Boolean;
-  //    Ratio: array[TObstacleType] of Byte;
-  //    Density, Size, Variance: Byte;
-  //  end;
-  //  Locs: record
-  //    Active: Boolean;
-  //    Players: Byte;
-  //    Layout, ProtectedRadius: Byte;
-  //    Resource: record
-  //      Active, ConnectLocs, MineFix: Boolean;
-  //      Stone, Gold, Iron: Integer;
-  //    end;
-  //  end;
-  //  Height: record
-  //    Active, HideNonSmoothTransition: Boolean;
-  //  end;
-  //  OnePath: record
-  //    NoGoZones, ReplaceTerrain: Boolean;
-  //  end;
-  //  Objects: record
-  //    Active, Animals: Boolean;
-  //    ObjectDensity, Forests, Trees: Byte;
-  //  end;
-  //  Seed: Integer;
-  //  BasicTiles, CA: Boolean;
-  //end;
+
 end;
 
 
 // Main procedure for RMG - requires also RMGSettings: TKMRMGSettings (global variable)
 procedure TKMRandomMapGenerator.GenerateMap();
 var
-  Y, X, K: Integer;
+  Y, X, K, L: Integer;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
   TilesPartsArr: TTileParts;
@@ -493,7 +462,12 @@ begin
     gHands[K].ChooseLocation := LocProperty;
     Revealers := gGame.MapEditor.Revealers[K];
     Revealers.Clear;
-    Revealers.Add(Locs[K], 15);
+    Revealers.Add(Locs[K], 20);
+    for L := 0 to fRes.Count - 1 do
+      with fRes.Resources[L] do
+        if (InitOwner = K) then //InitOwner, Resource, MinesCnt: Byte;
+          for X := Low(Points) to High(Points) do
+            Revealers.Add(Points[X], 10);
   end;
 
   // Update game info
@@ -508,7 +482,7 @@ begin
     if (Length(gGame.MapTxtInfo.GetBigDesc) = 0) then
       with RMGSettings.Locs do
         gGame.MapTxtInfo.SetBigDesc( Format(
-          'This is a randomly generated map [%dx%d] for %d players||Parameters:|| Stones = %d| Gold = %d| Iron = %d| Initial resources: %s',
+          'This is a randomly generated map [%dx%d] for %d players||Parameters:| Stones = %d| Gold = %d| Iron = %d| Initial resources: %s',
           [fMapX, fMapY, Players, Resource.Stone, Resource.Gold, Resource.Iron, InitResStr]
         ));
 
@@ -1170,7 +1144,7 @@ const
   RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.15,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
   RES_AMOUNT: array[0..4] of Integer = (1, 1, 1, 2, 1);
-  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.25, 0.25);
+  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.3, 0.3);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
   // Find best place for resources (scan area around and find empy space)
@@ -1793,25 +1767,19 @@ var
     end;
 
   // Detect shape of resource
-    //if RMGSettings.Objects.Active then // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-    //begin
-    //
-      MineSearch := TKMMinerFixSearch.Create(  KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), MinLimit, MaxLimit, aVisited, A  );
-      try
-        MineSearch.QuickFlood(aPosition.X,aPosition.Y,Resource);
-      finally
-        MineSearch.Free;
+    MineSearch := TKMMinerFixSearch.Create(  KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), MinLimit, MaxLimit, aVisited, A  );
+    try
+      MineSearch.QuickFlood(aPosition.X,aPosition.Y,Resource);
+    finally
+      MineSearch.Free;
+    end;
+    for X := Low(Shape) to High(Shape) do
+      if (Shape[X].Min <> MinLimit[X]) then
+      begin
+        Shape[X].Active := True;
+        Shape[X].Min := MinLimit[X];
+        Shape[X].Max := MaxLimit[X];
       end;
-      for X := Low(Shape) to High(Shape) do
-        if (Shape[X].Min <> MinLimit[X]) then
-        begin
-          Shape[X].Active := True;
-          Shape[X].Min := MinLimit[X];
-          Shape[X].Max := MaxLimit[X];
-        end;
-    //end
-    //else
-    //  MinerFixFloodSearch(Resource, aPosition.Y, aPosition.X, aVisited);
 
   // Find start index of shape
     X := 0;

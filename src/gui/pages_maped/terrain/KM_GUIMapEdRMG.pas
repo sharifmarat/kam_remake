@@ -281,6 +281,7 @@ begin
       DList_InitRes.Add('High', 2);
       DList_InitRes.ItemIndex := 0;
       DList_InitRes.Enabled := aMP;
+      DList_InitRes.Hint := 'Amount of initial resources';
       if not aMP then begin DList_InitRes.Hide; NextLine(Column_Y,-20) end;
 
 
@@ -478,11 +479,11 @@ begin
 // Map size
   Column_X := Column_1_X;
   Column_Y := SIZE_Y - 100;
-  TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,0), gResTexts[TX_MAPED_RMG_SETTINGS_MAP_SIZE], fntMetal, taLeft);
-  DList_MapSize := nil;
-  Label_MapSize := nil;
+  Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,0), gResTexts[TX_MAPED_RMG_SETTINGS_MAP_SIZE], fntMetal, taLeft);
+  Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_MAP_SIZE];
   if aMP then
   begin
+    Label_MapSize := nil;
     DList_MapSize := TKMDropList.Create(Panel_Settings, Column_X, NextLine(Column_Y,15), 100, BOX_Y, fntMetal, '', bsMenu);
       DList_MapSize.Add('128x128', 0);
       DList_MapSize.Add('160x160', 1);
@@ -490,9 +491,11 @@ begin
       DList_MapSize.Add('224x224', 3);
       DList_MapSize.Add('256x256', 4);
       DList_MapSize.ItemIndex := 2;
+      DList_MapSize.Hint := 'Select size of the map';
   end
   else
   begin
+    DList_MapSize := nil;
     TKMBevel.Create(Panel_Settings, Column_X, Column_Y+15, 100, 20);
     Label_MapSize := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, ' ', fntMetal, taLeft);
   end;

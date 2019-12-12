@@ -1885,7 +1885,7 @@ procedure TKMHand.PlaceFirstStorehouse();
           AddUnit(UT, KMPoint(aEntrance.X,aEntrance.Y+1));
       // Finish action
       fChooseLocation.Placed := True;
-      gGameCursor.Mode := cmNone;
+      gGameCursor.Mode := cmRoad;
     end;
   end;
 var
