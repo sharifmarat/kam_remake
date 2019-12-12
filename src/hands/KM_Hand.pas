@@ -1860,15 +1860,42 @@ procedure TKMHand.PlaceFirstStorehouse();
         gTerrain.RemoveObject(aPoint);
     end;
   end;
+  // Add the first storehouse if we can place road at the entrance
+  function AddFirstStorehouse(aEntrance: TKMPoint): Boolean;
+  var
+    L: Integer;
+    H: TKMHouse;
+    WT: TKMWareType;
+    UT: TKMUnitType;
+  begin
+    Result := AddRoad( KMPoint(aEntrance.X,aEntrance.Y+1) );
+    if Result then
+    begin
+      // Add Storehouse
+      H := AddHouse(htStore, aEntrance.X, aEntrance.Y, True);
+      for WT := Low(fChooseLocation.Resources) to High(fChooseLocation.Resources) do
+        if H.ResCanAddToIn(WT) OR H.ResCanAddToOut(WT) then
+          H.ResAddToEitherFromScript(WT, fChooseLocation.Resources[WT]);
+      // Add Roads
+      AddRoad( KMPoint(aEntrance.X-1,aEntrance.Y+1) );
+      AddRoad( KMPoint(aEntrance.X+1,aEntrance.Y+1) );
+      // Add Units
+      for UT := Low(fChooseLocation.Units) to High(fChooseLocation.Units) do
+        for L := 0 to fChooseLocation.Units[UT] - 1 do
+          AddUnit(UT, KMPoint(aEntrance.X,aEntrance.Y+1));
+      // Finish action
+      fChooseLocation.Placed := True;
+      gGameCursor.Mode := cmNone;
+    end;
+  end;
 var
-  K, L: Integer;
+  K: Integer;
   Entrance: TKMPoint;
-  H: TKMHouse;
-  WT: TKMWareType;
-  UT: TKMUnitType;
 begin
+  if (HandType = hndComputer) then
+    fChooseLocation.Placed := True
   // Check if storehouse has been selected
-  if (Stats.GetHouseTotal(htStore) > 0) then
+  else if (Stats.GetHouseTotal(htStore) > 0) then
   begin
     for K := 0 to BuildList.HousePlanList.Count - 1 do
       with BuildList.HousePlanList.Plans[K] do
@@ -1876,24 +1903,7 @@ begin
         begin
           Entrance := KMPointAdd( Loc, KMPoint(gRes.Houses[HouseType].EntranceOffsetX,0) );
           RemHousePlan(Entrance);
-          if AddRoad( KMPoint(Entrance.X,Entrance.Y+1) ) then
-          begin
-            // Add Storehouse
-            H := AddHouse(htStore, Entrance.X, Entrance.Y, True);
-            for WT := Low(fChooseLocation.Resources) to High(fChooseLocation.Resources) do
-              if H.ResCanAddToIn(WT) OR H.ResCanAddToOut(WT) then
-                H.ResAddToEitherFromScript(WT, fChooseLocation.Resources[WT]);
-            // Add Roads
-            AddRoad( KMPoint(Entrance.X-1,Entrance.Y+1) );
-            AddRoad( KMPoint(Entrance.X+1,Entrance.Y+1) );
-            // Add Units
-            for UT := Low(fChooseLocation.Units) to High(fChooseLocation.Units) do
-              for L := 0 to fChooseLocation.Units[UT] - 1 do
-                AddUnit(UT, KMPoint(Entrance.X,Entrance.Y+1));
-            // Finish action
-            fChooseLocation.Placed := True;
-            gGameCursor.Mode := cmNone;
-          end;
+          AddFirstStorehouse(Entrance);
         end;
   end;
   // Preselect storehouse
