@@ -134,7 +134,7 @@ uses
   KM_FormLogistics,
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess, KM_GameInputProcess_Multi, KM_GameSavedReplays,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
-  KM_Saves, KM_CommonUtils, KM_Random;
+  KM_Saves, KM_CommonUtils, KM_RandomChecks;
 
 
 { Creating everything needed for MainMenu, game stuff is created on StartGame }
@@ -461,6 +461,8 @@ end;
 
 
 procedure TKMGameApp.PrepageStopGame(aMsg: TKMGameResultMsg);
+var
+  LastSentCmdsTick: Integer;
 begin
   if (gGame = nil) or gGame.ReadyToStop then Exit;
 
@@ -478,20 +480,27 @@ begin
       fCampaigns.ActiveCampaign.ScriptData.Clear;
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
-//@Rey: Inconsistency here. We SaveCampaignScriptData for every outcome, but it gets saved to the HDD only on grWin in the clause below
+      //Always save Campaigns progress after mission
+      //We always save script data with SaveCampaignScriptData
+      //then campaign progress should be saved always as well on any outcome (win or lose)
+      //otherwise we will get inconsistency
+      SaveCampaignsProgress;
 
       if aMsg = grWin then
-      begin
         fCampaigns.UnlockNextMap;
-        SaveCampaignsProgress; //Always save Campaigns progress after mission has been won. In case future game crash
-      end;
     end;
   end;
 
   if gGame.IsMultiPlayerOrSpec then
   begin
     if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect(TKMGameInputProcess_Multi(gGame.GameInputProcess).LastSentCmdsTick);
+    begin
+      if TKMGameInputProcess_Multi(gGame.GameInputProcess) <> nil then
+        LastSentCmdsTick := TKMGameInputProcess_Multi(gGame.GameInputProcess).LastSentCmdsTick
+      else
+        LastSentCmdsTick := LAST_SENT_COMMANDS_TICK_NONE;
+      fNetworking.AnnounceDisconnect(LastSentCmdsTick);
+    end;
     fNetworking.Disconnect;
   end;
 
@@ -831,7 +840,6 @@ begin
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
-
 end;
 
 

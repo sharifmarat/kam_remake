@@ -1505,6 +1505,7 @@ procedure TKMGUIGameHouse.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.Write(fLastSchoolUnit);
   SaveStream.Write(fLastBarracksUnit);
+  SaveStream.Write(fLastTHUnit);
 end;
 
 
@@ -1512,6 +1513,7 @@ procedure TKMGUIGameHouse.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fLastSchoolUnit);
   LoadStream.Read(fLastBarracksUnit);
+  LoadStream.Read(fLastTHUnit);
 end;
 
 

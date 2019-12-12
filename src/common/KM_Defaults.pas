@@ -106,6 +106,8 @@ var
   SKIP_RNG_CHECKS_FOR_SOME_GIC: Boolean = True; //Skip rng checks for Autosave and few other commands to have same AI city with predefined seed + mapconfig
   ALLOW_SELECT_ALLY_UNITS :Boolean = DEBUG_CFG; //Do we allow to select ally units or groups
   ALLOW_SELECT_ENEMIES    :Boolean = DEBUG_CFG; //Do we allow to select enemies houses/units/groups
+  ALLOW_LOAD_UNSUP_VERSION_SAVE:
+                           Boolean = True;  //Allow to try load saves / replay with unsupported version
   SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
   SHOW_DEBUG_CONTROLS     :Boolean = False; //Show debug panel / Form1 menu (F11)
   SHOW_CONTROLS_OVERLAY   :Boolean = False; //Draw colored overlays ontop of controls! always Off here
@@ -837,6 +839,7 @@ const
   icLightOrange = $FF80CCFF;
   icLightRed   = $FF7070FF;
   icLight2Red   = $FFB0B0FF;
+  icLightLightRed = $FF9DB4FB;
   icDarkOrange = $FF0060FF;
   icDarkCyan   = $FFB0B000;
   icLightGreen = $FF00F000;
@@ -906,6 +909,10 @@ const
 
   clScriptCmdName = icYellow;
   clScriptCmdParam = icLightGray;
+
+  clSaveLoadOk = icWhite;
+  clSaveLoadTry = icLightLightRed;
+  clSaveLoadError = icLightRed;
 
 //  clGameSelf = icRed;
 //  clGameAlly = icYellow;

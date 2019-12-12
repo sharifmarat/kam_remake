@@ -257,7 +257,7 @@ uses
   KM_Terrain, KM_Hand, KM_HandsCollection, KM_HandSpectator,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults,
-  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_Random;
+  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_RandomChecks;
 
 
 //Create template for the Game
@@ -396,6 +396,9 @@ begin
   gRes.Cursors.Cursor := kmcDefault;
 
   FreeAndNil(gMySpectator);
+
+  if gRandomCheckLogger <> nil then
+    gRandomCheckLogger.Clear;
 
   if Assigned(fOnDestroy) then
     fOnDestroy();
@@ -1789,7 +1792,7 @@ end;
 //Saves game by provided name
 procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
 var
-  fullPath, mpLocalDataPath, NewSaveName: UnicodeString;
+  fullPath, RngPath, mpLocalDataPath, NewSaveName: UnicodeString;
 begin
   //Convert name to full path+name
   fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiPlayerOrSpec);
@@ -1813,7 +1816,13 @@ begin
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
   if DoSaveRandomChecks then
-    gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
+    try
+      RngPath := ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT);
+      gRandomCheckLogger.SaveToPath(RngPath);
+    except
+      on E: Exception do
+        gLog.AddTime('Error saving random checks to ' + RngPath); //Silently log error, don't propagate error further
+    end;
 
   gLog.AddTime('Saving game', True);
 end;
@@ -1957,6 +1966,7 @@ procedure TKMGame.LoadFromFile(const aPathName: UnicodeString; aCustomReplayFile
 var
   LoadStream: TKMemoryStreamBinary;
   GameMPLocalData: TKMGameMPLocalData;
+  RngPath: UnicodeString;
 begin
   fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
@@ -1994,7 +2004,13 @@ begin
     // SetSeed was there, I dont know the dependencies so please check if it is ok to include it in LoadGameStream
 
     if DoSaveRandomChecks then
-      gRandomCheckLogger.LoadFromPath(ChangeFileExt(aPathName, EXT_SAVE_RNG_LOG_DOT));
+      try
+        RngPath := ChangeFileExt(aPathName, EXT_SAVE_RNG_LOG_DOT);
+        gRandomCheckLogger.LoadFromPath(RngPath);
+      except
+        on E: Exception do
+          gLog.AddTime('Error loading random checks from ' + RngPath); //Silently log error, don't propagate error further
+      end;
 
     gLog.AddTime('Loading game', True);
   finally
@@ -2277,9 +2293,6 @@ begin
 
                           IncGameTick;
 
-                          if gRandomCheckLogger <> nil then
-                            gRandomCheckLogger.UpdateState(fGameTick);
-
                           fLastReplayTick := fGameTick;
 
                           if (fGameMode in [gmMulti, gmMultiSpectate]) then
@@ -2326,6 +2339,9 @@ begin
                           CheckPauseGameAtTick;
 
                           Result := True;
+
+                          if DoSaveRandomChecks then
+                            gRandomCheckLogger.UpdateState(fGameTick);
                         end
                         else
                         begin

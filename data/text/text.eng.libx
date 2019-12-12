@@ -368,7 +368,7 @@
 370:Heights
 371:Tiles
 372:Objects
-373:Heights
+373:Elevations
 374:Brush shape
 375:Size
 376:Slide to change brush size
@@ -382,12 +382,12 @@
 384:Unequalize / Flatten
 385:Elevate (left click) / Lower (right click)
 386:Unequalize (left click) / Flatten (right click)
-387:Brush
+387:Brush & Masks
 388:Random elements
 389:Random Direction
 390:Tick for randomized tile direction or use right click to rotate the selected tile
 392:Block walking
-393:Remove an object
+393:Remove object
 394:Village planning
 395:Visual scripts
 396:Global scripting
@@ -418,10 +418,10 @@
 421:Center screen on mission start
 422:Center screen
 423:Reveal all
-424:Reveal a portion of map
+424:Reveal a portion of the map
 425:Reveal fog
 426:Block trade
-427:Block/release houses
+427:Block/Enable houses
 428:Colors
 429:Goal
 432:Player
@@ -471,7 +471,7 @@
 481:Equip rate leather
 482:Equip rate iron
 483:Autodefence
-484:AI creates and manages defence positions automatically
+484:AI creates and manages defense positions automatically. Ignores all manually set defense positions
 485:Place defence position for AI
 486:AI defence positions
 487:Laborers
@@ -655,9 +655,10 @@
 666:Information
 667:Please wait a moment...
 668:Save Map
-669:Delay in minutes before the AI starts training recruits
+669:Delay in minutes before the AI starts training recruits. Recruits for Towers are not affected
 670:Recruit delay (mins)
-671:Magic water - sets the direction for all tiles in a body of water
+671:Magic water: Sets the direction for all tiles in a body of water
+672:Magic water
 673:Copy
 674:Paste
 675:Paste apply
@@ -680,7 +681,7 @@
 694:Delete current defence position
 695:Return to the defence page
 696:Defence position
-697:Units
+697:Units & Animals
 698:Wolf
 699:Fish
 700:Watersnake
@@ -760,7 +761,7 @@
 807:Hide scripted overlay
 808:Show scripted overlay
 809:You cannot change host when the server is running in your client
-810:AI creates and manages attacks automatically
+810:AI creates and manages attacks automatically. Ignores manually set attacks
 811:Unlimited equip
 812:Classic AI: Soldiers are equipped as fast as possible. Equip rates still affect village planning|Advanced AI: No equip limit
 813:Apply AI defaults
@@ -913,7 +914,7 @@
 962:Game Keys
 963:Map Editor Keys
 964:Waiting for disconnected players data:
-965:Eyedropper - select the type of tile under the cursor
+965:Eyedropper: Select the type of tile under the cursor
 966:This armor smithy is not occupied
 967:This armory workshop is not occupied
 968:This bakery is not occupied
@@ -1147,11 +1148,11 @@
 1196:Shift + Mouse wheel
 1197:Force paint
 1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
-1199:Magic brush - using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
-1200:No mask - use exiting tiles for transitions
-1201:Softest mask - use automatically created transitions
-1202:Soft mask - use automatically created transitions
-1203:Hard mask - use automatically created transitions
+1199:Magic brush: Using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
+1200:No mask: Use exiting tiles for transitions
+1201:Softest mask: Use automatically created transitions
+1202:Soft mask: Use automatically created transitions
+1203:Hard mask: Use automatically created transitions
 1204:Custom TownHall units cost
 1205:Custom gold market prices
 1206:Additional options
@@ -1180,7 +1181,7 @@
 1229:Classic AI|Parameters
 1230:Setup AI Parameters used only by Classic AI
 1231:Classic AI Parameters
-1232:Take every group type
+1232:Take any group type
 1233:Difficulty
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
 1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
@@ -1317,3 +1318,13 @@
 1366:Step of the height algorithm (1 = small, 10 = big)
 1367:Slope of the height evaluation (0 = plateau, 15 = peak)
 1368:Maximum height of walkable tiles
+1377:Try to start
+1378:Try to load save
+1379:Try to view replay
+1380:Error loading unsupported version %s save from %s
+1381:Error loading unsupported version %s replay from %s
+1382:Map name
+1383:Time
+1384:Vers.
+1385:Loading unsupported version could cause game not being properly loaded or even cause game crash
+1386:Unsupported version
