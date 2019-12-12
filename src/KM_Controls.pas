@@ -1283,7 +1283,7 @@ type
     procedure SetTopIndex(aIndex: Integer); override;
     function GetItemString(aIndex: Integer): UnicodeString; override;
 
-    function CanChangeSelection: Boolean;
+    function CanChangeSelection: Boolean; override;
   public
     HideSelection: Boolean;
     HighlightError: Boolean;
@@ -7461,9 +7461,6 @@ end;
 
 
 function TKMColumnBox.KeyDown(Key: Word; Shift: TShiftState): Boolean;
-var
-  OldIndex, NewIndex: Integer;
-  PageScrolling: Boolean;
 begin
   Result := False;
   if PassAllKeys then Exit;

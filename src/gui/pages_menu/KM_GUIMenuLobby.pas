@@ -2138,7 +2138,7 @@ begin
       end;
 
       if Color = clSaveLoadError then
-        DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName, '', '', '', MapName, fSavesMP[I].GameInfo.Version],
+        DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName, '', '', '', MapName, fSavesMP[I].GameInfo.VersionU],
                                      [Color, Color, Color, Color, Color, Color], I))
       else
         DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName,
@@ -2146,7 +2146,7 @@ begin
                                       fSavesMP[I].GameInfo.GetTimeText,
                                       fSavesMP[I].GameInfo.GetSaveTimestamp,
                                       MapName,
-                                      fSavesMP[I].GameInfo.Version],
+                                      fSavesMP[I].GameInfo.VersionU],
                                      [Color, Color, Color, Color, Color, Color], I));
     end;
 
@@ -2729,7 +2729,7 @@ begin
   begin
     if fNetworking.IsSave then
     begin
-      Version := fNetworking.SaveInfo.GameInfo.Version;
+      Version := fNetworking.SaveInfo.GameInfo.VersionU;
       Path := fNetworking.SaveInfo.Path;
       if not fNetworking.SaveInfo.IsValidStrictly then //We are trying to load other version save
       begin

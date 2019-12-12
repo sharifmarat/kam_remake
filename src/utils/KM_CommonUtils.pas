@@ -68,7 +68,8 @@ uses
   function KaMRandomS2(Range_Both_Directions: Single; const aCaller: String): Single; overload;
 
   function IsGameStartAllowed(aGameStartMode: TKMGameStartMode): Boolean;
-  function GetGameVersionNum(const aGameVersionStr: UnicodeString): Integer;
+  function GetGameVersionNum(const aGameVersionStr: AnsiString): Integer; overload;
+  function GetGameVersionNum(const aGameVersionStr: UnicodeString): Integer; overload;
 
   function TimeGet: Cardinal;
   function TimeGetUsec: Int64;
@@ -350,6 +351,12 @@ end;
 function IsGameStartAllowed(aGameStartMode: TKMGameStartMode): Boolean;
 begin
   Result := not (aGameStartMode in [gsmNoStart, gsmNoStartWithWarn]);
+end;
+
+
+function GetGameVersionNum(const aGameVersionStr: AnsiString): Integer;
+begin
+  Result := GetGameVersionNum(UnicodeString(aGameVersionStr));
 end;
 
 
