@@ -63,6 +63,7 @@ type
     property OnNewMap: TKMRMGCallback write fOnNewMap;
     property OnCloseGUI: TKMRMGCallback write fOnCloseGUI;
     procedure Show();
+    procedure Hide();
   end;
 
 
@@ -699,6 +700,12 @@ begin
   Panel_RMG.Hide;
   if Assigned(fOnCloseGUI) then
     fOnCloseGUI();
+end;
+
+
+procedure TKMMapEdRMG.Hide();
+begin
+  Panel_RMG.Hide;
 end;
 
 

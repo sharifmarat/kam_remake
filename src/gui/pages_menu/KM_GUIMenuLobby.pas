@@ -35,6 +35,7 @@ type
 
     fMapsSortUpdateNeeded: Boolean;
     fMainHeight: Integer;
+    fPanelDescBaseTop: Integer;
 
     procedure UpdateMappings;
     procedure UpdateSpectatorDivide;
@@ -66,7 +67,6 @@ type
     procedure PlayersSetupChange(Sender: TObject);
     procedure MapColumnClick(aValue: Integer);
     procedure NewRMGMap(); //RMG
-    procedure CloseRMGGui(); //RMG
     procedure MapTypeChanged(Sender: TObject);
     procedure InitDropColMapsList;
     procedure MapList_OnShow(Sender: TObject);
@@ -225,6 +225,7 @@ const
   ASK_READY_COOLDOWN = 1000;
   SPEED_MAX_VALUE = 2.5;
   SPEED_STEP = 0.1;
+  RADIO_INDEX_MAP_TYPE_RMG = 5;
 
 
 { TKMGUIMenuLobby }
@@ -545,18 +546,20 @@ begin
     //Setup
     Panel_Setup := TKMPanel.Create(Panel_Lobby, 725, 30, 270, 723);
     Panel_Setup.Anchors := [anLeft, anTop, anBottom];
+      OffY := 9;
       with TKMBevel.Create(Panel_Setup,  0,  0, 270, 723) do AnchorsStretch;
-      Radio_MapType := TKMRadioGroup.Create(Panel_Setup, 10, 10, 250, 80, fntMetal);
+      Radio_MapType := TKMRadioGroup.Create(Panel_Setup, 10, OffY, 250, 96, fntMetal);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_BUILD]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_FIGHT]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_COOP]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_SPECIAL]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_SAVED]);
-      Radio_MapType.Add('Random map'); //RMG
+      Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_RANDOM]); //RMG
       Radio_MapType.ItemIndex := 0;
-      Radio_MapType.OnChange := MapTypeChanged;
+      Radio_MapType.OnClick := MapTypeChanged;
 
-      DropCol_Maps := TKMDropColumns.Create(Panel_Setup, 10, 95, 250, 20, fntMetal, gResTexts[TX_LOBBY_MAP_SELECT], bsMenu);
+      Inc(OffY, 101);
+      DropCol_Maps := TKMDropColumns.Create(Panel_Setup, 10, OffY, 250, 20, fntMetal, gResTexts[TX_LOBBY_MAP_SELECT], bsMenu);
       DropCol_Maps.DropCount := 19;
       InitDropColMapsList;
       DropCol_Maps.OnShowList := MapList_OnShow;
@@ -565,39 +568,42 @@ begin
       DropCol_Maps.OnChange := MapChange;
       DropCol_Maps.List.OnCellClick := DropBoxMaps_CellClick;
 
-      Label_MapName := TKMLabel.Create(Panel_Setup, 10, 95, 250, 20, '', fntMetal, taLeft);
+      Label_MapName := TKMLabel.Create(Panel_Setup, 10, OffY, 250, 20, '', fntMetal, taLeft);
 
-      Panel_SetupMinimap := TKMPanel.Create(Panel_Setup, 0, 120, 270, 200);
+      Inc(OffY, 25);
+      Panel_SetupMinimap := TKMPanel.Create(Panel_Setup, 0, OffY, 270, 200);
         MinimapView := TKMMinimapView.Create(Panel_SetupMinimap, 39, 4, 191, 191, True);
         MinimapView.ShowLocs := True; //In the minimap we want player locations to be shown
         MinimapView.OnLocClick := MinimapLocClick;
 
-      Panel_SetupTransfer := TKMPanel.Create(Panel_Setup, 0, 120, 270, 200);
+      Panel_SetupTransfer := TKMPanel.Create(Panel_Setup, 0, OffY, 270, 200);
         Button_SetupDownload := TKMButton.Create(Panel_SetupTransfer, 10, 0, 250, 30, gResTexts[TX_LOBBY_DOWNLOAD], bsMenu);
         Button_SetupDownload.OnClick := FileDownloadClick;
         PercentBar_SetupProgress := TKMPercentBar.Create(Panel_SetupTransfer, 10, 0, 250, 24, fntGame);
       Panel_SetupTransfer.Hide;
 
-      Button_TabDesc := TKMButton.Create(Panel_Setup, 10, 324, 125, 20, gResTexts[TX_LOBBY_MAP_DESCRIPTION], bsMenu);
+      Inc(OffY, 204);
+      Button_TabDesc := TKMButton.Create(Panel_Setup, 10, OffY, 125, 20, gResTexts[TX_LOBBY_MAP_DESCRIPTION], bsMenu);
       Button_TabDesc.OnClick := GameOptionsTabSwitch;
       Button_TabDesc.Hide;
-      Button_TabOptions := TKMButton.Create(Panel_Setup, 10+125, 324, 125, 20, gResTexts[TX_LOBBY_OPTIONS], bsMenu);
+      Button_TabOptions := TKMButton.Create(Panel_Setup, 10+125, OffY, 125, 20, gResTexts[TX_LOBBY_OPTIONS], bsMenu);
       Button_TabOptions.OnClick := GameOptionsTabSwitch;
       Button_TabOptions.Hide;
 
-      Panel_SetupDesc := TKMPanel.Create(Panel_Setup, 0, 324, 270, 218);
+      fPanelDescBaseTop := OffY;
+      Panel_SetupDesc := TKMPanel.Create(Panel_Setup, 0, OffY, 270, 203);
       Panel_SetupDesc.Anchors := [anLeft, anTop, anBottom];
-        Memo_MapDesc := TKMMemo.Create(Panel_SetupDesc, 10, 0, 250, 218, fntGame, bsMenu);
+        Memo_MapDesc := TKMMemo.Create(Panel_SetupDesc, 10, 0, 250, 203, fntGame, bsMenu);
         Memo_MapDesc.Anchors := [anLeft,anTop,anBottom];
         Memo_MapDesc.AutoWrap := True;
         Memo_MapDesc.ItemHeight := 16;
 
-        Button_SetupReadme := TKMButton.Create(Panel_SetupDesc, 10, 200, 250, 25, gResTexts[TX_LOBBY_VIEW_README], bsMenu);
+        Button_SetupReadme := TKMButton.Create(Panel_SetupDesc, 10, 185, 250, 25, gResTexts[TX_LOBBY_VIEW_README], bsMenu);
         Button_SetupReadme.Anchors := [anLeft,anBottom];
         Button_SetupReadme.OnClick := ReadmeClick;
         Button_SetupReadme.Hide;
 
-      Panel_SetupOptions := TKMPanel.Create(Panel_Setup, 0, PANEL_SETUP_OPTIONS_TOP, 270, PANEL_SETUP_OPTIONS_HEIGHT);
+      Panel_SetupOptions := TKMPanel.Create(Panel_Setup, 0, PANEL_SETUP_OPTIONS_TOP + 15, 270, PANEL_SETUP_OPTIONS_HEIGHT);
       Panel_SetupOptions.Anchors := [anLeft,anBottom];
 
         Label_GameOptions := TKMLabel.Create(Panel_SetupOptions, 10, 4, 250, 20, gResTexts[TX_LOBBY_GAME_OPTIONS], fntOutline, taLeft);
@@ -647,7 +653,6 @@ begin
 
   fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby, True); //RMG
   fGuiRMG.OnNewMap := NewRMGMap;
-  fGuiRMG.OnCloseGUI := CloseRMGGui;
 
   UpdateSpectatorDivide;
 end;
@@ -834,6 +839,9 @@ begin
               if fNetworking.MapInfo.TxtInfo.IsSpecial then
                 Result := 3
               else
+              if fNetworking.MapInfo.TxtInfo.IsRMG then
+                Result := RADIO_INDEX_MAP_TYPE_RMG
+              else
               if fNetworking.MapInfo.MissionMode = mmTactic then
                 Result := 1;
     ngkSave: Result := 4;
@@ -870,7 +878,8 @@ end;
 
 
 procedure TKMMenuLobby.Show(aKind: TKMNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
-var I: Integer;
+var
+  I: Integer;
 begin
   fNetworking := aNetworking;
 
@@ -878,13 +887,13 @@ begin
 
   //Events binding is the same for Host and Joiner because of stand-alone Server
   //E.g. If Server fails, Host can be disconnected from it as well as a Joiner
-  fNetworking.OnTextMessage  := Lobby_OnMessage;
-  fNetworking.OnPlayersSetup := Lobby_OnPlayersSetup;
+  fNetworking.OnTextMessage   := Lobby_OnMessage;
+  fNetworking.OnPlayersSetup  := Lobby_OnPlayersSetup;
   fNetworking.OnUpdateMinimap := Lobby_OnUpdateMinimap;
-  fNetworking.OnGameOptions  := Lobby_OnGameOptions;
-  fNetworking.OnMapName      := Lobby_OnMapName;
-  fNetworking.OnMapMissing   := Lobby_OnMapMissing;
-  fNetworking.OnPingInfo     := Lobby_OnPingInfo;
+  fNetworking.OnGameOptions   := Lobby_OnGameOptions;
+  fNetworking.OnMapName       := Lobby_OnMapName;
+  fNetworking.OnMapMissing    := Lobby_OnMapMissing;
+  fNetworking.OnPingInfo      := Lobby_OnPingInfo;
   //fNetworking.OnStartMap - already assigned in gGameApp when Net is created
   //fNetworking.OnStartSave - already assigned in gGameApp when Net is created
   fNetworking.OnDisconnect   := Lobby_OnDisconnect;
@@ -897,6 +906,10 @@ begin
 
   Radio_MapType.ItemIndex := gGameApp.GameSettings.MenuLobbyMapType;
   UpdateMapList;
+
+  //Hide RMG settings PopUp in case it was shown previosly
+  if fGuiRMG <> nil then
+    fGuiRMG.Hide;
 
   //Update chat
   SetChatHandlers;
@@ -922,16 +935,16 @@ begin
   if Button_TabDesc.Visible then
   begin
     //Not enough space, so enabled tabbed view
-    Panel_SetupDesc.Top := 350;
-    Panel_SetupDesc.Height := fMainHeight - 406;
-    Panel_SetupOptions.Top := 350;
+    Panel_SetupDesc.Top := fPanelDescBaseTop + 11;
+    Panel_SetupDesc.Height := fMainHeight - 401;
+    Panel_SetupOptions.Top := fPanelDescBaseTop + 11;
   end
   else
   begin
     //We have enough space, so stack Options below Desc
-    Panel_SetupDesc.Top := 324;
-    Panel_SetupDesc.Height := fMainHeight - 550 - DiffHeight;
-    Panel_SetupOptions.Top := 330 + Panel_SetupDesc.Height;
+    Panel_SetupDesc.Top := fPanelDescBaseTop;
+    Panel_SetupDesc.Height := fMainHeight - 555 - DiffHeight;
+    Panel_SetupOptions.Top := Panel_SetupDesc.Bottom;
   end;
   Panel_SetupOptions.Height := PANEL_SETUP_OPTIONS_HEIGHT + DiffHeight;
   Panel_GameOptions.Top := 26 + DiffHeight;
@@ -986,7 +999,10 @@ end;
 procedure TKMMenuLobby.EscKeyDown(Sender: TObject);
 begin
   if Button_SettingsCancel.IsClickable then
-    SettingsClick(Button_SettingsCancel);
+    SettingsClick(Button_SettingsCancel)
+  else
+  if fGuiRMG.Visible then
+    fGuiRMG.Hide;
 end;
 
 
@@ -1893,10 +1909,14 @@ begin
                                    gResTexts[TX_MENU_LOAD_MAP_NAME], gResTexts[TX_MENU_LOAD_GAME_VERSION]],
                                   [0, 290, 320, 400, 540, 740]);
         end;
-    5:  //RMG
+    RADIO_INDEX_MAP_TYPE_RMG:  //RMG
         begin
           fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
           DropCol_Maps.DefaultCaption := MAPS_RMG_NAME;
+//          DropCol_Maps.Hide;
+//          Label_MapName.Caption := MAPS_RMG_NAME;
+//          Label_MapName.Show;
+
           InitDropColMapsList;
           fGuiRMG.Show;
         end;
@@ -1911,7 +1931,6 @@ end;
 
 procedure TKMMenuLobby.NewRMGMap(); //RMG
 begin
-//{
   fMapsMP.Lock;
   try
     fNetworking.SelectMap(MAPS_RMG_NAME, mfMP);
@@ -1919,15 +1938,7 @@ begin
     fMapsMP.Unlock;
   end;
   GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
-//}
 end;
-
-
-procedure TKMMenuLobby.CloseRMGGui(); //RMG
-begin
-  NewRMGMap();
-end;
-
 
 
 procedure TKMMenuLobby.MapTypeChanged(Sender: TObject);
@@ -2428,7 +2439,7 @@ begin
 
   //Don't reset the selection if no map is selected
   if ((fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid)
-  or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.IsValid) then
+    or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.IsValid) then
     Radio_MapType.ItemIndex := DetectMapType;
 
   Memo_MapDesc.Height := Panel_SetupDesc.Height;
