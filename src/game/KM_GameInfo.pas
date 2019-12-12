@@ -18,6 +18,7 @@ type
   private
     fParseError: TKMGameInfoParseError;
     procedure ResetParseError;
+    function GetVersionUnicode: UnicodeString;
   public
     Title: UnicodeString; //Used for campaigns and to store in savegames
     Version: AnsiString; //Savegame version, yet unused in maps, they always have actual version
@@ -51,6 +52,8 @@ type
     function GetTitleWithTime: UnicodeString;
     function GetSaveTimestamp: UnicodeString;
     function ColorUsed(aColorID: Integer): Boolean;
+
+    property VersionU: UnicodeString read GetVersionUnicode;
   end;
 
 
@@ -72,6 +75,12 @@ procedure TKMGameInfo.ResetParseError;
 begin
   fParseError.ErrorString := '';
   fParseError.ErrorType := gipetNone;
+end;
+
+
+function TKMGameInfo.GetVersionUnicode: UnicodeString;
+begin
+  Result := UnicodeString(Version);
 end;
 
 

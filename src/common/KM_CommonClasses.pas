@@ -1429,7 +1429,7 @@ end;
 
 procedure TKMemoryStreamText.WriteA(const Value: AnsiString);
 begin
-  WriteText(Value);
+  WriteText(UnicodeString(Value));
 end;
 
 procedure TKMemoryStreamText.WriteANSI(const aValue: string);

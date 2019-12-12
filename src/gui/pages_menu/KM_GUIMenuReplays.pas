@@ -411,7 +411,7 @@ begin
         Color := clSaveLoadError;
 
       Row := MakeListRow(['', fSaves[I].FileName, fSaves[I].GameInfo.GetSaveTimestamp, fSaves[I].GameInfo.Title,
-                          TickToTimeStr(fSaves[I].GameInfo.TickCount), fSaves[I].GameInfo.Version],
+                          TickToTimeStr(fSaves[I].GameInfo.TickCount), fSaves[I].GameInfo.VersionU],
                          [Color, Color, Color, Color, Color, Color]);
       Row.Cells[0].Pic := MakePic(rxGui, 657 + Byte(fSaves[I].GameInfo.MissionMode = mmTactic));
       ColumnBox_Replays.AddItem(Row);
@@ -475,6 +475,11 @@ begin
             SSM := smByGameVersionDesc
           else
             SSM := smByGameVersionAsc;
+      else
+          if SortDirection = sdDown then
+            SSM := smByFileNameDesc
+          else
+            SSM := smByFileNameAsc;
     end;
   fSaves.Sort(SSM, Replays_SortUpdate);
 end;
