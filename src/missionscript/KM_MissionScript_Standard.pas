@@ -173,8 +173,10 @@ var
   Qty, HandI: Integer;
   H: TKMHouse;
   HT: TKMHouseType;
+  WT: TKMWareType;
   UT: TKMUnitType;
   iPlayerAI: TKMHandAI;
+  ChooseLoc: TKMChooseLoc;
 begin
   Result := False; //Set it right from the start. There are several Exit points below
 
@@ -285,6 +287,31 @@ begin
     ctCenterScreen:    if (fLastHand <> PLAYER_NONE)
                           and PointInMap(P[0]+1, P[1]+1) then
                           gHands[fLastHand].CenterScreen := KMPoint(P[0]+1, P[1]+1);
+
+    ctChooseLoc:       if (fLastHand <> PLAYER_NONE) then
+                        begin
+                          ChooseLoc := gHands[fLastHand].ChooseLocation;
+                          ChooseLoc.Allowed := Boolean(P[0]);
+                          gHands[fLastHand].ChooseLocation := ChooseLoc;
+                        end;
+
+    ctChooseLocAddWare: if (fLastHand <> PLAYER_NONE) then
+                        begin
+                          Qty := EnsureRange(P[1], -1, High(Word)); //Sometimes user can define it to be 999999
+                          if Qty = -1 then Qty := High(Word); //-1 means maximum resources
+                          ChooseLoc := gHands[fLastHand].ChooseLocation;
+                          ChooseLoc.Resources[ WareIndexToType[P[0]] ] := Qty;
+                          gHands[fLastHand].ChooseLocation := ChooseLoc;
+                        end;
+
+    ctChooseLocAddUnit:  if (fLastHand <> PLAYER_NONE) then
+                        begin
+                          Qty := EnsureRange(P[1], -1, High(Byte)); //Sometimes user can define it to be 999999
+                          if Qty = -1 then Qty := High(Byte); //-1 means maximum resources
+                          ChooseLoc := gHands[fLastHand].ChooseLocation;
+                          ChooseLoc.Units[ UnitIndexToType[P[0]] ] := Qty;
+                          gHands[fLastHand].ChooseLocation := ChooseLoc;
+                        end;
 
     ctClearUp:         if fLastHand <> PLAYER_NONE then
                         begin
@@ -763,16 +790,16 @@ var
   I: longint; //longint because it is used for encoding entire output, which will limit the file size
   K,J,iX,iY,CommandLayerCount: Integer;
   StoreCount, BarracksCount: Integer;
-  Res: TKMWareType;
+  WT: TKMWareType;
   G: TKMGroupType;
   U: TKMUnit;
+  UT: TKMUnitType;
   H: TKMHouse;
   Group: TKMUnitGroup;
   HT: TKMHouseType;
   ReleaseAllHouses: Boolean;
   SaveString: AnsiString;
   SaveStream: TFileStream;
-  UT: TKMUnitType;
 
   procedure AddData(const aText: AnsiString);
   begin
@@ -788,7 +815,7 @@ var
     end
   end;
 
-  procedure AddCommand(aCommand: TKMCommandType; aComParam: TKMCommandParamType; aParams: array of Integer); overload;
+  procedure AddCommand(aCommand: TKMCommandType; aComParam: TKMCommandParamType; aParams: TIntegerArray); overload;
   var
     OutData: AnsiString;
     I: Integer;
@@ -804,7 +831,7 @@ var
     AddData(OutData);
   end;
 
-  procedure AddCommand(aCommand: TKMCommandType; aComParam: TAIAttackParamType; aParams: array of Integer); overload;
+  procedure AddCommand(aCommand: TKMCommandType; aComParam: TAIAttackParamType; aParams: TIntegerArray); overload;
   var
     OutData: AnsiString;
     I: Integer;
@@ -817,7 +844,7 @@ var
     AddData(OutData);
   end;
 
-  procedure AddCommand(aCommand: TKMCommandType; aParams: array of Integer); overload;
+  procedure AddCommand(aCommand: TKMCommandType; aParams: TIntegerArray); overload;
   begin
     AddCommand(aCommand, cptUnknown, aParams);
   end;
@@ -862,8 +889,25 @@ begin
     //Write RGB command second so it will be used if color is not from KaM palette
     AddCommand(ctSetRGBColor, [gHands[I].FlagColor and $00FFFFFF]);
 
+    // Save center screen
     if not KMSamePoint(gHands[I].CenterScreen, KMPOINT_ZERO) then
       AddCommand(ctCenterScreen, [gHands[I].CenterScreen.X - 1 + aLeftInset, gHands[I].CenterScreen.Y - 1 + aTopInset]);
+
+    // Choose loc configuration
+    with gHands[I].ChooseLocation do
+      if Allowed then
+      begin
+        // Allow loc configuration
+        AddCommand(ctChooseLoc, [1]);
+        // Add resources
+        for WT := Low(Resources) to High(Resources) do
+          if (Resources[WT] > 0) then
+            AddCommand(ctChooseLocAddWare, [WareTypeToIndex[WT], Resources[WT]]);
+        // Add units
+        for UT := Low(Units) to High(Units) do
+          if (Units[UT] > 0) then
+            AddCommand(ctChooseLocAddUnit, [UnitTypeToIndex[UT], Units[UT]]);
+      end;
 
     with gGame.MapEditor.Revealers[I] do
     for K := 0 to Count - 1 do
@@ -991,9 +1035,9 @@ begin
     end;
 
     //Block trades
-    for Res := WARE_MIN to WARE_MAX do
-      if not gHands[I].Locks.AllowToTrade[Res] then
-        AddCommand(ctBlockTrade, [WareTypeToIndex[Res]]);
+    for WT := WARE_MIN to WARE_MAX do
+      if not gHands[I].Locks.AllowToTrade[WT] then
+        AddCommand(ctBlockTrade, [WareTypeToIndex[WT]]);
 
     //Houses
     StoreCount := 0;
@@ -1028,11 +1072,11 @@ begin
         if (H.HouseType = htStore) and (StoreCount < 2) then
         begin
           Inc(StoreCount);
-          for Res := WARE_MIN to WARE_MAX do
-            if H.CheckResIn(Res) > 0 then
+          for WT := WARE_MIN to WARE_MAX do
+            if H.CheckResIn(WT) > 0 then
               case StoreCount of
-                1:  AddCommand(ctAddWare, [WareTypeToIndex[Res], H.CheckResIn(Res)]);
-                2:  AddCommand(ctAddWareToSecond, [WareTypeToIndex[Res], H.CheckResIn(Res)]);
+                1:  AddCommand(ctAddWare, [WareTypeToIndex[WT], H.CheckResIn(WT)]);
+                2:  AddCommand(ctAddWareToSecond, [WareTypeToIndex[WT], H.CheckResIn(WT)]);
               end;
         end
         else
@@ -1040,17 +1084,17 @@ begin
         if (H.HouseType = htBarracks) and (BarracksCount = 0) then
         begin
           Inc(BarracksCount);
-          for Res := WARFARE_MIN to WARFARE_MAX do
-            if H.CheckResIn(Res) > 0 then
-              AddCommand(ctAddWeapon, [WareTypeToIndex[Res], H.CheckResIn(Res)]); //Ware, Count
+          for WT := WARFARE_MIN to WARFARE_MAX do
+            if H.CheckResIn(WT) > 0 then
+              AddCommand(ctAddWeapon, [WareTypeToIndex[WT], H.CheckResIn(WT)]); //Ware, Count
         end
         else
-          for Res := WARE_MIN to WARE_MAX do
+          for WT := WARE_MIN to WARE_MAX do
           begin
-            if H.CheckResIn(Res) > 0 then
-              AddCommand(ctAddWareToLast, [WareTypeToIndex[Res], H.CheckResIn(Res)]);
-            if H.CheckResOut(Res) > 0 then
-              AddCommand(ctAddWareToLast, [WareTypeToIndex[Res], H.CheckResOut(Res)]);
+            if H.CheckResIn(WT) > 0 then
+              AddCommand(ctAddWareToLast, [WareTypeToIndex[WT], H.CheckResIn(WT)]);
+            if H.CheckResOut(WT) > 0 then
+              AddCommand(ctAddWareToLast, [WareTypeToIndex[WT], H.CheckResOut(WT)]);
           end;
 
         //Set Delivery mode after Wares, so in case there are some wares and delivery mode TakeOut, then we will need to add proper Offers

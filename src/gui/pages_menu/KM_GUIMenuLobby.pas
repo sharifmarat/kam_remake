@@ -6,7 +6,8 @@ uses
   {$IFDEF Unix} LCLType, {$ENDIF}
   Classes, Controls, Math, SysUtils,
   KM_Defaults, KM_NetworkTypes, KM_Console, KM_ResTexts,
-  KM_Controls, KM_Maps, KM_Saves, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_Networking;
+  KM_Controls, KM_Maps, KM_Saves, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_Networking,
+  KM_GUIMapEdRMG;
 
 
 type
@@ -15,6 +16,7 @@ type
   TKMMenuLobby = class (TKMMenuPageCommon)
   private
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
+    fGuiRMG: TKMMapEdRMG; //RMG
 
     fLastTimeResetBans: Cardinal;
     fLastTimeAskReady: Cardinal;
@@ -63,6 +65,8 @@ type
 
     procedure PlayersSetupChange(Sender: TObject);
     procedure MapColumnClick(aValue: Integer);
+    procedure NewRMGMap(); //RMG
+    procedure CloseRMGGui(); //RMG
     procedure MapTypeChanged(Sender: TObject);
     procedure InitDropColMapsList;
     procedure MapList_OnShow(Sender: TObject);
@@ -211,7 +215,8 @@ var
 implementation
 uses
   KM_Log, KM_CommonTypes, KM_ResLocales, KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI,
-  KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points, KM_MapTypes;
+  KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points, KM_MapTypes,
+  KM_Game, KM_RandomMapGenerator; //RMG
 
 const
   PANEL_SETUP_OPTIONS_TOP = 548;
@@ -547,6 +552,7 @@ begin
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_COOP]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_SPECIAL]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_SAVED]);
+      Radio_MapType.Add('Random map'); //RMG
       Radio_MapType.ItemIndex := 0;
       Radio_MapType.OnChange := MapTypeChanged;
 
@@ -638,6 +644,10 @@ begin
     Button_Start.Anchors := [anLeft, anBottom];
     Button_Start.OnClick := StartClick;
     Button_Start.OnChangeEnableStatus := StartBtnChangeEnabled;
+
+  fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby,True); //RMG
+  fGuiRMG.OnNewMap := NewRMGMap;
+  fGuiRMG.OnCloseGUI := CloseRMGGui;
 
   UpdateSpectatorDivide;
 end;
@@ -1883,6 +1893,13 @@ begin
                                    gResTexts[TX_MENU_LOAD_MAP_NAME], gResTexts[TX_MENU_LOAD_GAME_VERSION]],
                                   [0, 290, 320, 400, 540, 740]);
         end;
+    5:  //RMG
+        begin
+          fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
+          DropCol_Maps.DefaultCaption := MAPS_RMG_NAME;
+          InitDropColMapsList;
+          fGuiRMG.Show;
+        end;
     else
         begin
           DropCol_Maps.DefaultCaption := NO_TEXT;
@@ -1892,11 +1909,36 @@ begin
 end;
 
 
-procedure TKMMenuLobby.MapTypeChanged(Sender: TObject);
+procedure TKMMenuLobby.NewRMGMap(); //RMG
 begin
+//{
+  fMapsMP.Lock;
+  try
+    fNetworking.SelectMap(MAPS_RMG_NAME, mfMP);
+  finally
+    fMapsMP.Unlock;
+  end;
+  GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
+//}
+end;
+
+
+procedure TKMMenuLobby.CloseRMGGui(); //RMG
+begin
+  NewRMGMap();
+end;
+
+
+
+procedure TKMMenuLobby.MapTypeChanged(Sender: TObject);
+var
+  RMG: Boolean; //RMG
+begin
+  RMG := Radio_MapType.ItemIndex = 5; //RMG
   UpdateMapList;
   gGameApp.GameSettings.MenuLobbyMapType := Radio_MapType.ItemIndex;
-  fNetworking.SelectNoMap('');
+  if not RMG then //RMG
+    fNetworking.SelectNoMap('');
 end;
 
 
