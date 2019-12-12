@@ -513,9 +513,9 @@ begin
 
 
 // Preselection of configuration
+  {
   Column_X := Column_1_X + 370;
   Column_Y := SIZE_Y - 100;
-    {
 	Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y,0), BOX_X, BOX_Y, 'Load', fntMetal, taLeft);
     Lab.Hint := 'Load configuration';
   DList_PreCfg := TKMDropList.Create(Panel_Settings, Column_X, NextLine(Column_Y,15), 130, BOX_Y, fntMetal, '', bsMenu);

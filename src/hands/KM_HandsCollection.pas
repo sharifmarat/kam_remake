@@ -171,6 +171,13 @@ procedure TKMHandsCollection.AfterMissionInit(aFlattenRoads: Boolean);
 var
   I: Integer;
 begin
+  //RMG place storehouse before assembling NavMesh and create influences so AI initialize correctly
+  gAIFields.Eye.AfterMissionInit(); // Update Eye so it sees all mines on the map
+  for I := 0 to fCount - 1 do
+    with fHandsList[I] do
+      if (HandType = hndComputer) then
+        AI.PlaceFirstStorehouse(CenterScreen);
+
   gAIFields.AfterMissionInit;
 
   GetTeamsLazy;

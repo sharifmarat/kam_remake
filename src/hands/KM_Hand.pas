@@ -94,7 +94,7 @@ type
     function LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
     function GetGameFlagColor: Cardinal;
     function GetOwnerNiknameU: UnicodeString;
-    procedure PlaceFirstStorehouse();
+    procedure SelectFirstStorehouse();
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -170,6 +170,7 @@ type
     function CanAddHousePlan(const aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
     function CanAddHousePlanAI(aX, aY: Word; aHouseType: TKMHouseType; aCheckInfluence: Boolean): Boolean;
 
+    procedure AddFirstStorehouse(aEntrance: TKMPoint);
     procedure AddRoadToList(const aLoc: TKMPoint);
     procedure AddRoad(const aLoc: TKMPoint);
     procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
@@ -1842,52 +1843,11 @@ begin
     fStats.UpdateState;
 
   if fChooseLocation.Allowed AND not fChooseLocation.Placed then
-    PlaceFirstStorehouse();
+    SelectFirstStorehouse();
 end;
 
 
-procedure TKMHand.PlaceFirstStorehouse();
-  // Place road and return true if it is possible
-  function AddRoad(aPoint: TKMPoint): Boolean;
-  begin
-    Result := CanAddFieldPlan(KMPoint(aPoint.X, aPoint.Y), ftRoad);
-    if Result then
-    begin
-      gTerrain.SetRoad(aPoint, fID);
-      //Terrain under roads is flattened (fields are not)
-      gTerrain.FlattenTerrain(aPoint);
-      if gMapElements[gTerrain.Land[aPoint.Y,aPoint.X].Obj].WineOrCorn then
-        gTerrain.RemoveObject(aPoint);
-    end;
-  end;
-  // Add the first storehouse if we can place road at the entrance
-  function AddFirstStorehouse(aEntrance: TKMPoint): Boolean;
-  var
-    L: Integer;
-    H: TKMHouse;
-    WT: TKMWareType;
-    UT: TKMUnitType;
-  begin
-    Result := AddRoad( KMPoint(aEntrance.X,aEntrance.Y+1) );
-    if Result then
-    begin
-      // Add Storehouse
-      H := AddHouse(htStore, aEntrance.X, aEntrance.Y, True);
-      for WT := Low(fChooseLocation.Resources) to High(fChooseLocation.Resources) do
-        if H.ResCanAddToIn(WT) OR H.ResCanAddToOut(WT) then
-          H.ResAddToEitherFromScript(WT, fChooseLocation.Resources[WT]);
-      // Add Roads
-      AddRoad( KMPoint(aEntrance.X-1,aEntrance.Y+1) );
-      AddRoad( KMPoint(aEntrance.X+1,aEntrance.Y+1) );
-      // Add Units
-      for UT := Low(fChooseLocation.Units) to High(fChooseLocation.Units) do
-        for L := 0 to fChooseLocation.Units[UT] - 1 do
-          AddUnit(UT, KMPoint(aEntrance.X,aEntrance.Y+1));
-      // Finish action
-      fChooseLocation.Placed := True;
-      gGameCursor.Mode := cmRoad;
-    end;
-  end;
+procedure TKMHand.SelectFirstStorehouse();
 var
   K: Integer;
   Entrance: TKMPoint;
@@ -1903,7 +1863,8 @@ begin
         begin
           Entrance := KMPointAdd( Loc, KMPoint(gRes.Houses[HouseType].EntranceOffsetX,0) );
           RemHousePlan(Entrance);
-          AddFirstStorehouse(Entrance);
+          if CanAddFieldPlan(KMPoint(Entrance.X, Entrance.Y+1), ftRoad) then
+            AddFirstStorehouse(Entrance);
         end;
   end;
   // Preselect storehouse
@@ -1912,6 +1873,50 @@ begin
     gGameCursor.Mode := cmHouses;
     gGameCursor.Tag1 := Byte(htStore);
   end;
+end;
+
+
+
+procedure TKMHand.AddFirstStorehouse(aEntrance: TKMPoint);
+  // Place road and return true if it is possible
+  function AddRoad(aPoint: TKMPoint): Boolean;
+  begin
+    Result := CanAddFieldPlan(KMPoint(aPoint.X, aPoint.Y), ftRoad);
+    if Result then
+    begin
+      gTerrain.SetRoad(aPoint, fID);
+      //Terrain under roads is flattened (fields are not)
+      gTerrain.FlattenTerrain(aPoint);
+      if gMapElements[gTerrain.Land[aPoint.Y,aPoint.X].Obj].WineOrCorn then
+        gTerrain.RemoveObject(aPoint);
+    end;
+  end;
+var
+  K: Integer;
+  H: TKMHouse;
+  WT: TKMWareType;
+  UT: TKMUnitType;
+begin
+  // Add Storehouse
+  H := AddHouse(htStore, aEntrance.X, aEntrance.Y, True);
+  // Add Wares
+  for WT := Low(fChooseLocation.Resources) to High(fChooseLocation.Resources) do
+    if H.ResCanAddToIn(WT) OR H.ResCanAddToOut(WT) then
+    begin
+      Stats.WareInitial(WT, fChooseLocation.Resources[WT]);
+      H.ResAddToEitherFromScript(WT, fChooseLocation.Resources[WT]);
+    end;
+  // Add Roads
+  AddRoad( KMPoint(aEntrance.X,  aEntrance.Y+1) );
+  AddRoad( KMPoint(aEntrance.X-1,aEntrance.Y+1) );
+  AddRoad( KMPoint(aEntrance.X+1,aEntrance.Y+1) );
+  // Add Units
+  for UT := Low(fChooseLocation.Units) to High(fChooseLocation.Units) do
+    for K := 0 to fChooseLocation.Units[UT] - 1 do
+      AddUnit(UT, KMPoint(aEntrance.X,aEntrance.Y+1));
+  // Finish action
+  fChooseLocation.Placed := True;
+  gGameCursor.Mode := cmRoad; // Preselect road
 end;
 
 
