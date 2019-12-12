@@ -1300,8 +1300,8 @@ var TempMaps: array of TKMapInfo;
       smByHumanPlayersDesc:   Result := A.HumanPlayerCount > B.HumanPlayerCount;
       smByHumanPlayersMPAsc:  Result := A.HumanPlayerCountMP < B.HumanPlayerCountMP;
       smByHumanPlayersMPDesc: Result := A.HumanPlayerCountMP > B.HumanPlayerCountMP;
-      smByMissionModeAsc:            Result := A.MissionMode < B.MissionMode;
-      smByMissionModeDesc:           Result := A.MissionMode > B.MissionMode;
+      smByMissionModeAsc:     Result := A.MissionMode < B.MissionMode;
+      smByMissionModeDesc:    Result := A.MissionMode > B.MissionMode;
     end;
     if fDoSortWithFavourites and not (fSortMethod in [smByFavouriteAsc, smByFavouriteDesc]) then
     begin
