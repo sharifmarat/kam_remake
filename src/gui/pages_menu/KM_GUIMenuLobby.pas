@@ -645,7 +645,7 @@ begin
     Button_Start.OnClick := StartClick;
     Button_Start.OnChangeEnableStatus := StartBtnChangeEnabled;
 
-  fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby,True); //RMG
+  fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby, True); //RMG
   fGuiRMG.OnNewMap := NewRMGMap;
   fGuiRMG.OnCloseGUI := CloseRMGGui;
 
