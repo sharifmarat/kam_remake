@@ -1031,7 +1031,8 @@ end;
 
 //Reset everything to it's defaults depending on users role (Host/Joiner/Reassigned)
 procedure TKMMenuLobby.Reset(aKind: TKMNetPlayerKind; aPreserveMaps: Boolean = False);
-var I: Integer;
+var
+  I: Integer;
 begin
   Label_ServerName.Caption := '';
 
@@ -1909,19 +1910,19 @@ begin
     2,  //Co-op Map
     3:  //Special map Map
         begin
+          InitDropColMapsList;
           fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
           DropCol_Maps.DefaultCaption := gResTexts[TX_LOBBY_MAP_SELECT];
-          InitDropColMapsList;
         end;
     MAP_TYPE_INDEX_RMG:  //RMG
         begin
+          InitDropColMapsList;
           fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
 //          DropCol_Maps.DefaultCaption := MAPS_RMG_NAME;
           DropCol_Maps.Hide;
           Label_MapName.Caption := MAPS_RMG_NAME;
           Label_MapName.Show;
 
-//          InitDropColMapsList;
           fGuiRMG.Show;
         end;
     MAP_TYPE_INDEX_SAVE:  //Saved Game
@@ -1945,6 +1946,9 @@ end;
 
 procedure TKMMenuLobby.SelectRMGMap(); //RMG
 begin
+  if not fNetworking.IsHost then
+    Exit; //Only host can select RMG map
+
   fMapsMP.Lock;
   try
     fNetworking.SelectMap(MAPS_RMG_NAME, mfMP);
@@ -2077,7 +2081,8 @@ begin
       end;
 
       //Presect RMG map, if we have it in map list
-      if (Radio_MapType.ItemIndex = MAP_TYPE_INDEX_RMG) 
+      if fNetworking.IsHost
+        and (Radio_MapType.ItemIndex = MAP_TYPE_INDEX_RMG)
         and (fMapsMP[I].FileName = MAPS_RMG_NAME) then
         SelectRMGMap;
 
