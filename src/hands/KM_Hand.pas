@@ -78,6 +78,7 @@ type
 
     fOnAllianceChange: TEvent;
 
+    function IsDisabled: Boolean;
     function GetColorIndex: Byte;
 
     function  GetAlliances(aIndex: Integer): TKMAllianceType; inline;
@@ -95,7 +96,6 @@ type
     function GetGameFlagColor: Cardinal;
     function GetOwnerNiknameU: UnicodeString;
     procedure ChooseFirstStorehouse();
-    function IsDisabled: Boolean;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
