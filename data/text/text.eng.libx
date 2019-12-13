@@ -1320,6 +1320,12 @@
 1368:Maximum height of walkable tiles
 1369:Random map
 1370:Map was generated automatically with random map generator
+1371:Initial resources
+1372:Amount of initial resources
+1373:Low
+1374:Medium
+1375:High
+1376:Select size of the map
 1377:Try to start
 1378:Try to load save
 1379:Try to view replay
@@ -1330,9 +1336,3 @@
 1384:Vers.
 1385:Loading unsupported version could cause game not being properly loaded or even cause game crash
 1386:Unsupported version
-1387:Initial resources
-1388:Amount of initial resources
-1389:Low
-1390:Medium
-1391:High
-1392:Select size of the map
