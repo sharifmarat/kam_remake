@@ -323,9 +323,16 @@ begin
                               gGame.MapEditor.Revealers[fLastHand].Add(KMPoint(P[0]+1,P[1]+1), P[2]);
                           end else begin
                             if P[0] = 255 then
-                              gHands[fLastHand].FogOfWar.RevealEverything
-                            else if PointInMap(P[0]+1, P[1]+1) then
+                            begin
+                              gHands[fLastHand].FogOfWar.RevealEverything;
+                              gHands[fLastHand].FogOfWar.InitialRevealAll := True;
+                            end
+                            else
+                            if PointInMap(P[0]+1, P[1]+1) then
+                            begin
                               gHands[fLastHand].FogOfWar.RevealCircle(KMPoint(P[0]+1,P[1]+1), P[2], 255);
+                              gHands[fLastHand].FogOfWar.InitialRevealers.Add(KMPoint(P[0]+1,P[1]+1), P[2]);
+                            end;
                           end;
                         end;
 

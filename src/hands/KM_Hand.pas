@@ -945,7 +945,9 @@ end;
 
 
 function TKMHand.CanAddHousePlan(const aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
-var I,K,J,S,T,Tx,Ty: Integer; HA: THouseArea;
+var
+  I,K,J,S,T,Tx,Ty: Integer;
+  HA: THouseArea;
 begin
   Result := gTerrain.CanPlaceHouse(aLoc, aHouseType);
   if not Result then Exit;
@@ -959,7 +961,9 @@ begin
     Ty := aLoc.Y + I - 4;
     //AI ignores FOW (this function is used from scripting)
     Result := Result and gTerrain.TileInMapCoords(Tx, Ty, 1)
-                     and ((fHandType = hndComputer) or (fFogOfWar.CheckTileRevelation(Tx, Ty) > 0));
+                     and ((fHandType = hndComputer)
+                      or (NeedToChooseFirstStorehouse and fFogOfWar.CheckTileInitialRevelation(Tx, Ty)) //Use initial revelation for first storehouse
+                      or (not NeedToChooseFirstStorehouse and (fFogOfWar.CheckTileRevelation(Tx, Ty) > 0)));
     //This checks below require Tx;Ty to be within the map so exit immediately if they are not
     if not Result then exit;
 
@@ -1659,7 +1663,9 @@ begin
         P2 := KMPoint(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4);
 
         //Forbid planning on unrevealed areas and fieldplans
-        AllowBuild := aIgnoreFOW or (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
+        AllowBuild := aIgnoreFOW
+                      or (NeedToChooseFirstStorehouse and fFogOfWar.CheckTileInitialRevelation(P2.X, P2.Y)) //Use initial revelation for first storehouse
+                      or (not NeedToChooseFirstStorehouse and (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0));
 
         //This tile must not contain fields/houses of allied players or self
         if AllowBuild then
@@ -1874,8 +1880,6 @@ end;
 
 
 procedure TKMHand.ChooseFirstStorehouse();
-const
-  MAX_DISTANCE_FROM_CENTER_SCREEN = 25;
 var
   K: Integer;
   Entrance: TKMPoint;
@@ -1891,8 +1895,7 @@ begin
         begin
           Entrance := KMPointAdd( Loc, KMPoint(gRes.Houses[HouseType].EntranceOffsetX,0) );
           RemHousePlan(Entrance);
-          if (KMDistanceSqr(Entrance,CenterScreen) < sqr(MAX_DISTANCE_FROM_CENTER_SCREEN))
-            AND CanAddFieldPlan(KMPoint(Entrance.X, Entrance.Y+1), ftRoad) then
+          if CanAddFieldPlan(KMPoint(Entrance.X, Entrance.Y+1), ftRoad) then
             AddFirstStorehouse(Entrance);
         end;
   end;
