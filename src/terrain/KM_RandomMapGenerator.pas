@@ -1145,10 +1145,10 @@ procedure TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKM
 const
   RESOURCES: array[0..4] of TBiomeType = (btIron,btGold,btStone,btCoal,btCoal);
   VORONOI_STEP = 3;
-  RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.2,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
+  RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.1,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
   RES_AMOUNT: array[0..4] of Integer = (1, 1, 1, 2, 1);
-  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.15, 0.066, 0.3, 0.3);
+  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.35, 0.35);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
   // Find best place for resources (scan area around and find empy space)
