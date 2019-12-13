@@ -1874,6 +1874,8 @@ end;
 
 
 procedure TKMHand.ChooseFirstStorehouse();
+const
+  MAX_DISTANCE_FROM_CENTER_SCREEN = 25;
 var
   K: Integer;
   Entrance: TKMPoint;
@@ -1889,7 +1891,8 @@ begin
         begin
           Entrance := KMPointAdd( Loc, KMPoint(gRes.Houses[HouseType].EntranceOffsetX,0) );
           RemHousePlan(Entrance);
-          if CanAddFieldPlan(KMPoint(Entrance.X, Entrance.Y+1), ftRoad) then
+          if (KMDistanceSqr(Entrance,CenterScreen) < sqr(MAX_DISTANCE_FROM_CENTER_SCREEN))
+            AND CanAddFieldPlan(KMPoint(Entrance.X, Entrance.Y+1), ftRoad) then
             AddFirstStorehouse(Entrance);
         end;
   end;
