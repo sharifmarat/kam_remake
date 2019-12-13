@@ -94,7 +94,8 @@ type
     function LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
     function GetGameFlagColor: Cardinal;
     function GetOwnerNiknameU: UnicodeString;
-    procedure SelectFirstStorehouse();
+    procedure ChooseFirstStorehouse();
+    function IsDisabled: Boolean;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -114,6 +115,7 @@ type
     property FogOfWar: TKMFogOfWar read fFogOfWar;
     property UnitGroups: TKMUnitGroups read fUnitGroups;
     property MessageLog: TKMMessageLog read fMessageLog;
+    property Disabled: Boolean read IsDisabled;
 
     procedure SetHandIndex(aNewIndex: TKMHandID);
     procedure SetOwnerNikname(const aName: AnsiString); //MP owner nikname (empty in SP)
@@ -171,6 +173,8 @@ type
     function CanAddHousePlanAI(aX, aY: Word; aHouseType: TKMHouseType; aCheckInfluence: Boolean): Boolean;
 
     procedure AddFirstStorehouse(aEntrance: TKMPoint);
+    procedure ResetChooseLocation;
+    function NeedToChooseFirstStorehouse: Boolean;
     procedure AddRoadToList(const aLoc: TKMPoint);
     procedure AddRoad(const aLoc: TKMPoint);
     procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
@@ -200,6 +204,7 @@ type
     procedure GetPlansTablets(aList: TKMPointTagList; const aRect: TKMRect);
 
     function CanDoStatsUpdate(aTick: Cardinal): Boolean;
+    function DoCheckGoals: Boolean;
 
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure Load(LoadStream: TKMemoryStream); override;
@@ -213,7 +218,7 @@ type
 
   TKMHandAnimals = class (TKMHandCommon)
   public
-    function GetFishInWaterBody(aWaterID: Byte; FindHighestCount: Boolean=True): TKMUnitAnimal;
+    function GetFishInWaterBody(aWaterID: Byte; FindHighestCount: Boolean = True): TKMUnitAnimal;
   end;
 
   function GetStatsUpdatePeriod: Integer;
@@ -349,8 +354,7 @@ begin
   fFirstHSketch := TKMHouseSketchEdit.Create;
   fFoundHSketch := TKMHouseSketchEdit.Create;
 
-  fChooseLocation.Allowed := False;
-  fChooseLocation.Placed := False;
+  ResetChooseLocation;
 end;
 
 
@@ -378,6 +382,13 @@ begin
   FreeThenNil(fDeliveries);
   FreeThenNil(fBuildList);
   FreeThenNil(fAI);
+end;
+
+
+procedure TKMHand.ResetChooseLocation;
+begin
+  fChooseLocation.Allowed := False;
+  fChooseLocation.Placed := False;
 end;
 
 
@@ -897,6 +908,12 @@ begin
 end;
 
 
+function TKMHand.IsDisabled: Boolean;
+begin
+  Result := not Enabled;
+end;
+
+
 //See comment on CanAddFakeFieldPlan
 function TKMHand.CanAddFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
@@ -1287,7 +1304,8 @@ end;
 //Does the player has any assets (without assets player is harmless)
 function TKMHand.HasAssets: Boolean;
 begin
-  Result := (Houses.Count > 0) or (Units.Count > 0) or (GetFieldsCount > 0) or (ChooseLocation.Allowed and not ChooseLocation.Placed); //RMG - added ChooseLocation.Allowed option as a valid player
+  Result := (Houses.Count > 0) or (Units.Count > 0) or (GetFieldsCount > 0)
+            or NeedToChooseFirstStorehouse; //RMG - added ChooseLocation.Allowed option as a valid player
 end;
 
 
@@ -1834,7 +1852,7 @@ begin
   end;
 
   //AI update takes care of it's own interleaving, so run it every tick
-  fAI.UpdateState(aTick);
+  fAI.UpdateState(aTick, gHands.DoCheckGoals);
 
   //if (aTick + Byte(fPlayerIndex)) mod 20 = 0 then
     //fArmyEval.UpdateState;
@@ -1842,19 +1860,27 @@ begin
   if CanDoStatsUpdate(aTick) then
     fStats.UpdateState;
 
-  if fChooseLocation.Allowed AND not fChooseLocation.Placed then
-    SelectFirstStorehouse();
+  if gGame.IsNormalGame //Do not place first storehouse for replays/maped etc
+    and fChooseLocation.Allowed
+    and not fChooseLocation.Placed then
+    ChooseFirstStorehouse();
 end;
 
 
-procedure TKMHand.SelectFirstStorehouse();
+function TKMHand.NeedToChooseFirstStorehouse: Boolean;
+begin
+  Result := fChooseLocation.Allowed and not fChooseLocation.Placed;
+end;
+
+
+procedure TKMHand.ChooseFirstStorehouse();
 var
   K: Integer;
   Entrance: TKMPoint;
 begin
   if (HandType = hndComputer) then
     fChooseLocation.Placed := True
-  // Check if storehouse has been selected
+  // Check if storehouse has been placed
   else if (Stats.GetHouseTotal(htStore) > 0) then
   begin
     for K := 0 to BuildList.HousePlanList.Count - 1 do
@@ -1874,7 +1900,6 @@ begin
     gGameCursor.Tag1 := Byte(htStore);
   end;
 end;
-
 
 
 procedure TKMHand.AddFirstStorehouse(aEntrance: TKMPoint);
@@ -1916,13 +1941,20 @@ begin
       AddUnit(UT, KMPoint(aEntrance.X,aEntrance.Y+1));
   // Finish action
   fChooseLocation.Placed := True;
-  gGameCursor.Mode := cmRoad; // Preselect road
+  gGameCursor.Mode := cmNone; // Reset cursor
 end;
 
 
 function TKMHand.CanDoStatsUpdate(aTick: Cardinal): Boolean;
 begin
   Result := (aTick mod GetStatsUpdatePeriod = 0) or (aTick = 1);
+end;
+
+
+function TKMHand.DoCheckGoals: Boolean;
+begin
+  Result := not fChooseLocation.Allowed
+            or (fChooseLocation.Allowed and fChooseLocation.Placed);
 end;
 
 
@@ -1970,7 +2002,7 @@ end;
 
 
 { TKMHandAnimals }
-function TKMHandAnimals.GetFishInWaterBody(aWaterID: Byte; FindHighestCount: Boolean=True): TKMUnitAnimal;
+function TKMHandAnimals.GetFishInWaterBody(aWaterID: Byte; FindHighestCount: Boolean = True): TKMUnitAnimal;
 var
   I, HighestGroupCount: Integer;
   U: TKMUnit;
