@@ -179,7 +179,7 @@ begin
   if not gGame.IsMapEditor then
     for I := 0 to fCount - 1 do
       with fHandsList[I] do
-        if (HandType = hndComputer) then
+        if (HandType = hndComputer) AND NeedToChooseFirstStorehouse() then
           AI.PlaceFirstStorehouse(CenterScreen);
 
   gAIFields.AfterMissionInit;
