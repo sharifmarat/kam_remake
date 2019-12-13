@@ -57,7 +57,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
-    procedure UpdateState(aTick: Cardinal);
+    procedure UpdateState(aTick: Cardinal; aCheckGoals: Boolean);
     procedure AfterMissionInit();
     procedure PlaceFirstStorehouse(aLoc: TKMPoint); //RMG
 
@@ -460,13 +460,13 @@ begin
 end;
 
 
-procedure TKMHandAI.UpdateState(aTick: Cardinal);
+procedure TKMHandAI.UpdateState(aTick: Cardinal; aCheckGoals: Boolean);
 begin
   if (WonOrLost <> wolNone) then
     Exit;
   //Check goals for all players to maintain multiplayer consistency
   //AI victory/defeat is used in scripts (e.g. OnPlayerDefeated in battle tutorial)
-  if (aTick + Byte(fOwner)) mod MAX_HANDS = 0 then
+  if aCheckGoals and (((aTick + Byte(fOwner)) mod MAX_HANDS) = 0) then
     CheckGoals; //This procedure manages victory and loss
 
   case gHands[fOwner].HandType of

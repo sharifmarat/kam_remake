@@ -1318,6 +1318,8 @@
 1366:Step of the height algorithm (1 = small, 10 = big)
 1367:Slope of the height evaluation (0 = plateau, 15 = peak)
 1368:Maximum height of walkable tiles
+1369:Random map
+1370:Map was generated automatically with random map generator
 1377:Try to start
 1378:Try to load save
 1379:Try to view replay

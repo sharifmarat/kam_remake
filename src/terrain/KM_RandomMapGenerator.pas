@@ -492,9 +492,7 @@ begin
           [fMapX, fMapY, Players, Resource.Stone, Resource.Gold, Resource.Iron, InitResStr]
         ));
 
-    //gGame.MapTxtInfo.IsCoop := False;
-    gGame.MapTxtInfo.IsSpecial := True;
-    //gGame.MapTxtInfo.IsPlayableAsSP := True;
+    gGame.MapTxtInfo.IsRMG := True;
 
     gGame.MapTxtInfo.BlockTeamSelection := False;
     gGame.MapTxtInfo.BlockPeacetime := False;
