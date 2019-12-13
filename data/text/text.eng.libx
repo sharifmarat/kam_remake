@@ -1294,8 +1294,8 @@
 1342:Animals
 1343:Enable animals
 1344:Object density
-1345:Forests
-1346:Number of forests
+1345:Forests density
+1346:Forests density
 1347:Trees
 1348:Number of trees in the forest
 1349:Seed
@@ -1330,3 +1330,9 @@
 1384:Vers.
 1385:Loading unsupported version could cause game not being properly loaded or even cause game crash
 1386:Unsupported version
+1387:Initial resources
+1388:Amount of initial resources
+1389:Low
+1390:Medium
+1391:High
+1392:Select size of the map

@@ -273,16 +273,16 @@ begin
       TBar_Res_Iron.Step := 50;
       TBar_Res_Iron.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_IRON_HINT];
   // Preselection of initial resources
-    Lab := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, 'Initial resources', fntMetal, taLeft);
-      Lab.Hint := 'Amount of initial resources';
+    Lab := TKMLabel.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES], fntMetal, taLeft);
+      Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES_HINT];
       if not aMP then begin Lab.Hide; NextLine(Column_Y,-20) end;
     DList_InitRes := TKMDropList.Create(Panel_Settings, Column_X+OFFSET_1, NextLine(Column_Y), BOX_X-OFFSET_1, BOX_Y, fntMetal, '', bsMenu);
-      DList_InitRes.Add('Low', 0);
-      DList_InitRes.Add('Medium', 1);
-      DList_InitRes.Add('High', 2);
+      DList_InitRes.Add(gResTexts[TX_MAPED_RMG_SETTINGS_LOW], 0);
+      DList_InitRes.Add(gResTexts[TX_MAPED_RMG_SETTINGS_MEDIUM], 1);
+      DList_InitRes.Add(gResTexts[TX_MAPED_RMG_SETTINGS_HIGH], 2);
       DList_InitRes.ItemIndex := 0;
       DList_InitRes.Enabled := aMP;
-      DList_InitRes.Hint := 'Amount of initial resources';
+      DList_InitRes.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES_HINT];
       if not aMP then begin DList_InitRes.Hide; NextLine(Column_Y,-20) end;
 
 
@@ -463,17 +463,16 @@ begin
     TBar_ObjectDensity.Position := 6;
     TBar_ObjectDensity.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_OBJECTS_DENSITY_HINT];
   // Forests
-  Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS] + ' (x5)', fntMetal, taLeft);
-    Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_HINT];
-    TBar_Forests := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 100);
-    TBar_Forests.Position := 10;
-    TBar_Forests.Step := 5;
-    TBar_Forests.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_HINT];
+  Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_DENSITY], fntMetal, taLeft);
+    Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_DENSITY_HINT];
+    TBar_Forests := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 10);
+    TBar_Forests.Position := 5;
+    TBar_Forests.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_DENSITY_HINT];
   // Trees in forest
   Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_TREES], fntMetal, taLeft);
     Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_TREES_HINT];
     TBar_Trees := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 1, 30);
-    TBar_Trees.Position := 20;
+    TBar_Trees.Position := 17;
     TBar_Trees.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_TREES_HINT];
 
 
@@ -492,7 +491,7 @@ begin
       DList_MapSize.Add('224x224', 3);
       DList_MapSize.Add('256x256', 4);
       DList_MapSize.ItemIndex := 2;
-      DList_MapSize.Hint := 'Select size of the map';
+      DList_MapSize.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_MAP_SIZE_HINT];
   end
   else
   begin
@@ -635,7 +634,7 @@ procedure TKMMapEdRMG.RMG_Generate_Map(Sender: TObject);
       begin
         Active := Check_Objects.Checked;
         ObjectDensity := TBar_ObjectDensity.Position;
-        Forests := TBar_Forests.Position;
+        ForestDensity := TBar_Forests.Position;
         Trees := TBar_Trees.Position;
         Animals := Check_Animals.Checked;
       end;

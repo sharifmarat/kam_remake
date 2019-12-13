@@ -1860,7 +1860,7 @@ begin
   if CanDoStatsUpdate(aTick) then
     fStats.UpdateState;
 
-  if gGame.IsNormalGame //Do not place first storehouse for replays/maped etc
+  if not gGame.IsMapEditor //Do not place first storehouse in map editor etc
     and fChooseLocation.Allowed
     and not fChooseLocation.Placed then
     ChooseFirstStorehouse();
@@ -1894,7 +1894,9 @@ begin
         end;
   end;
   // Preselect storehouse
-  if not fChooseLocation.Placed then
+  if not gGame.IsReplayOrSpectate
+    AND (gMySpectator.HandID = ID)
+    AND not fChooseLocation.Placed then
   begin
     gGameCursor.Mode := cmHouses;
     gGameCursor.Tag1 := Byte(htStore);

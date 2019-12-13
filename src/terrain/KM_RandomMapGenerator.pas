@@ -54,7 +54,7 @@ type
     end;
     Objects: record
       Active, Animals: Boolean;
-      ObjectDensity, Forests, Trees: Byte;
+      ObjectDensity, ForestDensity, Trees: Byte;
     end;
     Seed: Integer;
     BasicTiles, CA: Boolean;
@@ -261,7 +261,7 @@ begin
     begin
       Active := True;
       ObjectDensity := 6;
-      Forests := 10;
+      ForestDensity := 10;
       Trees := 20;
       Animals := True;
     end;
@@ -931,7 +931,7 @@ end;
 
 // Generator of random points with minimal distance between them (algorithmic from division into areas with indetical size = very fast)
 // aCnt = minimal count (it will adapt to map size to secure that it is balanced
-// aSpace = minimal space between generated points (when it is high number points will be in grid)
+// aSpace = minimal space between generated points (points will be in grid if it is equal to infinity)
 // aMinimum, aMaximum = point will be generated in rectangle given by this points
 // Result = TKMPointArray of pseudorandom points
 function TKMRandomMapGenerator.RNDPointsInGrid(const aCnt: Single; aSpace: Integer; const aMinimum,aMaximum: TKMPoint): TKMPointArray;
@@ -1145,10 +1145,10 @@ procedure TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKM
 const
   RESOURCES: array[0..4] of TBiomeType = (btIron,btGold,btStone,btCoal,btCoal);
   VORONOI_STEP = 3;
-  RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.15,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
+  RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.2,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
   RES_AMOUNT: array[0..4] of Integer = (1, 1, 1, 2, 1);
-  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.3, 0.3);
+  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.15, 0.066, 0.3, 0.3);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
   // Find best place for resources (scan area around and find empy space)
@@ -3404,12 +3404,12 @@ var
 begin
 
 	// Forests
-  if (RMGSettings.Objects.Forests > 0) then
+  if (RMGSettings.Objects.ForestDensity > 0) then
   begin
     Minimum := KMPoint(1,1);
     Maximum.X := Max(fMapX - FOREST_RADIUS, Minimum.X + 1);
     Maximum.Y := Max(fMapY - FOREST_RADIUS, Minimum.Y + 1);
-    forests := RNDPointsInGrid(RMGSettings.Objects.Forests*10, 0, Minimum, Maximum);
+    forests := RNDPointsInGrid(fMapX*fMapY / sqr(4*(12-RMGSettings.Objects.ForestDensity)), 0, Minimum, Maximum);
 	  for cntForests := Low(forests) to High(forests) do
     begin
 		  count := 0;
