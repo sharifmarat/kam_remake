@@ -166,6 +166,7 @@ type
     function IsReplay: Boolean;
     function IsReplayOrSpectate: Boolean;
     function IsSingleplayer: Boolean;
+    function IsNormalGame: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedChangeAllowed: Boolean;
 
@@ -755,7 +756,8 @@ begin
 
   //Multiplayer missions don't have goals yet, so add the defaults (except for special/coop missions)
   if (fNetworking.SelectGameKind = ngkMap)
-  and not fNetworking.MapInfo.TxtInfo.IsSpecial and not fNetworking.MapInfo.TxtInfo.IsCoop then
+    and not fNetworking.MapInfo.TxtInfo.IsSpecial
+    and not fNetworking.MapInfo.TxtInfo.IsCoop then
     gHands.AddDefaultGoalsToAll(fMissionMode);
 
   fNetworking.OnPlay           := GameMPPlay;
@@ -1371,6 +1373,12 @@ end;
 function TKMGame.IsSingleplayer: Boolean;
 begin
   Result := fGameMode in [gmSingle, gmCampaign];
+end;
+
+
+function TKMGame.IsNormalGame: Boolean;
+begin
+  Result := fGameMode in [gmSingle, gmCampaign, gmMulti];
 end;
 
 
