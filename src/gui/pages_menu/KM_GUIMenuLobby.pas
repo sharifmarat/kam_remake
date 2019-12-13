@@ -1889,6 +1889,18 @@ begin
   fMapsMP.TerminateScan;
   fSavesMP.TerminateScan;
   DropCol_Maps.Clear; //Clear previous items in case scanning finds no maps/saves
+
+  if fNetworking.IsHost then
+  begin
+    DropCol_Maps.Show;
+    Label_MapName.Hide;
+  end
+  else
+  begin
+    DropCol_Maps.Hide;
+    Label_MapName.Show;
+  end;
+
   case Radio_MapType.ItemIndex of
     0,  //Build Map
     1,  //Fight Map
@@ -1913,9 +1925,9 @@ begin
         begin
           fMapsMP.Refresh(MapList_ScanUpdate, nil, MapList_ScanComplete);
           DropCol_Maps.DefaultCaption := MAPS_RMG_NAME;
-//          DropCol_Maps.Hide;
-//          Label_MapName.Caption := MAPS_RMG_NAME;
-//          Label_MapName.Show;
+          DropCol_Maps.Hide;
+          Label_MapName.Caption := MAPS_RMG_NAME;
+          Label_MapName.Show;
 
           InitDropColMapsList;
           fGuiRMG.Show;
