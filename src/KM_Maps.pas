@@ -37,6 +37,7 @@ type
     SmallDescLibx, BigDescLibx: Integer;
     IsCoop: Boolean; //Some multiplayer missions are defined as coop
     IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
+    IsRMG: Boolean; //Missions that were generated via Random Map Generator
     IsPlayableAsSP: Boolean; //Is MP map playable as SP map ?
 
     DifficultyLevels: TKMMissionDifficultySet;
@@ -913,6 +914,9 @@ begin
   if IsSpecial then
     WriteLine('SetSpecial');
 
+  if IsRMG then
+    WriteLine('RMG');
+
   if IsPlayableAsSP then
     WriteLine('PlayableAsSP');
 
@@ -1002,6 +1006,8 @@ begin
 
       if SameText(St, 'SetSpecial') then
         IsSpecial := True;
+      if SameText(St, 'RMG') then
+        IsRMG := True;
       if SameText(St, 'PlayableAsSP') then
         IsPlayableAsSP := True;
       if SameText(St, 'BlockPeacetime') then
@@ -1055,7 +1061,7 @@ end;
 
 function TKMMapTxtInfo.IsEmpty: Boolean;
 begin
-  Result := not (IsCoop or IsSpecial or IsPlayableAsSP
+  Result := not (IsCoop or IsSpecial or IsPlayableAsSP or IsRMG
             or BlockTeamSelection or BlockPeacetime or BlockFullMapPreview
             or (Author <> '')
             or (SmallDesc <> '') or IsSmallDescLibxSet
@@ -1079,6 +1085,7 @@ procedure TKMMapTxtInfo.ResetInfo;
 begin
   IsCoop := False;
   IsSpecial := False;
+  IsRMG := False;
   IsPlayableAsSP := False;
   BlockTeamSelection := False;
   BlockPeacetime := False;
@@ -1096,6 +1103,7 @@ procedure TKMMapTxtInfo.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(IsCoop);
   LoadStream.Read(IsSpecial);
+  LoadStream.Read(IsRMG);
   LoadStream.Read(IsPlayableAsSP);
 
   LoadStream.Read(BlockTeamSelection);
@@ -1112,6 +1120,7 @@ procedure TKMMapTxtInfo.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.Write(IsCoop);
   SaveStream.Write(IsSpecial);
+  SaveStream.Write(IsRMG);
   SaveStream.Write(IsPlayableAsSP);
 
   SaveStream.Write(BlockTeamSelection);
@@ -1300,8 +1309,8 @@ var TempMaps: array of TKMapInfo;
       smByHumanPlayersDesc:   Result := A.HumanPlayerCount > B.HumanPlayerCount;
       smByHumanPlayersMPAsc:  Result := A.HumanPlayerCountMP < B.HumanPlayerCountMP;
       smByHumanPlayersMPDesc: Result := A.HumanPlayerCountMP > B.HumanPlayerCountMP;
-      smByMissionModeAsc:            Result := A.MissionMode < B.MissionMode;
-      smByMissionModeDesc:           Result := A.MissionMode > B.MissionMode;
+      smByMissionModeAsc:     Result := A.MissionMode < B.MissionMode;
+      smByMissionModeDesc:    Result := A.MissionMode > B.MissionMode;
     end;
     if fDoSortWithFavourites and not (fSortMethod in [smByFavouriteAsc, smByFavouriteDesc]) then
     begin
