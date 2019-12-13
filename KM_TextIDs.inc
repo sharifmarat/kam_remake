@@ -1405,6 +1405,12 @@ TX_MAPED_RMG_SETTINGS_CLOSE_RMG_HINT = 1355; //Close Random Map Generator
 TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT = 1366; //Step of the height algorithm (1 = small, 10 = big)
 TX_MAPED_RMG_SETTINGS_HEIGHT_SLOPE_HINT = 1367; //Slope of the height evaluation (0 = plateau, 15 = peak)
 TX_MAPED_RMG_SETTINGS_HEIGHT_HEIGHTS_HINT = 1368; //Maximum height of walkable tiles
+TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES = 1371; //Initial resources
+TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES_HINT = 1372; //Amount of initial resources
+TX_MAPED_RMG_SETTINGS_LOW = 1373; //Low
+TX_MAPED_RMG_SETTINGS_MEDIUM = 1374; //Medium
+TX_MAPED_RMG_SETTINGS_HIGH = 1375; //High
+TX_MAPED_RMG_SETTINGS_MAP_SIZE_HINT = 1376; //Select size of the map
 
 TX_MENU_LOBBY_TRY_TO_START = 1377; //Try to start 
 TX_MENU_SAVE_TRY_TO_LOAD = 1378; //Try to load save
@@ -1413,9 +1419,3 @@ TX_UNSUPPORTED_SAVE_LOAD_ERROR_MSG = 1380; //Error loading unsupported version %
 TX_UNSUPPORTED_REPLAY_LOAD_ERROR_MSG = 1381; //Error loading unsupported version %s replay from %s
 TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT = 1385; //Loading unsupported version could cause game not being properly loaded or even cause game crash
 
-TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES = 1387; //Initial resources
-TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES_HINT = 1388; //Amount of initial resources
-TX_MAPED_RMG_SETTINGS_LOW = 1389; //Low
-TX_MAPED_RMG_SETTINGS_MEDIUM = 1390; //Medium
-TX_MAPED_RMG_SETTINGS_HIGH = 1391; //High
-TX_MAPED_RMG_SETTINGS_MAP_SIZE_HINT = 1392; //Select size of the map
