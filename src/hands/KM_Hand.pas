@@ -232,6 +232,9 @@ uses
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
   KM_GameTypes, KM_CommonUtils;
 
+const
+  TIME_TO_SET_FIRST_STOREHOUSE = 10*60*2; //We give 2 minutes to set first storehouse, otherwise player will be defeated
+
 
 { TKMHandCommon }
 constructor TKMHandCommon.Create(aHandIndex: TKMHandID);
@@ -1844,9 +1847,17 @@ begin
   if not Enabled then Exit;
 
   if not gGame.IsMapEditor
-    and (fHandType = hndComputer)
     and NeedToChooseFirstStorehouse() then
-    AI.PlaceFirstStorehouse(fCenterScreen);
+  begin
+    if aTick > TIME_TO_SET_FIRST_STOREHOUSE then
+    begin
+      AI.Defeat;
+      Exit;
+    end;
+
+    if fHandType = hndComputer then
+      AI.PlaceFirstStorehouse(fCenterScreen);
+  end;
 
   //Update Groups logic before Units
   fUnitGroups.UpdateState;
