@@ -20,7 +20,26 @@ var
 
 
 { KM_ArmyAttack }
+  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance         : Single = 6; // 1-12 ~6 Archers change target if the enemy is too close
+  GA_ATTACK_SQUAD_ChangeTarget_Delay                 : Word = 200; // [ticks] Archers cannot change target too often otherwise they don't shoot
+  GA_ATTACK_SQUAD_TargetReached_Position             : Word =   4; // Tolerance between reached point and actual position it is useful in traffic problems
+  GA_ATTACK_SQUAD_TargetReached_Unit                 : Word =   4; // Target unit should have lower tolerance because of group type pathfinding (cav will avoid spears etc)
+  GA_ATTACK_SQUAD_TargetReached_House                : Word =   8; // Houses should have larger tolerance because NavMesh does not work in cities properly
+  GA_ATTACK_SQUAD_TargetReached_RangedSquad          : Word =  15; // This should be more than maximal range of ranged groups (11*11)
+  GA_ATTACK_SQUAD_MinWalkingDistance                 : Word =   4; // Avoid group to be stucked in cities (higher = less stuck)
 
+
+  GA_ATTACK_COMPANY_AttackRadius                     : Word =  20; // Attack radius of company
+  GA_ATTACK_COMPANY_ProtectRangedRadius              : Word =  10; // Radius around ranged units where requires close combat protection
+  GA_ATTACK_COMPANY_AttackRangedGain                 : Single = 5;
+  GA_ATTACK_COMPANY_ProtectRangedGain                : Single = 1; // Gain of threat level if enemy is close to ranged group
+  GA_ATTACK_COMPANY_ProtectRangedAllInDist           : Word =   7; // If is enemy too cloose aim him but dont decrease threat level
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio1             : Single = 1;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio2             : Single = 0.7;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio3             : Single = 0.5;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single = 0.2;
+  GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =   7; // Max ticks per a tile (slow mode)
+  GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   4; // Max ticks per a tile (fast mode)
 
 { KM_ArmyDefence }
 
@@ -215,6 +234,11 @@ var
   GA_EYE_GetForests_SPRndOwnLimMax : Single = 201.641844511032; // Maximum influence of potential forest
   GA_EYE_GetForests_MinRndSoil     : Single =  81.396015167236; // 0-82
 //}
+
+
+{  KM_NavMeshPathFinding }
+  GA_PATHFINDING_AvoidTraffic      : Single =  1.5; // 1 tile is max 10 points, max value of ArmyTraffic is 20, this coefficient must increase the price
+  GA_PATHFINDING_AvoidSpecEnemy    : Single =  1;
 
 
 { KM_Supervisor }

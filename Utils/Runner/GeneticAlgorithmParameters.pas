@@ -22,6 +22,7 @@ type
     function GetParCnt_RoadPlanner(): Word;
     function GetParCnt_Forest(): Word;
     function GetParCnt_CityPlanner(): Word;
+    function GetParCnt_ArmyAttack(): Word;
     // Set global parameters
     procedure SetPar_HandLogistics(aIdv: TGAIndividual; aLogIt: Boolean = False);
     procedure SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False);
@@ -31,6 +32,7 @@ type
     procedure SetPar_RoadPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False);
     procedure SetPar_Forest(aIdv: TGAIndividual; aLogIt: Boolean = False);
     procedure SetPar_CityPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False);
+    procedure SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
   public
     constructor Create();
     destructor Destroy(); override;
@@ -86,6 +88,7 @@ begin
   else if (CompareStr(fClass, 'TKMRunnerGA_Quarry'       ) = 0) then Result := GetParCnt_Quarry
   else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then Result := GetParCnt_RoadPlanner
   else if (CompareStr(fClass, 'TKMRunnerGA_TestParRun'   ) = 0) then Result := GetParCnt_TestParRun
+  else if (CompareStr(fClass, 'TKMRunnerGA_ArmyAttack'   ) = 0) then Result := GetParCnt_ArmyAttack
   else Result := 0;
 end;
 
@@ -98,7 +101,8 @@ begin
   else if (CompareStr(fClass, 'TKMRunnerGA_HandLogistics') = 0) then SetPar_HandLogistics(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Manager'      ) = 0) then SetPar_Manager(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Quarry'       ) = 0) then SetPar_Quarry(aIdv, aLogIt)
-  else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then SetPar_RoadPlanner(aIdv, aLogIt);
+  else if (CompareStr(fClass, 'TKMRunnerGA_RoadPlanner'  ) = 0) then SetPar_RoadPlanner(aIdv, aLogIt)
+  else if (CompareStr(fClass, 'TKMRunnerGA_ArmyAttack'   ) = 0) then SetPar_ArmyAttack(aIdv, aLogIt);
 end;
 
 
@@ -486,5 +490,69 @@ begin
   end;
 end;
 
+
+
+
+function TGAParameterization.GetParCnt_ArmyAttack(): Word;
+begin
+  Result := 2+3+5+11;
+end;
+
+procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
+var
+  K: Integer;
+begin
+  K := 0;
+
+  GA_PATHFINDING_AvoidTraffic                    := 1.5 * aIdv.Gene[Incr(K)]; // 1.5
+  GA_PATHFINDING_AvoidSpecEnemy                  :=  1  * aIdv.Gene[Incr(K)]; // 1
+
+  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance     := 1 * aIdv.Gene[Incr(K)]; //   6;
+  GA_ATTACK_SQUAD_ChangeTarget_Delay             := Round(1 * aIdv.Gene[Incr(K)]); // 200;
+  GA_ATTACK_SQUAD_TargetReached_Position         := Round(1 * aIdv.Gene[Incr(K)]); //   4;
+  GA_ATTACK_SQUAD_TargetReached_Unit             := Round(1 * aIdv.Gene[Incr(K)]); //   4;
+  GA_ATTACK_SQUAD_TargetReached_House            := Round(1 * aIdv.Gene[Incr(K)]); //   8;
+  GA_ATTACK_SQUAD_TargetReached_RangedSquad      := Round(1 * aIdv.Gene[Incr(K)]); //  15;
+  GA_ATTACK_SQUAD_MinWalkingDistance             := Round(1 * aIdv.Gene[Incr(K)]); //   4;
+
+  GA_ATTACK_COMPANY_AttackRadius                 := Round(1 * aIdv.Gene[Incr(K)]); //  20;
+  GA_ATTACK_COMPANY_ProtectRangedRadius          := Round(1 * aIdv.Gene[Incr(K)]); //  10;
+  GA_ATTACK_COMPANY_AttackRangedGain             := 1 * aIdv.Gene[Incr(K)]; //   5;
+  GA_ATTACK_COMPANY_ProtectRangedGain            := 1 * aIdv.Gene[Incr(K)]; //   1;
+  GA_ATTACK_COMPANY_ProtectRangedAllInDist       := Round(1 * aIdv.Gene[Incr(K)]); //   7;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio1         := 1 * aIdv.Gene[Incr(K)]; //   1;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio2         := 1 * aIdv.Gene[Incr(K)]; //   0.7;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio3         := 1 * aIdv.Gene[Incr(K)]; //   0.5;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio4         := 1 * aIdv.Gene[Incr(K)]; //   0.2;
+  GA_ATTACK_COMPANY_TimePerATile_Slow            := Round(1 * aIdv.Gene[Incr(K)]); //   7;
+  GA_ATTACK_COMPANY_TimePerATile_Fast            := Round(1 * aIdv.Gene[Incr(K)]); //   4;
+
+
+  if aLogIt AND (fLogPar <> nil) then
+  begin
+    fLogPar.AddTime(Format('GA_PATHFINDING_AvoidTraffic                        : Single = %16.10f;',[ GA_PATHFINDING_AvoidTraffic                ]));
+    fLogPar.AddTime(Format('GA_PATHFINDING_AvoidSpecEnemy                      : Single = %16.10f;',[ GA_PATHFINDING_AvoidSpecEnemy              ]));
+
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_ChangeTarget_DistTolerance         : Single = %16.10f;',[ GA_ATTACK_SQUAD_ChangeTarget_DistTolerance ]));
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_ChangeTarget_Delay                 : Word = %4d;',      [ GA_ATTACK_SQUAD_ChangeTarget_Delay         ]));
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_TargetReached_Position             : Word = %4d;',      [ GA_ATTACK_SQUAD_TargetReached_Position     ]));
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_TargetReached_Unit                 : Word = %4d;',      [ GA_ATTACK_SQUAD_TargetReached_Unit         ]));
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_TargetReached_House                : Word = %4d;',      [ GA_ATTACK_SQUAD_TargetReached_House        ]));
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_TargetReached_RangedSquad          : Word = %4d;',      [ GA_ATTACK_SQUAD_TargetReached_RangedSquad  ]));
+    fLogPar.AddTime(Format('GA_ATTACK_SQUAD_MinWalkingDistance                 : Word = %4d;',      [ GA_ATTACK_SQUAD_MinWalkingDistance         ]));
+
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_AttackRadius                     : Word = %4d;',      [ GA_ATTACK_COMPANY_AttackRadius             ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_ProtectRangedRadius              : Word = %4d;',      [ GA_ATTACK_COMPANY_ProtectRangedRadius      ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_AttackRangedGain                 : Single = %16.10f;',[ GA_ATTACK_COMPANY_AttackRangedGain         ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_ProtectRangedGain                : Single = %16.10f;',[ GA_ATTACK_COMPANY_ProtectRangedGain        ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_ProtectRangedAllInDist           : Word = %4d;',      [ GA_ATTACK_COMPANY_ProtectRangedAllInDist   ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_DecreaseThreat_Prio1             : Single = %16.10f;',[ GA_ATTACK_COMPANY_DecreaseThreat_Prio1     ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_DecreaseThreat_Prio2             : Single = %16.10f;',[ GA_ATTACK_COMPANY_DecreaseThreat_Prio2     ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_DecreaseThreat_Prio3             : Single = %16.10f;',[ GA_ATTACK_COMPANY_DecreaseThreat_Prio3     ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single = %16.10f;',[ GA_ATTACK_COMPANY_DecreaseThreat_Prio4     ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_TimePerATile_Slow                : Word = %4d;',      [ GA_ATTACK_COMPANY_TimePerATile_Slow        ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_TimePerATile_Fast                : Word = %4d;',      [ GA_ATTACK_COMPANY_TimePerATile_Fast        ]));
+  end;
+end;
 
 end.
