@@ -165,6 +165,7 @@ type
     function IsMultiplayer: Boolean;
     function IsReplay: Boolean;
     function IsReplayOrSpectate: Boolean;
+    function IsSingleplayerGame: Boolean;
     function IsSingleplayer: Boolean;
     function IsNormalGame: Boolean;
     function IsSpeedUpAllowed: Boolean;
@@ -1370,9 +1371,15 @@ begin
 end;
 
 
-function TKMGame.IsSingleplayer: Boolean;
+function TKMGame.IsSingleplayerGame: Boolean;
 begin
   Result := fGameMode in [gmSingle, gmCampaign];
+end;
+
+
+function TKMGame.IsSingleplayer: Boolean;
+begin
+  Result := fGameMode in [gmSingle, gmCampaign, gmReplaySingle];
 end;
 
 
@@ -1591,7 +1598,7 @@ end;
 
 function TKMGame.AllowGetPointer: Boolean;
 begin
-  Result := IsSinglePlayer or IsMapEditor or not BlockGetPointer;
+  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer;
 end;
 
 
