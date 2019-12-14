@@ -1516,7 +1516,8 @@ begin
         Result := gGame.TextMission[HANDS_NAMES_OFFSET + fID];
 
   //If this location is controlled by an MP player - show his nik
-  if fOwnerNikname <> '' then
+  if (fOwnerNikname <> '')
+    and (HandType = hndHuman) then //we could ask AI to play on ex human loc, so fOwnerNikname will be still some human name
     Result := UnicodeString(fOwnerNikname);
 end;
 
@@ -1841,6 +1842,11 @@ end;
 procedure TKMHand.UpdateState(aTick: Cardinal);
 begin
   if not Enabled then Exit;
+
+  if not gGame.IsMapEditor
+    and (fHandType = hndComputer)
+    and NeedToChooseFirstStorehouse() then
+    AI.PlaceFirstStorehouse(fCenterScreen);
 
   //Update Groups logic before Units
   fUnitGroups.UpdateState;
