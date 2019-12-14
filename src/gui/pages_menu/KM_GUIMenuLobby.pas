@@ -2083,7 +2083,8 @@ begin
       //Presect RMG map, if we have it in map list
       if fNetworking.IsHost
         and (Radio_MapType.ItemIndex = MAP_TYPE_INDEX_RMG)
-        and (fMapsMP[I].FileName = MAPS_RMG_NAME) then
+        and (fMapsMP[I].FileName = MAPS_RMG_NAME)
+        and fMapsMP[I].TxtInfo.IsRMG then
         SelectRMGMap;
 
       if AddMap and fNetworking.NetGameFilter.FilterMap(fMapsMP[I].CRC) then
