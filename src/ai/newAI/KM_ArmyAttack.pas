@@ -864,6 +864,9 @@ var
     // Close combat groups view: enemy units -> select oponent => keep something in reserve
     Cnt := Length(TargetU);
     BestGT := gtMelee;
+    TargetIdx := 0; // For compiler
+    BestPrioIdx := 0; // For compiler
+    BestPrioCoeff := 1; // For compiler
     repeat
       // Find top threat
       HighestThreat := INIT_THREAT;
@@ -915,78 +918,6 @@ var
         AvailableSquads[BestGT].Squads[TargetIdx] := AvailableSquads[BestGT].Squads[ AvailableSquads[BestGT].Count ];
       end;
     until (Cnt <= 0) OR (BestDist >= INIT_DISTANCE);
-
-
-      {
-    for I := 0 to Length(TargetU) - 1 do
-      if (TargetU[I].CloseThreat > 0) then
-      begin
-        for K := 0 to 3 do
-        begin
-          GT := BEST_TARGET[  UGA[ TargetU[I].Index ].GroupType, K  ];
-          if (GT = gtRanged) then // Skip ranged groups
-            continue;
-          while (TargetU[I].CloseThreat > 0) AND (AvailableSquads[GT].Count > 0) do
-          begin
-            BestDist := INIT_DISTANCE;
-            for L := 0 to AvailableSquads[GT].Count - 1 do
-            begin
-              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ TargetU[I].Index ].CurrPosition);
-              if (Dist < BestDist) then
-              begin
-                BestDist := Dist;
-                TargetIdx := L;
-              end;
-            end;
-
-            Output := True;
-            Squad := AvailableSquads[GT].Squads[TargetIdx];
-            Squad.TargetUnit := UGA[ TargetU[I].Index ].GetAliveMember;
-            TargetU[I].CloseThreat := TargetU[I].CloseThreat - Squad.Group.Count/2;
-            Dec(AvailableSquads[GT].Count);
-            AvailableSquads[GT].Squads[TargetIdx] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
-          end;
-        end;
-        BestGT := gtMelee;
-        repeat
-          // Find best close combat support
-          BestDist := INIT_DISTANCE;
-          for K := 0 to 3 do
-          begin
-            GT := BEST_TARGET[  UGA[ TargetU[I].Index ].GroupType, K  ];
-            for L := 0 to AvailableSquads[GT].Count - 1 do
-            begin
-              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ TargetU[I].Index ].CurrPosition) + K * 100;
-              if (Dist < BestDist) then
-              begin
-                BestDist := Dist;
-                TargetIdx := L;
-                BestGT := GT;
-                BestPrioIdx := K;
-              end;
-            end;
-          end;
-          // Set target
-          if (BestDist < INIT_DISTANCE) then
-          begin
-            Output := True;
-            Squad := AvailableSquads[BestGT].Squads[TargetIdx];
-            Squad.TargetUnit := UGA[ TargetU[I].Index ].GetAliveMember;
-            // Update threat level and call another squad if needed
-            case BestPrioIdx of
-              0: BestPrioCoeff := GA_ATTACK_COMPANY_DecreaseThreat_Prio1;
-              1: BestPrioCoeff := GA_ATTACK_COMPANY_DecreaseThreat_Prio2;
-              2: BestPrioCoeff := GA_ATTACK_COMPANY_DecreaseThreat_Prio3;
-              3: BestPrioCoeff := GA_ATTACK_COMPANY_DecreaseThreat_Prio4;
-            end;
-            TargetU[I].CloseThreat := TargetU[I].CloseThreat - Squad.Group.Count * BestPrioCoeff;
-            Dec(AvailableSquads[BestGT].Count);
-            AvailableSquads[BestGT].Squads[TargetIdx] := AvailableSquads[BestGT].Squads[ AvailableSquads[BestGT].Count ];
-          end;
-        until (TargetU[I].CloseThreat <= 0) OR (BestDist >= INIT_DISTANCE);
-      end;
-
-          }
     Result := Output;
   end;
 
@@ -1160,9 +1091,6 @@ end;
 function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boolean;
 
   function GetInitPolygons(aCnt: Integer; var aPointPath: TKMPointArray): TKMWordArray;
-  const
-    MINIMAL_MOVEMENT = 5;
-    INIT_POLYGONS_COEF = 3;
   var
     InitPolygon: Word;
     I, Idx: Integer;
@@ -1170,7 +1098,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
   begin
     // Get initial point on the path (it must be in specific distance from actual position to secure smooth moving of the company)
     I := Length(aPointPath)-1;
-    while (I >= 0) AND (KMDistanceAbs(aActualPosition, aPointPath[I]) < MINIMAL_MOVEMENT) do
+    while (I >= 0) AND (KMDistanceAbs(aActualPosition, aPointPath[I]) < GA_ATTACK_COMPANY_MinimumMovement) do
       I := I - 1;
     // Make sure that platoon will not start in actual polygon but position will be moved forward
     InitPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aActualPosition ];
@@ -1181,7 +1109,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
 
     I := Max(0,I + 1); // I = 0 we are in polygon of our target
     // Get several init polygons
-    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, aCnt div INIT_POLYGONS_COEF)) );
+    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, aCnt div GA_ATTACK_COMPANY_Positioning_InitPolyCnt)) );
     Idx := 0;
     while (I >= 0) AND (Idx < Length(InitPolygons)) do
     begin
