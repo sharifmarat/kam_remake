@@ -1359,16 +1359,16 @@ begin
 end;
 
 
+function TKMGame.IsMultiplayerGame: Boolean;
+begin
+  Result := fGameMode = gmMulti;
+end;
+
+
 // We often need to see if game is MP
 function TKMGame.IsMultiPlayerOrSpec: Boolean;
 begin
   Result := fGameMode in [gmMulti, gmMultiSpectate];
-end;
-
-
-function TKMGame.IsMultiplayerGame: Boolean;
-begin
-  Result := fGameMode = gmMulti;
 end;
 
 
