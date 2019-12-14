@@ -77,6 +77,9 @@ type
 
   TWonOrLost = (wolNone, wolWon, wolLost);
 
+  //Menu load type - load / no load / load unsupported version
+  TKMGameStartMode = (gsmNoStart, gsmStart, gsmStartWithWarn, gsmNoStartWithWarn);
+
   TKMCustomScriptParam = (cspTHTroopCosts, cspMarketGoldPrice);
 
   TKMCustomScriptParamData = record

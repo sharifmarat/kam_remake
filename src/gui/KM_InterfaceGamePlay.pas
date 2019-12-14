@@ -463,7 +463,7 @@ begin
   try
     Button_Load.Enabled := InRange(ListBox_Load.ItemIndex, 0, fSaves.Count - 1)
                            and fSaves[ListBox_Load.ItemIndex].IsValid;
-    if InRange(ListBox_Load.ItemIndex,0,fSaves.Count-1) then
+    if InRange(ListBox_Load.ItemIndex, 0 ,fSaves.Count - 1) then
     begin
       Label_LoadDescription.Caption := fSaves[ListBox_Load.ItemIndex].GameInfo.GetTitleWithTime;
       fSave_Selected := ListBox_Load.ItemIndex;
@@ -1384,6 +1384,7 @@ begin
 
     ListBox_Save := TKMListBox.Create(Panel_Save, 0, 4, TB_WIDTH, 220, fntMetal, bsGame);
     ListBox_Save.AutoHideScrollBar := True;
+    ListBox_Save.SearchEnabled := True;
     ListBox_Save.OnChange := Menu_Save_ListChange;
 
     Label_SaveExists := TKMLabel.Create(Panel_Save,0,260,TB_WIDTH,30,gResTexts[TX_GAMEPLAY_SAVE_EXISTS],fntOutline,taLeft);
@@ -1402,6 +1403,7 @@ begin
 
     ListBox_Load := TKMListBox.Create(Panel_Load, 0, 2, TB_WIDTH, 260, fntMetal, bsGame);
     ListBox_Load.AutoHideScrollBar := True;
+    ListBox_Load.SearchEnabled := True;
     ListBox_Load.OnChange := Menu_Load_ListClick;
     ListBox_Load.OnDoubleClick := Menu_Load_Click;
 
@@ -3878,7 +3880,8 @@ begin
               begin
                 gGame.GameInputProcess.CmdBuild(gicBuildHousePlan, P, TKMHouseType(gGameCursor.Tag1));
                 // If shift pressed do not reset cursor (keep selected building)
-                if not (ssShift in Shift) then
+                if not (ssShift in Shift)
+                  and not gMySpectator.Hand.NeedToChooseFirstStorehouse then //Do not show Build menu after place first storehouse feature
                   fGuiGameBuild.Show;
               end
               else
@@ -4328,7 +4331,9 @@ begin
     begin
       if ObjToShowInfo is TKMUnit then
         S := S + TKMUnit(ObjToShowInfo).ObjToString
-      else if ObjToShowInfo is TKMUnitGroup then
+      else if (ObjToShowInfo is TKMUnitGroup)
+        and not TKMUnitGroup(ObjToShowInfo).IsDead
+        and (TKMUnitGroup(ObjToShowInfo).SelectedUnit <> nil) then
         S := S + TKMUnitGroup(ObjToShowInfo).SelectedUnit.ObjToString
       else if ObjToShowInfo is TKMHouse then
         S := S + TKMHouse(ObjToShowInfo).ObjToString;

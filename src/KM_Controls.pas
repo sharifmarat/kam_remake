@@ -661,7 +661,7 @@ type
   end;
 
 
-  TKMCheckBoxState = (cbsChecked, cbsSemiChecked, cbsUnchecked);
+  TKMCheckBoxState = (cbsUnchecked, cbsSemiChecked, cbsChecked);
 
   { Checkbox }
   TKMCheckBox = class(TKMControl)
@@ -1039,13 +1039,41 @@ type
   end;
 
 
-  TKMListBox = class(TKMControl)
+  TKMSearchableList = class(TKMControl)
+  private
+    fSearch: UnicodeString; //Contains user input characters we should search for
+    fLastKeyTime: Cardinal;
+  protected
+    fOnChange: TNotifyEvent;
+    function CanSearch: Boolean; virtual; abstract;
+    function GetRowCount: Integer; virtual; abstract;
+    function GetItemIndex: Integer; virtual; abstract;
+    procedure SetItemIndex(aIndex: Integer); virtual; abstract;
+    function GetTopIndex: Integer; virtual; abstract;
+    procedure SetTopIndex(aIndex: Integer); virtual; abstract;
+    function GetVisibleRows: Integer; virtual; abstract;
+    function GetItemString(aIndex: Integer): UnicodeString; virtual; abstract;
+
+    function KeyEventHandled(Key: Word; Shift: TShiftState): Boolean; virtual;
+    function CanChangeSelection: Boolean; virtual;
+  public
+    property ItemIndex: Integer read GetItemIndex write SetItemIndex;
+    property TopIndex: Integer read GetTopIndex write SetTopIndex;
+    property RowCount: Integer read GetRowCount;
+
+    function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
+    procedure KeyPress(Key: Char); override;
+    function KeyUp(Key: Word; Shift: TShiftState): Boolean; override;
+  end;
+
+
+  TKMListBox = class(TKMSearchableList)
   private
     fAutoHideScrollBar: Boolean;
     fBackAlpha: Single; //Alpha of background (usually 0.5, dropbox 1)
     fFont: TKMFont; //Should not be changed from inital value, it will mess up the word wrapping
     fItemHeight: Byte;
-    fItemIndex: Smallint;
+    fItemIndex: Integer;
     fItems: TStringList;
     fSeparatorPositions: array of Integer;
     fSeparatorHeight: Byte;
@@ -1053,9 +1081,7 @@ type
     fSeparatorTexts: TStringList;
     fSeparatorFont: TKMFont;
     fScrollBar: TKMScrollBar;
-    fOnChange: TNotifyEvent;
-    function GetTopIndex: Integer;
-    procedure SetTopIndex(aIndex: Integer);
+    fSearchEnabled: Boolean;
     procedure SetBackAlpha(aValue: single);
     procedure SetItemHeight(const Value: byte);
     procedure SetAutoHideScrollBar(Value: boolean);
@@ -1071,6 +1097,14 @@ type
     procedure SetVisible(aValue: Boolean); override;
     function GetSelfWidth: Integer; override;
     function DoHandleMouseWheelByDefault: Boolean; override;
+    //TKMSearchableList
+    function CanSearch: Boolean; override;
+    function GetRowCount: Integer; override;
+    function GetItemIndex: Integer; override;
+    procedure SetItemIndex(aIndex: Integer); override;
+    function GetTopIndex: Integer; override;
+    procedure SetTopIndex(aIndex: Integer); override;
+    function GetItemString(aIndex: Integer): UnicodeString; override;
   public
     ItemTags: array of Integer;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle;
@@ -1080,6 +1114,8 @@ type
     property AutoHideScrollBar: boolean read fAutoHideScrollBar write SetAutoHideScrollBar;
     property BackAlpha: Single write SetBackAlpha;
 
+    property SearchEnabled: Boolean read fSearchEnabled write fSearchEnabled;
+
     procedure Add(const aItem: UnicodeString; aTag: Integer = 0);
     procedure AddSeparator(aPosition: Integer; const aText: String = '');
     procedure ClearSeparators;
@@ -1088,19 +1124,16 @@ type
     function Count: Integer;
     function SeparatorsCount: Integer;
 
-    function GetVisibleRows: Integer;
+    function GetVisibleRows: Integer; override;
 
     property Item[aIndex: Integer]: UnicodeString read GetItem; default;
     property ItemHeight: Byte read fItemHeight write SetItemHeight; //Accessed by DropBox
-    property ItemIndex: Smallint read fItemIndex write fItemIndex;
-    property TopIndex: Integer read GetTopIndex write SetTopIndex;
 
     property SeparatorPos[aIndex: Integer]: Integer read GetSeparatorPos;
     property SeparatorFont: TKMFont read fSeparatorFont write fSeparatorFont;
     property SeparatorColor: TColor4 read fSeparatorColor write fSeparatorColor;
     property SeparatorHeight: Byte read fSeparatorHeight write fSeparatorHeight;
 
-    function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     function Selected: Boolean;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
@@ -1187,16 +1220,14 @@ type
     TriggerOnChange: Boolean;
   end;
 
-  TKMColumnBox = class(TKMControl)
+  TKMColumnBox = class(TKMSearchableList)
   private
     fFont: TKMFont;
     fBackAlpha: Single; //Alpha of background
     fEdgeAlpha: Single; //Alpha of outline
     fItemHeight: Byte;
-    fItemIndex: SmallInt;
+    fItemIndex: Integer;
     fSearchColumn: ShortInt; //which columns text we should search, -1 for disabled
-    fSearch: UnicodeString; //Contains user input characters we should search for
-    fLastKeyTime: Cardinal;
     fRowCount: Integer;
     fColumns: array of TKMListColumn;
     fHeader: TKMListHeader;
@@ -1206,13 +1237,10 @@ type
     fMouseOverColumn: SmallInt;
     fMouseOverCell: TKMPoint;
     fScrollBar: TKMScrollBar;
-    fOnChange: TNotifyEvent;
     fOnCellClick: TPointEventFunc;
     fOnCellClickShift: TPointEventShiftFunc;
     fOnChangeInvoked: Boolean;
-    function GetTopIndex: Integer;
-    procedure SetTopIndex(aIndex: Integer);
-    procedure SetBackAlpha(aValue: single);
+    procedure SetBackAlpha(aValue: Single);
     procedure SetEdgeAlpha(aValue: Single);
     function GetSortIndex: Integer;
     procedure SetSortIndex(aIndex: Integer);
@@ -1225,7 +1253,6 @@ type
     function GetColumn(aIndex: Integer): TKMListColumn;
     procedure ClearColumns;
     procedure SetSearchColumn(aValue: ShortInt);
-    procedure SetItemIndex(const Value: Smallint);
     procedure UpdateMouseOverPosition(X,Y: Integer);
     procedure UpdateItemIndex(Shift: TShiftState; var aOnChangeInvoked: Boolean);
     function GetItem(aIndex: Integer): TKMListRow;
@@ -1246,6 +1273,17 @@ type
     procedure DoPaintLine(aIndex: Integer; X,Y: Integer; PaintWidth: Integer; aAllowHighlight: Boolean = True); overload;
     procedure DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: Integer; aColumnsToShow: array of Boolean; aAllowHighlight: Boolean = True); overload;
     function GetHint: UnicodeString; override;
+
+    // TKMSearchableList methods implementation
+    function CanSearch: Boolean; override;
+    function GetRowCount: Integer; override;
+    function GetItemIndex: Integer; override;
+    procedure SetItemIndex(aIndex: Integer); override;
+    function GetTopIndex: Integer; override;
+    procedure SetTopIndex(aIndex: Integer); override;
+    function GetItemString(aIndex: Integer): UnicodeString; override;
+
+    function CanChangeSelection: Boolean; override;
   public
     HideSelection: Boolean;
     HighlightError: Boolean;
@@ -1265,7 +1303,7 @@ type
     procedure SetColumns(aHeaderFont: TKMFont; aCaptions, aHints: array of String; aOffsets: array of Word); overload;
     procedure AddItem(aItem: TKMListRow);
     procedure Clear;
-    function GetVisibleRows: Integer;
+    function GetVisibleRows: Integer; override;
     function GetVisibleRowsExact: Single;
     function IsSelected: Boolean;
     property ShowHeader: Boolean read fShowHeader write SetShowHeader;
@@ -1277,8 +1315,6 @@ type
     property EdgeAlpha: Single read fEdgeAlpha write SetEdgeAlpha;
     property RowCount: Integer read fRowCount;
     property ItemHeight: Byte read fItemHeight write fItemHeight;
-    property ItemIndex: Smallint read fItemIndex write SetItemIndex;
-    property TopIndex: Integer read GetTopIndex write SetTopIndex;
     property Header: TKMListHeader read fHeader;
 
     //Sort properties are just hints to render Up/Down arrows. Actual sorting is done by client
@@ -3932,7 +3968,6 @@ begin
   // If key is ignored, then check if can still handle it (check via OnIsKeyEventHandled)
   if not Result and Assigned(OnIsKeyEventHandled) then
     Result := OnIsKeyEventHandled(Self, Key);
-
 end;
 
 
@@ -6386,6 +6421,7 @@ begin
   fSeparatorTexts := TStringList.Create;
   fSeparatorFont := fntAntiqua; //Looks good on dark solid background
   fSeparatorColor := clListSeparatorShape;
+  fSearchEnabled := False;
 
   fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-20, aTop, 20, aHeight, saVertical, aStyle);
   UpdateScrollBar; //Initialise the scrollbar
@@ -6397,6 +6433,39 @@ begin
   fItems.Free;
   fSeparatorTexts.Free;
   inherited;
+end;
+
+
+function TKMListBox.CanSearch: Boolean;
+begin
+  Result := fSearchEnabled;
+end;
+
+
+function TKMListBox.GetRowCount: Integer;
+begin
+  Result := fItems.Count;
+end;
+
+
+procedure TKMListBox.SetItemIndex(aIndex: Integer);
+begin
+  if InRange(aIndex, 0, GetRowCount - 1) then
+    fItemIndex := aIndex
+  else
+    fItemIndex := -1;
+end;
+
+
+function TKMListBox.GetItemIndex: Integer;
+begin
+  Result := fItemIndex;
+end;
+
+
+function TKMListBox.GetItemString(aIndex: Integer): UnicodeString;
+begin
+  Result := fItems[aIndex];
 end;
 
 
@@ -6571,54 +6640,6 @@ begin
   for I := 0 to Length(fSeparatorPositions) - 1 do
     if fSeparatorPositions[I] <= aIndex then
       Inc(Result, fSeparatorHeight);
-end;
-
-
-function TKMListBox.KeyDown(Key: Word; Shift: TShiftState): Boolean;
-var
-  OldIndex, NewIndex: Integer;
-  PageScrolling: Boolean;
-begin
-  Result := Key in [VK_UP, VK_DOWN, VK_HOME, VK_END, VK_PRIOR, VK_NEXT];
-  if inherited KeyDown(Key, Shift) then Exit;
-
-  PageScrolling := False;
-  OldIndex := fItemIndex;
-  case Key of
-    VK_UP:      NewIndex := fItemIndex - 1;
-    VK_DOWN:    NewIndex := fItemIndex + 1;
-    VK_HOME:    NewIndex := 0;
-    VK_END:     NewIndex := Count - 1;
-    VK_PRIOR:   begin
-                    NewIndex := EnsureRange(fItemIndex - GetVisibleRows, 0, Count - 1);
-                    PageScrolling := True;
-                  end;
-    VK_NEXT:    begin
-                    NewIndex := EnsureRange(fItemIndex + GetVisibleRows, 0, Count - 1);
-                    PageScrolling := True;
-                  end;
-    VK_RETURN:  begin
-                  //Trigger click to hide drop downs
-                  if Assigned(fOnClick) then
-                    fOnClick(Self);
-                  Exit;
-                end;
-    else        Exit;
-  end;
-
-  if InRange(NewIndex, 0, Count - 1) then
-  begin
-    fItemIndex := NewIndex;
-    if PageScrolling then
-      TopIndex := fItemIndex - (OldIndex - TopIndex) // Save position from the top of the list
-    else if TopIndex < fItemIndex - (Height div fItemHeight) + 1 then //Moving down
-      TopIndex := fItemIndex - (Height div fItemHeight) + 1
-    else if TopIndex > fItemIndex then //Moving up
-      TopIndex := fItemIndex;
-  end;
-
-  if Assigned(fOnChange) and (NewIndex <> OldIndex) then
-    fOnChange(Self);
 end;
 
 
@@ -6944,6 +6965,121 @@ begin
 end;
 
 
+{ TKMSearchableList }
+procedure TKMSearchableList.KeyPress(Key: Char);
+var
+  I, OldIndex: Integer;
+begin
+  //KeyPress used only for key input search, do not allow unsupported Keys.
+  //Otherwise fOnChange will be invoked on any key pressed
+  if not IsCharAllowed(Key, acFileName) then Exit;
+
+  if not CanSearch then
+    Exit;
+
+  OldIndex := GetItemIndex;
+
+  //Allow to type several characters in a row to pick some item
+  if GetTimeSince(fLastKeyTime) < 1000 then
+    fSearch := fSearch + Key
+  else
+    fSearch := Key;
+
+  fLastKeyTime := TimeGet;
+
+  for I := 0 to GetRowCount - 1 do
+    if AnsiStartsText(fSearch, GetItemString(I)) then
+    begin
+      SetItemIndex(I);
+      SetTopIndex(GetItemIndex - GetVisibleRows div 2);
+      Break;
+    end;
+
+  if Assigned(fOnChange) and (OldIndex <> GetItemIndex) then
+    fOnChange(Self);
+end;
+
+
+function TKMSearchableList.KeyEventHandled(Key: Word; Shift: TShiftState): Boolean;
+begin
+  //We want these keys to be ignored
+  if Key in [VK_F1..VK_F12, VK_ESCAPE, VK_RETURN, VK_TAB] then
+    Result := False
+  else
+    Result := CanSearch or (Key in [VK_UP, VK_DOWN, VK_HOME, VK_END, VK_PRIOR, VK_NEXT]);
+
+  Result := Result and CanChangeSelection; //Don't handle keys if can't change selection
+end;
+
+
+function TKMSearchableList.CanChangeSelection: Boolean;
+begin
+  Result := True;
+end;
+
+
+function TKMSearchableList.KeyDown(Key: Word; Shift: TShiftState): Boolean;
+var
+  OldIndex, NewIndex: Integer;
+  PageScrolling: Boolean;
+begin
+  Result := KeyEventHandled(Key, Shift);
+  if inherited KeyDown(Key, Shift) then Exit;
+
+  if not CanChangeSelection then Exit; //Can't change selection
+
+  PageScrolling := False;
+  OldIndex := ItemIndex;
+  case Key of
+    VK_UP:      NewIndex := ItemIndex - 1;
+    VK_DOWN:    NewIndex := ItemIndex + 1;
+    VK_HOME:    NewIndex := 0;
+    VK_END:     NewIndex := RowCount - 1;
+    VK_PRIOR:   begin
+                  NewIndex := EnsureRange(ItemIndex - GetVisibleRows, 0, RowCount - 1);
+                  PageScrolling := True;
+                end;
+    VK_NEXT:    begin
+                  NewIndex := EnsureRange(ItemIndex + GetVisibleRows, 0, RowCount - 1);
+                  PageScrolling := True;
+                end;
+    VK_RETURN:  begin
+                  //Trigger click to hide drop downs
+                  if Assigned(fOnClick) then
+                    fOnClick(Self);
+                  //Double click on Enter
+                  if Assigned(fOnDoubleClick) then
+                    fOnDoubleClick(Self);
+                  Exit;
+                end;
+    else        Exit;
+  end;
+
+  if InRange(NewIndex, 0, RowCount - 1) then
+  begin
+    ItemIndex := NewIndex;
+    if PageScrolling then
+      TopIndex := ItemIndex - (OldIndex - TopIndex) // Save position from the top of the list
+    else if TopIndex < ItemIndex - GetVisibleRows + 1 then //Moving down
+      TopIndex := ItemIndex - GetVisibleRows + 1
+    else if TopIndex > ItemIndex then //Moving up
+      TopIndex := ItemIndex;
+  end;
+
+  if Assigned(fOnChange) and (OldIndex <> NewIndex) then
+    fOnChange(Self);
+end;
+
+
+function TKMSearchableList.KeyUp(Key: Word; Shift: TShiftState): Boolean;
+begin
+  Result := KeyEventHandled(Key, Shift);
+  if inherited KeyUp(Key, Shift) then Exit;
+
+  if Assigned(fOnChange) then fOnChange(Self);
+end;
+
+
 { TKMColumnListBox }
 constructor TKMColumnBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle);
 const
@@ -6973,6 +7109,30 @@ begin
   ClearColumns;
 
   inherited;
+end;
+
+
+function TKMColumnBox.CanSearch: Boolean;
+begin
+  Result := SearchColumn <> -1;
+end;
+
+
+function TKMColumnBox.GetRowCount: Integer;
+begin
+  Result := fRowCount;
+end;
+
+
+function TKMColumnBox.GetItemIndex: Integer;
+begin
+  Result := fItemIndex;
+end;
+
+
+function TKMColumnBox.GetItemString(aIndex: Integer): UnicodeString;
+begin
+  Result := Rows[aIndex].Cells[SearchColumn].Caption;
 end;
 
 
@@ -7025,10 +7185,10 @@ begin
 end;
 
 
-procedure TKMColumnBox.SetItemIndex(const Value: Smallint);
+procedure TKMColumnBox.SetItemIndex(aIndex: Integer);
 begin
-  if InRange(Value, 0, RowCount - 1) then
-    fItemIndex := Value
+  if InRange(aIndex, 0, RowCount - 1) then
+    fItemIndex := aIndex
   else
     fItemIndex := -1;
 end;
@@ -7301,95 +7461,26 @@ end;
 
 
 function TKMColumnBox.KeyDown(Key: Word; Shift: TShiftState): Boolean;
-var
-  OldIndex, NewIndex: Integer;
-  PageScrolling: Boolean;
 begin
   Result := False;
   if PassAllKeys then Exit;
   
-  Result := (Key in [VK_UP, VK_DOWN, VK_HOME, VK_END, VK_PRIOR, VK_NEXT]) and not HideSelection;
-  if inherited KeyDown(Key, Shift) then Exit;
+  Result := inherited;
+end;
 
-  if HideSelection then Exit; //Can't change selection if it's hidden
 
-  PageScrolling := False;
-  OldIndex := fItemIndex;
-  case Key of
-    VK_UP:      NewIndex := fItemIndex - 1;
-    VK_DOWN:    NewIndex := fItemIndex + 1;
-    VK_HOME:    NewIndex := 0;
-    VK_END:     NewIndex := fRowCount - 1;
-    VK_PRIOR:   begin
-                  NewIndex := EnsureRange(fItemIndex - GetVisibleRows, 0, fRowCount - 1);
-                  PageScrolling := True;
-                end;
-    VK_NEXT:    begin
-                  NewIndex := EnsureRange(fItemIndex + GetVisibleRows, 0, fRowCount - 1);
-                  PageScrolling := True;
-                end;
-    VK_RETURN:  begin
-                  //Trigger click to hide drop downs
-                  if Assigned(fOnClick) then
-                    fOnClick(Self);
-                    //Double click on Enter
-                    if Assigned(fOnDoubleClick) then
-                      fOnDoubleClick(Self);
-                  Exit;
-                end;
-    else        Exit;
-  end;
-
-  if InRange(NewIndex, 0, fRowCount - 1) then
-  begin
-    ItemIndex := NewIndex;
-    if PageScrolling then
-      TopIndex := fItemIndex - (OldIndex - TopIndex) // Save position from the top of the list
-    else if TopIndex < fItemIndex - GetVisibleRows + 1 then //Moving down
-    TopIndex := fItemIndex - GetVisibleRows + 1
-    else if TopIndex > fItemIndex then //Moving up
-    TopIndex := fItemIndex;
-  end;
-
-  if Assigned(fOnChange) and (OldIndex <> NewIndex) then
-    fOnChange(Self);
+function TKMColumnBox.CanChangeSelection: Boolean;
+begin
+  Result := not HideSelection;
 end;
 
 
 procedure TKMColumnBox.KeyPress(Key: Char);
-var
-  I: Integer;
 begin
   if PassAllKeys then
     Exit
   else
-  begin
-    //KeyPress used only for key input search, do not allow unsupported Keys.
-    //Otherwise fOnChange will be invoked on any key pressed
-    if not IsCharAllowed(Key, acFileName) then Exit;
-
-    if SearchColumn = -1 then
-      Exit;
-
-    //Allow to type several characters in a row to pick some item
-    if GetTimeSince(fLastKeyTime) < 1000 then
-      fSearch := fSearch + Key
-    else
-      fSearch := Key;
-
-    fLastKeyTime := TimeGet;
-
-    for I := 0 to fRowCount - 1 do
-    if AnsiStartsText(fSearch, Rows[I].Cells[SearchColumn].Caption) then
-    begin
-      ItemIndex := I;
-      TopIndex := fItemIndex - GetVisibleRows div 2;
-      Break;
-    end;
-
-    if Assigned(fOnChange) then
-      fOnChange(Self);
-  end;
+    inherited;
 end;
 
 
