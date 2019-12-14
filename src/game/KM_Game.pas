@@ -162,7 +162,7 @@ type
     function IsMapEditor: Boolean;
     function IsCampaign: Boolean;
     function IsMultiPlayerOrSpec: Boolean;
-    function IsMultiplayer: Boolean;
+    function IsMultiplayerGame: Boolean;
     function IsReplay: Boolean;
     function IsReplayOrSpectate: Boolean;
     function IsSingleplayerGame: Boolean;
@@ -1365,7 +1365,7 @@ begin
 end;
 
 
-function TKMGame.IsMultiplayer: Boolean;
+function TKMGame.IsMultiplayerGame: Boolean;
 begin
   Result := fGameMode = gmMulti;
 end;
