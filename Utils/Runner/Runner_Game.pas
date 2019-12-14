@@ -534,6 +534,8 @@ end;
 procedure TKMRunnerGA_ArmyAttack.InitGAParameters();
 begin
   inherited;
+  f_SIM_SimulationTimeInMin := 10;
+  f_SIM_NumberOfMaps  := 17;
   f_SIM_MapNamePrefix := 'GA_S2_%.3d';
   f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_ArmyAttack');
 end;
