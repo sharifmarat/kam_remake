@@ -279,7 +279,6 @@ type
   TKMPointCenteredList = class(TKMWeightedPointList)
   private
     fCenter: TKMPoint;
-    fWeight: array of Single;
   public
     constructor Create(aCenter: TKMPoint);
     procedure Add(const aLoc: TKMPoint); reintroduce;
