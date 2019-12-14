@@ -495,7 +495,7 @@ end;
 
 function TGAParameterization.GetParCnt_ArmyAttack(): Word;
 begin
-  Result := 2+3+5+11;
+  Result := 2+7+11;
 end;
 
 procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
@@ -504,28 +504,28 @@ var
 begin
   K := 0;
 
-  GA_PATHFINDING_AvoidTraffic                    := 1.5 * aIdv.Gene[Incr(K)]; // 1.5
-  GA_PATHFINDING_AvoidSpecEnemy                  :=  1  * aIdv.Gene[Incr(K)]; // 1
+  GA_PATHFINDING_AvoidTraffic                    := 3 * aIdv.Gene[Incr(K)]; // 1.5
+  GA_PATHFINDING_AvoidSpecEnemy                  := 3 * aIdv.Gene[Incr(K)]; // 1
 
-  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance     := 1 * aIdv.Gene[Incr(K)]; //   6;
-  GA_ATTACK_SQUAD_ChangeTarget_Delay             := Round(1 * aIdv.Gene[Incr(K)]); // 200;
-  GA_ATTACK_SQUAD_TargetReached_Position         := Round(1 * aIdv.Gene[Incr(K)]); //   4;
-  GA_ATTACK_SQUAD_TargetReached_Unit             := Round(1 * aIdv.Gene[Incr(K)]); //   4;
-  GA_ATTACK_SQUAD_TargetReached_House            := Round(1 * aIdv.Gene[Incr(K)]); //   8;
-  GA_ATTACK_SQUAD_TargetReached_RangedSquad      := Round(1 * aIdv.Gene[Incr(K)]); //  15;
-  GA_ATTACK_SQUAD_MinWalkingDistance             := Round(1 * aIdv.Gene[Incr(K)]); //   4;
+  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance     := 10 * aIdv.Gene[Incr(K)]; //   6;
+  GA_ATTACK_SQUAD_ChangeTarget_Delay             :=  0 + Round(aIdv.Gene[Incr(K)] * 1000); // 200;
+  GA_ATTACK_SQUAD_TargetReached_Position         :=  0 + Round(aIdv.Gene[Incr(K)] *    8); //   4;
+  GA_ATTACK_SQUAD_TargetReached_Unit             :=  0 + Round(aIdv.Gene[Incr(K)] *   12); //   4;
+  GA_ATTACK_SQUAD_TargetReached_House            :=  0 + Round(aIdv.Gene[Incr(K)] *    8); //   8;
+  GA_ATTACK_SQUAD_TargetReached_RangedSquad      := 10 + Round(aIdv.Gene[Incr(K)] *   10); //  15;
+  GA_ATTACK_SQUAD_MinWalkingDistance             :=  0 + Round(aIdv.Gene[Incr(K)] *   10); //   4;
 
-  GA_ATTACK_COMPANY_AttackRadius                 := Round(1 * aIdv.Gene[Incr(K)]); //  20;
-  GA_ATTACK_COMPANY_ProtectRangedRadius          := Round(1 * aIdv.Gene[Incr(K)]); //  10;
-  GA_ATTACK_COMPANY_AttackRangedGain             := 1 * aIdv.Gene[Incr(K)]; //   5;
-  GA_ATTACK_COMPANY_ProtectRangedGain            := 1 * aIdv.Gene[Incr(K)]; //   1;
-  GA_ATTACK_COMPANY_ProtectRangedAllInDist       := Round(1 * aIdv.Gene[Incr(K)]); //   7;
+  GA_ATTACK_COMPANY_AttackRadius                 := 10 + Round(aIdv.Gene[Incr(K)] *   20); //  20;
+  GA_ATTACK_COMPANY_ProtectRangedRadius          :=  4 + Round(aIdv.Gene[Incr(K)] *   10); //  10;
+  GA_ATTACK_COMPANY_AttackRangedGain             := 10 * aIdv.Gene[Incr(K)]; //   5;
+  GA_ATTACK_COMPANY_ProtectRangedGain            := 10 * aIdv.Gene[Incr(K)]; //   1;
+  GA_ATTACK_COMPANY_ProtectRangedAllInDist       :=  0 + Round(aIdv.Gene[Incr(K)] *   10); //   7;
   GA_ATTACK_COMPANY_DecreaseThreat_Prio1         := 1 * aIdv.Gene[Incr(K)]; //   1;
   GA_ATTACK_COMPANY_DecreaseThreat_Prio2         := 1 * aIdv.Gene[Incr(K)]; //   0.7;
   GA_ATTACK_COMPANY_DecreaseThreat_Prio3         := 1 * aIdv.Gene[Incr(K)]; //   0.5;
   GA_ATTACK_COMPANY_DecreaseThreat_Prio4         := 1 * aIdv.Gene[Incr(K)]; //   0.2;
-  GA_ATTACK_COMPANY_TimePerATile_Slow            := Round(1 * aIdv.Gene[Incr(K)]); //   7;
-  GA_ATTACK_COMPANY_TimePerATile_Fast            := Round(1 * aIdv.Gene[Incr(K)]); //   4;
+  GA_ATTACK_COMPANY_TimePerATile_Slow            :=  1 + Round(aIdv.Gene[Incr(K)] *   10); //   7;
+  GA_ATTACK_COMPANY_TimePerATile_Fast            :=  1 + Round(aIdv.Gene[Incr(K)] *   10); //   4;
 
 
   if aLogIt AND (fLogPar <> nil) then
