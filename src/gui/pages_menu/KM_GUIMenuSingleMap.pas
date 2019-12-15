@@ -697,6 +697,10 @@ begin
     for I := 0 to fMaps.Count - 1 do
       if fLastMapCRC = fMaps[I].CRC then
       begin
+        //Unlock before TerminateScan,
+        //or we can get deadlock when try to start game quickly while scanning is still in progress
+        //it could be done if press Enter to start the game just after entering SP maps list menu
+        fMaps.Unlock;
         //Scan should be terminated, as it is no longer needed
         fMaps.TerminateScan;
 
@@ -705,7 +709,10 @@ begin
         Exit;
       end;
   finally
-    fMaps.Unlock; // Even if Exit; happens Unlock will be called anyway
+    //Even if Exit; happens Unlock will be called anyway
+    //Double call Unlock should not harm
+    //we just allow other threads to use code after that point
+    fMaps.Unlock;
   end;
 
   raise Exception.Create('We should NOT reach here, since we checked that the start button was enabled'); //We should NOT reach here, since we checked that the start button was enabled
