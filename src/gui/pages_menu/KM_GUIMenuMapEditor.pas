@@ -457,7 +457,6 @@ end;
 procedure TKMMenuMapEditor.LoadClick(Sender: TObject);
 var
   MapEdSizeX, MapEdSizeY: Integer;
-  ID: Integer;
   Map: TKMapInfo;
 begin
   fMaps.Lock;

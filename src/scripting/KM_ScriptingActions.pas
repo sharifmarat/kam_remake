@@ -176,7 +176,7 @@ uses
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
-  KM_HouseWoodcutters, KM_HouseTownHall;
+  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor;
 
 const
   MIN_SOUND_AT_LOC_RADIUS = 28;
