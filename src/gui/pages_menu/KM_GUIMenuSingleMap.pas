@@ -687,6 +687,7 @@ end;
 procedure TKMMenuSingleMap.StartClick(Sender: TObject);
 var
   I: Integer;
+  Map: TKMapInfo;
 begin
   //This is also called by double clicking on a list entry
   if not Button_Start.Enabled then
@@ -697,6 +698,8 @@ begin
     for I := 0 to fMaps.Count - 1 do
       if fLastMapCRC = fMaps[I].CRC then
       begin
+        Map := fMaps[I]; //save map locally, cause we will unlock fMaps before using it
+
         //Unlock before TerminateScan,
         //or we can get deadlock when try to start game quickly while scanning is still in progress
         //it could be done if press Enter to start the game just after entering SP maps list menu
@@ -705,7 +708,7 @@ begin
         fMaps.TerminateScan;
 
         //Provide mission FileName mask and title here
-        gGameApp.NewSingleMap(fMaps[I].FullPath('.dat'), fMaps[I].FileName, fSingleLoc, fSingleColor, fDifficulty, fAIType);
+        gGameApp.NewSingleMap(Map.FullPath('.dat'), Map.FileName, fSingleLoc, fSingleColor, fDifficulty, fAIType);
         Exit;
       end;
   finally
