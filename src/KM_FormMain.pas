@@ -126,6 +126,7 @@ type
     cpUserInreface: TCategoryPanel;
     cpGraphicTweaks: TCategoryPanel;
     cpLogs: TCategoryPanel;
+    chkSnowHouses: TCheckBox;
     {$ENDIF}
     {$IFDEF FPC}
     mainGroup: TGroupBox;
@@ -139,7 +140,6 @@ type
     LoadSavThenRpl: TMenuItem;
     N7: TMenuItem;
     ReloadLibx: TMenuItem;
-    chkSnowHouses: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
