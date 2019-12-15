@@ -3,7 +3,7 @@ unit KM_Units;
 interface
 uses
   Classes, Math, SysUtils, KromUtils, Types,
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points, KM_CommonUtils,
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points, KM_CommonUtils, KM_PointerContainer,
   KM_Terrain, KM_ResHouses, KM_ResWares, KM_Houses, KM_HouseSchool, KM_HouseBarracks, KM_HouseInn;
 
 //Memo on directives:
@@ -71,6 +71,13 @@ type
   end;
 
 
+  TKMUnitPointerContainer = class(TKMPointerContainer<TKMUnit>)
+  protected
+    function GetPointer(aPointerObject: TKMUnit): TKMUnit; override;
+    procedure ReleasePointer(aPointerObject: TKMUnit); override;
+  end;
+
+
   TKMUnit = class
   protected //Accessible for child classes
     fUID: Integer; //unique unit ID, used for save/load to sync to
@@ -119,6 +126,9 @@ type
     procedure UpdateHitPoints;
     procedure DoKill(aShowAnimation: Boolean);
     procedure DoDismiss;
+
+    function GetUnitPointer: TKMUnit; //Returns self and adds one to the pointer counter
+    procedure ReleaseUnitPointer;  //Decreases the pointer counter
   public
     AnimStep: Integer;
     IsExchanging: Boolean; //Current walk is an exchange, used for sliding
@@ -133,8 +143,6 @@ type
     procedure SyncLoad; virtual;
     destructor Destroy; override;
 
-    function GetUnitPointer: TKMUnit; //Returns self and adds one to the pointer counter
-    procedure ReleaseUnitPointer;  //Decreases the pointer counter
     property GetPointerCount: Word read fPointerCount;
 
     //Creates TTaskDie which then will Close the unit from further access
@@ -2482,6 +2490,22 @@ end;
 procedure TKMUnitTask.Paint;
 begin
 
+end;
+
+
+{ TKMUnitPointerContainer }
+function TKMUnitPointerContainer.GetPointer(aPointerObject: TKMUnit): TKMUnit;
+begin
+  Result := nil;
+  if aPointerObject <> nil then
+    Result := aPointerObject.GetUnitPointer;
+end;
+
+
+procedure TKMUnitPointerContainer.ReleasePointer(aPointerObject: TKMUnit);
+begin
+  if aPointerObject <> nil then
+    aPointerObject.ReleaseUnitPointer;
 end;
 
 

@@ -228,6 +228,7 @@ uses
 	
   KM_PerfLog in 'src\KM_PerfLog.pas',
   KM_Projectiles in 'src\KM_Projectiles.pas',
+  KM_PointerContainer in 'src\common\KM_PointerContainer.pas',
   
   KM_RandomChecks in 'src\KM_RandomChecks.pas',
 
