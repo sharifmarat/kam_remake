@@ -81,11 +81,11 @@ object FormMain: TFormMain
     HeaderStyle = hsThemed
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 489
+      Top = 559
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
-      ExplicitTop = 559
+      ExplicitWidth = 181
       object chkLogCommands: TCheckBox
         Left = 100
         Top = 8
@@ -159,10 +159,13 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 365
-      Height = 124
+      Top = 535
+      Height = 24
       Caption = 'Graphic tweaks'
+      Collapsed = True
       TabOrder = 1
+      ExplicitWidth = 181
+      ExpandedHeight = 124
       object Label1: TLabel
         Left = 101
         Top = 55
@@ -259,12 +262,12 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 341
+      Top = 511
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
-      ExplicitTop = 511
+      ExplicitWidth = 181
       ExpandedHeight = 72
       object chkUIControlsBounds: TCheckBox
         Left = 8
@@ -295,11 +298,11 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 175
+      Top = 345
       Height = 166
       Caption = 'AI'
       TabOrder = 3
-      ExplicitTop = 345
+      ExplicitWidth = 181
       object Label5: TLabel
         Left = 106
         Top = 111
@@ -459,11 +462,10 @@ object FormMain: TFormMain
     end
     object cpDebugRender: TCategoryPanel
       Top = 151
-      Height = 24
+      Height = 194
       Caption = 'Debug Render'
-      Collapsed = True
       TabOrder = 4
-      ExpandedHeight = 194
+      ExplicitWidth = 181
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -616,6 +618,7 @@ object FormMain: TFormMain
       Height = 151
       Caption = 'Game Controls'
       TabOrder = 5
+      ExplicitWidth = 181
       object RGPlayer: TRadioGroup
         Left = 8
         Top = 4
