@@ -40,6 +40,9 @@ var
   GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single =     0.4229704440;
   GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    5;
   GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   11;
+
+  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5;
+  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    3;
 //}
 
 { 2019-12-13
