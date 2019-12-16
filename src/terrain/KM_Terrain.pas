@@ -72,6 +72,8 @@ type
     //Tells us the stage of house construction or workers making a road
     TileLock: TKMTileLock;
 
+    JamMeter: Integer;
+
     //Used to display half-dug road
     TileOverlay: TKMTileOverlay; //toNone toDig1, toDig2, toDig3, toDig4 + toRoad
 
@@ -3306,24 +3308,16 @@ begin
         begin
           TempUnit := UnitsHitTest(tx, ty);
           // Always include the pushers loc in the possibilities, otherwise we can get two units swapping places forever
-          if (KMPoint(tx, ty) = PusherLoc) then
-          begin
-//            if aPusherWasPushed then
-//              exchWithPushedPusher := True
-//            else
-              isPushable := True;
-          end
-          else if
-            ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
+          if (KMPoint(tx, ty) = PusherLoc)
+            or ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
               and (not TKMUnitActionStay(TempUnit.Action).Locked)) then
             isPushable := True;
         end;
         newWeight := 4*Ord(isFree)
                       + Ord(isOffroad)
                       + Ord(isPushable)
-//                      - 4*Ord(exchWithPushedPusher)
                       + 2*KaMRandom('TKMTerrain.GetOutOfTheWay')
-//                      - 4*U.fFreeWalkBreadCrumbs.GetPointsCnt(KMPoint(tx, ty))
+                      - 4*U.fFreeWalkBreadCrumbs.GetPointsCnt(KMPoint(tx, ty))
                       ;
 //        if DBG_PUSH_MODE > 0 then
 //          newWeight := newWeight - 10*Ord(exchWithPushedPusher);
@@ -4447,6 +4441,8 @@ begin
                 TREE_AGE_FULL: Land[I,K].Obj := ChopableTrees[H, caAgeFull];
               end;
     end;
+
+//    UsedCnt
 
     Inc(A, TERRAIN_PACE);
   end;
