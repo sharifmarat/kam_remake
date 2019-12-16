@@ -221,7 +221,7 @@ type
     function GetConnectID(aWalkConnect: TKMWalkConnect; const Loc: TKMPoint): Byte;
 
     function CheckAnimalIsStuck(const Loc: TKMPoint; aPass: TKMTerrainPassability; aCheckUnits: Boolean = True): Boolean;
-    function GetOutOfTheWay(aUnit: Pointer; const PusherLoc: TKMPoint; aPass: TKMTerrainPassability): TKMPoint;
+    function GetOutOfTheWay(aUnit: Pointer; const PusherLoc: TKMPoint; aPass: TKMTerrainPassability; aPusher: Pointer = nil): TKMPoint;
     function FindSideStepPosition(const Loc, Loc2, Loc3: TKMPoint; aPass: TKMTerrainPassability; out SidePoint: TKMPoint; OnlyTakeBest: Boolean = False): Boolean;
     function Route_CanBeMade(const LocA, LocB: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
     function Route_CanBeMadeToVertex(const LocA, LocB: TKMPoint; aPass: TKMTerrainPassability): Boolean;
@@ -345,7 +345,7 @@ var
 
 implementation
 uses
-  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
+  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units, KM_UnitActionWalkTo,
   KM_ResSound, KM_Sound, KM_UnitActionStay, KM_UnitWarrior, KM_TerrainPainter, KM_Houses,
   KM_ResUnits, KM_ResSprites, KM_Hand, KM_Game, KM_GameTypes, KM_ScriptingEvents, KM_Utils;
 
@@ -3255,7 +3255,7 @@ end;
 
 // Return random tile surrounding Loc with aPass property. PusherLoc is the unit that pushed us
 // which is preferable to other units (otherwise we can get two units swapping places forever)
-function TKMTerrain.GetOutOfTheWay(aUnit: Pointer; const PusherLoc: TKMPoint; aPass: TKMTerrainPassability): TKMPoint;
+function TKMTerrain.GetOutOfTheWay(aUnit: Pointer; const PusherLoc: TKMPoint; aPass: TKMTerrainPassability; aPusher: Pointer = nil): TKMPoint;
 var
   U: TKMUnit;
   Loc: TKMPoint;
@@ -3271,12 +3271,21 @@ var
 var
   I, K: Integer;
   tx, ty: Integer;
-  isFree, isOffroad, isPushable: Boolean;
+  isFree, isOffroad, isPushable, exchWithPushedPusher,
+  PusherWasPushed: Boolean;
   newWeight, bestWeight: Single;
-  TempUnit: TKMUnit;
+  TempUnit, Pusher: TKMUnit;
 begin
   U := TKMUnit(aUnit);
   Loc := U.CurrPosition;
+  Pusher := nil;
+  PusherWasPushed := False;
+  if aPusher <> nil then
+  begin
+    Pusher := TKMUnit(aPusher);
+    PusherWasPushed := (Pusher.Action is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Pusher.Action).WasPushed;
+  end;
+
   Result := Loc;
   bestWeight := -1;
 
@@ -3301,19 +3310,25 @@ begin
         isOffroad := not TileHasRoad(tx, ty);
         // Try to be pushed to exchange with pusher or to push other non-locked units
         isPushable := False;
+        exchWithPushedPusher := False;
         if Land[ty, tx].IsUnit <> nil then
         begin
           TempUnit := UnitsHitTest(tx, ty);
           // Always include the pushers loc in the possibilities, otherwise we can get two units swapping places forever
-          if (KMPoint(tx, ty) = PusherLoc)
-          or ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
+          if (KMPoint(tx, ty) = PusherLoc) then
+          begin
+//            if PusherWasPushed then
+//              exchWithPushedPusher := True
+//            else
+              isPushable := True;
+          end
+          else if
+            ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
               and (not TKMUnitActionStay(TempUnit.Action).Locked)) then
             isPushable := True;
         end;
 
-        // If everything is bad, don't consider it (and remain at 0 - original Loc)
-        if isFree or isOffroad or isPushable then
-          newWeight := Ord(isFree) * 8 + Ord(isOffroad) * 4 + Ord(isPushable) * 2 + KaMRandom('TKMTerrain.GetOutOfTheWay');
+        newWeight := Ord(isFree) * 4 + Ord(isOffroad) + Ord(isPushable) - Ord(exchWithPushedPusher)*4 + 2 * KaMRandom('TKMTerrain.GetOutOfTheWay');
 
         if newWeight > bestWeight then
         begin
