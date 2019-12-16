@@ -44,6 +44,8 @@ var
   RunnerList: array of TKMRunnerClass;
 
 implementation
+uses
+  KM_HouseInn, KM_HandsCollection;
 
 
 procedure RegisterRunner(aRunner: TKMRunnerClass);
@@ -175,6 +177,12 @@ begin
 
     gGameApp.Game.UpdateGame(nil);
     gGameApp.Render(False);
+
+    if TKMHouseInn(gHands.HousesHitTest(24,32)).GetFoodCnt = 10 then
+    begin
+//      fResults.Value[fRun, 0] := gGameApp.Game.TickCount;
+      Exit;
+    end;
 
     fResults.Times[fRun, I] := TimeGet - fResults.Times[fRun, I];
 

@@ -190,6 +190,8 @@ begin
 
   if aSetPushed then
   begin
+    fUnit.fFreeWalkBreadCrumbs.Add(aLocB);
+    fUnit.fFreeWalkBreadCrumbs.Add(fUnit.CurrPosition);
     fInteractionStatus := kisPushed; //So that unit knows it was pushed not just walking somewhere
     Explanation := 'We were asked to get out of the way';
     ExplanationLogAdd;
@@ -619,8 +621,6 @@ end;
 function TKMUnitActionWalkTo.IntSolutionPush(fOpponent:TKMUnit; HighestInteractionCount:integer):boolean;
 var
   OpponentPass: TKMTerrainPassability;
-  prevInterationStatus: TInteractionStatus;
-
 begin
   Result := False;
 
@@ -643,11 +643,12 @@ begin
     if OpponentPass = tpWalkRoad then
       OpponentPass := tpWalk;
 
-//    if not CanAbandonInternal then
-//      raise ELocError.Create('Unit walk IntSolutionPush', fUnit.CurrPosition);
+    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponentPass, WasPushed));
 
-    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponentPass, fUnit));
     fInteractionStatus := kisPushing;
+
+    if not CanAbandonInternal then
+      raise ELocError.Create('Unit walk IntSolutionPush', fUnit.CurrPosition);
 
 
     Explanation := 'Unit was blocking the way but it has been forced to go away now';

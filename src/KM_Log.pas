@@ -70,6 +70,8 @@ type
     function CanLogNetPacketCommand: Boolean;
     function CanLogNetPacketPingFps: Boolean;
 
+    procedure SetDefaultMessageTypes;
+
     // Add line if TestValue=false
     procedure AddAssert(const aMessageText: UnicodeString);
     // AddToLog simply adds the text
@@ -146,12 +148,18 @@ begin
   fLogPath := aPath;
   fFirstTick := TimeGet;
   fPreviousTick := TimeGet;
-  MessageTypes := DEFAULT_LOG_TYPES_TO_WRITE;
+  SetDefaultMessageTypes;
+
   if DEBUG_LOGS then
     Include(MessageTypes, lmtDebug);
 
   CS := TCriticalSection.Create;
   InitLog;
+end;
+
+procedure TKMLog.SetDefaultMessageTypes;
+begin
+  MessageTypes := DEFAULT_LOG_TYPES_TO_WRITE;
 end;
 
 

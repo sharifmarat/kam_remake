@@ -4362,7 +4362,7 @@ begin
           or (U.Visible and (gMySpectator.FogOfWar.CheckRevelation(U.PositionF) > FOG_OF_WAR_MIN)) then
         begin
           if SHOW_UIDs then
-            Label_TeamName.Caption := IntToStr(U.UID)
+            Label_TeamName.Caption := IntToStr(U.fFreeWalkBreadCrumbs.GetPointsCnt(U.CurrPosition))
           else
             Label_TeamName.Caption := gHands[U.Owner].OwnerName;
 

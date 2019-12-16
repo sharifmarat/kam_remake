@@ -37,6 +37,8 @@ begin
   StayStill   := aStayStill;
   TimeToStay  := aTimeToStay;
   StillFrame  := aStillFrame;
+  if not aLocked then
+    fUnit.fFreeWalkBreadCrumbs.AddNew(fUnit.CurrPosition);
 end;
 
 
