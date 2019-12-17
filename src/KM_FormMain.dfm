@@ -81,11 +81,11 @@ object FormMain: TFormMain
     HeaderStyle = hsThemed
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 441
+      Top = 339
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
-      ExplicitTop = 289
+      ExplicitTop = 441
       object chkLogCommands: TCheckBox
         Left = 100
         Top = 8
@@ -159,12 +159,12 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 417
+      Top = 315
       Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
       TabOrder = 1
-      ExplicitTop = 265
+      ExplicitTop = 417
       ExpandedHeight = 124
       object Label1: TLabel
         Left = 101
@@ -262,12 +262,12 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 393
+      Top = 291
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
-      ExplicitTop = 241
+      ExplicitTop = 393
       ExpandedHeight = 72
       object chkUIControlsBounds: TCheckBox
         Left = 8
@@ -298,12 +298,12 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 369
+      Top = 267
       Height = 24
       Caption = 'AI'
       Collapsed = True
       TabOrder = 3
-      ExplicitTop = 217
+      ExplicitTop = 369
       ExpandedHeight = 166
       object Label5: TLabel
         Left = 106
@@ -463,10 +463,11 @@ object FormMain: TFormMain
       end
     end
     object cpDebugRender: TCategoryPanel
-      Top = 175
+      Top = 73
       Height = 194
       Caption = 'Debug Render'
       TabOrder = 4
+      ExplicitTop = 175
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -615,12 +616,12 @@ object FormMain: TFormMain
       end
     end
     object cpGameAdv: TCategoryPanel
-      Top = 151
+      Top = 49
       Height = 24
       Caption = 'Game additional'
       Collapsed = True
       TabOrder = 5
-      ExpandedHeight = 50
+      ExpandedHeight = 152
       object chkLoadUnsupSaves: TCheckBox
         Left = 12
         Top = 8
@@ -630,15 +631,9 @@ object FormMain: TFormMain
         TabOrder = 0
         OnClick = ControlsUpdate
       end
-    end
-    object cpGameControls: TCategoryPanel
-      Top = 0
-      Height = 151
-      Caption = 'Game Controls'
-      TabOrder = 6
       object RGPlayer: TRadioGroup
         Left = 8
-        Top = 4
+        Top = 30
         Width = 177
         Height = 99
         BiDiMode = bdLeftToRight
@@ -665,26 +660,32 @@ object FormMain: TFormMain
           '17'
           '18')
         ParentBiDiMode = False
-        TabOrder = 0
+        TabOrder = 1
         OnClick = RGPlayerClick
       end
+    end
+    object cpGameControls: TCategoryPanel
+      Top = 0
+      Height = 49
+      Caption = 'Game '
+      TabOrder = 6
       object chkSuperSpeed: TCheckBox
         Left = 8
-        Top = 109
+        Top = 5
         Width = 75
         Height = 17
         Hint = 'Autosave is disabled while on very fast speedup'
         Caption = 'Speed x200'
-        TabOrder = 1
+        TabOrder = 0
         OnClick = chkSuperSpeedClick
       end
       object Button_Stop: TButton
         Left = 89
-        Top = 109
+        Top = 5
         Width = 89
         Height = 17
         Caption = 'Stop the game'
-        TabOrder = 2
+        TabOrder = 1
         OnClick = Button_StopClick
       end
     end
