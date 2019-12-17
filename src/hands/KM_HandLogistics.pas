@@ -1143,12 +1143,13 @@ begin
   if CACHE_DELIVERY_BIDS then
   begin
     BidKey.FromUID := aOfferUID;
+    BidKey.ToUID := 0;
     if (fDemand[iD].Loc_House <> nil) then
       BidKey.ToUID := fDemand[iD].Loc_House.UID
-    else
+    else if (fDemand[iD].Loc_Unit <> nil) then //Sometimes Loc_House and Loc_Unit could be nil for some reason (its a bug actually). Just add nil check here for now
       BidKey.ToUID := fDemand[iD].Loc_Unit.UID;
 
-    if fOfferToDemandCache.TryGetValue(BidKey, OfferToDemandCache) then
+    if (BidKey.ToUID <> 0) and fOfferToDemandCache.TryGetValue(BidKey, OfferToDemandCache) then
     begin
       Result := (OfferToDemandCache <> NOT_REACHABLE_DEST_VALUE);
       if not Result then
