@@ -81,11 +81,11 @@ object FormMain: TFormMain
     HeaderStyle = hsThemed
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 559
+      Top = 441
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
-      ExplicitWidth = 181
+      ExplicitTop = 289
       object chkLogCommands: TCheckBox
         Left = 100
         Top = 8
@@ -159,12 +159,12 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 535
+      Top = 417
       Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
       TabOrder = 1
-      ExplicitWidth = 181
+      ExplicitTop = 265
       ExpandedHeight = 124
       object Label1: TLabel
         Left = 101
@@ -262,12 +262,12 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 511
+      Top = 393
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
-      ExplicitWidth = 181
+      ExplicitTop = 241
       ExpandedHeight = 72
       object chkUIControlsBounds: TCheckBox
         Left = 8
@@ -298,11 +298,13 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 345
-      Height = 166
+      Top = 369
+      Height = 24
       Caption = 'AI'
+      Collapsed = True
       TabOrder = 3
-      ExplicitWidth = 181
+      ExplicitTop = 217
+      ExpandedHeight = 166
       object Label5: TLabel
         Left = 106
         Top = 111
@@ -461,11 +463,10 @@ object FormMain: TFormMain
       end
     end
     object cpDebugRender: TCategoryPanel
-      Top = 151
+      Top = 175
       Height = 194
       Caption = 'Debug Render'
       TabOrder = 4
-      ExplicitWidth = 181
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -613,12 +614,28 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
     end
+    object cpGameAdv: TCategoryPanel
+      Top = 151
+      Height = 24
+      Caption = 'Game additional'
+      Collapsed = True
+      TabOrder = 5
+      ExpandedHeight = 50
+      object chkLoadUnsupSaves: TCheckBox
+        Left = 12
+        Top = 8
+        Width = 157
+        Height = 17
+        Caption = 'Allow load unsupported saves'
+        TabOrder = 0
+        OnClick = ControlsUpdate
+      end
+    end
     object cpGameControls: TCategoryPanel
       Top = 0
       Height = 151
       Caption = 'Game Controls'
-      TabOrder = 5
-      ExplicitWidth = 181
+      TabOrder = 6
       object RGPlayer: TRadioGroup
         Left = 8
         Top = 4

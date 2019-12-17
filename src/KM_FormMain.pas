@@ -126,7 +126,9 @@ type
     cpUserInreface: TCategoryPanel;
     cpGraphicTweaks: TCategoryPanel;
     cpLogs: TCategoryPanel;
+    cpGameAdv: TCategoryPanel;
     chkSnowHouses: TCheckBox;
+    chkLoadUnsupSaves: TCheckBox;
     {$ENDIF}
     {$IFDEF FPC}
     mainGroup: TGroupBox;
@@ -140,6 +142,7 @@ type
     LoadSavThenRpl: TMenuItem;
     N7: TMenuItem;
     ReloadLibx: TMenuItem;
+
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -860,6 +863,7 @@ begin
     SHOW_HANDS_INFO := chkHands.Checked;
     {$IFDEF WDC} //one day update .lfm for lazarus...
     SNOW_HOUSES := chkSnowHouses.Checked;
+    ALLOW_LOAD_UNSUP_VERSION_SAVE := chkLoadUnsupSaves.Checked;
     {$ENDIF}
 
     SKIP_RENDER := chkSkipRender.Checked;
