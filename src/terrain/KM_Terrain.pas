@@ -398,6 +398,7 @@ begin
         //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
         TileOverlay  := toNone;
         TileLock     := tlNone;
+        JamMeter     := 0;
         CornOrWine   := 0;
         Passability  := []; //Gets recalculated later
         TileOwner    := -1;
@@ -451,6 +452,7 @@ begin
       begin
         Land[I,J].TileOverlay  := toNone;
         Land[I,J].TileLock     := tlNone;
+        Land[I,J].JamMeter     := 0;
         Land[I,J].CornOrWine   := 0;
         Land[I,J].Passability  := []; //Gets recalculated later
         Land[I,J].TileOwner    := PLAYER_NONE;
@@ -3273,7 +3275,7 @@ var
 var
   I, K: Integer;
   tx, ty: Integer;
-  isFree, isOffroad, isPushable, exchWithPushedPusher: Boolean;
+  isFree, isOffroad, isPushable, exchWithPushedPusher, exchWithPushedPusherChoosen: Boolean;
   newWeight, bestWeight: Single;
   TempUnit: TKMUnit;
 begin
@@ -3282,6 +3284,7 @@ begin
 
   Result := Loc;
   bestWeight := -100000;
+  exchWithPushedPusherChoosen := False;
 
   // Check all available walkable positions except self
   for I := -1 to 1 do for K := -1 to 1 do
@@ -3308,16 +3311,28 @@ begin
         begin
           TempUnit := UnitsHitTest(tx, ty);
           // Always include the pushers loc in the possibilities, otherwise we can get two units swapping places forever
-          if (KMPoint(tx, ty) = PusherLoc)
-            or ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
+          if (KMPoint(tx, ty) = PusherLoc) then
+          begin
+            if aPusherWasPushed then
+            begin
+              exchWithPushedPusher := True;
+              exchWithPushedPusherChoosen := True;
+            end
+            else
+              isPushable := True;
+          end
+          else
+            if ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
               and (not TKMUnitActionStay(TempUnit.Action).Locked)) then
-            isPushable := True;
+              isPushable := True;
         end;
-        newWeight := 4*Ord(isFree)
+        newWeight := 40*Ord(isFree)
                       + Ord(isOffroad)
                       + Ord(isPushable)
+//                      - 10*Ord(exchWithPushedPusher)
                       + 2*KaMRandom('TKMTerrain.GetOutOfTheWay')
-                      - 4*U.fFreeWalkBreadCrumbs.GetPointsCnt(KMPoint(tx, ty))
+//                      - 4*U.fFreeWalkBreadCrumbs.GetPointsCnt(KMPoint(tx, ty))
+                      - 2*Land[ty,tx].JamMeter;
                       ;
 //        if DBG_PUSH_MODE > 0 then
 //          newWeight := newWeight - 10*Ord(exchWithPushedPusher);
@@ -3329,7 +3344,9 @@ begin
         begin
           bestWeight := newWeight;
           Result := KMPoint(tx, ty);
-          gLog.AddTime(Format('%s -(EXCH = %s)- %d', [Result.ToString, BoolToStr(exchWithPushedPusher, True), U.fFreeWalkBreadCrumbs.GetPointsCnt(Result)]));
+          if exchWithPushedPusherChoosen then
+            Land[Loc.Y,Loc.X].JamMeter := Land[Loc.Y,Loc.X].JamMeter + 3;
+//          gLog.AddTime(Format('%s -(EXCH = %s)- %d', [Result.ToString, BoolToStr(exchWithPushedPusher, True), U.fFreeWalkBreadCrumbs.GetPointsCnt(Result)]));
         end;
       end;
     end;
@@ -4258,6 +4275,7 @@ begin
       SaveStream.Write(Land[I,K].TreeAge);
       SaveStream.Write(Land[I,K].FieldAge);
       SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
+      SaveStream.Write(Land[I,K].JamMeter);
       SaveStream.Write(Land[I,K].TileOverlay, SizeOf(Land[I,K].TileOverlay));
       SaveStream.Write(Land[I,K].TileOwner, SizeOf(Land[I,K].TileOwner));
       if Land[I,K].IsUnit <> nil then
@@ -4297,6 +4315,7 @@ begin
       LoadStream.Read(Land[I,J].TreeAge);
       LoadStream.Read(Land[I,J].FieldAge);
       LoadStream.Read(Land[I,J].TileLock,SizeOf(Land[I,J].TileLock));
+      LoadStream.Read(Land[I,J].JamMeter);
       LoadStream.Read(Land[I,J].TileOverlay,SizeOf(Land[I,J].TileOverlay));
       LoadStream.Read(Land[I,J].TileOwner,SizeOf(Land[I,J].TileOwner));
       LoadStream.Read(Land[I,J].IsUnit, 4);
@@ -4399,6 +4418,8 @@ begin
     K := (A mod fMapX) + 1;
     I := (A div fMapX) + 1;
 
+    Land[I,K].JamMeter := Max(0, Land[I,K].JamMeter - 2);
+
     if InRange(Land[I,K].FieldAge, 1, CORN_AGE_MAX-1) then
     begin
       Inc(Land[I,K].FieldAge);
@@ -4441,8 +4462,6 @@ begin
                 TREE_AGE_FULL: Land[I,K].Obj := ChopableTrees[H, caAgeFull];
               end;
     end;
-
-//    UsedCnt
 
     Inc(A, TERRAIN_PACE);
   end;

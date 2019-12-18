@@ -56,7 +56,7 @@ object Form2: TForm2
     MaxValue = 1000000
     MinValue = 1
     TabOrder = 1
-    Value = 10
+    Value = 1
   end
   object ListBox1: TListBox
     Left = 8

@@ -85,6 +85,12 @@ begin
 
   for I := 0 to High(RunnerList) do
     ListBox1.Items.Append(RunnerList[I].ClassName);
+
+  if Length(RunnerList) > 0 then
+  begin
+    ListBox1.ItemIndex := 0;
+    Button1.Enabled := True
+  end;
 end;
 
 

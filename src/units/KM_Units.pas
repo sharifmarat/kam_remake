@@ -121,7 +121,7 @@ type
     procedure DoKill(aShowAnimation: Boolean);
     procedure DoDismiss;
   public
-    fFreeWalkBreadCrumbs: TKMPointCounterList;
+//    fFreeWalkBreadCrumbs: TKMPointCounterList;
     AnimStep: Integer;
     IsExchanging: Boolean; //Current walk is an exchange, used for sliding
     OnUnitDied: TKMUnitFromEvent;
@@ -1145,7 +1145,7 @@ begin
   AnimStep      := UnitStillFrames[fDirection]; //Use still frame at begining, so units don't all change frame on first tick
   Dismissable   := True;
 
-  fFreeWalkBreadCrumbs := TKMPointCounterList.Create;
+//  fFreeWalkBreadCrumbs := TKMPointCounterList.Create;
 
   //Units start with a random amount of condition ranging from 0.5 to 0.7 (KaM uses 0.6 for all units)
   //By adding the random amount they won't all go eat at the same time and cause crowding, blockages, food shortages and other problems.
@@ -1174,7 +1174,7 @@ begin
   if not IsDead then gTerrain.UnitRem(NextPosition); //Happens only when removing player from map on GameStart (network)
   FreeAndNil(fAction);
   FreeAndNil(fTask);
-  FreeAndNil(fFreeWalkBreadCrumbs);
+//  FreeAndNil(fFreeWalkBreadCrumbs);
   SetInHouse(nil); //Free pointer
   inherited;
 end;
@@ -1263,8 +1263,8 @@ begin
   LoadStream.Read(fDismissASAP);
   LoadStream.Read(Dismissable);
 
-  fFreeWalkBreadCrumbs := TKMPointCounterList.Create;
-  fFreeWalkBreadCrumbs.LoadFromStream(LoadStream);
+//  fFreeWalkBreadCrumbs := TKMPointCounterList.Create;
+//  fFreeWalkBreadCrumbs.LoadFromStream(LoadStream);
 end;
 
 
@@ -2272,7 +2272,7 @@ begin
   SaveStream.Write(fNextPosition);
   SaveStream.Write(fDismissASAP);
   SaveStream.Write(Dismissable);
-  fFreeWalkBreadCrumbs.SaveToStream(SaveStream);
+//  fFreeWalkBreadCrumbs.SaveToStream(SaveStream);
 end;
 
 
@@ -2334,10 +2334,10 @@ begin
   UpdateHitPoints;
   if UpdateVisibility then Exit; //incase units home was destroyed. Returns true if the unit was killed due to lack of space
 
-  if (fTicker mod 100) = 0 then
-  begin
-    fFreeWalkBreadCrumbs.Delete(0);
-  end;
+//  if (fTicker mod 100) = 0 then
+//  begin
+//    fFreeWalkBreadCrumbs.Delete(0);
+//  end;
 
   //Shortcut to kill unit in place if it's on an unwalkable tile. We use fNextPosition rather than fCurrPosition
   //because once we have taken a step from a tile we no longer care about it. (fNextPosition matches up with IsUnit in terrain)

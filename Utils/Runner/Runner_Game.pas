@@ -644,6 +644,7 @@ const
   // Maps for simulation (I dont use for loop in this array)
   //MAPS: array [1..27] of String = ('GA_S1_001','GA_S1_002','GA_S1_003','GA_S1_004','GA_S1_005','GA_S1_006','GA_S1_007','GA_S1_008','GA_S1_009','GA_S1_010','GA_S1_011','GA_S1_012','GA_S1_013','GA_S1_014','GA_S1_015','GA_S1_016','GA_S1_017','GA_S1_018','GA_S1_019','GA_S1_020','GA_S1_021','GA_S1_022','GA_S1_023','GA_S1_024','GA_S1_025','GA_S1_026','GA_S1_027');
   MAPS: array [1..3] of String = ('Test1','Test2','Test3');
+//  MAPS: array [1..3] of String = ('Test4','Test5','Test6');
   cnt_MAP_SIMULATIONS = 100;
 var
   K,L: Integer;
@@ -680,7 +681,7 @@ begin
     fAverageScore := fAverageScore / cnt_MAP_SIMULATIONS;
 //    gGameApp.Game.Save(Format('AVRG_%s__%.6d',[MapName, Round(fAverageScore)]), Now);
     gLog.SetDefaultMessageTypes;
-    gLog.AddNoTime(Format('%s: Best = %d Avg = %d Worst = %d', [MAPS[K], Round(fWorstScore), Round(fAverageScore), Round(fBestScore)]));
+    gLog.AddNoTime(Format('%s: Best = %d Avg = %d Worst = %d', [MAPS[K], Round(fWorstScore), Round(fAverageScore), Round(fBestScore)]), False);
     gLog.MessageTypes := [];
   end;
 
