@@ -81,11 +81,11 @@ object FormMain: TFormMain
     HeaderStyle = hsThemed
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 339
+      Top = 360
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
-      ExplicitTop = 441
+      ExplicitTop = 339
       object chkLogCommands: TCheckBox
         Left = 100
         Top = 8
@@ -159,12 +159,12 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 315
+      Top = 336
       Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
       TabOrder = 1
-      ExplicitTop = 417
+      ExplicitTop = 315
       ExpandedHeight = 124
       object Label1: TLabel
         Left = 101
@@ -262,12 +262,12 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 291
+      Top = 312
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
-      ExplicitTop = 393
+      ExplicitTop = 291
       ExpandedHeight = 72
       object chkUIControlsBounds: TCheckBox
         Left = 8
@@ -298,12 +298,12 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 267
+      Top = 288
       Height = 24
       Caption = 'AI'
       Collapsed = True
       TabOrder = 3
-      ExplicitTop = 369
+      ExplicitTop = 267
       ExpandedHeight = 166
       object Label5: TLabel
         Left = 106
@@ -464,10 +464,9 @@ object FormMain: TFormMain
     end
     object cpDebugRender: TCategoryPanel
       Top = 73
-      Height = 194
+      Height = 215
       Caption = 'Debug Render'
       TabOrder = 4
-      ExplicitTop = 175
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -477,7 +476,7 @@ object FormMain: TFormMain
       end
       object btnUpdateUI: TButton
         Left = 5
-        Top = 152
+        Top = 156
         Width = 79
         Height = 17
         Caption = 'Update UI'
@@ -486,7 +485,7 @@ object FormMain: TFormMain
       end
       object chkHands: TCheckBox
         Left = 8
-        Top = 110
+        Top = 117
         Width = 76
         Height = 17
         Caption = 'Hands'
@@ -495,7 +494,7 @@ object FormMain: TFormMain
       end
       object chkSelectedObjInfo: TCheckBox
         Left = 90
-        Top = 126
+        Top = 133
         Width = 84
         Height = 17
         Caption = 'Selection Info'
@@ -512,8 +511,8 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowFPS: TCheckBox
-        Left = 90
-        Top = 72
+        Left = 114
+        Top = 156
         Width = 76
         Height = 17
         Caption = 'FPS'
@@ -521,8 +520,8 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowGameTick: TCheckBox
-        Left = 90
-        Top = 88
+        Left = 114
+        Top = 172
         Width = 76
         Height = 17
         Caption = 'Game tick'
@@ -594,7 +593,7 @@ object FormMain: TFormMain
       end
       object chkUIDs: TCheckBox
         Left = 90
-        Top = 110
+        Top = 117
         Width = 79
         Height = 17
         Caption = 'UIDs by T'
@@ -613,6 +612,15 @@ object FormMain: TFormMain
         TickMarks = tmBoth
         TickStyle = tsNone
         OnChange = ControlsUpdate
+      end
+      object chkJamMeter: TCheckBox
+        Left = 90
+        Top = 72
+        Width = 79
+        Height = 17
+        Caption = 'Jam meter'
+        TabOrder = 15
+        OnClick = ControlsUpdate
       end
     end
     object cpGameAdv: TCategoryPanel

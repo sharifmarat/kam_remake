@@ -190,6 +190,8 @@ begin
 
   if aSetPushed then
   begin
+    gTerrain.IncTileJamMeter(aLocB, 1);
+    gTerrain.IncTileJamMeter(fUnit.CurrPosition, 1);
     fInteractionStatus := kisPushed; //So that unit knows it was pushed not just walking somewhere
     Explanation := 'We were asked to get out of the way';
     ExplanationLogAdd;
@@ -641,12 +643,14 @@ begin
     if OpponentPass = tpWalkRoad then
       OpponentPass := tpWalk;
 
+    //We tell opponent, that we were also pushed, so he could avoid unhelpful exchange with us
+    //So ipdate fInteractionStatus after that
+    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponentPass, WasPushed));
+
     fInteractionStatus := kisPushing;
 
     if not CanAbandonInternal then
       raise ELocError.Create('Unit walk IntSolutionPush', fUnit.CurrPosition);
-
-    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponentPass));
 
     Explanation := 'Unit was blocking the way but it has been forced to go away now';
     ExplanationLogAdd; //Hopefully next tick tile will be free and we will walk there

@@ -129,6 +129,7 @@ type
     cpGameAdv: TCategoryPanel;
     chkSnowHouses: TCheckBox;
     chkLoadUnsupSaves: TCheckBox;
+    chkJamMeter: TCheckBox;
     {$ENDIF}
     {$IFDEF FPC}
     mainGroup: TGroupBox;
@@ -862,6 +863,7 @@ begin
     SHOW_SELECTED_OBJ_INFO := chkSelectedObjInfo.Checked;
     SHOW_HANDS_INFO := chkHands.Checked;
     {$IFDEF WDC} //one day update .lfm for lazarus...
+    SHOW_JAM_METER := chkJamMeter.Checked;
     SNOW_HOUSES := chkSnowHouses.Checked;
     ALLOW_LOAD_UNSUP_VERSION_SAVE := chkLoadUnsupSaves.Checked;
     {$ENDIF}
