@@ -617,7 +617,8 @@ end;
 
 { We can push idling unit }
 function TKMUnitActionWalkTo.IntSolutionPush(fOpponent:TKMUnit; HighestInteractionCount:integer):boolean;
-var OpponenTKMTerrainPassability: TKMTerrainPassability;
+var
+  OpponentPass: TKMTerrainPassability;
 begin
   Result := False;
 
@@ -636,15 +637,16 @@ begin
     and TKMUnitWarrior(fOpponent).CheckForEnemy then
       Exit;
 
+    OpponentPass := fOpponent.DesiredPassability;
+    if OpponentPass = tpWalkRoad then
+      OpponentPass := tpWalk;
+
     fInteractionStatus := kisPushing;
-    OpponenTKMTerrainPassability := fOpponent.DesiredPassability;
-    if OpponenTKMTerrainPassability = tpWalkRoad then
-      OpponenTKMTerrainPassability := tpWalk;
 
     if not CanAbandonInternal then
       raise ELocError.Create('Unit walk IntSolutionPush', fUnit.CurrPosition);
 
-    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponenTKMTerrainPassability));
+    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponentPass));
 
     Explanation := 'Unit was blocking the way but it has been forced to go away now';
     ExplanationLogAdd; //Hopefully next tick tile will be free and we will walk there
