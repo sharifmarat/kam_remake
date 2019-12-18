@@ -2185,7 +2185,7 @@ begin
   Result := ObjToStringShort(aSeparator) +
             Format('%sPositionF = %s%sPrevPosition = %s%sNextPosition = %s%s' +
                    'Thought = %s%sHitPoints = %d%sHitPointCounter = %d%sCondition = %d%s' +
-                   'Owner = %d%sHome = %s%sInHouse = %s%sVisible = %s%sIsDead = %s',
+                   'Owner = %d%sHome = %s%sInHouse = %s%sVisible = %s%sIsDead = %s%sAnimStep = %d',
                    [aSeparator,
                     TypeToString(fPositionF), aSeparator,
                     TypeToString(fPrevPosition), aSeparator,
@@ -2198,7 +2198,8 @@ begin
                     HomeStr, aSeparator,
                     InHouseStr, aSeparator,
                     BoolToStr(fVisible, True), aSeparator,
-                    BoolToStr(fIsDead, True)]);
+                    BoolToStr(fIsDead, True), aSeparator,
+                    AnimStep]);
 end;
 
 
