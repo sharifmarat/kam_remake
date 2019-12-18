@@ -627,14 +627,14 @@ begin
 
   //Ask the other unit to step aside, only if they are idle!
   if (fOpponent.Action is TKMUnitActionStay)
-  and not TKMUnitActionStay(fOpponent.Action).Locked then
+    and not TKMUnitActionStay(fOpponent.Action).Locked then
   begin
     //We must alert the opponent to our presence because it looks bad when you warrior is pushed
     //by the enemy instead of fighting them.
     //CheckAlliance is for optimisation since pushing allies doesn't matter
     if (fOpponent is TKMUnitWarrior)
-    and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = atEnemy)
-    and TKMUnitWarrior(fOpponent).CheckForEnemy then
+      and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = atEnemy)
+      and TKMUnitWarrior(fOpponent).CheckForEnemy then
       Exit;
 
     OpponentPass := fOpponent.DesiredPassability;
