@@ -1273,7 +1273,7 @@ type
     procedure SetTopIndex(aIndex: Integer); override;
     function GetItemString(aIndex: Integer): UnicodeString; override;
 
-    function CanChangeSelection: Boolean;
+    function CanChangeSelection: Boolean; override;
   public
     HideSelection: Boolean;
     HighlightError: Boolean;
