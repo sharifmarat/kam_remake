@@ -664,7 +664,6 @@ procedure TKMRunnerPushModes.SetUp();
 begin
   inherited;
 
-  DBG_PUSH_MODE := 2;
   // Deactivate KaM log
   if (gLog = nil) then
     gLog := TKMLog.Create(Format('%s\Utils\Runner\Runner_Log.log',[ExeDir]));
