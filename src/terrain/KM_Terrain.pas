@@ -3306,7 +3306,7 @@ begin
         isOffroad := False;//not TileHasRoad(tx, ty);
         // Try to be pushed to exchange with pusher or to push other non-locked units
         isPushable := False;
-        exchWithPushedPusher := False;
+//        exchWithPushedPusher := False;
         if Land[ty, tx].IsUnit <> nil then
         begin
           TempUnit := UnitsHitTest(tx, ty);
@@ -3317,6 +3317,7 @@ begin
             begin
               exchWithPushedPusher := True;
               exchWithPushedPusherChoosen := True;
+//              isPushable := True;
             end
             else
               isPushable := True;
@@ -3332,7 +3333,7 @@ begin
 //                      - 10*Ord(exchWithPushedPusher)
                       + 2*KaMRandom('TKMTerrain.GetOutOfTheWay')
 //                      - 4*U.fFreeWalkBreadCrumbs.GetPointsCnt(KMPoint(tx, ty))
-                      - 2*Land[ty,tx].JamMeter;
+                      - 0.5*Land[ty,tx].JamMeter;
                       ;
 //        if DBG_PUSH_MODE > 0 then
 //          newWeight := newWeight - 10*Ord(exchWithPushedPusher);
@@ -3345,7 +3346,7 @@ begin
           bestWeight := newWeight;
           Result := KMPoint(tx, ty);
           if exchWithPushedPusherChoosen then
-            Land[Loc.Y,Loc.X].JamMeter := Land[Loc.Y,Loc.X].JamMeter + 3;
+            Land[Loc.Y,Loc.X].JamMeter := Land[Loc.Y,Loc.X].JamMeter + 8;
 //          gLog.AddTime(Format('%s -(EXCH = %s)- %d', [Result.ToString, BoolToStr(exchWithPushedPusher, True), U.fFreeWalkBreadCrumbs.GetPointsCnt(Result)]));
         end;
       end;
