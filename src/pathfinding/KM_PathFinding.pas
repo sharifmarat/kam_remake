@@ -8,14 +8,22 @@ uses
 
 const
   PATH_CACHE_MAX = 12; //How many paths to cache
+  PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX = 24; //Size of avoid routes cache
   PATH_CACHE_INIT_WEIGHT = 5; //New path weight
   PATH_CACHE_NODES_MIN_CNT = 20; //Min number of noder to put route in cache
+  PATH_CACHE_NO_ROUTES_AVOID_LOCKED_TTL = 100; //AvoidLockedCache item Time to live
 
 type
   TKMPathDestination = (
     pdLocation, //Walk to location
     pdPassability, //Walk to desired passability
     pdHouse //Approach house from any side (workers and warriors)
+    );
+
+  TKMPathAvoidLocked = (
+    palNoAvoid,
+    palAvoidByMovementCost,
+    palAvoidAsUnwalkable
     );
 
   //This is a helper class for TTerrain
@@ -28,15 +36,24 @@ type
       Pass: TKMTerrainPassabilitySet;
       Route: TKMPointList;
     end;
+
+    fCacheAvoidLocked: array [0 .. PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX] of record
+      Pass: TKMTerrainPassabilitySet;
+      LocA: TKMPoint;
+      LocB: TKMPoint;
+      TimeToLive: Word;
+    end;
   protected
     fPass: TKMTerrainPassabilitySet;
     fTargetWalkConnect: TKMWalkConnect;
     fTargetNetwork: Byte;
     fDistance: Single;
-    fIsInteractionAvoid: Boolean;
+    fAvoidLocked: TKMPathAvoidLocked;
     fTargetHouse: TKMHouse;
     procedure AddToCache(NodeList: TKMPointList);
     function TryRouteFromCache(NodeList: TKMPointList): Boolean;
+    procedure AddNoRouteAvoidLockedToCache;
+    function CacheHasNoRouteAvoidLocked: Boolean;
   protected
     fLocA: TKMPoint;
     fLocB: TKMPoint;
@@ -53,7 +70,7 @@ type
     destructor Destroy; override;
 
     function Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
-                        aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: Boolean = False): Boolean;
+                        aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: TKMPathAvoidLocked = palNoAvoid): Boolean;
     function Route_MakeAvoid(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
     function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect; aTargetNetwork: Byte;
                                     aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
@@ -79,6 +96,10 @@ begin
   if CACHE_PATHFINDING then
     for I := 0 to PATH_CACHE_MAX - 1 do
       fCache[I].Route := TKMPointList.Create;
+
+  if CACHE_PATHFINDING_AVOID_LOCKED then
+    for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+      fCacheAvoidLocked[I].TimeToLive := 0;
 end;
 
 
@@ -97,7 +118,7 @@ end;
 //Find a route from A to B which meets aPass Passability
 //Results should be written as NodeCount of waypoint nodes to Nodes
 function TPathFinding.Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
-                                 aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: Boolean = False): Boolean;
+                                 aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: TKMPathAvoidLocked = palNoAvoid): Boolean;
 begin
   Result := False;
 
@@ -107,13 +128,22 @@ begin
   fTargetNetwork := 0;
   fTargetWalkConnect := wcWalk;
   fDistance := aDistance;
-  fIsInteractionAvoid := aAvoidLocked;
+  fAvoidLocked := aAvoidLocked;
   fTargetHouse := aTargetHouse;
 
   if fTargetHouse = nil then
     fDestination := pdLocation
   else
     fDestination := pdHouse;
+
+  //Check
+  if CACHE_PATHFINDING_AVOID_LOCKED
+    and (aAvoidLocked = palAvoidAsUnwalkable)
+    and CacheHasNoRouteAvoidLocked then
+  begin
+    NodeList.Clear; //No route available
+    Exit;
+  end;
 
   //Try to find similar route in cache and reuse it
   if CACHE_PATHFINDING and TryRouteFromCache(NodeList) then
@@ -123,8 +153,12 @@ begin
   begin
     ReturnRoute(NodeList);
     Result := True;
-  end else
+  end else begin
     NodeList.Clear;
+    if CACHE_PATHFINDING_AVOID_LOCKED
+      and (aAvoidLocked = palAvoidAsUnwalkable) then
+      AddNoRouteAvoidLockedToCache;
+  end;
 end;
 
 
@@ -139,7 +173,7 @@ begin
   fTargetNetwork := 0;
   fTargetWalkConnect := wcWalk;
   fDistance := aDistance;
-  fIsInteractionAvoid := True;
+  fAvoidLocked := palAvoidByMovementCost;
   fTargetHouse := aTargetHouse;
   if fTargetHouse = nil then
     fDestination := pdLocation
@@ -155,7 +189,8 @@ end;
 
 
 //Even though we are only going to a road network it is useful to know where our target is so we start off in the right direction (makes algorithm faster/work over long distances)
-function TPathFinding.Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect; aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
+function TPathFinding.Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect;
+                                             aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 begin
   Result := False;
 
@@ -165,7 +200,7 @@ begin
   fTargetNetwork := aTargetNetwork;
   fTargetWalkConnect := aTargetWalkConnect;
   fDistance := 0;
-  fIsInteractionAvoid := False;
+  fAvoidLocked := palNoAvoid;
   fTargetHouse := nil;
   fDestination := pdPassability;
 
@@ -187,7 +222,8 @@ end;
 function TPathFinding.IsWalkableTile(aX, aY: Word): Boolean;
 begin
   //If cell meets Passability then estimate it
-  Result := (fPass * gTerrain.Land[aY,aX].Passability) <> [];
+  Result := ((fPass * gTerrain.Land[aY,aX].Passability) <> [])
+            and ((fAvoidLocked <> palAvoidAsUnwalkable) or not gTerrain.TileIsLocked(KMPoint(aX,aY)));
 end;
 
 
@@ -209,7 +245,7 @@ begin
     //Always avoid congested areas on roads
     if DO_WEIGHT_ROUTES and (U <> nil) and ((tpWalkRoad in fPass) or U.PathfindingShouldAvoid) then
       Inc(Result, 15); //Unit = 1.5 extra tiles
-    if fIsInteractionAvoid and gTerrain.TileIsLocked(KMPoint(aToX,aToY)) then
+    if (fAvoidLocked = palAvoidByMovementCost) and gTerrain.TileIsLocked(KMPoint(aToX,aToY)) then
       Inc(Result, 200); //In interaction avoid mode, working unit (or warrior attacking house) = 20 tiles
   end;
 end;
@@ -256,6 +292,51 @@ begin
   fCache[Best].Weight := PATH_CACHE_INIT_WEIGHT;
   fCache[Best].Pass := fPass;
   fCache[Best].Route.Copy(NodeList);
+end;
+
+
+procedure TPathFinding.AddNoRouteAvoidLockedToCache;
+var
+  I: Integer;
+  Best: Integer;
+begin
+  //Find cached route with least weight and replace it
+  Best := 0;
+  for I := 1 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+    if fCacheAvoidLocked[I].TimeToLive < fCacheAvoidLocked[Best].TimeToLive then
+      Best := I;
+
+  fCacheAvoidLocked[Best].TimeToLive := PATH_CACHE_NO_ROUTES_AVOID_LOCKED_TTL;
+  fCacheAvoidLocked[Best].Pass := fPass;
+  fCacheAvoidLocked[Best].LocA := fLocA;
+  fCacheAvoidLocked[Best].LocB := fLocB;
+
+end;
+
+
+function TPathFinding.CacheHasNoRouteAvoidLocked: Boolean;
+var
+  I: Integer;
+  Len: Single;
+  P: TKMPoint;
+begin
+  Result := False;
+
+  for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+  begin
+    if (fCacheAvoidLocked[I].TimeToLive > 0)
+      and (fCacheAvoidLocked[I].Pass = fPass)
+      and (fCacheAvoidLocked[I].LocB = fLocB) then //Destination should be the same in cache and our path
+    begin
+      //But starting point in cache could be near our path starting point
+      P := fCacheAvoidLocked[I].LocA;
+      Len := KMLengthDiag(fLocA, P);
+      if ((Len <= 1)
+        or ((Len < 2)
+          and gTerrain.CanWalkDiagonaly(fLocB, P.X, P.Y))) then //Check if we can walk diagonally
+        Exit( True );
+    end;
+  end;
 end;
 
 
@@ -370,6 +451,16 @@ begin
       SaveStream.Write(fCache[I].Pass, SizeOf(fCache[I].Pass));
       fCache[I].Route.SaveToStream(SaveStream);
     end;
+
+  SaveStream.PlaceMarker('PathFinding_CacheAvoidLocked');
+  if CACHE_PATHFINDING_AVOID_LOCKED then
+    for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+    begin
+      SaveStream.Write(fCacheAvoidLocked[I].Pass, SizeOf(fCacheAvoidLocked[I].Pass));
+      SaveStream.Write(fCacheAvoidLocked[I].LocA, SizeOf(fCacheAvoidLocked[I].LocA));
+      SaveStream.Write(fCacheAvoidLocked[I].LocB, SizeOf(fCacheAvoidLocked[I].LocB));
+      SaveStream.Write(fCacheAvoidLocked[I].TimeToLive);
+    end;
 end;
 
 
@@ -386,6 +477,16 @@ begin
       LoadStream.Read(fCache[I].Pass, SizeOf(fCache[I].Pass));
       fCache[I].Route.LoadFromStream(LoadStream);
     end;
+
+  LoadStream.CheckMarker('PathFinding_CacheAvoidLocked');
+  if CACHE_PATHFINDING_AVOID_LOCKED then
+    for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+    begin
+      LoadStream.Read(fCacheAvoidLocked[I].Pass, SizeOf(fCacheAvoidLocked[I].Pass));
+      LoadStream.Read(fCacheAvoidLocked[I].LocA, SizeOf(fCacheAvoidLocked[I].LocA));
+      LoadStream.Read(fCacheAvoidLocked[I].LocB, SizeOf(fCacheAvoidLocked[I].LocB));
+      LoadStream.Read(fCacheAvoidLocked[I].TimeToLive);
+    end;
 end;
 
 
@@ -396,6 +497,10 @@ begin
   if CACHE_PATHFINDING then
     for I := 0 to PATH_CACHE_MAX - 1 do
       fCache[I].Weight := Max(fCache[I].Weight - 1, 0);
+
+  if CACHE_PATHFINDING_AVOID_LOCKED then
+    for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+      fCacheAvoidLocked[I].TimeToLive := Max(fCacheAvoidLocked[I].TimeToLive - 1, 0);
 end;
 
 

@@ -87,7 +87,7 @@ var
 
   //Cache / delivery / pathfinding
   CACHE_PATHFINDING                       :Boolean = True; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
-  DELIVERY_BID_CALC_USE_PATHFINDING :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
+  CACHE_PATHFINDING_AVOID_LOCKED          :Boolean = True; //Cache unsuccesfull tries to find route with avoid locked (as non walkable)
   DELIVERY_BID_CALC_USE_PATHFINDING       :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
   {$IFDEF WDC} //Work only in Delphi
   CACHE_DELIVERY_BIDS: Boolean = True; //Cache delivery bids cost. Must be turned ON if we want to use pathfinding for bid calc, huge impact on performance in that case
