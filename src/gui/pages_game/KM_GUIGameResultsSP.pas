@@ -152,7 +152,9 @@ begin
 
   //If the player canceled mission, hide the AI graph lines so he doesn't see secret info about enemy (e.g. army size)
   //That info should only be visible if the mission was won or a replay
-  ShowAIResults := gGame.IsReplay or (fGameResultMsg in [grWin, grReplayEnd]);
+  ShowAIResults := gGame.IsReplay
+                   or (fGameResultMsg in [grWin, grReplayEnd])
+                   or ((fGameResultMsg = grGameContinues) and (gMySpectator.Hand.AI.HasWon));
 
   //Restart button is hidden if you won or if it is a replay
   Button_Restart.Visible := not (fGameResultMsg in [grReplayEnd, grWin, grGameContinues]);
@@ -187,11 +189,15 @@ begin
     Label_Results.Caption := Label_Results.Caption + ' (' + gResTexts[DIFFICULTY_LEVELS_TX[gGame.MissionDifficulty]] + ')';
 
 
-  //This is SP menu, we are dead sure there's only one Human player
+  //This is SP menu, we are dead sure there's only one Human player (NOT REALLY)
   HumanId := -1;
   for I := 0 to gHands.Count - 1 do
     if gHands[I].HandType = hndHuman then
       HumanId := I;
+
+  //Still possible to have no Humans, if we play some MP replay in SP replay mode
+  if HumanId = -1 then
+    HumanId := 0;
 
   //List values (like old KaM did)
   with gHands[HumanId].Stats do

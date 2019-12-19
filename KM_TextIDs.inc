@@ -1406,7 +1406,7 @@ TX_MAPED_RMG_SETTINGS_HEIGHT_STEP_HINT = 1366; //Step of the height algorithm (1
 TX_MAPED_RMG_SETTINGS_HEIGHT_SLOPE_HINT = 1367; //Slope of the height evaluation (0 = plateau, 15 = peak)
 TX_MAPED_RMG_SETTINGS_HEIGHT_HEIGHTS_HINT = 1368; //Maximum height of walkable tiles
 TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES = 1371; //Initial resources
-TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES_HINT = 1372; //Amount of initial resources
+TX_MAPED_RMG_SETTINGS_INITIAL_RESOURCES_HINT = 1372; //Amount of initial resources in the storehouse
 TX_MAPED_RMG_SETTINGS_LOW = 1373; //Low
 TX_MAPED_RMG_SETTINGS_MEDIUM = 1374; //Medium
 TX_MAPED_RMG_SETTINGS_HIGH = 1375; //High

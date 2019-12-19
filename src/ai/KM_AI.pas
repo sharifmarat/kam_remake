@@ -464,6 +464,7 @@ procedure TKMHandAI.UpdateState(aTick: Cardinal; aCheckGoals: Boolean);
 begin
   if (WonOrLost <> wolNone) then
     Exit;
+
   //Check goals for all players to maintain multiplayer consistency
   //AI victory/defeat is used in scripts (e.g. OnPlayerDefeated in battle tutorial)
   if aCheckGoals and (((aTick + Byte(fOwner)) mod MAX_HANDS) = 0) then

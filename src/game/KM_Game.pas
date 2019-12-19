@@ -79,6 +79,8 @@ type
     fReadyToStop: Boolean;
     fGameSeed: Integer;
 
+    fLoadFromFile: UnicodeString; //Path to file, from which game was loaded. '.bas' file for replays
+
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
     procedure MultiplayerRig;
@@ -162,9 +164,11 @@ type
     function IsMapEditor: Boolean;
     function IsCampaign: Boolean;
     function IsMultiPlayerOrSpec: Boolean;
+    function IsMultiplayerGame: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplay: Boolean;
     function IsReplayOrSpectate: Boolean;
+    function IsSingleplayerGame: Boolean;
     function IsSingleplayer: Boolean;
     function IsNormalGame: Boolean;
     function IsSpeedUpAllowed: Boolean;
@@ -289,6 +293,7 @@ begin
   fBlockGetPointer := False;
   fLastTimeUserAction := TimeGet;
   fLastAfkMessageSent := 0;
+  fLoadFromFile := '';
 
   if fGameMode in [gmReplaySingle, gmReplayMulti] then
     fSavedReplays := TKMSavedReplays.Create();
@@ -1357,6 +1362,12 @@ begin
 end;
 
 
+function TKMGame.IsMultiplayerGame: Boolean;
+begin
+  Result := fGameMode = gmMulti;
+end;
+
+
 // We often need to see if game is MP
 function TKMGame.IsMultiPlayerOrSpec: Boolean;
 begin
@@ -1366,13 +1377,19 @@ end;
 
 function TKMGame.IsMultiplayer: Boolean;
 begin
-  Result := fGameMode = gmMulti;
+  Result := fGameMode in [gmMulti, gmMultiSpectate, gmReplayMulti];
+end;
+
+
+function TKMGame.IsSingleplayerGame: Boolean;
+begin
+  Result := fGameMode in [gmSingle, gmCampaign];
 end;
 
 
 function TKMGame.IsSingleplayer: Boolean;
 begin
-  Result := fGameMode in [gmSingle, gmCampaign];
+  Result := fGameMode in [gmSingle, gmCampaign, gmReplaySingle];
 end;
 
 
@@ -1591,7 +1608,7 @@ end;
 
 function TKMGame.AllowGetPointer: Boolean;
 begin
-  Result := IsSinglePlayer or IsMapEditor or not BlockGetPointer;
+  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer;
 end;
 
 
@@ -1803,8 +1820,8 @@ var
   fullPath, RngPath, mpLocalDataPath, NewSaveName: UnicodeString;
 begin
   //Convert name to full path+name
-  fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiPlayerOrSpec);
-  mpLocalDataPath := SaveName(aSaveName, EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec);
+  fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiplayer);
+  mpLocalDataPath := SaveName(aSaveName, EXT_SAVE_MP_LOCAL, IsMultiplayer);
 
   SaveGameToFile(fullPath, aTimestamp, mpLocalDataPath);
 
@@ -1815,9 +1832,16 @@ begin
   //Remember which savegame to try to restart (if game was not saved before)
   fSaveFile := ExtractRelativePath(ExeDir, fullPath);
 
-  NewSaveName := SaveName(aSaveName, EXT_SAVE_BASE, IsMultiPlayerOrSpec);
+  NewSaveName := SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer);
   //Copy basesave so we have a starting point for replay
-  KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), NewSaveName, True);
+  if IsReplay then
+  begin
+    //Game was saved from replay (.bas file)
+    if FileExists(fLoadFromFile) then
+      KMCopyFile(fLoadFromFile, NewSaveName, True);
+  end else
+    //Normally saved game
+    KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
 
   //Save replay queue
   gLog.AddTime('Saving replay info');
@@ -1984,6 +2008,8 @@ begin
   try
     if not FileExists(aPathName) then
       raise Exception.Create('Savegame could not be found at ''' + aPathName + '''');
+
+    fLoadFromFile := aPathName;
 
     LoadStream.LoadFromFile(aPathName);
 

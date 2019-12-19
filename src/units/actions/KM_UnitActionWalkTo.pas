@@ -39,6 +39,7 @@ type
     fDoExchange: Boolean; //Command to make exchange maneuver with other unit, should use MakeExchange when vertex use needs to be set
     fInteractionCount, fLastSideStepNodePos: Integer;
     fInteractionStatus: TInteractionStatus;
+    fAvoidLockedAsMovementCost: Boolean; //Avoid locked as 'movement cost' if true and means 'as unwalkable' if false
     function AssembleTheRoute: Boolean;
     function CanWalkToTarget(const aFrom: TKMPoint; aPass: TKMTerrainPassability): Boolean;
     function CheckForNewDestination: TKMDestinationCheck;
@@ -76,7 +77,8 @@ type
     fVertexOccupied: TKMPoint; //Public because it needs to be used by AbandonWalk
     constructor Create(aUnit: TKMUnit; const aLocB: TKMPoint; aActionType: TKMUnitActionType; aDistance: Single; aSetPushed:
                        Boolean; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse; aTargetPassability: TKMTerrainPassability = tpUnused;
-                       aTargetWalkConnectSet: TKMByteSet = []; aUseExactTarget: Boolean = True);
+                       aTargetWalkConnectSet: TKMByteSet = []; aUseExactTarget: Boolean = True;
+                       aAvoidLockedByMovementCost: Boolean = True; aSilent: Boolean = False);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure  SyncLoad; override;
     destructor Destroy; override;
@@ -90,6 +92,7 @@ type
     function WasPushed: Boolean;
     property WalkFrom: TKMPoint read fWalkFrom;
     property WalkTo: TKMPoint read fWalkTo;
+    function RouteBuilt: Boolean;
 
     //Modify route to go to this destination instead
     procedure ChangeWalkTo(const aLoc: TKMPoint; aDistance: Single); overload;
@@ -105,7 +108,7 @@ type
 implementation
 uses
   KM_RenderAux, KM_Game, KM_HandsCollection, KM_Terrain, KM_ResUnits, KM_UnitGroup,
-  KM_UnitActionGoInOut, KM_UnitActionStay, KM_UnitTaskBuild, KM_UnitTaskDismiss,
+  KM_UnitActionGoInOut, KM_UnitActionStay, KM_UnitTaskBuild, KM_UnitTaskDismiss, KM_PathFinding,
   KM_UnitWarrior, KM_Log, KM_Resource, KM_CommonClassesExt;
 
 type
@@ -136,9 +139,11 @@ constructor TKMUnitActionWalkTo.Create( aUnit: TKMUnit;
                                         aTargetHouse: TKMHouse;
                                         aTargetPassability: TKMTerrainPassability = tpUnused;
                                         aTargetWalkConnectSet: TKMByteSet = [];
-                                        aUseExactTarget: Boolean = True);
+                                        aUseExactTarget: Boolean = True;
+                                        aAvoidLockedByMovementCost: Boolean = True;
+                                        aSilent: Boolean = False);
 var
-  RouteBuilt: Boolean; //Check if route was built, otherwise return nil
+  RouteWasBuilt: Boolean; //Check if route was built, otherwise return nil
 begin
   inherited Create(aUnit, aActionType, False);
 
@@ -149,6 +154,8 @@ begin
 
   fDistance := aDistance;
   // aSetPushed Doesn't need to be rememberred (it is used only in Create here)
+
+  fAvoidLockedAsMovementCost := aAvoidLockedByMovementCost;
 
   if aTargetUnit  <> nil then
     fTargetUnit  := aTargetUnit.GetUnitPointer;
@@ -186,20 +193,23 @@ begin
   SetInitValues;
 
   if KMSamePoint(fWalkFrom,fWalkTo) then //We don't care for this case, Execute will report action is done immediately
-    exit; //so we don't need to perform any more processing
+    Exit; //so we don't need to perform any more processing
 
   if aSetPushed then
   begin
+    gTerrain.IncTileJamMeter(aLocB, 1);
+    gTerrain.IncTileJamMeter(fUnit.CurrPosition, 1);
     fInteractionStatus := kisPushed; //So that unit knows it was pushed not just walking somewhere
     Explanation := 'We were asked to get out of the way';
     ExplanationLogAdd;
     fPass := GetEffectivePassability; //Units are allowed to step off roads when they are pushed
   end;
 
-  RouteBuilt := AssembleTheRoute;
+  RouteWasBuilt := AssembleTheRoute;
 
   //If route fails to build that's a serious issue, (consumes CPU) Can*** should mean that never happens
-  if not RouteBuilt then //NoList.Count = 0, means it will exit in Execute
+  if not RouteWasBuilt // Means it will exit in Execute
+    and not aSilent then // do not log this error in silent mode (we could expect route could not be build in some cases (f.e. warrior reRoute when attack house)
     //NoFlush logging here because this log is not much important
     gLog.AddNoTimeNoFlush('Unable to make a route for ' + gRes.Units[aUnit.UnitType].GUIName +
                    ' from ' + KM_Points.TypeToString(fWalkFrom) + ' to ' + KM_Points.TypeToString(fWalkTo) +
@@ -268,6 +278,7 @@ begin
   LoadStream.Read(fInteractionCount);
   LoadStream.Read(fLastSideStepNodePos);
   LoadStream.Read(fInteractionStatus, SizeOf(fInteractionStatus));
+  LoadStream.Read(fAvoidLockedAsMovementCost);
 
   LoadStream.Read(fVertexOccupied);
   NodeList := TKMPointList.Create;
@@ -344,6 +355,12 @@ begin
 end;
 
 
+function TKMUnitActionWalkTo.RouteBuilt: Boolean;
+begin
+  Result := NodeList.Count > 0;
+end;
+
+
 procedure TKMUnitActionWalkTo.PerformExchange(const ForcedExchangePos: TKMPoint);
 begin
   //If we are being forced to exchange then modify our route to make the exchange,
@@ -387,7 +404,7 @@ function TKMUnitActionWalkTo.AssembleTheRoute: Boolean;
 var
   I: Integer;
   NodeList2: TKMPointList;
-  AvoidLocked: Boolean;
+  AvoidLocked: TKMPathAvoidLocked;
 begin
   //Build a piece of route to return to nearest road piece connected to destination road network
   if (fPass = tpWalkRoad)
@@ -397,9 +414,16 @@ begin
     if CanWalkToTarget(fWalkFrom, tpWalk) then
       gGame.Pathfinding.Route_ReturnToWalkable(fWalkFrom, fWalkTo, wcRoad, gTerrain.GetRoadConnectID(fWalkTo), [tpWalk], NodeList);
 
-  AvoidLocked := (fUnit is TKMUnitWarrior)
-                  and (TKMUnitWarrior(fUnit).Task <> nil)
-                  and (TKMUnitWarrior(fUnit).Task.TaskType = uttAttackHouse);
+  AvoidLocked := palNoAvoid;
+  if (fUnit is TKMUnitWarrior)
+    and (TKMUnitWarrior(fUnit).Task <> nil)
+    and (TKMUnitWarrior(fUnit).Task.TaskType = uttAttackHouse) then
+  begin
+    if fAvoidLockedAsMovementCost then
+      AvoidLocked := palAvoidByMovementCost
+    else
+      AvoidLocked := palAvoidAsUnwalkable;
+  end;
 
   //Build a route A*
   if NodeList.Count = 0 then //Build a route from scratch
@@ -522,11 +546,15 @@ begin
         Exit(ocNoObstacle)
       else
       begin
-        //Restore direction, cause it usually looks unpleasant,
+
+        if fUnit.TrySetActionWalk(fWalkTo, fType, fDistance, fTargetUnit, fTargetHouse, False) then
+        begin
+          //Restore direction, cause it usually looks unpleasant,
         //when warrior turns to locked Loc and then immidiately (in 1 tick) turns away when on new route
-        fUnit.Direction := aDir;
-        fUnit.SetActionWalk(fWalkTo, fType, fDistance, fTargetUnit, fTargetHouse);
-        Result := ocReRouteMade;
+          fUnit.Direction := aDir;
+          Result := ocReRouteMade;
+        end else
+          Exit(ocNoObstacle); //Same as when AllTilesAroundLocked
       end;
     end else
       Result := ocNoRoute;
@@ -617,7 +645,8 @@ end;
 
 { We can push idling unit }
 function TKMUnitActionWalkTo.IntSolutionPush(fOpponent:TKMUnit; HighestInteractionCount:integer):boolean;
-var OpponenTKMTerrainPassability: TKMTerrainPassability;
+var
+  OpponentPass: TKMTerrainPassability;
 begin
   Result := False;
 
@@ -626,25 +655,28 @@ begin
 
   //Ask the other unit to step aside, only if they are idle!
   if (fOpponent.Action is TKMUnitActionStay)
-  and not TKMUnitActionStay(fOpponent.Action).Locked then
+    and not TKMUnitActionStay(fOpponent.Action).Locked then
   begin
     //We must alert the opponent to our presence because it looks bad when you warrior is pushed
     //by the enemy instead of fighting them.
     //CheckAlliance is for optimisation since pushing allies doesn't matter
     if (fOpponent is TKMUnitWarrior)
-    and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = atEnemy)
-    and TKMUnitWarrior(fOpponent).CheckForEnemy then
+      and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = atEnemy)
+      and TKMUnitWarrior(fOpponent).CheckForEnemy then
       Exit;
 
+    OpponentPass := fOpponent.DesiredPassability;
+    if OpponentPass = tpWalkRoad then
+      OpponentPass := tpWalk;
+
+    //We tell opponent, that we were also pushed, so he could avoid unhelpful exchange with us
+    //So ipdate fInteractionStatus after that
+    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponentPass, WasPushed));
+
     fInteractionStatus := kisPushing;
-    OpponenTKMTerrainPassability := fOpponent.DesiredPassability;
-    if OpponenTKMTerrainPassability = tpWalkRoad then
-      OpponenTKMTerrainPassability := tpWalk;
 
     if not CanAbandonInternal then
       raise ELocError.Create('Unit walk IntSolutionPush', fUnit.CurrPosition);
-
-    fOpponent.SetActionWalkPushed(gTerrain.GetOutOfTheWay(fOpponent, fUnit.CurrPosition, OpponenTKMTerrainPassability));
 
     Explanation := 'Unit was blocking the way but it has been forced to go away now';
     ExplanationLogAdd; //Hopefully next tick tile will be free and we will walk there
@@ -1255,6 +1287,7 @@ begin
   SaveStream.Write(fInteractionCount);
   SaveStream.Write(fLastSideStepNodePos);
   SaveStream.Write(fInteractionStatus,SizeOf(fInteractionStatus));
+  SaveStream.Write(fAvoidLockedAsMovementCost);
 
   SaveStream.Write(fVertexOccupied);
   NodeList.SaveToStream(SaveStream);

@@ -232,6 +232,9 @@ uses
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
   KM_GameTypes, KM_CommonUtils;
 
+const
+  TIME_TO_SET_FIRST_STOREHOUSE = 10*60*2; //We give 2 minutes to set first storehouse, otherwise player will be defeated
+
 
 { TKMHandCommon }
 constructor TKMHandCommon.Create(aHandIndex: TKMHandID);
@@ -1516,7 +1519,8 @@ begin
         Result := gGame.TextMission[HANDS_NAMES_OFFSET + fID];
 
   //If this location is controlled by an MP player - show his nik
-  if fOwnerNikname <> '' then
+  if (fOwnerNikname <> '')
+    and (HandType = hndHuman) then //we could ask AI to play on ex human loc, so fOwnerNikname will be still some human name
     Result := UnicodeString(fOwnerNikname);
 end;
 
@@ -1814,6 +1818,9 @@ begin
   if aFrom <> PLAYER_NONE then
     gHands[aFrom].Stats.UnitKilled(aUnit.UnitType);
 
+  //Demands: food for soldiers / stone or wood for workers
+  Deliveries.Queue.RemDemand(aUnit);
+
   //Call script event after updating statistics
   gScriptEvents.ProcUnitDied(aUnit, aFrom);
 
@@ -1841,6 +1848,19 @@ end;
 procedure TKMHand.UpdateState(aTick: Cardinal);
 begin
   if not Enabled then Exit;
+
+  if not gGame.IsMapEditor
+    and NeedToChooseFirstStorehouse() then
+  begin
+    if aTick > TIME_TO_SET_FIRST_STOREHOUSE then
+    begin
+      AI.Defeat;
+      Exit;
+    end;
+
+    if fHandType = hndComputer then
+      AI.PlaceFirstStorehouse(fCenterScreen);
+  end;
 
   //Update Groups logic before Units
   fUnitGroups.UpdateState;
