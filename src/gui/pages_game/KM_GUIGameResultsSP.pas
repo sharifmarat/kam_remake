@@ -152,7 +152,9 @@ begin
 
   //If the player canceled mission, hide the AI graph lines so he doesn't see secret info about enemy (e.g. army size)
   //That info should only be visible if the mission was won or a replay
-  ShowAIResults := gGame.IsReplay or (fGameResultMsg in [grWin, grReplayEnd]);
+  ShowAIResults := gGame.IsReplay
+                   or (fGameResultMsg in [grWin, grReplayEnd])
+                   or ((fGameResultMsg = grGameContinues) and (gMySpectator.Hand.AI.HasWon));
 
   //Restart button is hidden if you won or if it is a replay
   Button_Restart.Visible := not (fGameResultMsg in [grReplayEnd, grWin, grGameContinues]);
