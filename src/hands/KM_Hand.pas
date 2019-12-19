@@ -1849,19 +1849,15 @@ procedure TKMHand.UpdateState(aTick: Cardinal);
 begin
   if not Enabled then Exit;
 
-  if not gGame.IsMapEditor
-    and NeedToChooseFirstStorehouse() then
-  begin
-    if aTick > TIME_TO_SET_FIRST_STOREHOUSE then
-    begin
-      AI.Defeat;
-      Exit;
-    end;
+  //Player has to place first storehouse at some point or will be defeated
+	if aTick > TIME_TO_SET_FIRST_STOREHOUSE then
+	begin
+	  AI.Defeat;
+	  Exit;
+	end;
 
-    if fHandType = hndComputer then
-      AI.PlaceFirstStorehouse(fCenterScreen);
-  end;
-
+	if fHandType = hndComputer then
+  
   //Update Groups logic before Units
   fUnitGroups.UpdateState;
 
