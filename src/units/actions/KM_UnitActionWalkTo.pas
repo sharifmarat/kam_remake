@@ -186,7 +186,7 @@ begin
   SetInitValues;
 
   if KMSamePoint(fWalkFrom,fWalkTo) then //We don't care for this case, Execute will report action is done immediately
-    exit; //so we don't need to perform any more processing
+    Exit; //so we don't need to perform any more processing
 
   if aSetPushed then
   begin

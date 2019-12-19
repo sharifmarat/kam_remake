@@ -77,8 +77,8 @@ begin
   inherited;
 
   if CACHE_PATHFINDING then
-  for I := 0 to PATH_CACHE_MAX - 1 do
-    fCache[I].Route := TKMPointList.Create;
+    for I := 0 to PATH_CACHE_MAX - 1 do
+      fCache[I].Route := TKMPointList.Create;
 end;
 
 
@@ -87,8 +87,8 @@ var
   I: Integer;
 begin
   if CACHE_PATHFINDING then
-  for I := 0 to PATH_CACHE_MAX - 1 do
-    FreeAndNil(fCache[I].Route);
+    for I := 0 to PATH_CACHE_MAX - 1 do
+      FreeAndNil(fCache[I].Route);
 
   inherited;
 end;
@@ -109,6 +109,7 @@ begin
   fDistance := aDistance;
   fIsInteractionAvoid := aAvoidLocked;
   fTargetHouse := aTargetHouse;
+
   if fTargetHouse = nil then
     fDestination := pdLocation
   else
@@ -249,8 +250,8 @@ begin
   //Find cached route with least weight and replace it
   Best := 0;
   for I := 1 to PATH_CACHE_MAX - 1 do
-  if fCache[I].Weight < fCache[Best].Weight then
-    Best := I;
+    if fCache[I].Weight < fCache[Best].Weight then
+      Best := I;
 
   fCache[Best].Weight := PATH_CACHE_INIT_WEIGHT;
   fCache[Best].Pass := fPass;
@@ -301,10 +302,11 @@ begin
       BestL := MaxSingle;
       for K := fCache[I].Route.Count - 1 downto BestStart + 1 do
       begin
-        NewL := KMLengthDiag(fLocB, fCache[I].Route[K]);
+        P := fCache[I].Route[K];
+        NewL := KMLengthDiag(fLocB, P);
         if (NewL <= 1)
           or ((NewL < 2)
-            and gTerrain.CanWalkDiagonaly(fLocB, fCache[I].Route[K].X, fCache[I].Route[K].Y)) then
+            and gTerrain.CanWalkDiagonaly(fLocB, P.X, P.Y)) then
         begin
           BestEnd := K;
           BestL := NewL;
@@ -362,12 +364,12 @@ begin
   SaveStream.PlaceMarker('PathFinding');
 
   if CACHE_PATHFINDING then
-  for I := 0 to PATH_CACHE_MAX - 1 do
-  begin
-    SaveStream.Write(fCache[I].Weight);
-    SaveStream.Write(fCache[I].Pass, SizeOf(fCache[I].Pass));
-    fCache[I].Route.SaveToStream(SaveStream);
-  end;
+    for I := 0 to PATH_CACHE_MAX - 1 do
+    begin
+      SaveStream.Write(fCache[I].Weight);
+      SaveStream.Write(fCache[I].Pass, SizeOf(fCache[I].Pass));
+      fCache[I].Route.SaveToStream(SaveStream);
+    end;
 end;
 
 
@@ -378,12 +380,12 @@ begin
   LoadStream.CheckMarker('PathFinding');
 
   if CACHE_PATHFINDING then
-  for I := 0 to PATH_CACHE_MAX - 1 do
-  begin
-    LoadStream.Read(fCache[I].Weight);
-    LoadStream.Read(fCache[I].Pass, SizeOf(fCache[I].Pass));
-    fCache[I].Route.LoadFromStream(LoadStream);
-  end;
+    for I := 0 to PATH_CACHE_MAX - 1 do
+    begin
+      LoadStream.Read(fCache[I].Weight);
+      LoadStream.Read(fCache[I].Pass, SizeOf(fCache[I].Pass));
+      fCache[I].Route.LoadFromStream(LoadStream);
+    end;
 end;
 
 
@@ -392,8 +394,8 @@ var
   I: Integer;
 begin
   if CACHE_PATHFINDING then
-  for I := 0 to PATH_CACHE_MAX - 1 do
-    fCache[I].Weight := Max(fCache[I].Weight - 1, 0);
+    for I := 0 to PATH_CACHE_MAX - 1 do
+      fCache[I].Weight := Max(fCache[I].Weight - 1, 0);
 end;
 
 

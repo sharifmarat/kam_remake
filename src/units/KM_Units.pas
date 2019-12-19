@@ -1692,7 +1692,7 @@ begin
                                       aHouse.GetClosestCell(Self.CurrPosition),
                                       aActionType,        //
                                       aDistance,          //Proximity
-                                      false,              //If we were pushed
+                                      False,              //If we were pushed
                                       nil,                //Unit
                                       aHouse              //House
                                       ));

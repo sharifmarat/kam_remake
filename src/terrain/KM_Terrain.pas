@@ -3296,7 +3296,6 @@ var
   isFree, isOffroad, isPushable, exchWithPushedPusher, exchWithPushedPusherChoosen: Boolean;
   newWeight, bestWeight: Single;
   TempUnit: TKMUnit;
-  weigthedList: TKMWeightedPointList;
 begin
   U := TKMUnit(aUnit);
   Loc := U.CurrPosition;
