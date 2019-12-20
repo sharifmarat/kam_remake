@@ -358,6 +358,7 @@ begin
   for I := 0 to fCount - 1 do
     fSaves[i].Free;
   fCount := 0;
+  SetLength(fSaves,0);
 end;
 
 
@@ -514,13 +515,8 @@ var
       fSaves[j] := TempSaves[j];
   end;
 begin
-  SetLength(TempSaves, Length(fSaves));
-  try
-    MergeSort(Low(fSaves), High(fSaves));
-  except
-    on E: Exception do
-      Exit; //Ignore sort exceptions
-  end;
+  SetLength(TempSaves, fCount);
+  MergeSort(0, fCount-1);
 end;
 
 
