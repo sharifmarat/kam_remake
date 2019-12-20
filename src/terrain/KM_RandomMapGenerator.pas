@@ -276,6 +276,8 @@ destructor TKMRandomMapGenerator.Destroy();
 begin
   fRNG.Free;
   fRes.Free;
+
+  inherited;
 end;
 
 
