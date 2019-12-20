@@ -197,8 +197,10 @@ begin
 
   if aSetPushed then
   begin
+    //Mark destination and current position as 'jammed', so as bad place to be pushed to
     gTerrain.IncTileJamMeter(aLocB, 1);
     gTerrain.IncTileJamMeter(fUnit.CurrPosition, 1);
+
     fInteractionStatus := kisPushed; //So that unit knows it was pushed not just walking somewhere
     Explanation := 'We were asked to get out of the way';
     ExplanationLogAdd;

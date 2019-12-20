@@ -21,9 +21,9 @@ type
     );
 
   TKMPathAvoidLocked = (
-    palNoAvoid,
-    palAvoidByMovementCost,
-    palAvoidAsUnwalkable
+    palNoAvoid,             //Don't avoid any tiles
+    palAvoidByMovementCost, //Avoid locekd tiles by increasing their movement cost
+    palAvoidAsUnwalkable    //avoid locked tiles as mark them unwalkable (no route will be made through them)
     );
 
   //This is a helper class for TTerrain
