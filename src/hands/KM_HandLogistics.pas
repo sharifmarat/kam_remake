@@ -101,6 +101,7 @@ type
     fQueue: array of
     record
       Serf: TKMUnitSerf;
+      IsFromUnit: Boolean; //Delivery was redispatched, so now we start delivery from current serf position
       OfferID, DemandID: Integer;
       JobStatus: TKMDeliveryJobStatus; //Empty slot, resource Taken, job Done
       Item: TListItem;
@@ -128,9 +129,11 @@ type
     function SerfCanDoDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
     function PermitDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
     function TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
-    function TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
+    function TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil;
+                                  aAllowOffroad: Boolean = False): Boolean; overload;
     function TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
-                                  aOwner: TKMHandID; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
+                                  aOwner: TKMHandID; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil;
+                                  aAllowOffroad: Boolean = False): Boolean; overload;
     function TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
     function TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single; aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
     function GetUnitsCntOnPath(aNodeList: TKMPointList): Integer;
@@ -1108,16 +1111,19 @@ begin
 end;
 
 
-function TKMDeliveries.TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
+function TKMDeliveries.TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil;
+                                            aAllowOffroad: Boolean = False): Boolean;
 begin
   Result := TryCalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.PointBelowEntrance, fOffer[iO].Count,
-                                 fOffer[iO].Loc_House.HouseType, fOffer[iO].Loc_House.Owner, iD, aBidBasicValue, aSerf);
+                                 fOffer[iO].Loc_House.HouseType, fOffer[iO].Loc_House.Owner, iD, aBidBasicValue, aSerf,
+                                 aAllowOffroad);
 end;
 
 
 //Calc bid cost between offer object (house, serf) and demand object (house, unit - worker or warrior)
 function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
-                                            aOwner: TKMHandID; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
+                                            aOwner: TKMHandID; iD: Integer; var aBidBasicValue: Single;
+                                            aSerf: TKMUnitSerf = nil; aAllowOffroad: Boolean = False): Boolean;
 
   {$IFDEF USE_HASH}
   procedure TryAddToCache(aBidKey: TKMDeliveryBidKey; aBidBasicV: Single);
@@ -1129,6 +1135,7 @@ function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPo
 
 var
   SerfBidValue: Single;
+  SecondPass: TKMTerrainPassability;
   {$IFDEF USE_HASH}
   BidKey: TKMDeliveryBidKey;
   OfferToDemandCache: Single;
@@ -1177,8 +1184,11 @@ begin
     //For all other cases - use distance approach. Direct length (rough) or pathfinding (exact)
     if fDemand[iD].Loc_House <> nil then
     begin
+      SecondPass := tpUnused;
+      if aAllowOffroad then
+        SecondPass := tpWalk;
       //Calc cost between offer and demand houses
-      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue, SecondPass);
       aBidBasicValue := aBidBasicValue
         //Resource ratios are also considered
         + KaMRandom(16 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType],
@@ -1375,18 +1385,21 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     iD: Integer;
     Bid, BestBid: Single;
     BestImportance: TKMDemandImportance;
+    DeliverToUnit: Boolean;
   begin
     Result := -1;
     aForceDelivery := False;
     BestImportance := Low(TKMDemandImportance);
     BestBid := MaxSingle;
+    DeliverToUnit := fDemand[fQueue[aDeliveryId].DemandID].Loc_Unit <> nil;
     //Try to find house or unit demand first (not storage)
     for iD := 1 to fDemandCount do
       if (fDemand[iD].Ware <> wtNone)
         and (iD <> fQueue[aDeliveryId].DemandID)
         and (fDemand[iD].Importance >= BestImportance)
         and ValidBestDemand(iD)
-        and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid)
+        and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
+                                 DeliverToUnit or fQueue[aDeliveryId].IsFromUnit)
         and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then //Calc bid to find the best demand
       begin
         Result := iD;
@@ -1402,7 +1415,8 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
           and (fDemand[iD].Loc_House.DeliveryMode = dmDelivery)
           and (fDemand[iD].Loc_House is TKMHouseStore)
           and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource]
-          and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
+                                   DeliverToUnit or fQueue[aDeliveryId].IsFromUnit) //Choose the closest storage
           and (Bid < BestBid) then
         begin
           Result := iD;
@@ -1414,7 +1428,8 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wtAll)
           and not fDemand[iD].Loc_House.IsDestroyed //choose between all storages, including current delivery. But not destroyed
-          and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
+                                   DeliverToUnit or fQueue[aDeliveryId].IsFromUnit) //Choose the closest storage
           and (Bid < BestBid) then
         begin
           Result := iD;
@@ -1460,6 +1475,7 @@ begin
       // Take new demand
       fQueue[aDeliveryId].DemandId := BestDemandId;
       Inc(fDemand[BestDemandId].BeingPerformed); //Places a virtual "Reserved" sign on Demand
+      fQueue[aDeliveryId].IsFromUnit := True; //Now this delivery will always start from serfs hands
 
       UpdateDemandItem(BestDemandId);
       UpdateQueueItem(aDeliveryId);
@@ -1754,6 +1770,7 @@ begin
   SaveStream.Write(fQueueCount);
   for I := 1 to fQueueCount do
   begin
+    SaveStream.Write(fQueue[I].IsFromUnit);
     SaveStream.Write(fQueue[I].OfferID);
     SaveStream.Write(fQueue[I].DemandID);
     SaveStream.Write(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
@@ -1851,6 +1868,7 @@ begin
   SetLength(fQueue, fQueueCount+1);
   for I := 1 to fQueueCount do
   begin
+    LoadStream.Read(fQueue[I].IsFromUnit);
     LoadStream.Read(fQueue[I].OfferID);
     LoadStream.Read(fQueue[I].DemandID);
     LoadStream.Read(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
