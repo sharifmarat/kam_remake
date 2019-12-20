@@ -3881,7 +3881,7 @@ begin
                 gGame.GameInputProcess.CmdBuild(gicBuildHousePlan, P, TKMHouseType(gGameCursor.Tag1));
                 // If shift pressed do not reset cursor (keep selected building)
                 if not (ssShift in Shift)
-                  and not gMySpectator.Hand.NeedToChooseFirstStorehouse then //Do not show Build menu after place first storehouse feature
+                  and not gMySpectator.Hand.NeedToChooseFirstStorehouseInGame then //Do not show Build menu after place first storehouse feature
                   fGuiGameBuild.Show;
               end
               else
