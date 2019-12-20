@@ -358,7 +358,7 @@ begin
   for I := 0 to fCount - 1 do
     fSaves[i].Free;
   fCount := 0;
-  SetLength(fSaves,0);
+  SetLength(fSaves, 0); //We could use Low and High. Need to reset array to 0 length
 end;
 
 
