@@ -134,7 +134,7 @@ begin
 
   //Remember which map we played so we could restart it
   fRepeatGameName := gGame.GameName;
-  fRepeatMission := gGame.GetMissionFile;
+  fRepeatMission := gGame.MissionFile;
   fRepeatSave := gGame.SaveFile;
   fRepeatCampName := gGame.CampaignName;
   fRepeatCampMap := gGame.CampaignMap;
