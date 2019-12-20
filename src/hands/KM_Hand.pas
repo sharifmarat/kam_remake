@@ -1851,7 +1851,7 @@ begin
   if not Enabled then Exit;
 
   //Player has to place first storehouse at some point or will be defeated
-	if fChooseLocation.Allowed AND not fChooseLocation.Placed AND (aTick > TIME_TO_SET_FIRST_STOREHOUSE) then
+	if NeedToChooseFirstStorehouse and (aTick > TIME_TO_SET_FIRST_STOREHOUSE) then
 	  AI.Defeat;
   
   //Update Groups logic before Units
