@@ -107,6 +107,8 @@ type
 
     function DoSaveRandomChecks: Boolean;
     function DoSaveGameAsText: Boolean;
+
+    function GetMissionFile: UnicodeString;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -156,6 +158,7 @@ type
     property DynamicFOW: Boolean read fDynamicFOW write fDynamicFOW;
     property BlockGetPointer: Boolean read fBlockGetPointer;
     function AllowGetPointer: Boolean;
+    property MissionFile: UnicodeString read GetMissionFile;
 
     function MissionTime: TDateTime;
     function GetPeacetimeRemaining: TDateTime;
@@ -201,7 +204,7 @@ type
     property Scripting: TKMScripting read fScripting;
     property GameMode: TKMGameMode read fGameMode;
     property SaveFile: UnicodeString read fSaveFile;
-    function GetMissionFile: UnicodeString;
+
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
     property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
 
