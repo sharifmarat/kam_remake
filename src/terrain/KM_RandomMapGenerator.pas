@@ -1145,6 +1145,7 @@ end;
 procedure TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array);
 const
   RESOURCES: array[0..4] of TBiomeType = (btIron,btGold,btStone,btCoal,btCoal);
+  BASE_RES_RADIUS: array[0..4] of Single = (1.5,1.5,0.5,2,2);
   VORONOI_STEP = 3;
   RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.1,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
@@ -1375,7 +1376,7 @@ begin
           begin
             overflow := overflow + 1;
             // Try find unused shape
-            if not FindBestResLoc((RESOURCE <> Byte(btCoal)), 8.0, TP_S,TP_E,Locs[Loc], CountArr, ResLoc) then
+            if not FindBestResLoc((RESOURCE <> Byte(btCoal)), BASE_RES_RADIUS[I] * RMGSettings.Locs.ProtectedRadius, TP_S,TP_E,Locs[Loc], CountArr, ResLoc) then
               break;
             // Check if there is enought points to create mountains with specific size
             SetSizeOfMountain(ResLoc, sizeMountain, newSize, CountArr, PointsArr, PointArr);
@@ -1621,7 +1622,7 @@ var
 
   var
     X,Y,I, MaxCnt: Integer;
-    Factor,Probability, ProbabilityReducer: Single;
+    Factor,Probability, ProbabilityReducer, ProbabilityOffset: Single;
     MinP, MaxP: TKMPoint;
     Obstacle: TObstacleType;
     ObstacleSeeds: TKMPointArray;
@@ -1639,7 +1640,8 @@ begin
 // Create protected radius = array with smaller chance to spawn obstacle near aLocs
   if RMGSettings.Locs.Resource.Active then
   begin
-    ProbabilityReducer := (11 - RMGSettings.Locs.ProtectedRadius) * 0.02;
+    ProbabilityReducer := sqrt(11 - RMGSettings.Locs.ProtectedRadius) * 0.05;
+    ProbabilityOffset := RMGSettings.Locs.ProtectedRadius * 1.5;
     MaxCnt := Round(1 / ProbabilityReducer);
     if RMGSettings.Locs.Resource.ConnectLocs then
       ConnectLocs(aLocs);
@@ -1647,7 +1649,7 @@ begin
       for Y := Max(  Low(P), aLocs[I].Y - MaxCnt  ) to Min(  High(P), aLocs[I].Y + MaxCnt  ) do
         for X := Max(  Low(P[Y]), aLocs[I].X - MaxCnt  ) to Min(  High(P[Y]), aLocs[I].X + MaxCnt  ) do
         begin
-          Probability := KMLengthDiag(X,Y,aLocs[I]) * ProbabilityReducer;
+          Probability := Max(0, (KMLengthDiag(X,Y,aLocs[I]) - ProbabilityOffset) * ProbabilityReducer );
           if (P[Y,X] > Probability) then
             P[Y,X] := Probability;
         end;
