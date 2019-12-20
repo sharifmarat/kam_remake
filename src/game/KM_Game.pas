@@ -1254,6 +1254,7 @@ begin
   end;
 
   fGameName := TruncateExt(ExtractFileName(aPathName));
+  fMissionFileSP := ExtractRelativePath(ExeDir, aPathName);
 
   //Append empty players in place of removed ones
   gHands.AddPlayers(MAX_HANDS - gHands.Count);
