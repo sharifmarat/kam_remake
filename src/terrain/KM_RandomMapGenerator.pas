@@ -105,7 +105,7 @@ type
 
     property Resources: TKMBalancedResources read fRes;
   // Random number generators
-    procedure GenerateMap();
+    procedure GenerateMap(aSetLocProperties: Boolean);
   end;
 
 
@@ -292,7 +292,7 @@ end;
 
 
 // Main procedure for RMG - requires also RMGSettings: TKMRMGSettings (global variable)
-procedure TKMRandomMapGenerator.GenerateMap();
+procedure TKMRandomMapGenerator.GenerateMap(aSetLocProperties: Boolean);
 var
   Y, X, K, L: Integer;
   A,TileTemplateArr: TKMByte2Array;
@@ -415,52 +415,53 @@ begin
 
   // Prepare init resources
   FillChar(LocProperty, SizeOf(LocProperty), #0);
-  with LocProperty do
-  begin
-    Allowed := True;
-    Placed := False;
-    case RMGSettings.Locs.InitialResources of
-      0:
-        begin
-          Resources[wtStone] := 70;
-          Resources[wtWood] := 50;
-          Resources[wtGold] := 60;
-          Resources[wtWine] := 60;
-          Resources[wtBread] := 35;
-          Resources[wtSausages] := 15;
-          Resources[wtFish] := 30;
-          Units[utSerf] := 4;
-          Units[utWorker] := 3;
-          InitResStr := 'Low';
-        end;
-      1:
-        begin
-          Resources[wtStone] := 90;
-          Resources[wtWood] := 65;
-          Resources[wtGold] := 70;
-          Resources[wtWine] := 60;
-          Resources[wtBread] := 50;
-          Resources[wtSausages] := 25;
-          Resources[wtFish] := 30;
-          Units[utSerf] := 5;
-          Units[utWorker] := 4;
-          InitResStr := 'Medium';
-        end;
-      2:
-        begin
-          Resources[wtStone] := 120;
-          Resources[wtWood] := 80;
-          Resources[wtGold] := 80;
-          Resources[wtWine] := 80;
-          Resources[wtBread] := 60;
-          Resources[wtSausages] := 35;
-          Resources[wtFish] := 40;
-          Units[utSerf] := 7;
-          Units[utWorker] := 5;
-          InitResStr := 'High';
-        end;
+  if aSetLocProperties then
+    with LocProperty do
+    begin
+      Allowed := True;
+      Placed := False;
+      case RMGSettings.Locs.InitialResources of
+        0:
+          begin
+            Resources[wtStone] := 70;
+            Resources[wtWood] := 50;
+            Resources[wtGold] := 60;
+            Resources[wtWine] := 60;
+            Resources[wtBread] := 35;
+            Resources[wtSausages] := 15;
+            Resources[wtFish] := 30;
+            Units[utSerf] := 4;
+            Units[utWorker] := 3;
+            InitResStr := 'Low';
+          end;
+        1:
+          begin
+            Resources[wtStone] := 90;
+            Resources[wtWood] := 65;
+            Resources[wtGold] := 70;
+            Resources[wtWine] := 60;
+            Resources[wtBread] := 50;
+            Resources[wtSausages] := 25;
+            Resources[wtFish] := 30;
+            Units[utSerf] := 5;
+            Units[utWorker] := 4;
+            InitResStr := 'Medium';
+          end;
+        2:
+          begin
+            Resources[wtStone] := 120;
+            Resources[wtWood] := 80;
+            Resources[wtGold] := 80;
+            Resources[wtWine] := 80;
+            Resources[wtBread] := 60;
+            Resources[wtSausages] := 35;
+            Resources[wtFish] := 40;
+            Units[utSerf] := 7;
+            Units[utWorker] := 5;
+            InitResStr := 'High';
+          end;
+      end;
     end;
-  end;
   // Hand properties
   for K := 0 to Length(Locs) - 1 do
   begin
