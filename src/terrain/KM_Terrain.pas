@@ -3048,21 +3048,21 @@ begin
 
   Result := true;
   case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
-    144: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=157+KaMRandom(3, 'TKMTerrain.DecOreDeposit'); //Gold
-    145: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=144;
-    146: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=145;
-    147: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=146;
-    148: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=160+KaMRandom(4, 'TKMTerrain.DecOreDeposit 2'); //Iron
-    149: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=148;
-    150: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
-    259: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
-    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=150+KaMRandom(2, 'TKMTerrain.DecOreDeposit 3')*(259-150);
-    260: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=151;
-    152: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=35 +KaMRandom(2, 'TKMTerrain.DecOreDeposit 4'); //Coal
-    153: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=152;
-    154: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=153;
-    155: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=154;
-    263: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=155;
+    144: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 157 + KaMRandom(3, 'TKMTerrain.DecOreDeposit'); //Gold
+    145: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 144;
+    146: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 145;
+    147: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 146;
+    148: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 160 + KaMRandom(4, 'TKMTerrain.DecOreDeposit 2'); //Iron
+    149: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 148;
+    150: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 149;
+    259: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 149;
+    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 150 + KaMRandom(2, 'TKMTerrain.DecOreDeposit 3')*(259 - 150);
+    260: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 151;
+    152: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 35  + KaMRandom(2, 'TKMTerrain.DecOreDeposit 4'); //Coal
+    153: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 152;
+    154: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 153;
+    155: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 154;
+    263: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 155;
     else Result := false;
   end;
   Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.DecOreDeposit 5');
