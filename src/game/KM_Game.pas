@@ -2399,6 +2399,8 @@ begin
                       end;
         gmReplaySingle,gmReplayMulti:
                       begin
+                        IncGameTick;
+
                         fScripting.UpdateState;
                         UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                         gTerrain.UpdateState;
@@ -2445,9 +2447,6 @@ begin
                           Exit;
 
                         CheckPauseGameAtTick;
-
-                        //Increment game tick at the end, because we could have some commands even on 0 tick!
-                        IncGameTick;
 
                         Result := True;
                       end;
