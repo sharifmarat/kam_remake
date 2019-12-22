@@ -1311,7 +1311,7 @@ TX_HOUSE_BARRACKS_NOT_ACCEPT_RECRUIT_HINT = 1261; //Recruit is not allowed to ge
 
 TX_MAPED_RMG_SETTINGS_TITLE = 1263; //RMG Settings
 TX_MAPED_RMG_BUTTON_HINT = 1264; //Random map generator settings
-TX_MAPED_RMG_BUTTON_TITLE = 1265; //Random Map Generator - Settings
+TX_MAPED_RMG_BUTTON_TITLE = 1265; //RMG Settings
 TX_MAPED_RMG_SETTINGS_MAP_SIZE = 1266; //Map size:
 TX_MAPED_RMG_SETTINGS_LOCATIONS = 1267; //Locations
 TX_MAPED_RMG_SETTINGS_LOCATIONS_HINT = 1268; //Enable locations with resources
