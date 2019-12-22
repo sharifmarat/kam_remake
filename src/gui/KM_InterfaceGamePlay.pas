@@ -2563,7 +2563,7 @@ begin
       grDefeat:    gGame.GameHold(false, grDefeat);
       grReplayEnd: begin
                       gGame.SkipReplayEndCheck := True;
-                      gGame.GameHold(false, grReplayEnd);
+                      gGame.GameHold(False, grReplayEnd);
                     end;
     end;
 end;
