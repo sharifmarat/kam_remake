@@ -2264,10 +2264,10 @@ begin
 
   //These values have been measured from KaM
   case aRes of
-    wtGoldOre: begin R1:=144; R2:=145; R3:=146; R3_2:= -1; R4:=147; R5:= -1; end;
-    wtIronOre: begin R1:=148; R2:=149; R3:=150; R3_2:=259; R4:=151; R5:=260; end;
-    wtCoal:    begin R1:=152; R2:=153; R3:=154; R3_2:= -1; R4:=155; R5:=263; end;
-    else        begin R1:= -1; R2:= -1; R3:= -1; R3_2:= -1; R4:= -1; R5:= -1; end;
+    wtGoldOre: begin R1 := 144; R2 := 145; R3 := 146; R3_2 :=  -1; R4 := 147; R5 :=  -1; end;
+    wtIronOre: begin R1 := 148; R2 := 149; R3 := 150; R3_2 := 259; R4 := 151; R5 := 260; end;
+    wtCoal:    begin R1 := 152; R2 := 153; R3 := 154; R3_2 :=  -1; R4 := 155; R5 := 263; end;
+    else       begin R1 :=  -1; R2 :=  -1; R3 :=  -1; R3_2 :=  -1; R4 :=  -1; R5 :=  -1; end;
   end;
 
   for I := Max(aLoc.Y - MiningRect.Top, 1) to Min(aLoc.Y + MiningRect.Bottom, fMapY - 1) do
