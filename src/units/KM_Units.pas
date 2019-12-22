@@ -148,7 +148,7 @@ type
     procedure DismissCancel; virtual;
     //Could be used only in UI
     procedure DismissStarted;
-    property DismissInProgress: Boolean read fDismissInProgress;
+    property DismissInProgress: Boolean read fDismissInProgress write fDismissInProgress;
 
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); dynamic;
 
