@@ -135,7 +135,7 @@ type
 
     procedure GameMPPlay(Sender: TObject);
     procedure GameMPReadyToPlay(Sender: TObject);
-    procedure GameHold(DoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
+    procedure GameHold(aDoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
     procedure RequestGameHold(Msg: TKMGameResultMsg);
     procedure PlayerVictory(aHandIndex: TKMHandID);
     procedure PlayerDefeat(aPlayerIndex: TKMHandID; aShowDefeatMessage: Boolean = True);
@@ -979,19 +979,19 @@ end;
 
 
 //Put the game on Hold for Victory screen
-procedure TKMGame.GameHold(DoHold: Boolean; Msg: TKMGameResultMsg);
+procedure TKMGame.GameHold(aDoHold: Boolean; Msg: TKMGameResultMsg);
 begin
-  DoGameHold := false;
+  DoGameHold := False;
   fGamePlayInterface.ReleaseDirectionSelector; //In case of victory/defeat while moving troops
   gRes.Cursors.Cursor := kmcDefault;
 
   fGamePlayInterface.Viewport.ReleaseScrollKeys;
   GameResult := Msg;
 
-  if DoHold then
+  if aDoHold then
   begin
     fIsPaused := True;
-    fGamePlayInterface.ShowPlayMore(true, Msg);
+    fGamePlayInterface.ShowPlayMore(True, Msg);
   end else
     fIsPaused := False;
 end;
