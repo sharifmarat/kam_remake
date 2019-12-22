@@ -1296,6 +1296,11 @@ function TKMUnit.GetUnitPointer: TKMUnit;
 begin
   Assert(gGame.AllowGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
 
+  if UID = 13808289 then
+  begin
+    gLog.AddTime('P_CNT += ' + IntToStr(fPointerCount + 1) + '   ' + GetStackTrace(4));
+  end;
+
   Inc(fPointerCount);
   Result := Self;
 end;
@@ -1308,6 +1313,11 @@ var
   ErrorMsg: UnicodeString;
 begin
   Assert(gGame.AllowGetPointer, 'ReleaseUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+
+  if UID = 13808289 then
+  begin
+    gLog.AddTime('P_CNT -= ' + IntToStr(fPointerCount - 1) + '   ' + GetStackTrace(4));
+  end;
 
   if fPointerCount < 1 then
   begin
@@ -2450,8 +2460,20 @@ begin
   if fTask <> nil then
     fTask.Paint;
 
-  if SHOW_POINTER_DOTS then
+  if {SHOW_POINTER_DOTS and }(UID = 13808289) then
+  begin
+    gRenderAux.Quad(fCurrPosition.X, fCurrPosition.Y, icRed and $40FFFFFF);
     gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(axX), fPositionF.Y + 1   + GetSlide(axY), fPointerCount);
+    gRenderAux.Text(fPositionF.X, fPositionF.Y + 1, IntToStr(fPointerCount), icRed);
+    gRenderAux.Text(fPositionF.X+1, fPositionF.Y, IntToStr(fPointerCount), icRed);
+    gRenderAux.Text(fPositionF.X-1, fPositionF.Y , IntToStr(fPointerCount), icRed);
+    gRenderAux.Text(fPositionF.X, fPositionF.Y - 1, IntToStr(fPointerCount), icRed);
+
+    gRenderAux.Text(fPositionF.X-1, fPositionF.Y - 1, IntToStr(fPointerCount), icRed);
+    gRenderAux.Text(fPositionF.X+1, fPositionF.Y - 1, IntToStr(fPointerCount), icRed);
+    gRenderAux.Text(fPositionF.X-1, fPositionF.Y + 1, IntToStr(fPointerCount), icRed);
+    gRenderAux.Text(fPositionF.X+1, fPositionF.Y + 1, IntToStr(fPointerCount), icRed);
+  end;
 end;
 
 

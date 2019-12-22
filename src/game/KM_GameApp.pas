@@ -597,6 +597,7 @@ end;
 
 procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
 var
+  SaveStreamTxt: TKMemoryStreamText;
   LoadError, FilePath: String;
 begin
   //Save const aFilePath locally, since it could be destroyed as some Game Object instance in StopGame
@@ -630,6 +631,14 @@ begin
   end;
 
   gGame.AfterLoad; //Call after load separately, so errors in it could be sended in crashreport
+
+  SaveStreamTxt := TKMemoryStreamText.Create;
+//    if DoSaveGameAsText then
+//    begin
+      gGame.SaveGameToStream(UTCNow, SaveStreamTxt);
+      SaveStreamTxt.SaveToFile(FilePath + EXT_SAVE_TXT_DOT + '.tmp.txt');
+//    end;
+    SaveStreamTxt.Free;
 
   if Assigned(fOnCursorUpdate) then
     fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);

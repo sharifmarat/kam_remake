@@ -84,7 +84,7 @@ type
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
     procedure MultiplayerRig;
-    procedure SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryStream; aReplayStream: Boolean = False);
+//    procedure SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryStream; aReplayStream: Boolean = False);
     procedure SaveGameToFile(const aPathName: String; aTimestamp: TDateTime; const aMPLocalDataPathName: String = '');
     procedure UpdatePeaceTime;
     function GetWaitingPlayersList: TKMByteArray;
@@ -120,6 +120,7 @@ type
     constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
     destructor Destroy; override;
 
+    procedure SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryStream; aReplayStream: Boolean = False);
     procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                         aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone;
                         aAIType: TKMAIType = aitNone; aAutoselectHumanLoc: Boolean = False);
@@ -628,7 +629,9 @@ begin
   //until after user saves it, but we need to attach replay base to it.
   //Basesave is sort of temp we save to HDD instead of keeping in RAM
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
+  begin
     SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+  end;
 
   //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
   gScriptEvents.ProcMissionStart;
@@ -992,7 +995,7 @@ begin
     fIsPaused := True;
     fGamePlayInterface.ShowPlayMore(True, Msg);
   end else
-    fIsPaused := False;
+//    fIsPaused := False;
 end;
 
 
@@ -2000,7 +2003,7 @@ end;
 
 procedure TKMGame.LoadFromFile(const aPathName: UnicodeString; aCustomReplayFile: UnicodeString = '');
 var
-  LoadStream: TKMemoryStreamBinary;
+  LoadStream, SaveStreamTxt: TKMemoryStreamBinary;
   GameMPLocalData: TKMGameMPLocalData;
   RngPath: UnicodeString;
 begin
@@ -2016,6 +2019,8 @@ begin
     fLoadFromFile := aPathName;
 
     LoadStream.LoadFromFile(aPathName);
+
+//    LoadStream
 
     LoadFromStream(LoadStream, False);
 
