@@ -710,7 +710,8 @@ procedure TFormMain.ControlsReset;
 
   function SkipReset(aCtrl: TControl): Boolean;
   begin
-    Result := aCtrl = chkSnowHouses;
+    Result := {$IFDEF WDC} aCtrl = chkSnowHouses; {$ENDIF}
+              {$IFDEF FPC} False; {$ENDIF}
   end;
 
   {$IFDEF WDC}
@@ -756,7 +757,7 @@ procedure TFormMain.ControlsReset;
   begin
     for I := 0 to aBox.ControlCount - 1 do
     begin
-      if SkipReset(PanelSurface.Controls[I]) then Continue; //Skip reset for some controls
+      if SkipReset(aBox.Controls[I]) then Continue; //Skip reset for some controls
 
       if aBox.Controls[I] is TCheckBox then
         TCheckBox(aBox.Controls[I]).Checked :=    (aBox.Controls[I] = chkBevel)
