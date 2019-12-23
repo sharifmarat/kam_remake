@@ -223,6 +223,7 @@ type
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
     procedure SetExportGameStats(aEnabled: Boolean);
+    procedure UpdateSnowHouses;
   end;
 
 
@@ -319,6 +320,14 @@ end;
 procedure TFormMain.SetExportGameStats(aEnabled: Boolean);
 begin
   ExportGameStats.Enabled := aEnabled;
+end;
+
+
+procedure TFormMain.UpdateSnowHouses;
+begin
+  {$IFDEF WDC}
+  chkSnowHouses.Checked := SNOW_HOUSES;
+  {$ENDIF}
 end;
 
 
@@ -730,6 +739,7 @@ procedure TFormMain.ControlsReset;
         if PanelSurface.Controls[I] is TCheckBox then
           TCheckBox(PanelSurface.Controls[I]).Checked :=    (PanelSurface.Controls[I] = chkBevel)
                                                          or (PanelSurface.Controls[I] = chkLogNetConnection)
+                                                         or ((PanelSurface.Controls[I] = chkSnowHouses) and SNOW_HOUSES)
         else
         if PanelSurface.Controls[I] is TTrackBar then
           TTrackBar(PanelSurface.Controls[I]).Position := 0
@@ -911,6 +921,8 @@ begin
 
   {$IFDEF WDC} //one day update .lfm for lazarus...
   SNOW_HOUSES := chkSnowHouses.Checked;
+  gGameApp.GameSettings.AllowSnowHouses := SNOW_HOUSES;
+
   ALLOW_LOAD_UNSUP_VERSION_SAVE := chkLoadUnsupSaves.Checked;
   {$ENDIF}
 

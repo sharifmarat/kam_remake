@@ -158,6 +158,8 @@ begin
     and SAVE_RANDOM_CHECKS then
     gRandomCheckLogger := TKMRandomCheckLogger.Create;
 
+  SNOW_HOUSES := fGameSettings.AllowSnowHouses;
+
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);
 
