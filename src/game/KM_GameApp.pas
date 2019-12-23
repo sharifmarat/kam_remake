@@ -480,14 +480,14 @@ begin
       fCampaigns.ActiveCampaign.ScriptData.Clear;
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
+      if aMsg = grWin then
+        fCampaigns.UnlockNextMap; //Unlock next map before save campaign progress
+
       //Always save Campaigns progress after mission
       //We always save script data with SaveCampaignScriptData
       //then campaign progress should be saved always as well on any outcome (win or lose)
       //otherwise we will get inconsistency
       SaveCampaignsProgress;
-
-      if aMsg = grWin then
-        fCampaigns.UnlockNextMap;
     end;
   end;
 
