@@ -487,7 +487,10 @@ begin
         Item.SubItems.Add(IntToStr(Loc_House.UID));
       end
       else
+      begin
         Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end;
 
       Item.SubItems.Add(IntToStr(Count));
       Item.SubItems.Add(IntToStr(BeingPerformed));
@@ -528,7 +531,10 @@ begin
         Item.SubItems.Add(IntToStr(Loc_Unit.UID));
       end
       else
+      begin
         Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end;
 
       Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandType), Integer(DemandType)));
       Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandImportance), Integer(Importance)));
@@ -553,10 +559,13 @@ begin
 
       Item.SubItems.Add(IntToStr(fOwner));
       Item.SubItems.Add(IntToStr(aI));
-      Item.SubItems.Add(gRes.Wares[fOffer[OfferID].Ware].Title);
+      Item.SubItems.Add(gRes.Wares[fDemand[DemandID].Ware].Title); //Use demand ware, as offer could be nil after redispatching
 
       if fOffer[OfferID].Loc_House = nil then
-        Item.SubItems.Add('nil')
+      begin
+        Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end
       else
       begin
         Item.SubItems.Add(gRes.Houses[fOffer[OfferID].Loc_House.HouseType].HouseName);
@@ -575,7 +584,10 @@ begin
         Item.SubItems.Add(IntToStr(fDemand[DemandID].Loc_Unit.UID));
       end
       else
+      begin
         Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end;
 
       if Serf = nil then
         Item.SubItems.Add('nil')
