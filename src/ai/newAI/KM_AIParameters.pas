@@ -41,7 +41,7 @@ var
   GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    6;
   GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   10;
 
-  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    4;
+  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5;
   GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    3;
 //}
 
@@ -91,6 +91,9 @@ var
   GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single = 0.2;
   GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =   7; // Max ticks per a tile (slow mode)
   GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   4; // Max ticks per a tile (fast mode)
+
+  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5; // Minimum distance to move company
+  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    3; // Affects the shape of the moving company (1 = circle, max = line)
 //}
 
 
