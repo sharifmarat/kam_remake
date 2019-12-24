@@ -487,7 +487,10 @@ begin
         Item.SubItems.Add(IntToStr(Loc_House.UID));
       end
       else
+      begin
         Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end;
 
       Item.SubItems.Add(IntToStr(Count));
       Item.SubItems.Add(IntToStr(BeingPerformed));
@@ -528,7 +531,10 @@ begin
         Item.SubItems.Add(IntToStr(Loc_Unit.UID));
       end
       else
+      begin
         Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end;
 
       Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandType), Integer(DemandType)));
       Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandImportance), Integer(Importance)));
@@ -553,10 +559,13 @@ begin
 
       Item.SubItems.Add(IntToStr(fOwner));
       Item.SubItems.Add(IntToStr(aI));
-      Item.SubItems.Add(gRes.Wares[fOffer[OfferID].Ware].Title);
+      Item.SubItems.Add(gRes.Wares[fDemand[DemandID].Ware].Title); //Use demand ware, as offer could be nil after redispatching
 
       if fOffer[OfferID].Loc_House = nil then
-        Item.SubItems.Add('nil')
+      begin
+        Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end
       else
       begin
         Item.SubItems.Add(gRes.Houses[fOffer[OfferID].Loc_House.HouseType].HouseName);
@@ -575,7 +584,10 @@ begin
         Item.SubItems.Add(IntToStr(fDemand[DemandID].Loc_Unit.UID));
       end
       else
+      begin
         Item.SubItems.Add('nil');
+        Item.SubItems.Add('-');
+      end;
 
       if Serf = nil then
         Item.SubItems.Add('nil')
@@ -1363,6 +1375,9 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
                                                out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
 
   function ValidBestDemand(iD: Integer): Boolean;
+  var
+    I: Integer;
+    H: TKMHouse;
   begin
     Result := (fDemand[iD].Ware = aResource) or
               ((fDemand[iD].Ware = wtWarfare) and (aResource in [WARFARE_MIN..WARFARE_MAX])) or
@@ -1378,6 +1393,22 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
 
     //If Demand aren't reserved already
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
+
+    //For constructing houses check if they are connected with road to some other houses,
+    //which can produce demanded ware (stone or wood)
+    if Result
+      and (fDemand[iD].Loc_House <> nil)
+      and not fDemand[iD].Loc_House.IsComplete
+      and not fDemand[iD].Loc_House.IsDestroyed then
+      for I := 0 to gHands[fDemand[iD].Loc_House.Owner].Houses.Count - 1 do
+      begin
+        H := gHands[fDemand[iD].Loc_House.Owner].Houses[I];
+        if H.IsComplete
+          and not H.IsDestroyed
+          and (H.ResCanAddToOut(fDemand[iD].Ware) //Check both - output and input ware, because we could use in theory takeout delivery...
+            or H.ResCanAddToIn(fDemand[iD].Ware)) then
+          Result := Result and gTerrain.Route_CanBeMade(H.PointBelowEntrance, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, 0);
+      end;
   end;
 
   function FindBestDemandId(): Integer;
@@ -1625,7 +1656,7 @@ begin
     else
       CloseOffer(iO);
 
-//  UpdateQueueItem(aID);
+  UpdateQueueItem(aID);
   UpdateOfferItem(iO);
 end;
 

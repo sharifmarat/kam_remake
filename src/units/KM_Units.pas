@@ -148,7 +148,7 @@ type
     procedure DismissCancel; virtual;
     //Could be used only in UI
     procedure DismissStarted;
-    property DismissInProgress: Boolean read fDismissInProgress;
+    property DismissInProgress: Boolean read fDismissInProgress write fDismissInProgress;
 
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); dynamic;
 
@@ -1304,11 +1304,23 @@ end;
 {Decreases the pointer counter}
 //Should be used only by gHands for clarity sake
 procedure TKMUnit.ReleaseUnitPointer;
+var
+  ErrorMsg: UnicodeString;
 begin
   Assert(gGame.AllowGetPointer, 'ReleaseUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
 
   if fPointerCount < 1 then
-    raise ELocError.Create('Unit remove pointer', PrevPosition);
+  begin
+    ErrorMsg := 'Unit remove pointer for U: ';
+    try
+      ErrorMsg := ErrorMsg + ObjToStringShort(',');
+    except
+      on E: Exception do
+        ErrorMsg := ErrorMsg + IntToStr(UID) + ' Pos = ' + fCurrPosition.ToString;
+    end;
+    raise ELocError.Create(ErrorMsg, PrevPosition);
+  end;
+
   Dec(fPointerCount);
 end;
 
@@ -2212,12 +2224,13 @@ begin
   if fTask <> nil then
     TaskStr := fTask.ObjToString;
 
-  Result := Format('UID = %d%sType = %s%sAction = %s%sTask = [%s]%sCurrPosition = %s',
+  Result := Format('UID = %d%sType = %s%sAction = %s%sTask = [%s]%sCurrPosition = %s%sIsDead = %s',
                    [fUID, aSeparator,
                     GetEnumName(TypeInfo(TKMUnitType), Integer(fType)), aSeparator,
                     ActStr, aSeparator,
                     TaskStr, aSeparator,
-                    TypeToString(fCurrPosition)]);
+                    TypeToString(fCurrPosition), aSeparator,
+                    BoolToStr(fIsDead, True)]);
 end;
 
 
@@ -2236,7 +2249,7 @@ begin
   Result := ObjToStringShort(aSeparator) +
             Format('%sPositionF = %s%sPrevPosition = %s%sNextPosition = %s%s' +
                    'Thought = %s%sHitPoints = %d%sHitPointCounter = %d%sCondition = %d%s' +
-                   'Owner = %d%sHome = %s%sInHouse = %s%sVisible = %s%sIsDead = %s%sAnimStep = %d',
+                   'Owner = %d%sHome = %s%sInHouse = %s%sVisible = %s%sAnimStep = %d',
                    [aSeparator,
                     TypeToString(fPositionF), aSeparator,
                     TypeToString(fPrevPosition), aSeparator,
@@ -2249,7 +2262,6 @@ begin
                     HomeStr, aSeparator,
                     InHouseStr, aSeparator,
                     BoolToStr(fVisible, True), aSeparator,
-                    BoolToStr(fIsDead, True), aSeparator,
                     AnimStep]);
 end;
 

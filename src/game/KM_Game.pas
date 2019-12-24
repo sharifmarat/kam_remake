@@ -135,7 +135,7 @@ type
 
     procedure GameMPPlay(Sender: TObject);
     procedure GameMPReadyToPlay(Sender: TObject);
-    procedure GameHold(DoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
+    procedure GameHold(aDoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
     procedure RequestGameHold(Msg: TKMGameResultMsg);
     procedure PlayerVictory(aHandIndex: TKMHandID);
     procedure PlayerDefeat(aPlayerIndex: TKMHandID; aShowDefeatMessage: Boolean = True);
@@ -207,6 +207,7 @@ type
 
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
     property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
+    property IgnoreConsistencyCheckErrors: Boolean read fIgnoreConsistencyCheckErrors;
 
     property MissionMode: TKMissionMode read fMissionMode write fMissionMode;
     property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty write fMissionDifficulty;
@@ -978,19 +979,19 @@ end;
 
 
 //Put the game on Hold for Victory screen
-procedure TKMGame.GameHold(DoHold: Boolean; Msg: TKMGameResultMsg);
+procedure TKMGame.GameHold(aDoHold: Boolean; Msg: TKMGameResultMsg);
 begin
-  DoGameHold := false;
+  DoGameHold := False;
   fGamePlayInterface.ReleaseDirectionSelector; //In case of victory/defeat while moving troops
   gRes.Cursors.Cursor := kmcDefault;
 
   fGamePlayInterface.Viewport.ReleaseScrollKeys;
   GameResult := Msg;
 
-  if DoHold then
+  if aDoHold then
   begin
     fIsPaused := True;
-    fGamePlayInterface.ShowPlayMore(true, Msg);
+    fGamePlayInterface.ShowPlayMore(True, Msg);
   end else
     fIsPaused := False;
 end;
@@ -2278,7 +2279,7 @@ procedure TKMGame.CheckPauseGameAtTick;
   begin
     IsPaused := True;
     //Set replay UI to paused state, sync replay timer and other UI elements
-    fGamePlayInterface.SetButtons(False);
+    fGamePlayInterface.UpdateReplayButtons(False);
     fGamePlayInterface.UpdateState(fGameTick);
   end;
 
@@ -2391,8 +2392,6 @@ begin
                       end;
         gmReplaySingle,gmReplayMulti:
                       begin
-                        IncGameTick;
-
                         fScripting.UpdateState;
                         UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                         gTerrain.UpdateState;
@@ -2439,6 +2438,9 @@ begin
                           Exit;
 
                         CheckPauseGameAtTick;
+
+                        //Increment game tick at the end, because we could have some commands even on 0 tick!
+                        IncGameTick;
 
                         Result := True;
                       end;
