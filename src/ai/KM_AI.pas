@@ -508,6 +508,7 @@ procedure TKMHandAI.PlaceFirstStorehouse(aLoc: TKMPoint);
     K: Integer;
     Distance, BestDistance: Single;
   begin
+    aRes := KMPOINT_ZERO; // Set default point to zero so there is not integer overflow during evaluation if resource does not exist
     BestDistance := 1e10;
     for K := 0 to aList.Count - 1 do
     begin
