@@ -74,7 +74,8 @@ implementation
 uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_HouseBarracks,
-  KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_RenderAux;
+  KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_RenderAux,
+  KM_AIParameters;
 
 
 { TKMArmyManagement }
@@ -554,8 +555,6 @@ type
 
   // Order multiple companies with equally distributed group types
   procedure OrderAttack(aTargetPoint: TKMPoint; var aAG: TKMAvailableGroups);
-  const
-    MAX_GROUPS_IN_COMPANY = 6;
   var
     I, K, CompaniesCnt, GTMaxCnt, GCnt, HighAG: Integer;
     GT: TKMGroupType;
@@ -571,7 +570,7 @@ type
       Inc(  GTArr[ aAG.GroupArr[K].GroupType ]  );
     end;
 
-    CompaniesCnt := Max(1, Ceil(aAG.Count / MAX_GROUPS_IN_COMPANY));
+    CompaniesCnt := Max(1, Ceil(aAG.Count / Max(1,GA_ARMY_MaxGgroupsInCompany)));
     HighAG := aAG.Count - 1;
     for I := 0 to CompaniesCnt - 1 do
     begin
@@ -586,7 +585,7 @@ type
           else if (aAG.GroupArr[K].GroupType = GT) then
           begin
             if (Length(Groups) <= GCnt) then
-              SetLength(Groups, GCnt + MAX_GROUPS_IN_COMPANY);
+              SetLength(Groups, GCnt + GA_ARMY_MaxGgroupsInCompany);
             Groups[GCnt] := aAG.GroupArr[K];
             GCnt := GCnt + 1;
             aAG.GroupArr[K] := aAG.GroupArr[HighAG];

@@ -99,6 +99,7 @@ var
 
 
 { KM_ArmyManagement }
+  GA_ARMY_MaxGgroupsInCompany                        : Word =    6;
 
 
 { KM_CityBuilder }

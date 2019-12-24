@@ -1130,7 +1130,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
     Result := InitPolygons;
   end;
 
-  procedure SetOrders(aCnt: Integer; var aPositions: TKMPointArray);
+  procedure SetOrders(aCnt: Integer; aTargetPosition: TKMPoint; var aPositions: TKMPointArray);
   const
     INFLUENCE_DANGER = 20;
     INIT_DIST = 1000;
@@ -1148,10 +1148,11 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
     if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, gAIFields.NavMesh.KMPoint2Polygon[aActualPosition], atEnemy) < INFLUENCE_DANGER) then
       SelectedTime := GA_ATTACK_COMPANY_TimePerATile_Fast;
     // Get formations and set orders
+    // Sort points according to aTargetPosition (it should work better than aActualPosition)
     TagPositions := TKMPointTagList.Create;
     try
       for I := 0 to Min(aCnt, High(aPositions)) do
-        TagPositions.Add(aPositions[I], KMDistanceAbs(aActualPosition, aPositions[I]));
+        TagPositions.Add(aPositions[I], KMDistanceAbs(aTargetPosition, aPositions[I]));
       TagPositions.SortByTag();
       //fScanPosition := TagPositions.Items[TagPositions.Count - 1];
       //fPathPosition := TagPositions.Items[(TagPositions.Count - 1) div 2];
@@ -1184,6 +1185,9 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
           end;
         if (ClosestDist = INIT_DIST) then
           break;
+
+        Squads[ClosestIdx].TargetUnit := nil;
+        Squads[ClosestIdx].TargetHouse := nil;
         Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
         Squads[ClosestIdx].WalkTimeLimit := aTick + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * SelectedTime;
         AvailableSquads[ClosestIdx] := False;
@@ -1227,7 +1231,7 @@ begin
     gAIFields.NavMesh.Positioning.FindPositions(Cnt, InitPolygons, Positions);
 
     // Compute distance of new positions and select the closest group to walk there
-    SetOrders(Cnt, Positions);
+    SetOrders(Cnt, TargetPoint, Positions);
   end;
 
   {$IFDEF DEBUG_NewAI}
