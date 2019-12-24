@@ -598,7 +598,7 @@ begin
       AND not (H.HouseType in [htWatchTower, htWoodcutters])
       AND (AI OR H.IsComplete) then // Player must finish the house to update influence so he cannot troll the AI
     begin
-        IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.Position ];
+        IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.PointBelowEntrance ]; // Use point below entrance to match NavMeshDefence algorithm and city center detection in Eye
         Cnt := Cnt + 1;
     end;
   end;

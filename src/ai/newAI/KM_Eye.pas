@@ -1134,7 +1134,7 @@ begin
     H := gHands[fOwner].Houses[I];
     if (H <> nil) AND not H.IsDestroyed AND H.IsComplete AND (H.HouseType in SCANNED_HOUSES) then
     begin
-      Result[Cnt] := KMPointBelow(H.Entrance);
+      Result[Cnt] := H.PointBelowEntrance;
       Cnt := Cnt + 1;
       if (Length(Result) <= Cnt) then // in case of not aMultiplePoints
         Exit;
