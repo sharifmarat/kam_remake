@@ -495,7 +495,7 @@ end;
 
 function TGAParameterization.GetParCnt_ArmyAttack(): Word;
 begin
-  Result := 2+7+11;
+  Result := 2+7+11+1;
 end;
 
 procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
@@ -527,6 +527,8 @@ begin
   GA_ATTACK_COMPANY_TimePerATile_Slow            :=  1 + Round(aIdv.Gene[Incr(K)] *   10); //   7;
   GA_ATTACK_COMPANY_TimePerATile_Fast            :=  1 + Round(aIdv.Gene[Incr(K)] *   10); //   4;
 
+  GA_ARMY_MaxGgroupsInCompany                    :=  4 + Round(aIdv.Gene[Incr(K)] *   15); //   6;
+
 
   if aLogIt AND (fLogPar <> nil) then
   begin
@@ -552,6 +554,8 @@ begin
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single = %16.10f;',[ GA_ATTACK_COMPANY_DecreaseThreat_Prio4     ]));
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_TimePerATile_Slow                : Word = %4d;',      [ GA_ATTACK_COMPANY_TimePerATile_Slow        ]));
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_TimePerATile_Fast                : Word = %4d;',      [ GA_ATTACK_COMPANY_TimePerATile_Fast        ]));
+
+    fLogPar.AddTime(Format('GA_ARMY_MaxGgroupsInCompany                        : Word = %4d;',      [ GA_ARMY_MaxGgroupsInCompany                ]));
   end;
 end;
 
