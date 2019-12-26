@@ -389,13 +389,13 @@ begin
   //Strip dead projectiles
   LiveCount := 0;
   for I := 0 to Length(fItems) - 1 do
-    if fItems[I].fSpeed <> 0 then
+    //if fItems[I].fSpeed <> 0 then // This causes desynchronization in replay
       Inc(LiveCount);
 
   SaveStream.Write(LiveCount);
 
   for I := 0 to Length(fItems) - 1 do
-    if fItems[I].fSpeed <> 0 then
+    //if fItems[I].fSpeed <> 0 then // This causes desynchronization in replay
     begin
       SaveStream.Write(fItems[I].fScreenStart);
       SaveStream.Write(fItems[I].fScreenEnd);
