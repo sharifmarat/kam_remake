@@ -191,7 +191,7 @@ type
 implementation
 
 uses
-  SysUtils, KM_HandsCollection, KM_CommonClasses, KM_Game, KM_Hand, Dialogs, KM_Log;
+  SysUtils, KM_HandsCollection, KM_CommonClasses, KM_Game, KM_ResMapElements, KM_Hand, Dialogs, KM_Log;
 
 
 
@@ -2819,7 +2819,7 @@ begin
 end;
 
 
-// Last step in fix mines -> check count, height and TRY balance map
+// The last step in fix mines -> check count, height and TRY to balance the map
 // TilesPartsArr = tiles composition array
 // A = array of biomes
 procedure TKMRandomMapGenerator.MineFinalFixer(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
@@ -2924,28 +2924,62 @@ procedure TKMRandomMapGenerator.MineFinalFixer(var TilesPartsArr: TTileParts; va
 //  end;
 //end;
 //
+
+  function CheckObject(aID: Word): Boolean;
+  begin
+    with gMapElements[aID] do
+      Result := CanBeRemoved AND not AllBlocked;
+  end;
+
+  procedure FixMine(aX,aY,aBiome: Integer);
+  var
+    Check: Boolean;
+    X,Y, MineHeight: Integer;
+  begin
+    // Check tiles if placing mine is possible
+    for X := aX to aX + 3 + Byte(aBiome = Byte(btIron)) do
+      if (A[aY,X] <> aBiome) then
+        Exit;
+    for X := aX + 1 to aX + 3 - 1 + Byte(aBiome = Byte(btIron)) do
+      if (A[aY+1,X] >= Byte(btStone)) then
+        Exit;
+
+    // Check final height and obstacles (objects)
+    MineHeight := 0;
+    for Y := aY to aY + 1 do
+      for X := aX to aX + 3 + Byte(aBiome = Byte(btIron)) do
+        MineHeight := MineHeight + TilesPartsArr.Height[Y,X];
+    // Normalize height
+    MineHeight := MineHeight div 6;
+    // Update tiles of potential mine
+    for Y := aY to aY + 1 do
+      for X := aX to aX + 3 + Byte(aBiome = Byte(btIron)) do
+      begin
+        // Update height
+        TilesPartsArr.Height[Y,X] := MineHeight;
+        // Check object
+        if not CheckObject(TilesPartsArr.Obj[Y,X]) then
+          TilesPartsArr.Obj[Y,X] := 255;
+      end;
+  end;
+
 var
 //  RESOURCE: Byte;
-  X,Y, X1,Y1, MineHeight: Integer;
+  X,Y: Integer;
 //  Visited: TBoolean2Array;
 //  Resources: TBalancedResource1Array;
 begin
-  with TilesPartsArr do
-  begin
-	  for Y := 2 to fMapY-2 do
-		  for X := 2 to fMapX-2 do
-        if ((A[Y,X] = Byte(btGold)) OR (A[Y,X] = Byte(btIron))) AND (A[Y+1,X] < Byte(btStone)) then
-        begin
-          MineHeight := 0;
-          for Y1 := Y to Y + 1 do
-            for X1 := X - 1 to X + 1 do
-              MineHeight := MineHeight + Height[Y1,X1];
-          MineHeight := MineHeight div 6;
-          for Y1 := Y to Y + 1 do
-            for X1 := X - 1 to X + 1 do
-              Height[Y1,X1] := MineHeight;
-        end;
-  end;
+  for Y := 2 to fMapY-2 do
+    for X := 2 to fMapX-2-5 do
+    begin
+      if (A[Y,X] = Byte(btStone)) AND (A[Y+1,X] < Byte(btStone)) then
+      begin
+        if not CheckObject(TilesPartsArr.Obj[Y,X]) then
+          TilesPartsArr.Obj[Y,X] := 255;
+      end
+      else if (A[Y,X] = Byte(btGold)) then FixMine(X,Y,Byte(btGold))
+      else if (A[Y,X] = Byte(btIron)) then FixMine(X,Y,Byte(btIron));
+    end;
   //Resources := fRes.Resources;
   //for I := 0 to fRes.Count - 1 do
   //begin
