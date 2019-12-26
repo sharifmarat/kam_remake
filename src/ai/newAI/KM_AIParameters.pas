@@ -20,54 +20,30 @@ var
 
 
 { KM_ArmyAttack }
-//{ 2019-12-15
-  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance         : Single =     9.4665279388;
-  GA_ATTACK_SQUAD_ChangeTarget_Delay                 : Word =  957;
-  GA_ATTACK_SQUAD_TargetReached_Position             : Word =    8;
+//{ 2019-12-26
+  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance         : Single =     6.1796259880;
+  GA_ATTACK_SQUAD_ChangeTarget_Delay                 : Word =  697;
+  GA_ATTACK_SQUAD_TargetReached_Position             : Word =    2;
   GA_ATTACK_SQUAD_TargetReached_Unit                 : Word =   12;
   GA_ATTACK_SQUAD_TargetReached_House                : Word =    8;
-  GA_ATTACK_SQUAD_TargetReached_RangedSquad          : Word =   15;
-  GA_ATTACK_SQUAD_MinWalkingDistance                 : Word =    7;
+  GA_ATTACK_SQUAD_TargetReached_RangedSquad          : Word =   14;
+  GA_ATTACK_SQUAD_MinWalkingDistance                 : Word =   10;
 
-  GA_ATTACK_COMPANY_AttackRadius                     : Word =   10;
-  GA_ATTACK_COMPANY_ProtectRangedRadius              : Word =   12;
-  GA_ATTACK_COMPANY_AttackRangedGain                 : Single =     2.8249208927;
-  GA_ATTACK_COMPANY_ProtectRangedGain                : Single =     3.7131431103;
-  GA_ATTACK_COMPANY_ProtectRangedAllInDist           : Word =    2;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio1             : Single =     0.3383766413;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio2             : Single =     0.7938493490;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio3             : Single =     0.0632785782;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single =     0.3591269553;
-  GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    6;
-  GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   10;
-
-  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5;
-  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    3;
-//}
-
-{ 2019-12-14
-  GA_ATTACK_SQUAD_ChangeTarget_DistTolerance         : Single =     1.9587301016;
-  GA_ATTACK_SQUAD_ChangeTarget_Delay                 : Word =  415;
-  GA_ATTACK_SQUAD_TargetReached_Position             : Word =    6;
-  GA_ATTACK_SQUAD_TargetReached_Unit                 : Word =   10;
-  GA_ATTACK_SQUAD_TargetReached_House                : Word =    8;
-  GA_ATTACK_SQUAD_TargetReached_RangedSquad          : Word =   15;
-  GA_ATTACK_SQUAD_MinWalkingDistance                 : Word =    6;
-
-  GA_ATTACK_COMPANY_AttackRadius                     : Word =   11;
+  GA_ATTACK_COMPANY_AttackRadius                     : Word =   14;
   GA_ATTACK_COMPANY_ProtectRangedRadius              : Word =    9;
-  GA_ATTACK_COMPANY_AttackRangedGain                 : Single =     1.8996825218;
-  GA_ATTACK_COMPANY_ProtectRangedGain                : Single =     5.0222282410;
-  GA_ATTACK_COMPANY_ProtectRangedAllInDist           : Word =    8;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio1             : Single =     0.8563764095;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio2             : Single =     0.4269955456;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio3             : Single =     0.6608481407;
-  GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single =     0.4229704440;
-  GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    5;
-  GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   11;
+  GA_ATTACK_COMPANY_AttackRangedGain                 : Single =     3.8477339745;
+  GA_ATTACK_COMPANY_ProtectRangedGain                : Single =     1.5641868114;
+  GA_ATTACK_COMPANY_ProtectRangedAllInDist           : Word =    4;
+  GA_ATTACK_COMPANY_GroupTypePenalization            : Word =  157;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio1             : Single =     0.6768462062;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio2             : Single =     0.6052376032;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio3             : Single =     0.9684157968;
+  GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single =     0.4872157574;
+  GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    8;
+  GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =    7;
 
-  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5;
-  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    3;
+  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    3;
+  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    9;
 //}
 
 { 2019-12-13
@@ -102,7 +78,7 @@ var
 
 
 { KM_ArmyManagement }
-  GA_ARMY_MaxGgroupsInCompany                        : Word =    6;
+  GA_ARMY_MaxGgroupsInCompany                        : Word =    7;
 
 
 { KM_CityBuilder }
@@ -295,7 +271,13 @@ var
 
 
 {  KM_NavMeshPathFinding }
-//{ 2019-12-15
+//{ 2019-12-25
+  GA_PATHFINDING_AvoidTraffic                        : Single =     1.0783169270;
+  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     0.5625061989;
+  GA_PATHFINDING_AvoidEdges                          : Single =    10;
+//}
+
+{ 2019-12-15
   GA_PATHFINDING_AvoidTraffic                        : Single =     2.7153608799;
   GA_PATHFINDING_AvoidSpecEnemy                      : Single =     0.8165699244;
 //}
