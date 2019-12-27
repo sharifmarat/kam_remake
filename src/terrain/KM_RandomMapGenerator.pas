@@ -2950,13 +2950,13 @@ procedure TKMRandomMapGenerator.MineFinalFixer(var TilesPartsArr: TTileParts; va
       for X := aX to aX + 3 + Byte(aBiome = Byte(btIron)) do
         MineHeight := MineHeight + TilesPartsArr.Height[Y,X];
     // Normalize height
-    MineHeight := MineHeight div 6;
+    MineHeight := MineHeight div (8 + 2*Byte(aBiome = Byte(btIron)));
     // Update tiles of potential mine
     for Y := aY to aY + 1 do
       for X := aX to aX + 3 + Byte(aBiome = Byte(btIron)) do
       begin
         // Update height
-        TilesPartsArr.Height[Y,X] := MineHeight;
+        TilesPartsArr.Height[Y,X] := (TilesPartsArr.Height[Y,X] + MineHeight) div 2;
         // Check object
         if not CheckObject(TilesPartsArr.Obj[Y,X]) then
           TilesPartsArr.Obj[Y,X] := 255;
@@ -3291,7 +3291,7 @@ begin
   H2 := LinearInterpolation(Max(1, 6 + Round(RMGSettings.Height.Step / 2)),RMGSettings.Height.Height);
 	for Y1 := 1 to fMapY-1 do
     for X1 := 1 to fMapX-1 do
-      TilesPartsArr.Height[Y1,X1] := Min(100, Min(90,Max(0, -H1[Y1,X1] + H2[Y1,X1] + H3[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
+      TilesPartsArr.Height[Y1,X1] := Min(100, Min(90,Max(5, -H1[Y1,X1] + H2[Y1,X1] + H3[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
 
   for Y_1 := 1 to fMapY-1 do
   begin
@@ -3327,8 +3327,9 @@ begin
                  + Byte(A[Y_2,X_0] >= Byte(btStone))
                  + Byte(A[Y_2,X_1] >= Byte(btStone))
                  + Byte(A[Y_2,X_2] >= Byte(btStone));
+        // Tile is surrounded by mountains
         if (sum = 8) then
-          TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(70)+30;
+          TilesPartsArr.Height[Y_1,X_1] := Max(0, Min(100, TilesPartsArr.Height[Y_1,X_1] - 10 + fRNG.RandomI(50))) ;
       end;
 
     // Set lower height to non-smooth transitions (hide it)
