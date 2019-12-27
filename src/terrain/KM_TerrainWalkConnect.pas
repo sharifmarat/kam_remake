@@ -218,7 +218,7 @@ var
   X,Y: Word;
   FoundAnArea: Boolean;
 begin
-  SetLength(LocalWalkConnect, (aRect.Bottom-aRect.Top)+1, (aRect.Right-aRect.Left)+1);
+  SetLength(LocalWalkConnect, aRect.Height, aRect.Width);
 
   FoundAnArea := False;
   for Y := aRect.Top to aRect.Bottom do
@@ -227,15 +227,10 @@ begin
         and (aPass in gTerrain.Land[Y,X].Passability) then //Passability matches
       begin
         if FoundAnArea then
-        begin
-          Result := False; //We've found two walkable areas
-          Exit;
-        end
-        else
-        begin
-          LocalFillArea(X,Y); //Floodfill this area
-          FoundAnArea := True; //We have now found an area
-        end;
+          Exit(False); //We've found two walkable areas
+
+        LocalFillArea(X,Y); //Floodfill this area
+        FoundAnArea := True; //We have now found an area
       end;
 
   Result := FoundAnArea; //If we haven't exited yet and we found an area then there's exactly one
