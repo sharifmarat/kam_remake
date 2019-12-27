@@ -2933,7 +2933,6 @@ procedure TKMRandomMapGenerator.MineFinalFixer(var TilesPartsArr: TTileParts; va
 
   procedure FixMine(aX,aY,aBiome: Integer);
   var
-    Check: Boolean;
     X,Y, MineHeight: Integer;
   begin
     // Check tiles if placing mine is possible
