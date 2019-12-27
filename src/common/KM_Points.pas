@@ -49,6 +49,8 @@ type
   TKMRect = packed record
     Left, Top, Right, Bottom: Integer;
     function ToString: String;
+    function Width: Integer;
+    function Height: Integer;
   end;
 
   TKMRectF = packed record Left, Top, Right, Bottom: Single end;
@@ -245,6 +247,16 @@ end;
 function TKMRect.ToString: String;
 begin
   Result := Format('(%d, %d, %d, %d)', [Left, Top, Right, Bottom]);;
+end;
+
+function TKMRect.Width: Integer;
+begin
+  Result := Right - Left + 1;
+end;
+
+function TKMRect.Height: Integer;
+begin
+  Result := Bottom - Top + 1;
 end;
 
 function TKMRangeInt.ToString: String;
