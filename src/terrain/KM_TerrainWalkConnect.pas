@@ -25,8 +25,7 @@ type
     //LocalUpdate just updates changes in aRect for much better performance, used under special conditions
     class procedure LocalUpdate(const aRect: TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
   public
-    class procedure DoUpdate(const aAreaAffected: TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability;
-                             aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
+    class procedure DoUpdate(const aAreaAffected: TKMRect; aWC: TKMWalkConnect; aDiagObjectsEffected: Boolean);
   end;
 
 implementation
@@ -34,12 +33,20 @@ uses
   Math, KM_ResMapElements;
 
 { TKMTerrainWalkConnect }
-class procedure TKMTerrainWalkConnect.DoUpdate(const aAreaAffected: TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability;
-                                               aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
-var LocalArea: TKMRect;
+class procedure TKMTerrainWalkConnect.DoUpdate(const aAreaAffected: TKMRect; aWC: TKMWalkConnect; aDiagObjectsEffected: Boolean);
+const
+  WC_PASS: array [TKMWalkConnect] of TKMTerrainPassability = (
+    tpWalk, tpWalkRoad, tpFish, tpWorker);
+var
+  LocalArea: TKMRect;
+  Pass: TKMTerrainPassability;
+  AllowDiag: Boolean;
 begin
+  Pass := WC_PASS[aWC];
+  AllowDiag := (aWC <> wcRoad); //Do not consider diagonals "connected" for roads
+
   //If passability is unchanged we can completely skip the update
-  if CheckCanSkip(aAreaAffected, aWC, aPass, aDiagObjectsEffected) then
+  if CheckCanSkip(aAreaAffected, aWC, Pass, aDiagObjectsEffected) then
     Exit;
 
   LocalArea := KMRectGrow(aAreaAffected, 1);
@@ -96,10 +103,10 @@ begin
 
   if (KMRectArea(LocalArea) < 64) //If the area is large the test takes too long, better to just do global update
   and ExactlyOneAreaIDInRect_Current(LocalArea, aWC)
-  and ExactlyOneAreaIDInRect_New(LocalArea, aPass, aAllowDiag) then
-    LocalUpdate(LocalArea, aWC, aPass, aAllowDiag)
+  and ExactlyOneAreaIDInRect_New(LocalArea, Pass, AllowDiag) then
+    LocalUpdate(LocalArea, aWC, Pass, AllowDiag)
   else
-    GlobalUpdate(aWC, aPass, aAllowDiag);
+    GlobalUpdate(aWC, Pass, AllowDiag);
 end;
 
 
