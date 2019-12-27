@@ -111,7 +111,9 @@ end;
 
 
 class function TKMTerrainWalkConnect.CheckCanSkip(const aWorkRect:TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability; aDiagObjectsEffected: Boolean):Boolean;
-var I,K: Integer; AllPass, AllFail: Boolean;
+var
+  I,K: Integer;
+  AllPass, AllFail: Boolean;
 begin
   //If objects were effected we must reprocess because a tree could block the connection
   //between two areas. Also skip this check if the area is too large because it takes too long
@@ -183,8 +185,8 @@ var
   begin
     with gTerrain do
       if KMInRect(KMPoint(X,Y), aRect) //Within rectangle
-      and (not LocalWalkConnect[Y - aRect.Top, X - aRect.Left]) //Untested area
-      and (aPass in Land[Y,X].Passability) then //Matches passability
+        and (not LocalWalkConnect[Y - aRect.Top, X - aRect.Left]) //Untested area
+        and (aPass in Land[Y,X].Passability) then //Matches passability
       begin
         LocalWalkConnect[Y - aRect.Top, X - aRect.Left] := True;
         //Using custom TileInMapCoords replacement gives ~40% speed improvement
@@ -222,7 +224,7 @@ begin
   for X := aRect.Left to aRect.Right do
     for Y := aRect.Top to aRect.Bottom do
       if not LocalWalkConnect[Y - aRect.Top, X - aRect.Left] //Untested area
-      and (aPass in gTerrain.Land[Y,X].Passability) then //Passability matches
+        and (aPass in gTerrain.Land[Y,X].Passability) then //Passability matches
       begin
         if FoundAnArea then
         begin
@@ -278,7 +280,8 @@ var
       end;
   end;
 //const MinSize = 1; //Minimum size that is treated as new area
-var I,K: Integer;
+var
+  I,K: Integer;
 begin
   with gTerrain do
   begin
@@ -288,22 +291,22 @@ begin
 
     AreaID := 0;
     for I := 1 to MapY do for K := 1 to MapX do
-    if (Land[I,K].WalkConnect[aWC] = 0)
-    and (aPass in Land[I,K].Passability) then
-    begin
-      Inc(AreaID);
-      Count := 0;
-      FillArea(K,I);
-
-      if Count <= 1 then //Revert
+      if (Land[I,K].WalkConnect[aWC] = 0)
+        and (aPass in Land[I,K].Passability) then
       begin
-        Dec(AreaID);
+        Inc(AreaID);
         Count := 0;
-        Land[I,K].WalkConnect[aWC] := 0;
-      end;
+        FillArea(K,I);
 
-      Assert(AreaID < 255, 'UpdateWalkConnect failed due too many unconnected areas');
-    end;
+        if Count <= 1 then //Revert
+        begin
+          Dec(AreaID);
+          Count := 0;
+          Land[I,K].WalkConnect[aWC] := 0;
+        end;
+
+        Assert(AreaID < 255, 'UpdateWalkConnect failed due too many unconnected areas');
+      end;
   end;
 end;
 
@@ -354,20 +357,19 @@ begin
         Y := I + Samples[H,1];
 
         if (Y >= 1) and InRange(X, 1, MapX) and (aPass in Land[Y,X].Passability) then
-        if (H = 1) or (H = 3) or (aAllowDiag and (
-                                   ((H = 0) and not gMapElements[Land[I,K].Obj].DiagonalBlocked) or
-                                   ((H = 2) and not gMapElements[Land[I,K+1].Obj].DiagonalBlocked)))
-        then
-        begin
-          if (NCount = 0) then
-            Land[I,K].WalkConnect[aWC] := Land[Y,X].WalkConnect[aWC]
-          else
-            //Remember alias
-            if (Parent[Land[Y,X].WalkConnect[aWC]] <> Parent[Land[I,K].WalkConnect[aWC]]) then
-              AddAlias(TopParent(Land[Y,X].WalkConnect[aWC]), TopParent(Land[I,K].WalkConnect[aWC]));
+          if (H = 1) or (H = 3) or (aAllowDiag and (
+                                     ((H = 0) and not gMapElements[Land[I,K].Obj].DiagonalBlocked) or
+                                     ((H = 2) and not gMapElements[Land[I,K+1].Obj].DiagonalBlocked))) then
+          begin
+            if (NCount = 0) then
+              Land[I,K].WalkConnect[aWC] := Land[Y,X].WalkConnect[aWC]
+            else
+              //Remember alias
+              if (Parent[Land[Y,X].WalkConnect[aWC]] <> Parent[Land[I,K].WalkConnect[aWC]]) then
+                AddAlias(TopParent(Land[Y,X].WalkConnect[aWC]), TopParent(Land[I,K].WalkConnect[aWC]));
 
-          Inc(NCount);
-        end;
+            Inc(NCount);
+          end;
       end;
 
       //If there's no Area we create new one
@@ -392,9 +394,9 @@ begin
 
     //Merge areas
     for I := 1 to MapY do
-    for K := 1 to MapX do
-    if (Land[I,K].WalkConnect[aWC] <> 0) then
-      Land[I,K].WalkConnect[aWC] := Parent[Land[I,K].WalkConnect[aWC]];
+      for K := 1 to MapX do
+        if (Land[I,K].WalkConnect[aWC] <> 0) then
+          Land[I,K].WalkConnect[aWC] := Parent[Land[I,K].WalkConnect[aWC]];
   end;
 end;
 
