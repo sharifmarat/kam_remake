@@ -140,7 +140,7 @@ const
   OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
   ALLY_INFLUENCE_PENALIZATION = 4; // Ally penalization (dont place defences inside of ally city)
   ENEMY_INFLUENCE_PENALIZATION = 10; // Enemy penalization (dont place defences inside of enemy city)
-  MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
+  MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines - must be > 0 (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
   MAXIMAL_DEFENCE_DISTANCE = 75; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
 
 implementation
@@ -384,24 +384,24 @@ var
       Inc(fBestDefLines.Count);
   end;
 var
-  I, QueueIdx: Word;
+  I, Idx: Word;
   Evaluation: Single;
 begin
   PolyArr := gAIFields.NavMesh.Polygons;
 
   // Calculate evaluation of actual defensive position
   Evaluation := fQueueCnt * POLYGON_CNT_PENALIZATION;
-  QueueIdx := aIdx;
+  Idx := aIdx;
   for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
   begin
     Evaluation := + Evaluation
-                  //+ fDefInfo[aIdx].Distance // Consideration of distance does more damage than benefit
-                  - Byte(    ((fDefInfo[aIdx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
-                          OR ((fDefInfo[aIdx].Influence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].Influence < ALLY_INFLUENCE_LIMIT))
+                  //+ fDefInfo[Idx].Distance // Consideration of distance does more damage than benefit
+                  - Byte(    ((fDefInfo[Idx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[Idx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
+                          OR ((fDefInfo[Idx].Influence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[Idx].Influence < ALLY_INFLUENCE_LIMIT))
                          ) * OPTIMAL_INFLUENCE_ADD
-                  //+ Byte(fDefInfo[aIdx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION
-                  + Byte(fDefInfo[aIdx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION;
-    QueueIdx := fQueueArray[QueueIdx].Next;
+                  //+ Byte(fDefInfo[Idx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION
+                  + Byte(fDefInfo[Idx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION;
+    Idx := fQueueArray[Idx].Next;
   end;
   // If is evaluation better save polygons
   if (Evaluation < fBestEvaluation) then
@@ -410,12 +410,12 @@ begin
     fBestDefLines.Count := 0; // Set defences count to 0 (it will be incremented later)
     if (fQueueCnt >= Length(fBestDefLines.Lines)) then
       SetLength(fBestDefLines.Lines, fQueueCnt + 32);
-    QueueIdx := aIdx;
+    Idx := aIdx;
     // Copy defensive polygons
     for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
     begin
-      AddDefence(QueueIdx);
-      QueueIdx := fQueueArray[QueueIdx].Next;
+      AddDefence(Idx);
+      Idx := fQueueArray[Idx].Next;
     end;
   end;
 end;
@@ -446,8 +446,9 @@ var
       for K := 0 to PolyArr[QueueIdx].NearbyCount-1 do
       begin
         NearbyIdx := PolyArr[QueueIdx].Nearby[K];
-        if (fQueueArray[NearbyIdx].Visited < fVisitedIdx-1) then // This polygon was not visited in forward cycle -> it will not be visited in backward
-          fQueueArray[NearbyIdx].Visited := fVisitedIdx;
+        // This polygon hasnt been visited in forward loop (polygon is inside of the enemy city)
+        if (fQueueArray[NearbyIdx].Visited < fVisitedIdx-1) then
+          fQueueArray[NearbyIdx].Visited := fVisitedIdx; // Mark as visited for backward loop
       end;
       QueueIdx := fQueueArray[QueueIdx].Next;
     end;

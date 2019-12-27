@@ -94,22 +94,23 @@ begin
 
   // Default cfg
   fParametrization.CurrentClass := 'TKMRunnerGA_TestParRun';
+  fParametrization.CurrentClass := 'TKMRunnerGA_ArmyAttack';
   SIM_Class           := fParametrization.CurrentClass;
-  SIM_TimeInMin       := 65; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
+  SIM_TimeInMin       := 15; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
   SIM_CountThreads    := 3; //3;
-  GA_Generations      := 30; //40; // Count of generations
+  GA_Generations      := 50; //40; // Count of generations
   GA_CountIndividuals := 30; // Count of individuals in population
   GA_CountGenes       := fParametrization.GetParCnt(); // Count of genes
-  GA_CountMaps        := 27; // Count of simulated maps for each invididual
-  GA_START_TOURNAMENT_IndividualsCnt := 3; // Initial count of individuals in tournament
-  GA_FINAL_TOURNAMENT_IndividualsCnt := 5; // Final count of individuals in tournament
+  GA_CountMaps        := 20; // Count of simulated maps for each invididual
+  GA_START_TOURNAMENT_IndividualsCnt := 4; // Initial count of individuals in tournament
+  GA_FINAL_TOURNAMENT_IndividualsCnt := 6; // Final count of individuals in tournament
   GA_START_MUTATION_ResetGene := 0.01; // Initial mutation (first generation)
-  GA_FINAL_MUTATION_ResetGene := 0.001; // Final mutation (last generation)
-  GA_START_MUTATION_Gaussian := 0.1; // Initial mutation (first generation)
-  GA_FINAL_MUTATION_Gaussian := 0.4; // Final mutation (last generation)
+  GA_FINAL_MUTATION_ResetGene := 0.0001; // Final mutation (last generation)
+  GA_START_MUTATION_Gaussian := 0.2; // Initial mutation (first generation)
+  GA_FINAL_MUTATION_Gaussian := 0.1; // Final mutation (last generation)
   // Gaussian distribution generates mostly (-3,3) so variance > 0.1 is recommended
   GA_START_MUTATION_Variance := 0.1; // Initial variance coefficient (first generation)
-  GA_FINAL_MUTATION_Variance := 0.05; // Final variance coefficient (last generation)
+  GA_FINAL_MUTATION_Variance := 0.01; // Final variance coefficient (last generation)
 end;
 
 

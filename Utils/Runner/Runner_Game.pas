@@ -332,13 +332,13 @@ const
     utPeasant,      utSlingshot,    utMetalBarbarian,utHorseman,
   }
   WARRIOR_PRICE: array[WARRIOR_MIN..WARRIOR_MAX] of Integer = (
-    1, 3, 6, 3,
-    5, 3, 5, 4,
-    7, 6,
-    2, 2, 6, 3
+    1, 3, 6, 3+4, // Militia     AxeFighter  Swordsman       utBowman
+    5+4, 3, 5, 4, // Arbaletman  Pikeman     Hallebardman    utHorseScout
+    7, 6,       // Cavalry     Barbarian
+    2, 2+4, 6, 3  // Peasant     Slingshot   MetalBarbarian  utHorseman
     );
 var
-  K: Integer;
+  K, UnitCnt: Integer;
   IronArmy, WoodArmy, Militia, Output: Single;
   UT: TKMUnitType;
 begin
@@ -369,12 +369,17 @@ begin
     Output := Output + Byte(gHands[PL].Houses[K].IsComplete) * COMPLETE_HOUSE;
 
   // Defeated soldiers
+  UnitCnt := 0;
   with gHands[PL].Stats do
+  begin
     for UT := WARRIOR_MIN to WARRIOR_MAX do
     begin
+      UnitCnt := UnitCnt + GetUnitKilledQty(UT);
       Output := Output - GetUnitLostQty(UT) * WARRIOR_PRICE[UT];
-      Output := Output + GetUnitKilledQty(UT) * WARRIOR_PRICE[UT];
+      Output := Output + GetUnitKilledQty(UT) * WARRIOR_PRICE[UT] * 2;
     end;
+    Output := Output - Byte(UnitCnt = 0) * 500;
+  end;
 
   Result := Output;
 end;
@@ -466,7 +471,7 @@ begin
       begin
         Fitness := 0;
         for L := 0 to fNewPopulation.Individual[K].GenesCount - 1 do
-          Fitness := Fitness - abs(L / fNewPopulation.Individual[K].GenesCount - fNewPopulation.Individual[K].Gene[L]);
+          Fitness := 0.1 + Fitness - abs(L / fNewPopulation.Individual[K].GenesCount - fNewPopulation.Individual[K].Gene[L]);
         fNewPopulation.Individual[K].Fitness[MapNum] := Fitness;
       end;
   fOldPopulation := fNewPopulation;
@@ -544,7 +549,7 @@ procedure TKMRunnerGA_ArmyAttack.InitGAParameters();
 begin
   inherited;
   f_SIM_SimulationTimeInMin := 10;
-  f_SIM_NumberOfMaps  := 17;
+  f_SIM_NumberOfMaps  := 20;
   f_SIM_MapNamePrefix := 'GA_S2_%.3d';
   f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_ArmyAttack');
 end;

@@ -195,7 +195,7 @@ end;
 function TGAPopulation.GetFittest(aOnlySomeIdx: TIntegerArray = nil; aMapWeightedEval: Boolean = True): TGAIndividual;
 var
   K,L: Integer;
-  BestFit: Single;
+  BestFit, WorstFit: Single;
   FitnessArr: array of Single;
   Fittest: TGAIndividual;
 begin
@@ -218,14 +218,21 @@ begin
     begin
       // Get best result
       BestFit := -1E30;
+      WorstFit := 1E30;
       for L in aOnlySomeIdx do
+      begin
         if (BestFit < fIndividuals[L].Fitness[K]) then
           BestFit := fIndividuals[L].Fitness[K];
+        if (WorstFit > fIndividuals[L].Fitness[K]) then
+          WorstFit := fIndividuals[L].Fitness[K];
+      end;
       if (BestFit = 0) then
         BestFit := 1;
+      if (WorstFit > 0) then
+        WorstFit := 0;
       // Normalize fitness
       for L in aOnlySomeIdx do
-        FitnessArr[L] := FitnessArr[L] + fIndividuals[L].Fitness[K] / abs(BestFit);
+        FitnessArr[L] := FitnessArr[L] + (abs(WorstFit) + fIndividuals[L].Fitness[K]) / abs(BestFit);
     end;
   end
   else

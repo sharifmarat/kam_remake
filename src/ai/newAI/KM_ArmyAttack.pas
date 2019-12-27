@@ -246,10 +246,18 @@ begin
   // Archers will reaim (+ reset animation) only in case that new target is in specific distance from existing target
   if (aUnit <> nil) AND not aUnit.IsDeadOrDying then
   begin
-    if (fTargetUnit <> nil)
-      AND not fTargetUnit.IsDeadOrDying
-      AND (fGroup.GroupType = gtRanged)
-      AND (KMDistanceSqr(fTargetUnit.CurrPosition, aUnit.CurrPosition) < sqr(GA_ATTACK_SQUAD_ChangeTarget_DistTolerance)) then
+    if (fGroup.GroupType = gtRanged)
+      AND (fTargetUnit <> nil)
+      //AND not fTargetUnit.IsDeadOrDying
+      AND (
+       (
+         (fTargetUnit is TKMUnitWarrior)
+         AND (aUnit is TKMUnitWarrior)
+         AND (TKMUnitWarrior(fTargetUnit).Group = TKMUnitWarrior(aUnit).Group)
+       ) OR (
+         (KMDistanceSqr(fTargetUnit.CurrPosition, aUnit.CurrPosition) < sqr(GA_ATTACK_SQUAD_ChangeTarget_DistTolerance))
+       )
+      ) then
       Exit;
     fTargetChanged := True;
     gHands.CleanUpUnitPointer(fTargetUnit);
@@ -293,6 +301,37 @@ end;
 
 // Update state of squad (group orders)
 procedure TAISquad.UpdateState(aTick: Cardinal);
+  function GetTargetPosition(): TKMPoint;
+  var
+    K: Integer;
+    Dist, BestDist: Single;
+    BestTgt: TKMUnit;
+    G: TKMUnitGroup;
+  begin
+    Result := fTargetUnit.CurrPosition;
+    // Get closest warrior in enemy group if the squad is ranged
+    if (fGroup.GroupType = gtRanged) AND (fTargetUnit is TKMUnitWarrior) then
+    begin
+      BestTgt := nil;
+      G := TKMUnitWarrior(fTargetUnit).Group;
+      BestDist := 1E10;
+      for K := 0 to G.Count - 1 do
+        if not G.Members[K].IsDeadOrDying then
+        begin
+          Dist := KMDistanceSqr(fGroup.Position,G.Members[K].CurrPosition);
+          if (Dist < BestDist) then
+          begin
+            BestTgt := G.Members[K];
+            BestDist := Dist;
+          end;
+        end;
+      if (BestTgt <> nil) then
+      begin
+        gHands.CleanUpUnitPointer(fTargetUnit);
+        fTargetUnit := BestTgt.GetUnitPointer;
+      end;
+    end;
+  end;
 var
   ActPos, FinPos: TKMPoint;
 begin
@@ -311,11 +350,13 @@ begin
   ActPos := fGroup.Position;
   if (fTargetUnit <> nil) then
   begin
-    FinPos := fTargetUnit.CurrPosition;
+
+    FinPos := GetTargetPosition();
     if PlanPath(aTick, ActPos, FinPos, True, False) then  // Check if squad is in the place
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if
-      (fGroup.GroupType <> gtRanged) // If not ranged then send a command to attack every update
+      fTargetChanged // Target has been changed
+      OR (fGroup.GroupType <> gtRanged) // If not ranged then send a command to attack every update
       OR (KMDistanceSqr(FinPos,ActPos) > 12*12) // If ranged send attack command only until shoot distance to prevent reset of the shooting animation
       OR (fGroup.Order in [goNone, goWalkTo]) // If ranged send attack command also if target is already in range but previous command was not attack something
       OR (fAttackTimeLimit < aTick) // If ranged send attack command every X ticks to force at least first line of archers to shoot
@@ -774,6 +815,7 @@ var
           if (UGA[I].GroupType = gtRanged) then
           begin
             // Calculate distant threat level (determine whether archers are shooting at our troops)
+            CloseThreat := CloseThreat * GA_ATTACK_COMPANY_AttackRangedGain;
             DistantThreat := DistantThreat * Byte(SQR_RANGE_OF_PROJECTILES > SqrClosestDist) * GA_ATTACK_COMPANY_AttackRangedGain;
             // Close threat level is computed with using influences
             CloseCombatProtection := 0;
@@ -794,9 +836,9 @@ var
             begin
               for K := 0 to Length(GroupsInFightArr) - 1 do
                 if (GroupsInFightArr[K].GroupType = gtRanged) then
-                  CloseThreat := CloseThreat + GroupsInFightArr[K].Count;
-                //else
-                //  CloseThreat := CloseThreat - GroupsInFightArr[K].Count;
+                  CloseThreat := CloseThreat + GroupsInFightArr[K].Count
+                else
+                  CloseThreat := CloseThreat - GroupsInFightArr[K].Count;
             end
             // If group does not fight check how far is from ranged units
             else
@@ -877,7 +919,7 @@ var
       HighestThreat := INIT_THREAT;
       for I := Cnt - 1 downto 0 do
       begin
-        if (TargetU[I].CloseThreat < 0) then
+        if (TargetU[I].CloseThreat <= 0) then
         begin
           Cnt := Cnt - 1;
           TargetU[I] := TargetU[Cnt];
@@ -888,14 +930,16 @@ var
           ThreatIdx := I;
         end;
       end;
-      // Find best close combat support
+      if (Cnt <= 0) then
+        break;
+      // Find best close combat opponent
       BestDist := INIT_DISTANCE;
       for K := 0 to 3 do
       begin
         GT := BEST_TARGET[  UGA[ TargetU[ThreatIdx].Index ].GroupType, K  ];
         for L := 0 to AvailableSquads[GT].Count - 1 do
         begin
-          Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ TargetU[ThreatIdx].Index ].CurrPosition) + K * 100;
+          Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ TargetU[ThreatIdx].Index ].CurrPosition) + K * GA_ATTACK_COMPANY_GroupTypePenalization;
           if (Dist < BestDist) then
           begin
             BestDist := Dist;
@@ -910,7 +954,7 @@ var
       begin
         Output := True;
         Squad := AvailableSquads[BestGT].Squads[TargetIdx];
-        Squad.TargetUnit := UGA[ TargetU[ThreatIdx].Index ].GetAliveMember;
+        Squad.TargetUnit := UA[ TargetU[ThreatIdx].Index ];
         // Update threat level and call another squad if needed
         case BestPrioIdx of
           0: BestPrioCoeff := GA_ATTACK_COMPANY_DecreaseThreat_Prio1;
@@ -1096,9 +1140,6 @@ end;
 function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boolean;
 
   function GetInitPolygons(aCnt: Integer; var aPointPath: TKMPointArray): TKMWordArray;
-  const
-    MINIMAL_MOVEMENT = 5;
-    INIT_POLYGONS_COEF = 3;
   var
     InitPolygon: Word;
     I, Idx: Integer;
@@ -1106,7 +1147,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
   begin
     // Get initial point on the path (it must be in specific distance from actual position to secure smooth moving of the company)
     I := Length(aPointPath)-1;
-    while (I >= 0) AND (KMDistanceAbs(aActualPosition, aPointPath[I]) < MINIMAL_MOVEMENT) do
+    while (I >= 0) AND (KMDistanceAbs(aActualPosition, aPointPath[I]) < GA_ATTACK_COMPANY_MinimumMovement) do
       I := I - 1;
     // Make sure that platoon will not start in actual polygon but position will be moved forward
     InitPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aActualPosition ];
@@ -1117,7 +1158,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
 
     I := Max(0,I + 1); // I = 0 we are in polygon of our target
     // Get several init polygons
-    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, aCnt div INIT_POLYGONS_COEF)) );
+    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, aCnt div Max(1,GA_ATTACK_COMPANY_Positioning_InitPolyCnt))) );
     Idx := 0;
     while (I >= 0) AND (Idx < Length(InitPolygons)) do
     begin
@@ -1130,7 +1171,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
     Result := InitPolygons;
   end;
 
-  procedure SetOrders(aCnt: Integer; var aPositions: TKMPointArray);
+  procedure SetOrders(aCnt: Integer; aTargetPosition: TKMPoint; var aPositions: TKMPointArray);
   const
     INFLUENCE_DANGER = 20;
     INIT_DIST = 1000;
@@ -1148,10 +1189,11 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
     if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, gAIFields.NavMesh.KMPoint2Polygon[aActualPosition], atEnemy) < INFLUENCE_DANGER) then
       SelectedTime := GA_ATTACK_COMPANY_TimePerATile_Fast;
     // Get formations and set orders
+    // Sort points according to aTargetPosition (it should work better than aActualPosition)
     TagPositions := TKMPointTagList.Create;
     try
       for I := 0 to Min(aCnt, High(aPositions)) do
-        TagPositions.Add(aPositions[I], KMDistanceAbs(aActualPosition, aPositions[I]));
+        TagPositions.Add(aPositions[I], KMDistanceAbs(aTargetPosition, aPositions[I]));
       TagPositions.SortByTag();
       //fScanPosition := TagPositions.Items[TagPositions.Count - 1];
       //fPathPosition := TagPositions.Items[(TagPositions.Count - 1) div 2];
@@ -1184,6 +1226,9 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
           end;
         if (ClosestDist = INIT_DIST) then
           break;
+
+        Squads[ClosestIdx].TargetUnit := nil;
+        Squads[ClosestIdx].TargetHouse := nil;
         Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
         Squads[ClosestIdx].WalkTimeLimit := aTick + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * SelectedTime;
         AvailableSquads[ClosestIdx] := False;
@@ -1227,7 +1272,7 @@ begin
     gAIFields.NavMesh.Positioning.FindPositions(Cnt, InitPolygons, Positions);
 
     // Compute distance of new positions and select the closest group to walk there
-    SetOrders(Cnt, Positions);
+    SetOrders(Cnt, TargetPoint, Positions);
   end;
 
   {$IFDEF DEBUG_NewAI}
@@ -1573,7 +1618,6 @@ begin
         GroupOpacity2 := $20000000;
         if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = Squad.Group) then
         begin
-          gRenderAux.CircleOnTerrain(20, 20, 20, $09000000, $FF000000);
           CompOpacity1 :=  $13000000;
           CompOpacity2 :=  $FF000000;
           GroupOpacity1 := $99000000;
