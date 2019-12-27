@@ -159,8 +159,8 @@ begin
   begin
     //First find out the AreaID for this rect area BEFORE the change (must only be one!)
     AreaID := 0;
-    for X := aRect.Left to aRect.Right do
-      for Y := aRect.Top to aRect.Bottom do
+    for Y := aRect.Top to aRect.Bottom do
+      for X := aRect.Left to aRect.Right do
         if (Land[Y,X].WalkConnect[aWC] <> 0) and (Land[Y,X].WalkConnect[aWC] <> AreaID) then
         begin
           //If we already found a different AreaID then there's more than one, so we can exit immediately
@@ -221,8 +221,8 @@ begin
   SetLength(LocalWalkConnect, (aRect.Bottom-aRect.Top)+1, (aRect.Right-aRect.Left)+1);
 
   FoundAnArea := False;
-  for X := aRect.Left to aRect.Right do
-    for Y := aRect.Top to aRect.Bottom do
+  for Y := aRect.Top to aRect.Bottom do
+    for X := aRect.Left to aRect.Right do
       if not LocalWalkConnect[Y - aRect.Top, X - aRect.Left] //Untested area
         and (aPass in gTerrain.Land[Y,X].Passability) then //Passability matches
       begin
@@ -423,8 +423,8 @@ begin
   begin
     //First find out the AreaID for this rect area BEFORE the change (must only be one!)
     AreaID := 0;
-    for X := aRect.Left to aRect.Right do
-      for Y := aRect.Top to aRect.Bottom do
+    for Y := aRect.Top to aRect.Bottom do
+      for X := aRect.Left to aRect.Right do
         if (Land[Y,X].WalkConnect[aWC] <> 0) and (Land[Y,X].WalkConnect[aWC] <> AreaID) then
         begin
           Assert(AreaID = 0, 'Must not do local walk connect update with multiple AreaIDs in Rect');
@@ -433,8 +433,8 @@ begin
     Assert(AreaID <> 0, 'Must not do local walk connect update with zero AreaIDs in Rect');
 
     //Now update WalkConnect based on passability, setting it to either AreaID or 0
-    for X := aRect.Left to aRect.Right do
-      for Y := aRect.Top to aRect.Bottom do
+    for Y := aRect.Top to aRect.Bottom do
+      for X := aRect.Left to aRect.Right do
         if aPass in Land[Y,X].Passability then
           Land[Y,X].WalkConnect[aWC] := AreaID //Walkable
         else
