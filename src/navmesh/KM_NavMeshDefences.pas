@@ -29,6 +29,15 @@ type
     Lines: array of TKMDefenceLine;
   end;
   TKMDefLinesArray = array of TKMDefenceLines;
+  {$IFDEF DEBUG_NavMeshDefences}
+  TKMDefLinesDebugInfo = record
+    Count: Word;
+    DefLines: array of record
+      Price: Single;
+      DefArr: TKMDefenceLines;
+    end;
+  end;
+  {$ENDIF}
 
   // Defence position for army defence
   TKMDefencePosition = record
@@ -64,8 +73,6 @@ type
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
     function ForwardFF(): Boolean;
   public
-    //D_INIT_FLOOD, D_FF_INIT_ARR, D_FF_INIT_FLOOD: TKMWordArray;
-
     constructor Create(aSorted: Boolean = False); reintroduce;
     destructor Destroy(); override;
 
@@ -74,8 +81,9 @@ type
 
     function FindDefenceLines(aOwner: TKMHandID; var aDefLines: TKMDefenceLines): Boolean;
     function FindDefensivePolygons(aOwner: TKMHandID; var aDefPosArr: TKMDefencePosArr): Boolean;
-    function FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
-    //procedure DEBUG();
+    function FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False): Boolean;
+
+    procedure Paint();
   end;
 
 
@@ -89,14 +97,15 @@ type
     fBestDefLines: TKMDefenceLines;
     fDefPosArr: TKMDefencePosArr;
     fFilterFF: TFilterFF;
+    {$IFDEF DEBUG_NavMeshDefences}
+    fDebugDefLines: TKMDefLinesDebugInfo;
+    {$ENDIF}
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure BackwardFlood();
     procedure EvaluateDefence(const aIdx: Word);
     function FindDefencePos(aBaseCnt: Word): Boolean;
   public
-    //D_INIT_ARR, D_INIT_FLOOD: TKMWordArray;
-
     constructor Create(aSorted: Boolean = False); reintroduce;
     destructor Destroy(); override;
 
@@ -105,8 +114,9 @@ type
     procedure AddPolygon(aIdx: Word);
     function FindDefenceLines(aOwner: TKMHandID): TKMDefenceLines;
     function FindDefensivePolygons(aOwner: TKMHandID; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
-    procedure FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
-    //procedure DEBUG();
+    procedure FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False);
+
+    procedure Paint();
   end;
 
 
@@ -114,8 +124,9 @@ type
   private
     fPolyCnt: Word;
     fBestDefLines, fAllDefLines: TKMDefenceLines;
+
   protected
-    procedure InitQueue(aMaxIdx: Word; aInitIdxArray: TKMWordArray); reintroduce;
+    procedure InitQueue(aMaxIdx: Integer; aInitIdxArray: TKMWordArray); reintroduce;
     function IsVisited(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
     function CheckStartPolygons(var aStartPolygons: TKMWordArray): boolean;
@@ -125,27 +136,30 @@ type
     function IsPolyInsideDef(aIdx: Word): Boolean;
     procedure FilterDefenceLine(var aAllDefLines, aBestDefLines: TKMDefenceLines);
     procedure FilterTeamDefLine(aClean: Boolean; aOwner: TKMHandID; var aAllDefLines: TKMDefenceLines; var aSeparatedDefLines: TKMDefLinesArray; var aPLDefAreas: TKMByteArray);
+
+    procedure Paint();
   end;
 
 
 const
-  OWNER_INFLUENCE_LIMIT = 220; // From this influence limit will be counted distance, it is also the closest line of possible defence
+  OWNER_INFLUENCE_LIMIT = 240; // From this influence limit will be counted distance, it is also the closest line of possible defence
   MAX_ENEMY_INFLUENCE = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
-  ALLY_INFLUENCE_LIMIT = 220; // If ally influence will be greater than this constant, then will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
+  ALLY_INFLUENCE_LIMIT = 240; // If ally influence will be greater than this constant, then will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
   ENEMY_INFLUENCE_LIMIT = 1; // If enemy influence will be greater than this constant, then will be applied penalization ENEMY_INFLUENCE_PENALIZATION in weight function of actual defensive line
 
   // Weights of defensive line calculation
   MIN_OPTIMAL_INFLUENCE = 50; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
   POLYGON_CNT_PENALIZATION = 2; // Polygon count penalization (more polygons = worse defensive line)
   OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
-  ALLY_INFLUENCE_PENALIZATION = 4; // Ally penalization (dont place defences inside of ally city)
   ENEMY_INFLUENCE_PENALIZATION = 10; // Enemy penalization (dont place defences inside of enemy city)
-  MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines - must be > 0 (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
+  MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
   MAXIMAL_DEFENCE_DISTANCE = 75; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
-
+  MIN_DEFENCE_CNT = 15; // Minimal count of defence polygons before penalization
 implementation
 uses
-  KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator;
+  SysUtils, KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator, KM_RenderAux;
+
+
 
 
 { TForwardFF }
@@ -274,7 +288,7 @@ begin
 end;
 
 
-function TForwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
+function TForwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False): Boolean;
 begin
   fOwner := aOwners[0];
   fFirstLine := 0;
@@ -283,8 +297,72 @@ begin
 
   Result := ForwardFF();
   if Result then
-    fBackwardFF.FindTeamDefences(aOwners, aDefPosReq, aTeamDefPos);
+    fBackwardFF.FindTeamDefences(aOwners, aDefPosReq, aTeamDefPos, aDefLinesRequired);
 end;
+
+
+procedure TForwardFF.Paint();
+  procedure DrawPolygon(aIdx: Integer; const aFillColor: Cardinal);
+  var
+    P0,P1,P2: TKMPoint;
+  begin
+    if (aFillColor < (1 shl 24)) then // Skip transparent polygons
+      Exit;
+    with gAIFields.NavMesh do
+    begin
+      P0 := Nodes[ Polygons[aIdx].Indices[0] ];
+      P1 := Nodes[ Polygons[aIdx].Indices[1] ];
+      P2 := Nodes[ Polygons[aIdx].Indices[2] ];
+      gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor);
+      gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + 1, IntToStr(fDefInfo[aIdx].Distance), $FFFFFFFF);
+    end;
+  end;
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $7700FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+var
+  K: Integer;
+  PL: TKMHandID;
+  Owners: TKMHandIDArray;
+  DefPosReq: TKMWordArray;
+  TeamDefPos: TKMTeamDefPos;
+begin
+  //{
+  // Get players in alliance
+  for PL := 0 to gHands.Count - 1 do
+    if gHands[PL].Enabled AND (gHands[ gMySpectator.HandID ].Alliances[PL] = atAlly) then
+    begin
+      SetLength(Owners, Length(Owners) + 1);
+      Owners[ High(Owners) ] := PL;
+      // Make first index spec. handID so it have different color
+      if (gMySpectator.HandID = Owners[ High(Owners) ]) then
+      begin
+        Owners[ High(Owners) ] := Owners[0];
+        Owners[0] := gMySpectator.HandID;
+      end;
+    end;
+  // Copy dummy defense requirements
+  SetLength(DefPosReq, Length(Owners));
+  for K := Low(DefPosReq) to High(DefPosReq) do
+    DefPosReq[K] := 10;
+  // Find defences for debug
+  FindTeamDefences(Owners, DefPosReq, TeamDefPos, True);
+  for K := Low(fDefInfo) to High(fDefInfo) do
+    with fDefInfo[K] do
+    begin
+      if (fDefInfo[K].Influence      > 0) then DrawPolygon(K, (fDefInfo[K].Influence      shl 24) OR COLOR_GREEN );
+      if (fDefInfo[K].AllyInfluence  > 0) then DrawPolygon(K, (fDefInfo[K].AllyInfluence  shl 24) OR COLOR_BLUE  );
+      if (fDefInfo[K].EnemyInfluence > 0) then DrawPolygon(K, (fDefInfo[K].EnemyInfluence shl 24) OR COLOR_RED   );
+    end;
+  //}
+  fBackwardFF.Paint();
+end;
+
+
 
 
 { TBackwardFF }
@@ -384,24 +462,24 @@ var
       Inc(fBestDefLines.Count);
   end;
 var
-  I, Idx: Word;
+  I, QueueIdx: Word;
   Evaluation: Single;
 begin
   PolyArr := gAIFields.NavMesh.Polygons;
 
   // Calculate evaluation of actual defensive position
   Evaluation := fQueueCnt * POLYGON_CNT_PENALIZATION;
-  Idx := aIdx;
+  QueueIdx := aIdx;
   for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
   begin
     Evaluation := + Evaluation
-                  //+ fDefInfo[Idx].Distance // Consideration of distance does more damage than benefit
-                  - Byte(    ((fDefInfo[Idx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[Idx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
-                          OR ((fDefInfo[Idx].Influence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[Idx].Influence < ALLY_INFLUENCE_LIMIT))
-                         ) * OPTIMAL_INFLUENCE_ADD
-                  //+ Byte(fDefInfo[Idx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION
-                  + Byte(fDefInfo[Idx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION;
-    Idx := fQueueArray[Idx].Next;
+                  //+ fDefInfo[aIdx].Distance // Consideration of distance does more damage than benefit
+                  - Byte(    ((fDefInfo[aIdx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
+                          OR ((fDefInfo[aIdx].Influence     > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].Influence     < ALLY_INFLUENCE_LIMIT))
+                        ) * OPTIMAL_INFLUENCE_ADD
+                  + Byte(fDefInfo[aIdx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION
+                  + Byte(fQueueCnt < MIN_DEFENCE_CNT) * (MIN_DEFENCE_CNT - fQueueCnt) * 100;
+    QueueIdx := fQueueArray[QueueIdx].Next;
   end;
   // If is evaluation better save polygons
   if (Evaluation < fBestEvaluation) then
@@ -410,13 +488,26 @@ begin
     fBestDefLines.Count := 0; // Set defences count to 0 (it will be incremented later)
     if (fQueueCnt >= Length(fBestDefLines.Lines)) then
       SetLength(fBestDefLines.Lines, fQueueCnt + 32);
-    Idx := aIdx;
+    QueueIdx := aIdx;
     // Copy defensive polygons
     for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
     begin
-      AddDefence(Idx);
-      Idx := fQueueArray[Idx].Next;
+      AddDefence(QueueIdx);
+      QueueIdx := fQueueArray[QueueIdx].Next;
     end;
+    {$IFDEF DEBUG_NavMeshDefences}
+      with fDebugDefLines do
+        if (Count >= Length(DefLines)) then
+          SetLength(DefLines, Count + 20);
+      with fDebugDefLines.DefLines[ fDebugDefLines.Count ] do
+      begin
+        Price := Evaluation;
+        DefArr.Count := fBestDefLines.Count;
+        SetLength(DefArr.Lines, DefArr.Count);
+        Move(fBestDefLines.Lines[0], DefArr.Lines[0], SizeOf(DefArr.Lines[0]) * DefArr.Count);
+      end;
+      Inc(fDebugDefLines.Count);
+    {$ENDIF}
   end;
 end;
 
@@ -446,9 +537,8 @@ var
       for K := 0 to PolyArr[QueueIdx].NearbyCount-1 do
       begin
         NearbyIdx := PolyArr[QueueIdx].Nearby[K];
-        // This polygon hasnt been visited in forward loop (polygon is inside of the enemy city)
-        if (fQueueArray[NearbyIdx].Visited < fVisitedIdx-1) then
-          fQueueArray[NearbyIdx].Visited := fVisitedIdx; // Mark as visited for backward loop
+        if (fQueueArray[NearbyIdx].Visited < fVisitedIdx-1) then // This polygon was not visited in forward cycle -> it will not be visited in backward
+          fQueueArray[NearbyIdx].Visited := fVisitedIdx;
       end;
       QueueIdx := fQueueArray[QueueIdx].Next;
     end;
@@ -623,7 +713,7 @@ end;
 
 
 // Defense detection for new AI (once per a team)
-procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
+procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False);
 var
   SeparatedDefLines: TKMDefLinesArray;
   DefLinesReq: TKMWordArray;
@@ -633,7 +723,7 @@ var
   begin
     // Check length
     Cnt := Length(DefLinesReq);
-    if (Length(SeparatedDefLines) <> Cnt) then
+    if (Length(SeparatedDefLines) > Cnt) then
     begin
       SetLength(DefLinesReq, Length(SeparatedDefLines));
       FillChar(DefLinesReq[Cnt], SizeOf(DefLinesReq[Cnt]) * (Length(DefLinesReq) - Cnt), #0);
@@ -667,7 +757,7 @@ var
   PLsDefAreas: TKMByte2Array;
 begin
   fOwner := aOwners[0];
-  fDefLinesRequired := False;
+  fDefLinesRequired := aDefLinesRequired;
   BackwardFlood(); // Find best defence line
   if (fBestDefLines.Count = 0) then
     Exit;
@@ -694,6 +784,47 @@ begin
     end;
   end;
 end;
+
+
+procedure TBackwardFF.Paint();
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $7700FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+{$IFDEF DEBUG_NavMeshDefences}
+var
+  Opacity: Byte;
+  K,L: Integer;
+  MinPrc, MaxPrc: Single;
+  P1,P2: TKMPoint;
+{$ENDIF}
+begin
+  {$IFDEF DEBUG_NavMeshDefences}
+    MinPrc := +1E10;
+    MaxPrc := -1E10;
+    for K := 0 to fDebugDefLines.Count - 1 do
+      with fDebugDefLines.DefLines[K] do
+      begin
+        if (MinPrc > Price) then MinPrc := Price;
+        if (MaxPrc < Price) then MaxPrc := Price;
+      end;
+    for K := 0 to fDebugDefLines.Count - 1 do
+      with fDebugDefLines.DefLines[K] do
+        for L := 0 to DefArr.Count - 1 do
+        begin
+          Opacity := Round(255 - (Price - MinPrc) / MaxPrc * 254);
+          P1 := gAIFields.NavMesh.Nodes[ DefArr.Lines[L].Nodes[0] ];
+          P2 := gAIFields.NavMesh.Nodes[ DefArr.Lines[L].Nodes[1] ];
+          gRenderAux.LineOnTerrain(P1, P2, (Opacity shl 24) OR COLOR_RED);
+        end;
+  {$ENDIF}
+
+  fFilterFF.Paint();
+end;
+
 
 
 
@@ -729,7 +860,7 @@ begin
 end;
 
 
-procedure TFilterFF.InitQueue(aMaxIdx: Word; aInitIdxArray: TKMWordArray);
+procedure TFilterFF.InitQueue(aMaxIdx: Integer; aInitIdxArray: TKMWordArray);
 var
   I: Integer;
 begin
@@ -801,7 +932,14 @@ begin
   gAIFields.Eye.OwnerUpdate(aOwner);
   StartPolygons := gAIFields.Eye.GetCityCenterPolygons(True);
   if not CheckStartPolygons(StartPolygons) then
+  begin
+    if aClean then
+    begin
+      InitQueue(-1, []);
+      fVisitedIdx := fVisitedIdx - 1;
+    end;
     Exit;
+  end;
   // Check if city is already in known defence area
   SetLength(StartPolygon,1);
   SetLength(aPLDefAreas,0);
@@ -844,49 +982,34 @@ begin
 end;
 
 
-{
-procedure TForwardFF.DEBUG();
+procedure TFilterFF.Paint();
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $7700FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+{$IFDEF DEBUG_NavMeshDefences}
+const
+  RAD = 0.25;
 var
-  I, cnt: Integer;
+  K: Integer;
+{$ENDIF}
 begin
-  SetLength(D_INIT_FLOOD, Length(fQueueArray));
-  cnt := 0;
-  for I := 0 to Length(fQueueArray) - 1 do
-    if (fQueueArray[I].Visited = fVisitedIdx) then
-    begin
-      D_INIT_FLOOD[cnt] := I;
-      cnt := cnt + 1;
-    end;
-  SetLength(D_INIT_FLOOD, cnt);
-  fBackwardFF.DEBUG();
-  D_FF_INIT_ARR := fBackwardFF.D_INIT_ARR;
-  D_FF_INIT_FLOOD := fBackwardFF.D_INIT_FLOOD;
-  BestDefLines := fBackwardFF.BestDefLines;
+  {$IFDEF DEBUG_NavMeshDefences}
+  for K := Low(fQueueArray) to High(fQueueArray) do
+    with gAIFields.NavMesh.Polygons[K].CenterPoint do
+      case fQueueArray[K].Visited of
+       1: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_RED, ($09000000) OR COLOR_RED);
+       2: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLACK, ($09000000) OR COLOR_BLACK);
+       3: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_WHITE, ($09000000) OR COLOR_WHITE);
+       4: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_GREEN, ($09000000) OR COLOR_GREEN);
+       5: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLUE, ($09000000) OR COLOR_BLUE);
+       6: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLUE, ($09000000) OR COLOR_YELLOW);
+      end;
+  {$ENDIF}
 end;
 
-
-procedure TBackwardFF.DEBUG();
-var
-  I, cnt: Integer;
-begin
-  SetLength(D_INIT_ARR, fQueueCnt);
-  I := fStartQueue;
-  for cnt := 0 to fQueueCnt - 1 do
-  begin
-    D_INIT_ARR[cnt] := I;
-    I := fQueueArray[I].Next;
-  end;
-  BackwardFlood();
-  SetLength(D_INIT_FLOOD, Length(fQueueArray));
-  cnt := 0;
-  for I := 0 to Length(fQueueArray) - 1 do
-    if (fQueueArray[I].Visited = fVisitedIdx) then
-    begin
-      D_INIT_FLOOD[cnt] := I;
-      cnt := cnt + 1;
-    end;
-  SetLength(D_INIT_FLOOD, cnt);
-end;
-//}
 
 end.

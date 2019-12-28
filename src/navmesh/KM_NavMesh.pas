@@ -424,11 +424,22 @@ var
   K, L: Integer;
   p1,p2: TKMPoint;
 
-  Owner: TKMHandID;
-  DefLines: TKMDefenceLines;
-  DefencePosArr: TKMDefencePosArr;
   FFF: TForwardFF;
 begin
+  //{ DEFENCE SYSTEM
+  // Show this defences only in case that show combat AI is not enabled;
+  // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
+  if AI_GEN_NAVMESH AND not OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
+  begin
+    FFF := TForwardFF.Create(true);
+    try
+      FFF.Paint();
+    finally
+      FFF.Free;
+    end;
+  end;
+  //}
+
   //AfterMissionInit();
   if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH then
     Exit;
@@ -475,38 +486,6 @@ begin
       for L := 0 to NearbyCount - 1 do
         gRenderAux.Quad(NearbyPoints[L].X, NearbyPoints[L].Y, $AA000000);
     end;
-  //}
-
-  //{ DEFENCE SYSTEM
-  // Show this defences only in case that show combat AI is not enabled;
-  // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
-  if OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
-  begin
-    Owner := gMySpectator.HandID;
-    FFF := TForwardFF.Create(true);
-    try
-      if FFF.FindDefenceLines(Owner, DefLines) then
-        for K := 0 to DefLines.Count - 1 do
-        begin
-          L := DefLines.Lines[K].Polygon;
-          gRenderAux.TriangleOnTerrain(
-            fNodes[fPolygons[L].Indices[0]].X,
-            fNodes[fPolygons[L].Indices[0]].Y,
-            fNodes[fPolygons[L].Indices[1]].X,
-            fNodes[fPolygons[L].Indices[1]].Y,
-            fNodes[fPolygons[L].Indices[2]].X,
-            fNodes[fPolygons[L].Indices[2]].Y, $300000FF);
-        end;
-      if FFF.FindDefensivePolygons(Owner, DefencePosArr) then
-        for K := 0 to Length(DefencePosArr) - 1 do
-        begin
-          p1 := DefencePosArr[K].DirPoint.Loc;
-          gRenderAux.CircleOnTerrain(p1.X, p1.Y, 2, $0900FFFF, $FFFFFFFF);
-        end;
-    finally
-      FFF.Free;
-    end;
-  end;
   //}
 end;
 
