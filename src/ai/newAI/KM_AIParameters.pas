@@ -39,11 +39,13 @@ var
   GA_ATTACK_COMPANY_DecreaseThreat_Prio2             : Single =     0.6052376032;
   GA_ATTACK_COMPANY_DecreaseThreat_Prio3             : Single =     0.9684157968;
   GA_ATTACK_COMPANY_DecreaseThreat_Prio4             : Single =     0.4872157574;
-  GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    8;
-  GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =    7;
+  GA_ATTACK_COMPANY_TimePerATile_Slow                : Word =    3;//8
+  GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =    3;//7
 
-  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    3;
-  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    9;
+  GA_ATTACK_COMPANY_MinCombatSpacing                 : Word =    3;
+  GA_ATTACK_COMPANY_MinWalkSpacing                   : Word =    3;
+  GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5;
+  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    1;
 //}
 
 { 2019-12-13
@@ -69,7 +71,7 @@ var
   GA_ATTACK_COMPANY_TimePerATile_Fast                : Word =   4; // Max ticks per a tile (fast mode)
 
   GA_ATTACK_COMPANY_MinimumMovement                  : Word =    5; // Minimum distance to move company
-  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    3; // Affects the shape of the moving company (1 = circle, max = line)
+  GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word =    1; // Affects the shape of the moving company (1 = circle, max = line)
 //}
 
 
@@ -272,9 +274,9 @@ var
 
 {  KM_NavMeshPathFinding }
 //{ 2019-12-25
-  GA_PATHFINDING_AvoidTraffic                        : Single =     1.0783169270;
-  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     0.5625061989;
-  GA_PATHFINDING_AvoidEdges                          : Single =    10;
+  GA_PATHFINDING_AvoidTraffic                        : Single =     2.7351799011;
+  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     1.6479400396;
+  GA_PATHFINDING_AvoidEdges                          : Single =   129;
 //}
 
 { 2019-12-15

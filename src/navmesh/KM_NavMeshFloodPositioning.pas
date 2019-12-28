@@ -17,13 +17,14 @@ type
   TNavMeshFloodPositioning = class(TNavMeshFloodFill)
   private
     fCount: Word;
+    fSqrMinSpacing: Single;
   protected
     fPointArray: TKMPointArray;
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
-    function FindPositions(aCount: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
+    function FindPositions(aCount,aMinSpacing: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
   end;
 
 
@@ -42,25 +43,25 @@ end;
 procedure TNavMeshFloodPositioning.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
 var
   Check: Boolean;
-  I, K: Integer;
+  K, L: Integer;
 begin
   inherited MarkAsVisited(aIdx, aDistance, aPoint);
 
   // Add new positions (1 polygon (triangle) in NavMesh can give 3 new positions which are given by center points of it's 3 border lines)
   if CanBeExpanded(aIdx) then
     with gAIFields.NavMesh.Polygons[aIdx] do
-      for I := 0 to NearbyCount - 1 do
+      for K := 0 to NearbyCount - 1 do
       begin
         Check := True;
-        for K := 0 to fCount - 1 do // Does we already have this position?
-          if KMSamePoint(NearbyPoints[I], fPointArray[K]) then
+        for L := 0 to fCount - 1 do // Does we already have this position?
+          if (KMDistanceSqr(NearbyPoints[K], fPointArray[L]) < fSqrMinSpacing) then
           begin
             Check := False;
             break;
           end;
         if Check then // Add position
         begin
-          fPointArray[fCount] := NearbyPoints[I];
+          fPointArray[fCount] := NearbyPoints[K];
           fCount := fCount + 1;
           if not CanBeExpanded(aIdx) then
             Exit;
@@ -69,8 +70,9 @@ begin
 end;
 
 
-function TNavMeshFloodPositioning.FindPositions(aCount: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
+function TNavMeshFloodPositioning.FindPositions(aCount,aMinSpacing: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
 begin
+  fSqrMinSpacing := sqr(aMinSpacing);
   SetLength(fPointArray, aCount);
   fCount := 0;
 
