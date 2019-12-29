@@ -118,6 +118,7 @@ type
     procedure AddSquad(aGroup: TKMUnitGroup);
     procedure DeleteSquad(aGT: TKMGroupType; aIdx: Integer);
     function SquadCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
+    function WarriorCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
     function IsGroupInCompany(aGroup: TKMUnitGroup): Boolean;
     function SetTarget(aHouse: TKMHouse; aUnit: TKMUnit = nil): Boolean;
     function ActualizeTarget(aInitPosition: TKMPoint; var aTargetHouse: TKMHouse; var aTargetUnit: TKMUnit; aAimCivilians: Boolean = True): Boolean;
@@ -1288,6 +1289,22 @@ begin
   Result := 0;
   for GT in aTypes do
     Result := Result + fSquads[GT].Count;
+end;
+
+function TAICompany.WarriorCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
+var
+  K: Integer;
+  G: TKMUnitGroup;
+  GT: TKMGroupType;
+begin
+  Result := 0;
+  for GT in aTypes do
+    for K := 0 to fSquads[GT].Count - 1 do
+    begin
+      G := TAISquad(fSquads[GT].Items[K]).Group;
+      if (G <> nil) then
+        Result := Result + G.Count;
+    end;
 end;
 
 

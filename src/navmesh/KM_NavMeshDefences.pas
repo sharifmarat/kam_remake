@@ -149,12 +149,11 @@ const
 
   // Weights of defensive line calculation
   MIN_OPTIMAL_INFLUENCE = 50; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
-  POLYGON_CNT_PENALIZATION = 2; // Polygon count penalization (more polygons = worse defensive line)
+  POLYGON_CNT_PENALIZATION = 5; // Polygon count penalization (more polygons = worse defensive line)
   OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
   ENEMY_INFLUENCE_PENALIZATION = 10; // Enemy penalization (dont place defences inside of enemy city)
-  MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
   MAXIMAL_DEFENCE_DISTANCE = 75; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
-  MIN_DEFENCE_CNT = 15; // Minimal count of defence polygons before penalization
+  MIN_DEFENCE_CNT = 1; // Minimal count of defence polygons before penalization
 implementation
 uses
   SysUtils, KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator, KM_RenderAux;
@@ -514,7 +513,7 @@ end;
 
 function TBackwardFF.CanBeExpanded(const aIdx: Word): Boolean;
 begin
-  Result := (fDefInfo[aIdx].Distance > MINIMAL_DEFENCE_DISTANCE);
+  Result := (fDefInfo[aIdx].Distance > 0);
 
   if Result AND (fDefInfo[aIdx].Distance < MAXIMAL_DEFENCE_DISTANCE) then
     EvaluateDefence(aIdx);
