@@ -458,6 +458,8 @@ end;
 
 //We want to connect to nearest road piece (not necessarily built yet)
 function TKMayor.TryConnectToRoad(const aLoc: TKMPoint): Boolean;
+const
+  MAX_DISTANCE = 150;
 var
   I: Integer;
   P: TKMHand;
@@ -484,7 +486,7 @@ begin
   try
     RoadExists := fPathFindingRoad.Route_ReturnToWalkable(aLoc, LocTo, RoadConnectID, NodeList);
 
-    if not RoadExists then
+    if not RoadExists OR (NodeList.Count > MAX_DISTANCE) then
       Exit;
 
     for I := 0 to NodeList.Count - 1 do
