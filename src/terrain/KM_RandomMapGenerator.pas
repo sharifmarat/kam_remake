@@ -438,26 +438,26 @@ begin
           end;
         1:
           begin
-            Resources[wtStone] := 90;
-            Resources[wtWood] := 65;
-            Resources[wtGold] := 70;
-            Resources[wtWine] := 60;
+            Resources[wtStone] := 100;
+            Resources[wtWood] := 70;
+            Resources[wtGold] := 80;
+            Resources[wtWine] := 70;
             Resources[wtBread] := 50;
-            Resources[wtSausages] := 25;
-            Resources[wtFish] := 30;
+            Resources[wtSausages] := 30;
+            Resources[wtFish] := 40;
             Units[utSerf] := 5;
             Units[utWorker] := 4;
             InitResStr := 'Medium';
           end;
         2:
           begin
-            Resources[wtStone] := 120;
-            Resources[wtWood] := 80;
-            Resources[wtGold] := 80;
+            Resources[wtStone] := 130;
+            Resources[wtWood] := 90;
+            Resources[wtGold] := 100;
             Resources[wtWine] := 80;
-            Resources[wtBread] := 60;
-            Resources[wtSausages] := 35;
-            Resources[wtFish] := 40;
+            Resources[wtBread] := 65;
+            Resources[wtSausages] := 45;
+            Resources[wtFish] := 50;
             Units[utSerf] := 7;
             Units[utWorker] := 5;
             InitResStr := 'High';
