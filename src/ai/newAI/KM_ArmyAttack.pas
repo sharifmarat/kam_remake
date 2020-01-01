@@ -118,6 +118,7 @@ type
     procedure AddSquad(aGroup: TKMUnitGroup);
     procedure DeleteSquad(aGT: TKMGroupType; aIdx: Integer);
     function SquadCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
+    function WarriorCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
     function IsGroupInCompany(aGroup: TKMUnitGroup): Boolean;
     function SetTarget(aHouse: TKMHouse; aUnit: TKMUnit = nil): Boolean;
     function ActualizeTarget(aInitPosition: TKMPoint; var aTargetHouse: TKMHouse; var aTargetUnit: TKMUnit; aAimCivilians: Boolean = True): Boolean;
@@ -1090,7 +1091,7 @@ var
     // Get positions around center of scan area
     SetLength(InitPolygons,1);
     InitPolygons[0] := gAIFields.NavMesh.KMPoint2Polygon[ fScanPosition ];
-    gAIFields.NavMesh.Positioning.FindPositions(Cnt, InitPolygons, Positions);
+    gAIFields.NavMesh.Positioning.FindPositions(Cnt, GA_ATTACK_COMPANY_MinCombatSpacing, InitPolygons, Positions);
 
     Cnt := 0;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
@@ -1158,7 +1159,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
 
     I := Max(0,I + 1); // I = 0 we are in polygon of our target
     // Get several init polygons
-    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, aCnt div Max(1,GA_ATTACK_COMPANY_Positioning_InitPolyCnt))) );
+    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, GA_ATTACK_COMPANY_Positioning_InitPolyCnt)) );
     Idx := 0;
     while (I >= 0) AND (Idx < Length(InitPolygons)) do
     begin
@@ -1269,7 +1270,7 @@ begin
     InitPolygons := GetInitPolygons(Cnt, PointPath);
 
     // Get positions around init polygons
-    gAIFields.NavMesh.Positioning.FindPositions(Cnt, InitPolygons, Positions);
+    gAIFields.NavMesh.Positioning.FindPositions(Cnt, GA_ATTACK_COMPANY_MinWalkSpacing, InitPolygons, Positions);
 
     // Compute distance of new positions and select the closest group to walk there
     SetOrders(Cnt, TargetPoint, Positions);
@@ -1288,6 +1289,22 @@ begin
   Result := 0;
   for GT in aTypes do
     Result := Result + fSquads[GT].Count;
+end;
+
+function TAICompany.WarriorCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
+var
+  K: Integer;
+  G: TKMUnitGroup;
+  GT: TKMGroupType;
+begin
+  Result := 0;
+  for GT in aTypes do
+    for K := 0 to fSquads[GT].Count - 1 do
+    begin
+      G := TAISquad(fSquads[GT].Items[K]).Group;
+      if (G <> nil) then
+        Result := Result + G.Count;
+    end;
 end;
 
 
@@ -1587,6 +1604,7 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
 var
+  CompanySelected: Boolean;
   K,L: Integer;
   {$IFDEF DEBUG_NewAI}
   M: Integer;
@@ -1601,78 +1619,87 @@ begin
   //  Exit;
   //if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
   //  Exit;
+  CompanySelected := False;
   for K := 0 to Count - 1 do
   begin
     // Company status log
     Company := fCompanies.Items[K];
     CompOpacity1 := $09000000;
     CompOpacity2 := $33000000;
-
-    // Pathfinding (squads) + targets
+    // Check if company is selected
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for L := Company.Squads[GT].Count - 1 downto 0 do
-      begin
-        Squad := Company.Squads[GT].Items[L];
-        // Highlight selected group and squad
-        GroupOpacity1 := $10000000;
-        GroupOpacity2 := $20000000;
-        if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = Squad.Group) then
+        if ((gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = TAISquad(Company.Squads[GT].Items[L]).Group)) then
         begin
-          CompOpacity1 :=  $13000000;
+          CompanySelected := True;
+          CompOpacity1 :=  $20000000;
           CompOpacity2 :=  $FF000000;
-          GroupOpacity1 := $99000000;
-          GroupOpacity2 := $FF000000;
         end;
-        // Order position of group
-        Position := Squad.Group.OrderLoc.Loc;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, GroupOpacity2 OR COLOR_YELLOW);
-        // Position
-        Position := Squad.Position;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, GroupOpacity2 OR COLOR_GREEN);
 
-        // Target unit
-        if (Squad.TargetUnit <> nil) then
+    // Pathfinding (squads) + targets
+    if CompanySelected then
+      for GT := Low(TKMGroupType) to High(TKMGroupType) do
+        for L := Company.Squads[GT].Count - 1 downto 0 do
         begin
-          if not Squad.TargetUnit.IsDeadOrDying then
+          Squad := Company.Squads[GT].Items[L];
+          // Highlight selected group and squad
+          GroupOpacity1 := $20000000;
+          GroupOpacity2 := $30000000;
+          if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = Squad.Group) then
           begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.CurrPosition, GroupOpacity2 OR COLOR_RED);
+            GroupOpacity1 := $99000000;
+            GroupOpacity2 := $FF000000;
+          end;
+          // Order position of group
+          Position := Squad.Group.OrderLoc.Loc;
+          gRenderAux.CircleOnTerrain(Position.X, Position.Y, 0.25, $FF000000 OR COLOR_YELLOW, $FF000000 OR COLOR_YELLOW);
+          // Position
+          Position := Squad.Position;
+          gRenderAux.CircleOnTerrain(Position.X, Position.Y, 0.75, GroupOpacity2 OR COLOR_GREEN, GroupOpacity2 OR COLOR_GREEN);
+
+          // Target unit
+          if (Squad.TargetUnit <> nil) then
+          begin
+            if not Squad.TargetUnit.IsDeadOrDying then
+            begin
+              gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.CurrPosition, GroupOpacity2 OR COLOR_RED);
+              {$IFDEF DEBUG_NewAI}
+              if (Length(Squad.DEBUGPointPath) > 0) then
+                for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
+                  gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
+              {$ENDIF}
+            end;
+          end
+          // Target house
+          else if (Squad.TargetHouse <> nil) then
+            if not Squad.TargetHouse.IsDestroyed then
+            begin
+              gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.Position, GroupOpacity2 OR COLOR_RED);
+              {$IFDEF DEBUG_NewAI}
+              if (Length(Squad.DEBUGPointPath) > 0) then
+                for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
+                  gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
+              {$ENDIF}
+            end;
+          // Pathfinding
+          if not KMSamePoint(Squad.FinalPosition.Loc,KMPOINT_ZERO) then
+          begin
+            //gRenderAux.LineOnTerrain(Position, Squad.FinalPosition.Loc, $AAFF5555);
+            gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, GroupOpacity1 OR COLOR_BLUE);
             {$IFDEF DEBUG_NewAI}
             if (Length(Squad.DEBUGPointPath) > 0) then
               for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
                 gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
             {$ENDIF}
           end;
-        end
-        // Target house
-        else if (Squad.TargetHouse <> nil) then
-          if not Squad.TargetHouse.IsDestroyed then
-          begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.Position, GroupOpacity2 OR COLOR_RED);
-            {$IFDEF DEBUG_NewAI}
-            if (Length(Squad.DEBUGPointPath) > 0) then
-              for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
-            {$ENDIF}
-          end;
-        // Pathfinding
-        if not KMSamePoint(Squad.FinalPosition.Loc,KMPOINT_ZERO) then
-        begin
-          //gRenderAux.LineOnTerrain(Position, Squad.FinalPosition.Loc, $AAFF5555);
-          gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, GroupOpacity1 OR COLOR_BLUE);
-          {$IFDEF DEBUG_NewAI}
-          if (Length(Squad.DEBUGPointPath) > 0) then
-            for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
-              gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
-          {$ENDIF}
         end;
-      end;
 
     // Change color according to state
+    Col := 0; // For compiler
     case Company.State of
       csAttack:  Col := COLOR_RED;
       csWalking: Col := COLOR_BLUE;
       csIdle:    Col := COLOR_BLACK;
-      else       Col := 0; // For compiler
     end;
 
     // Mark company
@@ -1680,9 +1707,9 @@ begin
     {$IFDEF DEBUG_NewAI}
     //gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.DEBUGScanRad), CompOpacity1 OR Col, CompOpacity2 OR Col);
     {$ENDIF}
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 4, CompOpacity1 OR Col, CompOpacity2 OR Col);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, CompOpacity1 OR Col, CompOpacity2 OR Col);
     Position := Company.PathPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, CompOpacity1 OR COLOR_GREEN, CompOpacity2 OR COLOR_WHITE);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 2, CompOpacity1 OR COLOR_GREEN, CompOpacity2 OR COLOR_GREEN);
 
     // Target aim
     {$IFDEF DEBUG_NewAI}

@@ -656,9 +656,10 @@ begin
       for X1 := X0 to X2 do
         Surroundings := Surroundings + Byte((fSearchArr[Y1,X1] = fSearch) OR (fSearchArr[Y1,X1] = fNewSearch));
     case Surroundings of
-      5, 6: begin fTileArr[aY,aX] := 1; fCounter[1] := fCounter[1]+1; end;
-      7, 8: begin fTileArr[aY,aX] := 2; fCounter[2] := fCounter[2]+1; end;
-      9:    begin fTileArr[aY,aX] := 3; fCounter[3] := fCounter[3]+1; end;
+      5:    begin fTileArr[aY,aX] := 1; fCounter[1] := fCounter[1]+1; end;
+      6:    begin fTileArr[aY,aX] := 2; fCounter[2] := fCounter[2]+1; end;
+      7, 8: begin fTileArr[aY,aX] := 3; fCounter[3] := fCounter[3]+1; end;
+      9:    begin fTileArr[aY,aX] := 4; fCounter[4] := fCounter[4]+1; end;
       else  begin fTileArr[aY,aX] := 0; fCounter[0] := fCounter[0]+1; end;
     end;
   end;
