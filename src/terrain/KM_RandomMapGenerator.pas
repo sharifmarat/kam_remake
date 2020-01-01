@@ -1183,7 +1183,7 @@ const
   RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.1,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
   RES_AMOUNT: array[0..4] of Integer = (1, 1, 1, 2, 1);
-  RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.35, 0.35);
+  RES_TILES_AMOUNT: array[0..4] of Single = (0.2, 0.2, 0.066, 0.27,0.30);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
   // Find best place for resources (scan area around and find empy space)
@@ -2039,10 +2039,10 @@ var
    B: array of array of TileTemplateArr;
    Res: TKMByte2Array;
 const
-  canWalk: array[0..23] of Boolean = (
+  canWalk: array[0..len_BIOME-1] of Boolean = (
     True,True,False,False,False,True,True,True,True,True,True,True,False,True,True,True,True,True,False,False,False,False,False,False
   );
-  TerrainPreference: array[0..23,0..4] of Byte = (
+  TerrainPreference: array[0..len_BIOME-1,0..4] of Byte = (
     (0,1,14,255,255),(0,1,14,255,255),(2,3,4,0,255),(2,3,4,0,255),(2,19,20,21,22),(5,6,7,8,255),(5,6,7,8,255),(5,6,7,8,255),(6,7,0,1,255),(5,6,7,255,255),(9,10,11,255,255),(9,10,11,255,255),(4,255,255,255,255),(13,15,16,17,255),(0,1,8,14,255),(13,15,16,17,255),(13,15,16,17,255),(13,15,16,17,255),(0,255,255,255,255),(19,20,255,255,255),(19,20,255,255,255),(21,22,255,255,255),(21,22,255,255,255),(21,22,255,255,255)
   );
 
@@ -3036,7 +3036,7 @@ procedure TKMRandomMapGenerator.GenerateBasicTiles(var TilesPartsArr: TTileParts
 var
    X,Y: Integer;
 const
-  FT: array[0..23] of Byte = (0,8,48,40,192,155,34,35,17,47,46,45,44,31,26,27,28,29,132,147,156,151,160,245);
+  FT: array[0..len_BIOME-1] of Byte = (0,8,48,40,192,155,34,35,17,47,46,45,44,31,26,27,28,29,132,147,156,151,160,245);
 begin
 	for Y := 1 to fMapY-1 do
 		for X := 1 to fMapX-1 do
@@ -3207,17 +3207,17 @@ procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPa
   end;
 
 const
-  //HeightMix: array [0..23] of Byte = (
+  //HeightMix: array [0..len_BIOME-1] of Byte = (
   //  //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
   //  10,10,5,5,3,5,10,1,10,10,20,20,0,5,10,10,15,20,10,20,20,20,20,0
   //);
   //TBiomeType = (
   //10,15,0,0,0,10,5,0,15,15,20,20,10,5,btGrassSand1,btGrassSand2,btGrassSand3,btSand,btStone,btGold,btEgold,btIron,btEIron,btDark);
 
-  HeightVariance: array [0..23] of Byte = (
+  HeightVariance: array [0..len_BIOME-1] of Byte = (
     10,10,5,5,3,5,10,10,10,10,15,15,0,5,10,10,15,20,10,20,20,0,0,0
   );
-  HNST: array[0..23,0..23] of Byte = ( // Hide Non-Smooth Transition (height fix)
+  HNST: array[0..len_BIOME-1,0..len_BIOME-1] of Byte = ( // Hide Non-Smooth Transition (height fix)
     (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
     (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
     (0,0,0,2,0,5,2,3,2,5,5,5,5,2,1,2,3,4,0,0,0,0,0,0),
