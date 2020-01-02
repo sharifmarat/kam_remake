@@ -465,7 +465,7 @@ begin
   // Forests
   Lab := TKMLabel.Create(Panel_Settings, Column_X, NextLine(Column_Y), BOX_X, BOX_Y, gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_DENSITY], fntMetal, taLeft);
     Lab.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_DENSITY_HINT];
-    TBar_Forests := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 10);
+    TBar_Forests := TKMTrackBar.Create(Panel_Settings, Column_X, NextLine(Column_Y), WIDTH_TrackBar, 0, 10 - Byte(aMP) * 2);
     TBar_Forests.Position := 5;
     TBar_Forests.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_FORESTS_DENSITY_HINT];
   // Trees in forest
