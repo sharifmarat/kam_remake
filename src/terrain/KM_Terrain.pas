@@ -3790,23 +3790,14 @@ end;
 
 //Rebuilds connected areas using flood fill algorithm
 procedure TKMTerrain.UpdateWalkConnect(const aSet: array of TKMWalkConnect; aRect: TKMRect; aDiagObjectsEffected:Boolean);
-const
-  WC_PASS: array [TKMWalkConnect] of TKMTerrainPassability = (
-    tpWalk, tpWalkRoad, tpFish, tpWorker);
 var
   J: Integer;
-  WC: TKMWalkConnect;
-  AllowDiag: Boolean;
 begin
-  aRect := KMClipRect(aRect, 1, 1, fMapX-1, fMapY-1);
+  aRect := KMClipRect(aRect, 1, 1, fMapX - 1, fMapY - 1);
 
   //Process all items from set
   for J := Low(aSet) to High(aSet) do
-  begin
-    WC := aSet[J];
-    AllowDiag := (WC <> wcRoad); //Do not consider diagonals "connected" for roads
-    TKMTerrainWalkConnect.DoUpdate(aRect, WC, WC_PASS[WC], AllowDiag, aDiagObjectsEffected);
-  end;
+    TKMTerrainWalkConnect.DoUpdate(aRect, aSet[J], aDiagObjectsEffected);
 end;
 
 
