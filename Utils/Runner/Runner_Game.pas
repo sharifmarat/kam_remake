@@ -338,7 +338,7 @@ const
     2, 2+4, 6, 3  // Peasant     Slingshot   MetalBarbarian  utHorseman
     );
 var
-  K, UnitCnt: Integer;
+  K, UnitKilledCnt, UnitSurvivedCnt, UnitSurvivedEnemyCnt: Integer;
   IronArmy, WoodArmy, Militia, Output: Single;
   UT: TKMUnitType;
 begin
@@ -369,17 +369,32 @@ begin
     Output := Output + Byte(gHands[PL].Houses[K].IsComplete) * COMPLETE_HOUSE;
 
   // Defeated soldiers
-  UnitCnt := 0;
+  UnitKilledCnt := 0;
+  UnitSurvivedCnt := 0;
   with gHands[PL].Stats do
   begin
     for UT := WARRIOR_MIN to WARRIOR_MAX do
     begin
-      UnitCnt := UnitCnt + GetUnitKilledQty(UT);
-      Output := Output - GetUnitLostQty(UT) * WARRIOR_PRICE[UT];
+      UnitKilledCnt := UnitKilledCnt + GetUnitKilledQty(UT);
+      UnitSurvivedCnt := UnitSurvivedCnt + GetUnitQty(UT);
+      Output := Output + (GetUnitQty(UT) - GetUnitLostQty(UT)) * WARRIOR_PRICE[UT];
       Output := Output + GetUnitKilledQty(UT) * WARRIOR_PRICE[UT] * 2;
     end;
-    Output := Output - Byte(UnitCnt = 0) * 500;
+    Output := Output - Byte(UnitKilledCnt = 0) * 500;
   end;
+
+  // Check combat maps (GA_S2_...)
+  UnitSurvivedEnemyCnt := 0;
+  with gHands[0].Stats do
+    for UT := WARRIOR_MIN to WARRIOR_MAX do
+      UnitSurvivedEnemyCnt := UnitSurvivedEnemyCnt + GetUnitQty(UT);
+  // Sometimes it is third player in GA_S2_... maps
+  if (gHands.Count >= 3) then
+    with gHands[2].Stats do
+      for UT := WARRIOR_MIN to WARRIOR_MAX do
+        UnitSurvivedEnemyCnt := UnitSurvivedEnemyCnt + GetUnitQty(UT);
+  if (UnitSurvivedEnemyCnt > 0) AND (UnitSurvivedCnt > 0) then // The fight is not finished
+    Output := Output - (UnitSurvivedEnemyCnt + UnitSurvivedCnt) * 30;
 
   Result := Output;
 end;

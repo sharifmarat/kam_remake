@@ -495,7 +495,7 @@ end;
 
 function TGAParameterization.GetParCnt_ArmyAttack(): Word;
 begin
-  Result := 3 +(7-1) +12 +2 +1;
+  Result := 3 +(7-1) +12 +4 +1;
 end;
 
 procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
@@ -506,12 +506,12 @@ begin
 
   GA_PATHFINDING_AvoidTraffic                    :=   0 +       aIdv.Gene[Incr(K)] *    3; //    1.5
   GA_PATHFINDING_AvoidSpecEnemy                  :=   0 +       aIdv.Gene[Incr(K)] *    2; //    1
-  GA_PATHFINDING_AvoidEdges                      :=   0 +       aIdv.Gene[Incr(K)] *  150; //    1
+  GA_PATHFINDING_AvoidEdges                      :=  80 +       aIdv.Gene[Incr(K)] *   80; //    1
 
   GA_ATTACK_SQUAD_ChangeTarget_DistTolerance     :=   4 +       aIdv.Gene[Incr(K)] *    6;  //   6
   GA_ATTACK_SQUAD_ChangeTarget_Delay             := 400 + Round(aIdv.Gene[Incr(K)] *  500); // 200
-  GA_ATTACK_SQUAD_TargetReached_Position         :=   1 + Round(aIdv.Gene[Incr(K)] *    6); //   4
-  GA_ATTACK_SQUAD_TargetReached_Unit             :=   6 + Round(aIdv.Gene[Incr(K)] *   10); //   4
+  GA_ATTACK_SQUAD_TargetReached_Position         :=   1 + Round(aIdv.Gene[Incr(K)] *    4); //   4
+  GA_ATTACK_SQUAD_TargetReached_Unit             :=   8 + Round(aIdv.Gene[Incr(K)] *    8); //   4
   //GA_ATTACK_SQUAD_TargetReached_House            :=   0 + Round(aIdv.Gene[Incr(K)] *    8); //   8
   GA_ATTACK_SQUAD_TargetReached_RangedSquad      :=  12 + Round(aIdv.Gene[Incr(K)] *    5); //  15
   GA_ATTACK_SQUAD_MinWalkingDistance             :=  10 + Round(aIdv.Gene[Incr(K)] *   20); //   4
@@ -526,13 +526,15 @@ begin
   GA_ATTACK_COMPANY_DecreaseThreat_Prio2         :=   0 +       aIdv.Gene[Incr(K)] *    1;  //   0.7
   GA_ATTACK_COMPANY_DecreaseThreat_Prio3         :=   0 +       aIdv.Gene[Incr(K)] *    1;  //   0.5
   GA_ATTACK_COMPANY_DecreaseThreat_Prio4         :=   0 +       aIdv.Gene[Incr(K)] *    1;  //   0.2
-  GA_ATTACK_COMPANY_TimePerATile_Slow            :=   1 + Round(aIdv.Gene[Incr(K)] *   10); //   7
-  GA_ATTACK_COMPANY_TimePerATile_Fast            :=   1 + Round(aIdv.Gene[Incr(K)] *   10); //   4
+  GA_ATTACK_COMPANY_TimePerATile_Slow            :=   2 + Round(aIdv.Gene[Incr(K)] *    3); //   7
+  GA_ATTACK_COMPANY_TimePerATile_Fast            :=   2 + Round(aIdv.Gene[Incr(K)] *    3); //   4
 
+  GA_ATTACK_COMPANY_MinCombatSpacing             :=   2 + Round(aIdv.Gene[Incr(K)] *    3); //   3
+  GA_ATTACK_COMPANY_MinWalkSpacing               :=   2 + Round(aIdv.Gene[Incr(K)] *    3); //   3
   GA_ATTACK_COMPANY_MinimumMovement              :=   3 + Round(aIdv.Gene[Incr(K)] *   15); //   5
-  GA_ATTACK_COMPANY_Positioning_InitPolyCnt      :=   1 + Round(aIdv.Gene[Incr(K)] *   10); //   3
+  GA_ATTACK_COMPANY_Positioning_InitPolyCnt      :=   1 + Round(aIdv.Gene[Incr(K)] *    3); //   3
 
-  GA_ARMY_MaxGgroupsInCompany                    :=   4 + Round(aIdv.Gene[Incr(K)] *   15); //   6
+  GA_ARMY_MaxGgroupsInCompany                    :=   5 + Round(aIdv.Gene[Incr(K)] *   15); //   6
 
 
   if aLogIt AND (fLogPar <> nil) then
@@ -562,6 +564,8 @@ begin
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_TimePerATile_Slow                : Word = %4d;',      [ GA_ATTACK_COMPANY_TimePerATile_Slow        ]));
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_TimePerATile_Fast                : Word = %4d;',      [ GA_ATTACK_COMPANY_TimePerATile_Fast        ]));
 
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_MinCombatSpacing                 : Word = %4d;',      [ GA_ATTACK_COMPANY_MinCombatSpacing         ]));
+    fLogPar.AddTime(Format('GA_ATTACK_COMPANY_MinWalkSpacing                   : Word = %4d;',      [ GA_ATTACK_COMPANY_MinWalkSpacing           ]));
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_MinimumMovement                  : Word = %4d;',      [ GA_ATTACK_COMPANY_MinimumMovement          ]));
     fLogPar.AddTime(Format('GA_ATTACK_COMPANY_Positioning_InitPolyCnt          : Word = %4d;',      [ GA_ATTACK_COMPANY_Positioning_InitPolyCnt  ]));
 
