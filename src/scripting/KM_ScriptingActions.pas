@@ -508,8 +508,6 @@ function TKMScriptActions.PlayWAV(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
@@ -530,8 +528,6 @@ function TKMScriptActions.PlayWAVFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
@@ -558,8 +554,6 @@ function TKMScriptActions.PlayWAVAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
@@ -649,8 +643,6 @@ function TKMScriptActions.PlayOGG(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
@@ -671,8 +663,6 @@ function TKMScriptActions.PlayOGGFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
@@ -699,8 +689,6 @@ function TKMScriptActions.PlayOGGAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
