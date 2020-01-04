@@ -837,7 +837,7 @@ var
   I: Integer;
 begin
   //Check whether a sound needs starting or stopping
-  for I := 0 to fCount - 1 do
+  for I := fCount - 1 downto 0 do
     if fScriptSounds[I].Looped then
     begin
       if (fScriptSounds[I].PlayingIndex = -1) and CanPlay(I) then
@@ -972,7 +972,7 @@ var
   I: Integer;
 begin
   Assert(aScriptUID > 0, 'Script sounds UID should be > 0');
-  for I := 0 to fCount - 1 do
+  for I := fCount - 1 downto 0 do
     if (not aLoopedOnly or fScriptSounds[I].Looped) and (fScriptSounds[I].ScriptUID = aScriptUID) then
     begin
       RemoveSoundByIndex(I);
