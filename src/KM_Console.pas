@@ -161,7 +161,7 @@ begin
   if fMessages <> '' then
   begin
     //if not fMessages.EndsWith('[]') then
-    if EndsText('[]', fMessages) then
+    if not EndsText('[]', fMessages) then
       fMessages := fMessages + '[]';
     fMessages := fMessages + '|';
   end;
