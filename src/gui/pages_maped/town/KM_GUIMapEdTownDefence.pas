@@ -34,6 +34,7 @@ type
     procedure Hide;
     function Visible: Boolean; override;
     procedure UpdateState;
+    procedure UpdatePlayer(aIndex: TKMHandID);
   end;
 
 
@@ -199,6 +200,14 @@ begin
   Button_DefencePosAdd.Down := (gGameCursor.Mode = cmMarkers)
                                 and (gGameCursor.Tag1 = MARKER_DEFENCE)
                                 and not CheckBox_AutoDefence.Checked;
+  Town_DefenceRefresh;
+end;
+
+
+procedure TKMMapEdTownDefence.UpdatePlayer(aIndex: TKMHandID);
+begin
+  if Panel_Defence.Visible then
+    Show;
 end;
 
 
