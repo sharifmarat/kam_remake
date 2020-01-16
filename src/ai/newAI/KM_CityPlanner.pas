@@ -1158,6 +1158,7 @@ function TKMCityPlanner.CheckFields(var aFieldType: TKMFieldType; var aNodeList:
   end;
 var
   K,Cnt,ExpectedCnt: Integer;
+  FldType: TKMFieldType;
 begin
   Result := False;
   if (fFields.Count <= 0) then
@@ -1168,10 +1169,11 @@ begin
   begin
     if not FieldAvailable then
       Exit;
-    ExpectedCnt := FIELDS_PER_FARM * Byte(FieldType = ftCorn) + FIELDS_PER_WINE * Byte(FieldType = ftWine);
+    FldType := FieldType;
+    ExpectedCnt := FIELDS_PER_FARM * Byte(FldType = ftCorn) + FIELDS_PER_WINE * Byte(FldType = ftWine);
     Cnt := ExpectedCnt;
     for K := ExpectedCnt - 1 downto Low(Points) do
-      if KMSamePoint(Points[K],KMPoint_ZERO) OR ((FieldType = ftWine) AND not IsWine(Points[K])) OR ((FieldType = ftCorn) AND not IsField(Points[K])) then
+      if KMSamePoint(Points[K],KMPoint_ZERO) OR ((FldType = ftWine) AND not IsWine(Points[K])) OR ((FieldType = ftCorn) AND not IsField(Points[K])) then
       begin
         Cnt := Cnt - 1;
         Points[K] := Points[Cnt];
@@ -1179,8 +1181,8 @@ begin
       end;
     if (ExpectedCnt - Cnt > 1) then
     begin
-      PlanFields(ExpectedCnt-Cnt, Center, FieldType, aNodeList, fFields.UpdateIdx, Cnt);
-      aFieldType := FieldType;
+      PlanFields(ExpectedCnt - Cnt, Center, FldType, aNodeList, fFields.UpdateIdx, Cnt);
+      aFieldType := FldType;
     end;
   end;
 
