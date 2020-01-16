@@ -8,6 +8,9 @@ uses
 //For caching unit/house/group IDs. Shared between States and Actions.
 //Because scripts runs the same on every computer (i.e. no access to gMySpectator)
 //we can safely use pointers within the cache
+
+// We cache nil objects too, cos our goal is to resolve UID asap, no matter its state.
+// Hence UID can be valid and pointer = nil when the object is dying
 const
   CACHE_SIZE = 16; //Too big means caching becomes slow
 
@@ -44,11 +47,21 @@ uses
 
 { TKMScriptingIdCache }
 procedure TKMScriptingIdCache.CacheUnit(aUnit: TKMUnit; aUID: Integer);
-var I: ShortInt;
+var
+  I: Integer;
 begin
   for I := Low(fUnitCache) to High(fUnitCache) do
+    //Update cache item if changed (also from / to nil)
     if fUnitCache[I].UID = aUID then
-      Exit; //Already in cache
+    begin
+      if fUnitCache[I].U <> aUnit then
+      begin
+        gHands.CleanUpUnitPointer(fUnitCache[I].U);
+        if aUnit <> nil then
+          fUnitCache[I].U := aUnit.GetUnitPointer;
+      end;
+      Exit;
+    end;
 
   //We need to release pointer if we remove unit from cache
   if fUnitCache[fUnitLastAdded].U <> nil then
@@ -66,11 +79,21 @@ end;
 
 
 procedure TKMScriptingIdCache.CacheHouse(aHouse: TKMHouse; aUID: Integer);
-var I: ShortInt;
+var
+  I: Integer;
 begin
   for I := Low(fHouseCache) to High(fHouseCache) do
-  if fHouseCache[i].UID = aUID then
-    Exit; //Already in cache
+    //Update cache item if changed (also from / to nil)
+    if fHouseCache[I].UID = aUID then
+    begin
+      if fHouseCache[I].H <> aHouse then
+      begin
+        gHands.CleanUpHousePointer(fHouseCache[I].H);
+        if aHouse <> nil then
+          fHouseCache[I].H := aHouse.GetHousePointer;
+      end;
+      Exit;
+    end;
 
   //We need to release pointer if we remove house from cache
   if fHouseCache[fHouseLastAdded].H <> nil then
@@ -88,11 +111,21 @@ end;
 
 
 procedure TKMScriptingIdCache.CacheGroup(aGroup: TKMUnitGroup; aUID: Integer);
-var I: ShortInt;
+var
+  I: Integer;
 begin
   for I := Low(fGroupCache) to High(fGroupCache) do
-  if fGroupCache[I].UID = aUID then
-    Exit; //Already in cache
+    if fGroupCache[I].UID = aUID then
+    begin
+      //Update cache item if changed (also from / to nil)
+      if fGroupCache[I].G <> aGroup then
+      begin
+        gHands.CleanUpGroupPointer(fGroupCache[I].G);
+        if aGroup <> nil then
+          fGroupCache[I].G := aGroup.GetGroupPointer;
+      end;
+      Exit;
+    end;
 
   //We need to release pointer if we remove group from cache
   if fGroupCache[fGroupLastAdded].G <> nil then
@@ -110,7 +143,8 @@ end;
 
 
 function TKMScriptingIdCache.GetUnit(aUID: Integer): TKMUnit;
-var I: ShortInt;
+var
+  I: Integer;
 begin
   for I := Low(fUnitCache) to High(fUnitCache) do
     if fUnitCache[I].UID = aUID then
@@ -131,7 +165,8 @@ end;
 
 
 function TKMScriptingIdCache.GetHouse(aUID:Integer): TKMHouse;
-var I: ShortInt;
+var
+  I: Integer;
 begin
   for I := Low(fHouseCache) to High(fHouseCache) do
     if fHouseCache[I].UID = aUID then
@@ -152,7 +187,8 @@ end;
 
 
 function TKMScriptingIdCache.GetGroup(aUID: Integer): TKMUnitGroup;
-var I: ShortInt;
+var
+  I: Integer;
 begin
   for I := Low(fGroupCache) to High(fGroupCache) do
   if fGroupCache[I].UID = aUID then
@@ -174,7 +210,7 @@ end;
 
 procedure TKMScriptingIdCache.UpdateState;
 var
-  I: ShortInt;
+  I: Integer;
 begin
   //Clear out dead IDs every now and again
   //Leave them in the cache as nils, because we still might need to lookup that UID
@@ -202,17 +238,35 @@ begin
   SaveStream.PlaceMarker('ScriptingIdCache_Units');
   SaveStream.Write(fUnitLastAdded);
   for I := Low(fUnitCache) to High(fUnitCache) do
+  begin
     SaveStream.Write(fUnitCache[I].UID);
+    if fUnitCache[I].U <> nil then
+      SaveStream.Write(fUnitCache[I].U.UID) //Store ID, then substitute it with reference on SyncLoad
+    else
+      SaveStream.Write(Integer(0));
+  end;
 
   SaveStream.PlaceMarker('ScriptingIdCache_Houses');
   SaveStream.Write(fHouseLastAdded);
   for I := Low(fHouseCache) to High(fHouseCache) do
+  begin
     SaveStream.Write(fHouseCache[I].UID);
+    if fHouseCache[I].H <> nil then
+      SaveStream.Write(fHouseCache[I].H.UID) //Store ID, then substitute it with reference on SyncLoad
+    else
+      SaveStream.Write(Integer(0));
+  end;
 
   SaveStream.PlaceMarker('ScriptingIdCache_Groups');
   SaveStream.Write(fGroupLastAdded);
   for I := Low(fGroupCache) to High(fGroupCache) do
+  begin
     SaveStream.Write(fGroupCache[I].UID);
+    if fGroupCache[I].G <> nil then
+      SaveStream.Write(fGroupCache[I].G.UID) //Store ID, then substitute it with reference on SyncLoad
+    else
+      SaveStream.Write(Integer(0));
+  end;
 end;
 
 
@@ -223,17 +277,26 @@ begin
   LoadStream.CheckMarker('ScriptingIdCache_Units');
   LoadStream.Read(fUnitLastAdded);
   for I := Low(fUnitCache) to High(fUnitCache) do
-    LoadStream.Read(fUnitCache[I].UID); //Load only UID's, SyncLoad them after that, when all game assets are ready
+  begin
+    LoadStream.Read(fUnitCache[I].UID); //Load UID's
+    LoadStream.Read(fUnitCache[I].U, 4); //And cached unit, SyncLoad later, when all game assets are ready
+  end;
 
   LoadStream.CheckMarker('ScriptingIdCache_Houses');
   LoadStream.Read(fHouseLastAdded);
   for I := Low(fHouseCache) to High(fHouseCache) do
-    LoadStream.Read(fHouseCache[I].UID); //Load only UID's, SyncLoad them after that, when all game assets are ready
+  begin
+    LoadStream.Read(fHouseCache[I].UID); //Load only UID's
+    LoadStream.Read(fHouseCache[I].H, 4); //And cached house, SyncLoad later, when all game assets are ready
+  end;
 
   LoadStream.CheckMarker('ScriptingIdCache_Groups');
   LoadStream.Read(fGroupLastAdded);
   for I := Low(fGroupCache) to High(fGroupCache) do
-    LoadStream.Read(fGroupCache[I].UID); //Load only UID's, SyncLoad them after that, when all game assets are ready
+  begin
+    LoadStream.Read(fGroupCache[I].UID); //Load only UID's
+    LoadStream.Read(fGroupCache[I].G, 4); //And cached group, SyncLoad later, when all game assets are ready
+  end;
 end;
 
 
@@ -242,13 +305,13 @@ var
   I: Integer;
 begin
   for I := Low(fUnitCache) to High(fUnitCache) do
-    fUnitCache[I].U := gHands.GetUnitByUID(fUnitCache[I].UID);
+    fUnitCache[I].U := gHands.GetUnitByUID(Cardinal(fUnitCache[I].U));
 
   for I := Low(fHouseCache) to High(fHouseCache) do
-    fHouseCache[I].H := gHands.GetHouseByUID(fHouseCache[I].UID);
+    fHouseCache[I].H := gHands.GetHouseByUID(Cardinal(fHouseCache[I].H));
 
   for I := Low(fGroupCache) to High(fGroupCache) do
-    fGroupCache[I].G := gHands.GetGroupByUID(fGroupCache[I].UID);
+    fGroupCache[I].G := gHands.GetGroupByUID(Cardinal(fGroupCache[I].G));
 end;
 
 
