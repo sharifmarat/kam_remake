@@ -938,9 +938,9 @@ begin
   if Button_TabDesc.Visible then
   begin
     //Not enough space, so enabled tabbed view
-    Panel_SetupDesc.Top := fPanelDescBaseTop + 11;
-    Panel_SetupDesc.Height := fMainHeight - 401;
-    Panel_SetupOptions.Top := fPanelDescBaseTop + 11;
+    Panel_SetupDesc.Top := fPanelDescBaseTop + 25;
+    Panel_SetupDesc.Height := fMainHeight - 415;
+    Panel_SetupOptions.Top := fPanelDescBaseTop + 25;
   end
   else
   begin
