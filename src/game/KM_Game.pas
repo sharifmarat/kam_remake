@@ -238,7 +238,8 @@ type
 
     procedure SetSeed(aSeed: Integer);
 
-    procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
+    procedure Save(const aSaveName: UnicodeString); overload;
+    procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
@@ -1816,6 +1817,12 @@ begin
   end;
 
   gLog.AddTime('Saving game end: ' + aPathName);
+end;
+
+
+procedure TKMGame.Save(const aSaveName: UnicodeString);
+begin
+  Save(aSaveName, UTCNow);
 end;
 
 
