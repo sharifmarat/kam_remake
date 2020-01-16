@@ -502,6 +502,8 @@ end;
 
 procedure TKMMapEdTerrainObjects.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   aHandled := Key = gResKeys[SC_MAPEDIT_OBJ_PALETTE].Key;
   if (Key = VK_ESCAPE) and PopUp_ObjectsPalette.Visible then
   begin

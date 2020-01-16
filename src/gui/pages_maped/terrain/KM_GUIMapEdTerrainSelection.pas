@@ -217,6 +217,8 @@ end;
 
 procedure TKMMapEdTerrainSelection.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   if (Key = VK_ESCAPE) and fRMGPopUp.Visible then
   begin
     fRMGPopUp.Hide;

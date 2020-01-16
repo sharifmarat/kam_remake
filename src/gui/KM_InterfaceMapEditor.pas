@@ -713,7 +713,9 @@ begin
     Exit; //Handled by Controls
   end;
 
-  //For Objects Palette
+  KeyHandled := False;
+
+  //For MapEd windows / pages
   fGuiTerrain.KeyDown(Key, Shift, KeyHandled);
   fGuiTown.KeyDown(Key, Shift, KeyHandled);
   fGuiMission.KeyDown(Key, Shift, KeyHandled);

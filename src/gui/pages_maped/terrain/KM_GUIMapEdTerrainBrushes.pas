@@ -308,6 +308,8 @@ end;
 
 procedure TKMMapEdTerrainBrushes.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   if (Key = VK_ESCAPE) then
   begin
     if PopUp_BrushOptions.Visible then
