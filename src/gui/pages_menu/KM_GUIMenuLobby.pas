@@ -1119,7 +1119,9 @@ procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
 var
   MD: TKMMissionDifficulty;
 begin
-  if (DropBox_Difficulty.Count > 0) and DropBox_Difficulty.IsSelected then
+  if DropBox_Difficulty.Visible
+    and (DropBox_Difficulty.Count > 0)
+    and DropBox_Difficulty.IsSelected then
     MD := TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag)
   else
     MD := mdNone;
