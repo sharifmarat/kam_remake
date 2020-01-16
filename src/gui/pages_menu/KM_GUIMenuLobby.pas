@@ -1036,6 +1036,7 @@ var
   I: Integer;
 begin
   Label_ServerName.Caption := '';
+  Image_PasswordLock.Hide;
 
   for I := 1 to MAX_LOBBY_SLOTS do
   begin
