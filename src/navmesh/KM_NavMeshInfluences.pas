@@ -235,11 +235,11 @@ var
   I: Integer;
   InitIdxArray: TKMWordArray;
 begin
-  SetLength(WalkableAreas, Length(gAIFields.NavMesh.Polygons));
+  SetLength(WalkableAreas, gAIFields.NavMesh.PolygonsCnt);
   SetLength(InitIdxArray, 1);
-  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+  for I := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
     WalkableAreas[I] := 0;
-  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+  for I := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
   begin
     if (gAIFields.NavMesh.Polygons[I].NearbyCount = 3) then
     begin

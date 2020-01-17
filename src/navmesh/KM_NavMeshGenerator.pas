@@ -178,6 +178,9 @@ begin
     tSum := tExtrNodes + tAddInNodes + tPolyTrian + tPrettyPoly;
     if (tSum > 0) then tSum := tSum * 1; // Make sure that compiler does not f--ck up the variable TimeDiff
     {$ENDIF}
+
+  SetLength(fNodes, fNodeCount);
+  SetLength(fPolygons, fPolyCount);
 end;
 
 

@@ -73,9 +73,9 @@ procedure TNavMeshFloodFill.MakeNewQueue();
 begin
   fQueueCnt := 0;
   fVisitedIdx := fVisitedIdx + 1;
-  if (Length(fQueueArray) < Length(gAIFields.NavMesh.Polygons)) then
+  if (Length(fQueueArray) < gAIFields.NavMesh.PolygonsCnt) then
   begin
-    SetLength(fQueueArray, Length(gAIFields.NavMesh.Polygons));
+    SetLength(fQueueArray, gAIFields.NavMesh.PolygonsCnt);
     ClearVisitIdx();
   end;
   if (fVisitedIdx = High(Byte)) then

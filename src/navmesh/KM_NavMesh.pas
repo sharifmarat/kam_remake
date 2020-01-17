@@ -46,7 +46,9 @@ type
     property KMPoint2Polygon[const aPoint: TKMPoint]: Word read GetPolygonFromKMPoint;
     //property Polygon2Point: TKMPointArray read fPolygon2PointArr;
     property Polygons: TPolygonArray read fPolygons;
+    property PolygonsCnt: Integer read fPolyCount;
     property Nodes: TKMPointArray read fNodes;
+    property NodesCnt: Integer read fNodeCount;
     property Defences: TForwardFF read fDefences write fDefences;
     property Pathfinding: TNavMeshPathFinding read fPathfinding write fPathfinding;
     property Positioning: TNavMeshFloodPositioning read fPositioning write fPositioning;

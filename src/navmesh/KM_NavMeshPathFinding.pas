@@ -95,8 +95,8 @@ procedure TNavMeshPathFinding.Flush(aDestroy: Boolean = False);
 var
   I: Integer;
 begin
-  if not aDestroy AND (Length(fUsedNodes) <> Length(gAIFields.NavMesh.Polygons)) then
-    SetLength(fUsedNodes, Length(gAIFields.NavMesh.Polygons));
+  if not aDestroy AND (Length(fUsedNodes) <> gAIFields.NavMesh.PolygonsCnt) then
+    SetLength(fUsedNodes, gAIFields.NavMesh.PolygonsCnt);
   for I := Length(fUsedNodes)-1 downto 0 do
   begin
     fUsedNodes[I].Free;
@@ -325,8 +325,8 @@ begin
   fStart := aStart;
   fEnd := aEnd;
   if (fStart = High(Word)) OR (fEnd = High(Word))
-    OR (fStart >= Length(gAIFields.NavMesh.Polygons))
-    OR (fEnd >= Length(gAIFields.NavMesh.Polygons)) then  // Non-Existing polygon
+    OR (fStart >= gAIFields.NavMesh.PolygonsCnt)
+    OR (fEnd >= gAIFields.NavMesh.PolygonsCnt) then  // Non-Existing polygon
     Exit;
   Output := MakeRoute();
   if Output then
