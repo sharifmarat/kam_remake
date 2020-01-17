@@ -1383,10 +1383,11 @@ begin
 
   // Dont build more than 3 quarry at once if there is not quarry and stone shortage is possible
   RequiredHouses[htQuary] := RequiredHouses[htQuary] * Byte(not (fStoneShortage AND (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (fPlanner.PlannedHouses[htQuary].UnderConstruction > 2)));
-  if fStoneShortage AND (RequiredHouses[htQuary] > 0) then
+  if fStoneShortage AND (RequiredHouses[htQuary] > 0) AND (fPlanner.PlannedHouses[htSchool].Completed > 0) then
   begin
     RequiredHouses[htQuary] := 0;
-    AddToConstruction(htQuary, True, True);
+    if (AddToConstruction(htQuary, True, True) = csHousePlaced) then
+      MaxPlans := MaxPlans - 1;
   end;
 
   // Dont try to place wine if we are out of wood

@@ -21,6 +21,7 @@ type
   TKMCityManagement = class
   private
     fOwner: TKMHandID;
+    fUnitReqCnt: Word;
     fSetup: TKMHandAISetup;
 
     fBuilder: TKMCityBuilder;
@@ -29,7 +30,7 @@ type
     fRequiredWeapons: TKMWarfareArr;
     fWarriorsDemands: TKMWarriorsDemands;
 
-    fBalanceText: UnicodeString;
+    fBalanceText, fUnitText: UnicodeString;
 
     procedure CheckUnitCount(aTick: Cardinal);
     procedure CheckMarketplaces();
@@ -51,6 +52,7 @@ type
     procedure AfterMissionInit();
     procedure OwnerUpdate(aPlayer: TKMHandID);
 
+    property RequiredUnitsCnt: Word read fUnitReqCnt;
     property Builder: TKMCityBuilder read fBuilder write fBuilder;
     property Predictor: TKMCityPredictor read fPredictor;
     property WarriorsDemands: TKMWarriorsDemands read fWarriorsDemands;
@@ -74,6 +76,7 @@ begin
   inherited Create;
 
   fOwner := aPlayer;
+  fUnitReqCnt := 0;
   fSetup := aSetup;
 
   fPredictor := TKMCityPredictor.Create(aPlayer, aSetup);
@@ -94,6 +97,7 @@ procedure TKMCityManagement.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.PlaceMarker('CityManagement');
   SaveStream.Write(fOwner);
+  SaveStream.Write(fUnitReqCnt);
   SaveStream.Write(fWarriorsDemands, SizeOf(fWarriorsDemands)); // Usend for Army management -> must be saved
   //SaveStream.Write(fRequiredWeapons, SizeOf(fRequiredWeapons)); // Computed every time
 
@@ -106,6 +110,7 @@ procedure TKMCityManagement.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('CityManagement');
   LoadStream.Read(fOwner);
+  LoadStream.Read(fUnitReqCnt);
   LoadStream.Read(fWarriorsDemands, SizeOf(fWarriorsDemands));
   //LoadStream.Read(fRequiredWeapons, SizeOf(fRequiredWeapons));
 
@@ -151,11 +156,14 @@ begin
   begin
     fBuilder.UpdateState(aTick);
     fPredictor.UpdateState(aTick);
-    fBalanceText := '';
     if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
+    begin
+      fBalanceText := '';
       fPredictor.LogStatus(fBalanceText);
+      fBalanceText := fBalanceText + Format('Management, unit count: %d',[fUnitReqCnt]);
+    end;
     fBuilder.ChooseHousesToBuild(aTick);
-    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then // Builder LogStatus cannot be merged with predictor
+    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
     begin
       fBuilder.LogStatus(fBalanceText);
       LogStatus(fBalanceText);
@@ -235,18 +243,30 @@ var
   end;
 
   procedure TrainByPriority(const aPrior: TKMTrainPriorityArr; var aUnitReq: TKMUnitReqArr; var aSchools: TKMSchoolHouseArray; aSchoolCnt: Integer);
+  const
+    MAX_QUEUE = 4;
   var
-    K,L: Integer;
+    K,L,MinQueue,MinQueueIdx: Integer;
     UT: TKMUnitType;
   begin
     for K := Low(aPrior) to High(aPrior) do
     begin
       UT := aPrior[K];
-      for L := 0 to aSchoolCnt - 1 do
-        if (aUnitReq[UT] <= 0) then // Check unit requirements
-          break
-        else if (aSchools[L].QueueCount <= 2) then // Order citizen, decrease unit requirement
-          Dec(  aUnitReq[UT], aSchools[L].AddUnitToQueue( UT, Min(aUnitReq[UT], 3-aSchools[L].QueueCount) )  )
+      while (aUnitReq[UT] > 0) do
+      begin
+        MinQueue := MAX_QUEUE;
+        MinQueueIdx := 0;
+        for L := 0 to aSchoolCnt - 1 do
+          if (aSchools[L].QueueCount < MinQueue) then
+          begin
+            MinQueue := aSchools[L].QueueCount;
+            MinQueueIdx := L;
+          end;
+        if (MinQueue < MAX_QUEUE) then // Order citizen, decrease unit requirement
+          Dec(aUnitReq[UT], aSchools[MinQueueIdx].AddUnitToQueue(UT,1))
+        else
+          break;
+      end;
     end;
   end;
 
@@ -322,8 +342,12 @@ begin
   end;
 
   // Get required houses
+  fUnitReqCnt := 0;
   for UT := Low(UnitReq) to High(UnitReq) do
-    Dec(UnitReq[UT], Stats.GetUnitQty(UT));
+  begin
+    UnitReq[UT] := Max(0, UnitReq[UT] - Stats.GetUnitQty(UT));
+    Inc(fUnitReqCnt, UnitReq[UT]);
+  end;
 
   // Find completed schools, decrease UnitReq by already trained citizens
   cnt := 0;
@@ -348,12 +372,15 @@ begin
       cnt := cnt + 1;
     end;
 
-  //Order citizen training
-  if (gHands[fOwner].Stats.GetUnitQty(utSerf) < gHands[fOwner].Stats.GetHouseQty(htAny)) then // Keep minimal amount of serfs
-    TrainByPriority(TRAINING_PRIORITY_Serf, UnitReq, Schools, cnt)
-  else
-    TrainByPriority(TRAINING_PRIORITY, UnitReq, Schools, cnt);
 
+  // Order citizen training
+  if (cnt > 0) then
+  begin
+    if (gHands[fOwner].Stats.GetUnitQty(utSerf) < gHands[fOwner].Stats.GetHouseQty(htAny)) then // Keep minimal amount of serfs
+      TrainByPriority(TRAINING_PRIORITY_Serf, UnitReq, Schools, cnt)
+    else
+      TrainByPriority(TRAINING_PRIORITY, UnitReq, Schools, cnt);
+  end;
 end;
 
 
