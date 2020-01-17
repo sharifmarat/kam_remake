@@ -2192,7 +2192,7 @@ begin
   end;
 //}
 
-// Advanced detection (when we cannot draw tile try another logic with 2x2 array wich represet each tile)
+// Advanced detection (when we cannot draw tile try another logic with 2x2 array which represents each tile)
 //{
   for Y := 1 to fMapY-1 do
   begin
