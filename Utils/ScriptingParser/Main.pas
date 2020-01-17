@@ -70,7 +70,7 @@ const
     'TKMObjectiveStatus', 'TKMObjectiveType',
     'TKMHouseFace',
     'array of TKMTerrainTileBrief','TKMAudioFormat','TKMAIAttackTarget',
-    'TKMHouse', 'TKMUnit', 'TKMUnitGroup', 'TKMHandIndex', 'array of TKMHandIndex', // Werewolf types
+    'TKMHouse', 'TKMUnit', 'TKMUnitGroup', 'TKMHandID', 'array of TKMHandID', // Werewolf types
     'TKMPoint','TByteSet', 'TIntegerArray', 'TAnsiStringArray' // Werewolf types
   );
 
