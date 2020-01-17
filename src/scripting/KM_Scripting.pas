@@ -2109,7 +2109,7 @@ const
     ErrorStr: UnicodeString;
     DirectiveParamSL: TStringList;
     HasError: Boolean;
-    THTroopCost: array[0..5] of Integer;
+    THTroopCost: array[0..4] of Integer;
   begin
     if UpperCase(DirectiveName) = UpperCase(CUSTOM_TH_TROOP_COST_DIRECTIVE) then
     begin
@@ -2155,7 +2155,7 @@ const
           if not AllowGameUpdate then Exit;
 
           //Update actual troop cost
-          for I := 0 to 5 do
+          for I := Low(TH_TROOP_COST) to High(TH_TROOP_COST) do
             TH_TROOP_COST[I] := THTroopCost[I];
 
         finally
