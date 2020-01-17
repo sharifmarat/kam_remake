@@ -84,6 +84,7 @@ type
     function DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False; aIgnoreFirstLine: Boolean = False): Boolean;
     procedure FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray; var aDefRequest: TKMDefendRequest);
 
+    procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
@@ -676,6 +677,11 @@ begin
   fCityUnderAttack := (Cnt > 0);
 end;
 
+
+procedure TKMArmyDefence.AfterMissionInit();
+begin
+
+end;
 
 
 procedure TKMArmyDefence.UpdateState(aTick: Cardinal);
