@@ -2788,6 +2788,7 @@ procedure TKMTerrain.SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType
     else begin
       Land[Loc.Y, Loc.X].BaseLayer.Terrain := aTerrain;
       Land[Loc.Y, Loc.X].BaseLayer.Rotation := 0;
+      Land[Loc.Y, Loc.X].LayersCnt := 0; //Do not show transitions under corn/wine field
     end;
 
     if aObj <> -1 then
