@@ -213,6 +213,7 @@ end;
 function TKMScriptStates.AIArmyType(aPlayer: Byte): TKMArmyType;
 begin
   try
+    Result := atIronThenLeather; //Make compiler happy
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
       Result := gHands[aPlayer].AI.Setup.ArmyType
     else

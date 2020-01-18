@@ -60,7 +60,7 @@ type
     Houses: array [TKMHouseType] of TKMHouseStats;
     Units: array [HUMANS_MIN..HUMANS_MAX] of TKMUnitStats;
     Wares: array [WARE_MIN..WARE_MAX] of TKMWareStats;
-    MilitiaTrainedInTownHall: Cardinal;
+//    MilitiaTrainedInTownHall: Cardinal;
 
     fWareDistribution: TKMWareDistribution;
     function GetChartWares(aWare: TKMWareType): TKMCardinalArray;
