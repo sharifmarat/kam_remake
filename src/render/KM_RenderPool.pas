@@ -1503,7 +1503,7 @@ begin
       for K := aRect.Left to aRect.Right do
       begin
         P := KMPoint(K, I);
-        RenderWireTile(P, icDarkCyan, 0, 0.2);
+        RenderWireTile(P, icDarkCyan, 0, 1);
       end;
 end;
 
