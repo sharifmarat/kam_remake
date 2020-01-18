@@ -87,7 +87,7 @@ type
     RGLogNetPackets: TRadioGroup;
     chkLogsShowInChat: TCheckBox;
     chkUIControlsID: TCheckBox;
-    ShowLogistics: TMenuItem;
+    Debug_ShowLogistics: TMenuItem;
     chkShowTerrainIds: TCheckBox;
     chkShowTerrainKinds: TCheckBox;
     UnitAnim_All: TMenuItem;
@@ -143,6 +143,10 @@ type
     LoadSavThenRpl: TMenuItem;
     N7: TMenuItem;
     ReloadLibx: TMenuItem;
+    N8: TMenuItem;
+    N10: TMenuItem;
+    N9: TMenuItem;
+    Debug_UnlockCmpMissions: TMenuItem;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -188,7 +192,7 @@ type
     procedure RenderAreaMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure RenderAreaResize(aWidth, aHeight: Integer);
     procedure RenderAreaRender(aSender: TObject);
-    procedure ShowLogisticsClick(Sender: TObject);
+    procedure Debug_ShowLogisticsClick(Sender: TObject);
     procedure UnitAnim_AllClick(Sender: TObject);
     procedure SoldiersClick(Sender: TObject);
     procedure Civilians1Click(Sender: TObject);
@@ -199,6 +203,7 @@ type
     procedure Button_UpdateUI_Click(Sender: TObject);
     procedure LoadSavThenRplClick(Sender: TObject);
     procedure ReloadLibxClick(Sender: TObject);
+    procedure Debug_UnlockCmpMissionsClick(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -514,6 +519,18 @@ begin
 end;
 
 
+procedure TFormMain.Debug_UnlockCmpMissionsClick(Sender: TObject);
+begin
+  case MessageDlg(Format(gResTexts[TX_MENU_DEBUG_UNLOCK_CAMPAIGNS_CONFIRM], [ExeDir + 'Saves']), mtWarning, [mbYes, mbNo], 0) of
+    mrYes:  begin
+              Debug_UnlockCmpMissions.Checked := not Debug_UnlockCmpMissions.Checked;
+              UNLOCK_CAMPAIGN_MAPS := Debug_UnlockCmpMissions.Checked;
+              if UNLOCK_CAMPAIGN_MAPS then
+                gGameApp.UnlockAllCampaigns;
+            end;
+  end;
+end;
+
 //Exports
 procedure TFormMain.Export_TreesRXClick(Sender: TObject);
 begin
@@ -656,7 +673,7 @@ begin
 end;
 
 
-procedure TFormMain.ShowLogisticsClick(Sender: TObject);
+procedure TFormMain.Debug_ShowLogisticsClick(Sender: TObject);
 begin
   if not Assigned(FormLogistics) then
     FormLogistics := TFormLogistics.Create(Self);

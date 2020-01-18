@@ -1336,3 +1336,4 @@
 1384:Version
 1385:Loading unsupported version could cause game not being properly loaded or even cause game crash
 1386:Unsupported version
+1387:Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?
