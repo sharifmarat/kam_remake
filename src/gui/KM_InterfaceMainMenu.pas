@@ -51,6 +51,7 @@ type
     constructor Create(X,Y: Word);
     destructor Destroy; override;
 
+    property MenuPage: TKMMenuPageCommon read fMenuPage;
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
 

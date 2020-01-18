@@ -66,7 +66,7 @@ constructor TKMMenuCampaign.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChan
 var
   I: Integer;
 begin
-  inherited Create;
+  inherited Create(gpCampaign);
 
   fDifficulty := mdNone;
   fMapIndex := 1;

@@ -41,7 +41,7 @@ constructor TKMMenuCredits.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChang
 const
   OFFSET = 312;
 begin
-  inherited Create;
+  inherited Create(gpCredits);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := BackClick;

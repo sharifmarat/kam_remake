@@ -188,7 +188,7 @@ constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuC
 var
   I: Integer;
 begin
-  inherited Create;
+  inherited Create(gpMultiplayer);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;

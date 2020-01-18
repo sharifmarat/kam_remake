@@ -29,7 +29,7 @@ uses
 { TKMGUIMenuLoading }
 constructor TKMMenuLoading.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpLoading);
 
   fOnPageChange := aOnPageChange;
 

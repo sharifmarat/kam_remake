@@ -233,7 +233,7 @@ const
 { TKMGUIMenuLobby }
 constructor TKMMenuLobby.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpLobby);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;

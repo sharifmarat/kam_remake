@@ -138,7 +138,7 @@ var
   I: Integer;
   MS: TKMMapSize;
 begin
-  inherited Create;
+  inherited Create(gpMapEditor);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;

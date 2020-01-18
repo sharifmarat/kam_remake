@@ -90,7 +90,7 @@ constructor TKMMenuOptions.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChang
 var
   I: Integer;
 begin
-  inherited Create;
+  inherited Create(gpOptions);
 
   fTempKeys := TKMKeyLibrary.Create;
 

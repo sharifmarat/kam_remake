@@ -29,7 +29,7 @@ uses
 { TKMGUIMenuError }
 constructor TKMMenuError.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpError);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := BackClick;

@@ -37,7 +37,7 @@ uses
 { TKMGUIMenuSinglePlayer }
 constructor TKMMenuSinglePlayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpSinglePlayer);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := BackClick;

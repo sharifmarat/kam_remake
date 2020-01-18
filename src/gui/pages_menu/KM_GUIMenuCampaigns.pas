@@ -40,7 +40,7 @@ constructor TKMMenuCampaigns.Create(aParent: TKMPanel; aOnPageChange: TKMMenuCha
 var
   L: TKMLabel;
 begin
-  inherited Create;
+  inherited Create(gpCampSelect);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := BackClick;
