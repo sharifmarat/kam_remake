@@ -180,10 +180,10 @@ end;
 procedure TForwardFF.MakeNewQueue();
 begin
   // Check length
-  if (Length(fQueueArray) < Length(gAIFields.NavMesh.Polygons)) then
+  if (Length(fQueueArray) < gAIFields.NavMesh.PolygonsCnt) then
   begin
-    SetLength(fQueueArray, Length(gAIFields.NavMesh.Polygons));
-    SetLength(fDefInfo, Length(gAIFields.NavMesh.Polygons));
+    SetLength(fQueueArray, gAIFields.NavMesh.PolygonsCnt);
+    SetLength(fDefInfo, gAIFields.NavMesh.PolygonsCnt);
     fBackwardFF.UpdatePointers(fDefInfo, fQueueArray);
   end;
   // There is 1 FF forward, 1 FF backward and X FF for positioning in 1 cycle; filter have its own array
@@ -472,11 +472,11 @@ begin
   for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
   begin
     Evaluation := + Evaluation
-                  //+ fDefInfo[aIdx].Distance // Consideration of distance does more damage than benefit
-                  - Byte(    ((fDefInfo[aIdx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
-                          OR ((fDefInfo[aIdx].Influence     > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].Influence     < ALLY_INFLUENCE_LIMIT))
+                  //+ fDefInfo[QueueIdx].Distance // Consideration of distance does more damage than benefit
+                  - Byte(    ((fDefInfo[QueueIdx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[QueueIdx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
+                          OR ((fDefInfo[QueueIdx].Influence     > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[QueueIdx].Influence     < ALLY_INFLUENCE_LIMIT))
                         ) * OPTIMAL_INFLUENCE_ADD
-                  + Byte(fDefInfo[aIdx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION
+                  + Byte(fDefInfo[QueueIdx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION
                   + Byte(fQueueCnt < MIN_DEFENCE_CNT) * (MIN_DEFENCE_CNT - fQueueCnt) * 100;
     QueueIdx := fQueueArray[QueueIdx].Next;
   end;
@@ -487,8 +487,8 @@ begin
     fBestDefLines.Count := 0; // Set defences count to 0 (it will be incremented later)
     if (fQueueCnt >= Length(fBestDefLines.Lines)) then
       SetLength(fBestDefLines.Lines, fQueueCnt + 32);
-    QueueIdx := aIdx;
     // Copy defensive polygons
+    QueueIdx := aIdx;
     for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
     begin
       AddDefence(QueueIdx);

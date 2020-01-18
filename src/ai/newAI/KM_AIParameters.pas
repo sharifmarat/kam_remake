@@ -93,8 +93,8 @@ var
   GA_BUILDER_ChHTB_TrunkBalance                      : Single =  2.511;
   GA_BUILDER_ChHTB_AllWorkerCoef                     : Single =  7.154;
   GA_BUILDER_ChHTB_FreeWorkerCoef                    : Single =  4.251;
-  GA_BUILDER_Shortage_StoneReserve                   : Single = 29.0000000000;
-  GA_BUILDER_Shortage_Stone                          : Single = 14.0000000000;
+  GA_BUILDER_Shortage_StoneReserve                   : Single = 19.0000000000;
+  GA_BUILDER_Shortage_Stone                          : Single = 12.0000000000;
   GA_BUILDER_Shortage_Gold                           : Single = 27.638;
   GA_BUILDER_Shortage_Trunk                          : Single =  3.360;
   GA_BUILDER_Shortage_Wood                           : Single = 12.890;
@@ -193,11 +193,11 @@ var
   GA_PLANNER_PlanFields_Dist                         : Word =  3;
   GA_PLANNER_PlanFields_ExistField                   : Word = 33;
 
-  GA_PLANNER_FindPlaceForQuary_Obstacle              : Single =    35.4110183716;
-  GA_PLANNER_FindPlaceForQuary_DistCity              : Single =    10.5008840561;
-  GA_PLANNER_FindPlaceForQuary_DistTimer             : Single =     0.0000000000;
-  GA_PLANNER_FindPlaceForQuary_DistStone             : Single =    32.1478843689;
-  GA_PLANNER_FindPlaceForQuary_SnapCrit              : Single =     5.6924824715;
+  GA_PLANNER_FindPlaceForQuary_Obstacle              : Single =    14.2196416855;
+  GA_PLANNER_FindPlaceForQuary_DistCity              : Single =    24.3620433807;
+  GA_PLANNER_FindPlaceForQuary_DistTimer             : Single = 10644.8984375000;
+  GA_PLANNER_FindPlaceForQuary_DistStone             : Single =    14.4260616302;
+  GA_PLANNER_FindPlaceForQuary_SnapCrit              : Single =    24.6157531738;
 
   GA_PLANNER_FindPlaceForWoodcutter_TreeCnt          : Single =    32.1456005573273;
   GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer     : Single = 13805.7332038879;
@@ -214,7 +214,26 @@ var
 
 // Note: it is interesting to see different GA strategy for pathfinding
 // of first road to new house and pathfinding of shortcuts
-//{ 2019-11-24
+//{ 2020-01-09
+  GA_PATHFINDING_BasePrice                           : Word =   55;
+  GA_PATHFINDING_TurnPenalization                    : Word =   47;
+  GA_PATHFINDING_Road                                : Word =   43;
+  GA_PATHFINDING_noBuildArea                         : Word =    0;
+  GA_PATHFINDING_Field                               : Word =    9;
+  GA_PATHFINDING_Coal                                : Word =   36;
+  GA_PATHFINDING_Forest                              : Word =   68;
+  GA_PATHFINDING_OtherCase                           : Word =   24;
+
+  GA_SHORTCUTS_BasePrice                             : Word =   53;
+  GA_SHORTCUTS_TurnPenalization                      : Word =   64;
+  GA_SHORTCUTS_Road                                  : Word =   28;
+  GA_SHORTCUTS_noBuildArea                           : Word =   26;
+  GA_SHORTCUTS_Field                                 : Word =   18;
+  GA_SHORTCUTS_Coal                                  : Word =   41;
+  GA_SHORTCUTS_Forest                                : Word =   35;
+  GA_SHORTCUTS_OtherCase                             : Word =    9;
+//}
+{ 2019-11-24
   GA_PATHFINDING_BasePrice                           : Word =   53;
   GA_PATHFINDING_TurnPenalization                    : Word =   31;
   GA_PATHFINDING_Road                                : Word =   41;
@@ -256,8 +275,10 @@ var
 
 { KM_CityPredictor }
 //{ 2019-11-20
-  GA_PREDICTOR_WareNeedPerAWorker_Stone              : Single = 0.7038065791;
+  GA_PREDICTOR_WareNeedPerAWorker_StoneOffset        : Word =   7;
+  GA_PREDICTOR_WareNeedPerAWorker_Stone              : Single = 0.7049801946;
   GA_PREDICTOR_WareNeedPerAWorker_Wood               : Single = 0.2908146679;
+  GA_PREDICTOR_SecondSchool_MinRequiredUnits         : Word =   20;
 //}
 
 

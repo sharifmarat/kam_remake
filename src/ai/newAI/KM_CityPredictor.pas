@@ -349,7 +349,7 @@ end;
 procedure TKMCityPredictor.UpdateBuildMaterialConsumption(aInitialization: Boolean = False);
 begin
   // Worker count is decreased after peace time -> compute with maximal count
-  fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_WareNeedPerAWorker_Stone;
+  fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker] + GA_PREDICTOR_WareNeedPerAWorker_StoneOffset, fWorkerCount) * GA_PREDICTOR_WareNeedPerAWorker_Stone;
   fWareBalance[wtStone].FinalConsumption := fWareBalance[wtStone].ActualConsumption;
   // Raw wood expectations
   UpdateWareConsumption(wtWood, aInitialization);
@@ -423,7 +423,7 @@ end;
 procedure TKMCityPredictor.UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
 const
   INN_TIME_LIMIT = 60 * 10 * 14; // ~ 14 minutes from start
-  SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
+  SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not gold so it must be lower
   FIRST_MARKETPLACE = 10 * 60 * 60;
   SECOND_MARKETPLACE = 10 * 60 * 100;
   BARRACKS_PEACE_DELAY = 30; // Build barracks since 30 min
@@ -434,9 +434,19 @@ begin
   // 1 Barracks (build only when we have weapons and (from X tick or Y ticks before peace end -> avoid to build barracks in 1 minute when is still peace and we have predefined weapons in storehouse))
   RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wtWarfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY * 600) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
   // Schools (at least 1 + WarriorsPerMinute criterium)
-  RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
+  with gHands[fOwner].AI.CityManagement do
+    RequiredHouses[htSchool] := Max(
+                                  0,
+                                  Max(
+                                    1 + Byte( (RequiredUnitsCnt > GA_PREDICTOR_SecondSchool_MinRequiredUnits) AND not Builder.GoldShortage AND not Builder.StoneShortage AND not Builder.TrunkShortage AND not Builder.WoodShortage),
+                                    Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))
+                                  ) - fCityStats.Houses[htSchool]
+                                );
   // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
-  RequiredHouses[htInn] := Max(0, Ceil(  Byte( (aTick > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[htInn]);
+  RequiredHouses[htInn] := Max(
+                             0,
+                             Ceil(  Byte( (aTick > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[htInn]
+                           );
   // Marketplace - 1. after FIRST_MARKETPLACE; 2. after SECOND_MARKETPLACE
   RequiredHouses[htMarketplace] := Byte( aInitialization OR (aTick > FIRST_MARKETPLACE) ) + Byte( aInitialization OR (aTick > SECOND_MARKETPLACE) ) - fCityStats.Houses[htMarketplace];
 end;
@@ -751,10 +761,10 @@ begin
   FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
   // Update city stats
   UpdateCityStats();
-  // Update required basic houses (main buildings)
-  UpdateBasicHouses(aTick, False);
   // Update prediction and other houses (production of ware)
   UpdateWareBalance();
+  // Update required basic houses (main buildings)
+  UpdateBasicHouses(aTick, False);
 
   // Filter required houses
   FilterRequiredHouses(aTick);

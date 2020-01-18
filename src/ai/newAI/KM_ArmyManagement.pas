@@ -225,10 +225,7 @@ end;
 procedure TKMArmyManagement.AfterMissionInit();
 begin
   fAttack.AfterMissionInit();
-  //fDefence.AfterMissionInit();
-
-  //if (gGame.MissionMode = mmTactic) then
-  //  fAttack.OrderToAttack;
+  fDefence.AfterMissionInit();
 end;
 
 

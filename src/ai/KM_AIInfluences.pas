@@ -86,6 +86,8 @@ type
     procedure RemAvoidBuilding(aArea: TKMRect);
     procedure MarkForest(aPoint: TKMPoint; aRad, aDecreaseCoef: Single);
     // Army presence
+    function GetAlliancePresence(const aPL: TKMHandID; const aX,aY: Word; const aAllianceType: TKMAllianceType): Byte; overload;
+    function GetAlliancePresence(const aPL: TKMHandID; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte; overload;
     // City influence
     function GetBestOwner(const aX,aY: Word): TKMHandID; overload;
     function GetBestOwner(const aIdx: Word): TKMHandID; overload;
@@ -364,6 +366,27 @@ begin
 end;
 
 
+function TKMInfluences.GetAlliancePresence(const aPL: TKMHandID; const aX,aY: Word; const aAllianceType: TKMAllianceType): Byte;
+begin
+  Result := GetAlliancePresence(aPL, fNavMesh.Point2Polygon[aY,aX], aAllianceType);
+end;
+
+
+function TKMInfluences.GetAlliancePresence(const aPL: TKMHandID; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
+var
+  PL: TKMHandID;
+begin
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if gHands[PL].Enabled AND (gHands[aPL].Alliances[PL] = aAllianceType) then
+    begin
+      Result := Min(High(Result),Result + PresenceAllGroups[PL, aIdx]);
+      if Result = High(Result) then
+        Exit;
+    end;
+end;
+
+
 procedure TKMInfluences.UpdateMilitaryPresence(const aPL: TKMHandID);
 const
   EACH_X_MEMBER_COEF = 10;
@@ -391,7 +414,7 @@ begin
       begin
         if (Length(PointArr) <= Cnt) then
           SetLength(PointArr, Cnt + 16);
-        PointArr[Cnt] := gAIFields.NavMesh.KMPoint2Polygon[ U.CurrPosition ];
+        PointArr[Cnt] := fNavMesh.KMPoint2Polygon[ U.CurrPosition ];
         Cnt := Cnt + 1;
       end;
       K := K + EACH_X_MEMBER_COEF; // Pick each X member (Huge groups cover large areas so be sure that influence will be accurate)
@@ -613,9 +636,9 @@ procedure TKMInfluences.InitArrays();
 var
   PL: TKMHandID;
 begin
-  if (fPolygons < Length(gAIFields.NavMesh.Polygons)) then
+  if (fPolygons < Length(fNavMesh.Polygons)) then
   begin
-    fPolygons := Length(gAIFields.NavMesh.Polygons);
+    fPolygons := Length(fNavMesh.Polygons);
     SetLength(fPresence, gHands.Count * fPolygons * 4);
     SetLength(fOwnership, gHands.Count * fPolygons);
   end;
