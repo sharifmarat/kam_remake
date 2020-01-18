@@ -293,7 +293,10 @@ begin
     if PopUp_Confirm_PlayerDelete.Visible then
     begin
       if Key = VK_ESCAPE then //If confirmation dialog is opened only Esc button could be handled
-        PopUp_Confirm_PlayerDelete.Hide //Hide 'delete player' confirmation dialog
+      begin
+        aHandled := True;
+        PopUp_Confirm_PlayerDelete.Hide; //Hide 'delete player' confirmation dialog
+      end;
     end
     else
       case Key of
