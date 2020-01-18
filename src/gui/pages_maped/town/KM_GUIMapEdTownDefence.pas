@@ -150,14 +150,6 @@ procedure TKMMapEdTownDefence.Town_DefenceRefresh;
 var
   OnlyAdvancedAIHand: Boolean;
 begin
-  Button_DefencePosAdd.Enabled := not CheckBox_AutoDefence.Checked;
-
-  if CheckBox_AutoDefence.Checked then
-  begin
-    Button_DefencePosAdd.Down := False;
-    gGameCursor.Mode := cmNone;
-  end;
-
   OnlyAdvancedAIHand := gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandID);
 
   CheckBox_AutoDefence.Checked := gMySpectator.Hand.AI.Setup.AutoDefend;
@@ -172,6 +164,15 @@ begin
   CheckBox_MaxSoldiers.Checked := (gMySpectator.Hand.AI.Setup.MaxSoldiers >= 0);
   TrackBar_MaxSoldiers.Enabled := CheckBox_MaxSoldiers.Checked;
   TrackBar_MaxSoldiers.Position := Max(gMySpectator.Hand.AI.Setup.MaxSoldiers, 0);
+
+  //Update Button_DefencePosAdd after CheckBox_AutoDefence has been set
+  Button_DefencePosAdd.Enabled := not CheckBox_AutoDefence.Checked;
+
+  if CheckBox_AutoDefence.Checked then
+  begin
+    Button_DefencePosAdd.Down := False;
+    gGameCursor.Mode := cmNone;
+  end;
 end;
 
 
@@ -200,7 +201,6 @@ begin
   Button_DefencePosAdd.Down := (gGameCursor.Mode = cmMarkers)
                                 and (gGameCursor.Tag1 = MARKER_DEFENCE)
                                 and not CheckBox_AutoDefence.Checked;
-  Town_DefenceRefresh;
 end;
 
 
