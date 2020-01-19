@@ -182,6 +182,8 @@ end;
 
 procedure TKMMapEdTown.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   fGuiScript.KeyDown(Key, Shift, aHandled);
 end;
 

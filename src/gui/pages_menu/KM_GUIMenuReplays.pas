@@ -87,7 +87,7 @@ const
 { TKMGUIMenuReplays }
 constructor TKMMenuReplays.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpReplays);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;

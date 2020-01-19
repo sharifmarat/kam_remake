@@ -1184,7 +1184,7 @@
 1232:Take any group type
 1233:Difficulty
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
-1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
+1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm this operation?
 1236:The procedure [ %s ] declared for the script console command /%s was not found
 1237:Wrong parameter type for script console command /%s: [%s]
 1238:Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ]
@@ -1336,3 +1336,4 @@
 1384:Version
 1385:Loading unsupported version could cause game not being properly loaded or even cause game crash
 1386:Unsupported version
+1387:Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?

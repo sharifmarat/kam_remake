@@ -12,6 +12,7 @@ type
   private
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
+    fCampaignId: TKMCampaignId;
     fCampaign: TKMCampaign;
     fMapIndex: Byte;
     fAnimNodeIndex : Byte;
@@ -21,7 +22,6 @@ type
     procedure BackClick(Sender: TObject);
     procedure Scroll_Toggle(Sender: TObject);
 
-    procedure Campaign_Set(aCampaign: TKMCampaign);
     procedure Campaign_SelectMap(Sender: TObject);
     procedure UpdateDifficultyLevel;
     procedure StartClick(Sender: TObject);
@@ -48,6 +48,8 @@ type
     procedure Resize(X, Y: Word);
     procedure Show(aCampaign: TKMCampaignId);
 
+    procedure RefreshCampaign;
+
     procedure UpdateState(aTickCount: Cardinal);
   end;
 
@@ -66,7 +68,7 @@ constructor TKMMenuCampaign.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChan
 var
   I: Integer;
 begin
-  inherited Create;
+  inherited Create(gpCampaign);
 
   fDifficulty := mdNone;
   fMapIndex := 1;
@@ -137,11 +139,13 @@ begin
 end;
 
 
-procedure TKMMenuCampaign.Campaign_Set(aCampaign: TKMCampaign);
-const MapPic: array [Boolean] of byte = (10, 11);
-var I: Integer;
+procedure TKMMenuCampaign.RefreshCampaign;
+const
+  MapPic: array [Boolean] of Byte = (10, 11);
+var
+  I: Integer;
 begin
-  fCampaign := aCampaign;
+  fCampaign := gGameApp.Campaigns.CampaignById(fCampaignId);
 
   //Choose background
   Image_CampaignBG.RX := fCampaign.BackGroundPic.RX;
@@ -347,7 +351,8 @@ end;
 
 procedure TKMMenuCampaign.Show(aCampaign: TKMCampaignId);
 begin
-  Campaign_Set(gGameApp.Campaigns.CampaignById(aCampaign));
+  fCampaignId := aCampaign;
+  RefreshCampaign;
 
   //Refresh;
   Panel_Campaign.Show;

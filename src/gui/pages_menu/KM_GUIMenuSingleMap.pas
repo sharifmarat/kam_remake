@@ -101,7 +101,7 @@ const
 { TKMGUIMenuSingleMap }
 constructor TKMMenuSingleMap.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpSingleMap);
               
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := BackClick;

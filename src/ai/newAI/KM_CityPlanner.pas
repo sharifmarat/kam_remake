@@ -1169,8 +1169,8 @@ begin
   begin
     if not FieldAvailable then
       Exit;
-    ExpectedCnt := FIELDS_PER_FARM * Byte(FieldType = ftCorn) + FIELDS_PER_WINE * Byte(FieldType = ftWine);
     FldType := FieldType;
+    ExpectedCnt := FIELDS_PER_FARM * Byte(FldType = ftCorn) + FIELDS_PER_WINE * Byte(FldType = ftWine);
     Cnt := ExpectedCnt;
     for K := ExpectedCnt - 1 downto Low(Points) do
       if KMSamePoint(Points[K],KMPoint_ZERO) OR ((FldType = ftWine) AND not IsWine(Points[K])) OR ((FieldType = ftCorn) AND not IsField(Points[K])) then

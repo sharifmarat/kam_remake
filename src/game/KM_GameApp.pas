@@ -109,6 +109,8 @@ type
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
     procedure FPSMeasurement(aFPS: Cardinal);
 
+    procedure UnlockAllCampaigns;
+
     function DynamicFOWEnabled: Boolean;
 
     property OnGameSpeedChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
@@ -459,6 +461,18 @@ procedure TKMGameApp.SaveCampaignsProgress;
 begin
   if fCampaigns <> nil then
     fCampaigns.SaveProgress;
+end;
+
+
+procedure TKMGameApp.UnlockAllCampaigns;
+begin
+  if fCampaigns <> nil then
+  begin
+    fCampaigns.UnlockAllCampaignsMissions;
+    fCampaigns.SaveProgress;
+
+    fMainMenuInterface.RefreshCampaigns;
+  end;
 end;
 
 

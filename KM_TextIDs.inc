@@ -1298,7 +1298,7 @@ TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 
 TX_CHAT_ACTIONS_ALLOWED_HINT = 1245; //Enable/Disable chat history and copy from chat window
 
-TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
+TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm this operation?
 
 TX_SPECTATOR_PANEL_CITIZENS_SLR = 1256; //Citizens (S/L/R)
 TX_SPECTATOR_PANEL_CITIZENS_HOUSE_WORKERS = 1257; //Citizens (Others)
@@ -1419,3 +1419,4 @@ TX_UNSUPPORTED_SAVE_LOAD_ERROR_MSG = 1380; //Error loading unsupported version %
 TX_UNSUPPORTED_REPLAY_LOAD_ERROR_MSG = 1381; //Error loading unsupported version %s replay from %s
 TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT = 1385; //Loading unsupported version could cause game not being properly loaded or even cause game crash
 
+TX_MENU_DEBUG_UNLOCK_CAMPAIGNS_CONFIRM = 1387; //Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?

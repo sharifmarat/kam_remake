@@ -31,9 +31,12 @@ type
 
   TKMMenuPageCommon = class
   protected
+    fMenuType: TKMMenuPageType;
     OnKeyDown: TNotifyEventKeyShift;
     OnEscKeyDown: TNotifyEvent;
   public
+    constructor Create(aMenuType: TKMMenuPageType);
+    property MenuType: TKMMenuPageType read fMenuType;
     procedure MenuKeyDown(Key: Word; Shift: TShiftState);
   end;
 
@@ -253,6 +256,15 @@ end;
 procedure TKMUserInterfaceCommon.Paint;
 begin
   fMyControls.Paint;
+end;
+
+
+{ TKMMenuPageCommon }
+constructor TKMMenuPageCommon.Create(aMenuType: TKMMenuPageType);
+begin
+  inherited Create;
+
+  fMenuType := aMenuType;
 end;
 
 

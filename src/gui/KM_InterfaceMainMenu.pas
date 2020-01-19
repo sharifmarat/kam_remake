@@ -51,6 +51,7 @@ type
     constructor Create(X,Y: Word);
     destructor Destroy; override;
 
+    property MenuPage: TKMMenuPageCommon read fMenuPage;
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
 
@@ -63,6 +64,7 @@ type
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
 
+    procedure RefreshCampaigns;
     procedure Resize(X,Y: Word); override;
     procedure UpdateState(aTickCount: Cardinal); override;
   end;
@@ -156,6 +158,16 @@ end;
 function TKMMainMenuInterface.GetHintFont: TKMFont;
 begin
   Result := fntGrey;
+end;
+
+
+procedure TKMMainMenuInterface.RefreshCampaigns;
+begin
+  if fMenuPage.MenuType = gpCampSelect then
+    fMenuCampaigns.RefreshList;
+
+  if fMenuPage.MenuType = gpCampaign then
+    fMenuCampaign.RefreshCampaign;
 end;
 
 

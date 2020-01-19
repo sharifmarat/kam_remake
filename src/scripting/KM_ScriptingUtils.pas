@@ -58,6 +58,9 @@ type
 
     function Power(aBase, aExp: Extended): Extended;
 
+    function RoundToDown(aValue: Single; aBase: Integer): Integer;
+    function RoundToUp(aValue: Single; aBase: Integer): Integer;
+
     function Sqr(A: Extended): Extended;
 
     function SumI(aArray: array of Integer): Integer;
@@ -615,6 +618,32 @@ function TKMScriptUtils.Power(aBase, aExp: Extended): Extended;
 begin
   try
     Result := Math.Power(aBase, aExp);
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Rounds specified single number aValue to nearest multiple of specified base aBase. Rounding down. F.e. RoundToDown(11.7, 5) = 10
+function TKMScriptUtils.RoundToDown(aValue: Single; aBase: Integer): Integer;
+begin
+  try
+    Result := Trunc(aValue / aBase) * aBase
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Rounds specified single number aValue to nearest multiple of specified base aBase. Rounding up. F.e. RoundToUp(11.7, 5) = 15
+function TKMScriptUtils.RoundToUp(aValue: Single; aBase: Integer): Integer;
+begin
+  try
+    Result := Ceil(aValue / aBase) * aBase
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;

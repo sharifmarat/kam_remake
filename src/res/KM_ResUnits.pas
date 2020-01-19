@@ -162,7 +162,7 @@ const
 var
   //TownHall default units troops cost (number of gold chests needed)
   //Could be modified by script functions
-  TH_TROOP_COST: array[0..5] of Byte;
+  TH_TROOP_COST: array[0..4] of Byte;
 
 
 implementation
@@ -171,8 +171,8 @@ uses
 
 const
   //TownHall default units troops cost (number of gold chests needed)
-  TH_DEFAULT_TROOP_COST: array[0..5] of Byte = (
-    2, 3, 3, 5, 8, 8 //rebel / militia / rogue / vagabond / barbarian / warrior
+  TH_DEFAULT_TROOP_COST: array[0..4] of Byte = (
+    2, 3, 5, 8, 8 //rebel / rogue / vagabond / barbarian / warrior
   );
 
 
@@ -517,7 +517,7 @@ procedure TKMResUnits.ResetToDefaults;
 var
   I: Integer;
 begin
-  for I := 0 to 5 do
+  for I := Low(TH_TROOP_COST) to High(TH_TROOP_COST) do
     TH_TROOP_COST[I] := TH_DEFAULT_TROOP_COST[I];
 end;
 

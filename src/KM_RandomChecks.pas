@@ -5,7 +5,7 @@ uses
   {$IFDEF FPC}zstream, {$ENDIF}
   {$IFDEF WDC}ZLib, {$ENDIF}
   Generics.Collections,
-  KM_CommonTypes, KM_CommonClasses;
+  KM_CommonTypes, KM_CommonClasses, KM_GameTypes;
 
 type
   TKMLogRngType = (lrtNone, lrtInt, lrtSingle, lrtExt);
@@ -23,6 +23,7 @@ type
 
   TKMRandomCheckLogger = class
   private
+    fEnabled: Boolean;
     fGameTick: Cardinal;
     fSavedTicksCnt: Cardinal;
     fRngChecksInTick: TKMRLRecordList;
@@ -51,6 +52,8 @@ type
 
 //    property RngLogStream: TKMemoryStream read fRngLogStream;
 
+    property Enabled: Boolean read fEnabled write fEnabled;
+
     procedure SaveToPath(aPath: String);
     procedure ParseSaveStreamAndSaveAsText(aPath: String);
     procedure SaveAsText(aPath: String);
@@ -69,7 +72,7 @@ var
 
 implementation
 uses
-  KM_Log, Classes, SysUtils, KromUtils, KM_Defaults, KM_Game;
+  KM_Log, Classes, SysUtils, KromUtils, KM_Defaults;
 
 //const
 //  MAX_LOG_LENGTH = 200000;
@@ -83,6 +86,7 @@ begin
   fRngLog := TDictionary<Cardinal, TKMRLRecordList>.Create;
   fRngChecksInTick := TKMRLRecordList.Create;
   fSavedTicksCnt := 0;
+  fEnabled := True;
 
   fSaveStream := TKMemoryStreamBinary.Create;
 end;
@@ -155,7 +159,7 @@ procedure TKMRandomCheckLogger.AddRecordToDict(aTick: Cardinal; const aRec: TKMR
 var
   list: TList<TKMRngLogRecord>;
 begin
-  if gGame.IsMapEditor then Exit;
+  if not fEnabled then Exit;
 
   if not fRngLog.TryGetValue(aTick, list) then
   begin
@@ -170,7 +174,7 @@ end;
 
 procedure TKMRandomCheckLogger.AddRecordToList(aTick: Cardinal; const aRec: TKMRngLogRecord);
 begin
-  if gGame.IsMapEditor then Exit;
+  if not fEnabled then Exit;
 
   fRngChecksInTick.Add(aRec);
 end;
@@ -200,7 +204,7 @@ end;
 
 procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal);
 begin
-  if gGame.IsMapEditor then Exit;
+  if not fEnabled then Exit;
 
   fGameTick := aGameTick;
   SaveTickToStream(fSaveStream, fRngChecksInTick);
@@ -460,6 +464,7 @@ begin
     list.Free;
 
   fRngLog.Clear;
+  fEnabled := True;
 end;
 
 

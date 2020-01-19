@@ -40,7 +40,7 @@ uses
 { TKMGUIMenuMain }
 constructor TKMMenuMain.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpMainMenu);
 
   fOnPageChange := aOnPageChange;
 

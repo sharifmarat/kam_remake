@@ -233,7 +233,7 @@ const
 { TKMGUIMenuLobby }
 constructor TKMMenuLobby.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpLobby);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;
@@ -938,9 +938,9 @@ begin
   if Button_TabDesc.Visible then
   begin
     //Not enough space, so enabled tabbed view
-    Panel_SetupDesc.Top := fPanelDescBaseTop + 11;
-    Panel_SetupDesc.Height := fMainHeight - 401;
-    Panel_SetupOptions.Top := fPanelDescBaseTop + 11;
+    Panel_SetupDesc.Top := fPanelDescBaseTop + 25;
+    Panel_SetupDesc.Height := fMainHeight - 415;
+    Panel_SetupOptions.Top := fPanelDescBaseTop + 25;
   end
   else
   begin
@@ -1036,6 +1036,7 @@ var
   I: Integer;
 begin
   Label_ServerName.Caption := '';
+  Image_PasswordLock.Hide;
 
   for I := 1 to MAX_LOBBY_SLOTS do
   begin
@@ -1119,7 +1120,9 @@ procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
 var
   MD: TKMMissionDifficulty;
 begin
-  if (DropBox_Difficulty.Count > 0) and DropBox_Difficulty.IsSelected then
+  if DropBox_Difficulty.Visible
+    and (DropBox_Difficulty.Count > 0)
+    and DropBox_Difficulty.IsSelected then
     MD := TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag)
   else
     MD := mdNone;

@@ -97,8 +97,8 @@ const
     utMilitia, utAxeFighter, utSwordsman, utBowman, utArbaletman,
     utPikeman, utHallebardman, utHorseScout, utCavalry);
 
-  TownHall_Order: array [0..5] of TKMUnitType = (
-    utPeasant, utMilitia, utSlingshot, utHorseman, utBarbarian, utMetalBarbarian);
+  TownHall_Order: array [0..4] of TKMUnitType = (
+    utPeasant, utSlingshot, utHorseman, utBarbarian, utMetalBarbarian);
 
   Soldiers_Order: array[0..13] of TKMUnitType = (
     utMilitia, utAxeFighter, utSwordsman, utBowman, utArbaletman,

@@ -530,6 +530,7 @@ var
 begin
   gMySpectator.HandID := aIndex;
   fGuiMission.GuiMissionPlayers.UpdatePlayer(aIndex);
+  fGuiTown.GuiDefence.UpdatePlayer(aIndex);
 
   for I := 0 to MAX_HANDS - 1 do
     Button_PlayerSelect[I].Down := (I = gMySpectator.HandID);
@@ -713,7 +714,9 @@ begin
     Exit; //Handled by Controls
   end;
 
-  //For Objects Palette
+  KeyHandled := False;
+
+  //For MapEd windows / pages
   fGuiTerrain.KeyDown(Key, Shift, KeyHandled);
   fGuiTown.KeyDown(Key, Shift, KeyHandled);
   fGuiMission.KeyDown(Key, Shift, KeyHandled);

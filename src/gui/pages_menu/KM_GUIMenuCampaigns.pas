@@ -14,7 +14,6 @@ type
   private
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
-    procedure RefreshList;
     procedure ListChange(Sender: TObject);
     procedure StartClick(Sender: TObject);
     procedure BackClick(Sender: TObject);
@@ -26,6 +25,7 @@ type
       Button_Camp_Start, Button_Camp_Back: TKMButton;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
+    procedure RefreshList;
     procedure Show;
   end;
 
@@ -40,7 +40,7 @@ constructor TKMMenuCampaigns.Create(aParent: TKMPanel; aOnPageChange: TKMMenuCha
 var
   L: TKMLabel;
 begin
-  inherited Create;
+  inherited Create(gpCampSelect);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := BackClick;

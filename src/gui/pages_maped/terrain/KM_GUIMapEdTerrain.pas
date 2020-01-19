@@ -117,6 +117,8 @@ end;
 
 procedure TKMMapEdTerrain.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   fGuiBrushes.KeyDown(Key, Shift, aHandled);
   fGuiObjects.KeyDown(Key, Shift, aHandled);
   fGuiSelection.KeyDown(Key, Shift, aHandled);

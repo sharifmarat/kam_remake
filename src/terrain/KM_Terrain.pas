@@ -111,7 +111,8 @@ type
 
     fBoundsWC: TKMRect; //WC rebuild bounds used in FlattenTerrain (put outside to fight with recursion SO error in FlattenTerrain EnsureWalkable)
 
-    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False): Boolean;
+    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False;
+                              aStrictCheck: Boolean = False): Boolean;
 
     function GetMiningRect(aRes: TKMWareType): TKMRect;
 
@@ -1247,9 +1248,12 @@ begin
 end;
 
 
-function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False): Boolean;
+function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False;
+                                     aStrictCheck: Boolean = False): Boolean;
 const
   PROHIBIT_TERKINDS: array[0..1] of TKMTerrainKind = (tkLava, tkAbyss);
+  //Strict check (for roadable)
+  STRICT_TERKINDS: array[0..4] of TKMTerrainKind = (tkGrassyWater, tkSwamp, tkIce, tkWater, tkFastWater);
 var
   I, K, Cnt: Integer;
   Corners: TKMTerrainKindsArray;
@@ -1269,6 +1273,11 @@ begin
       for I := 0 to High(PROHIBIT_TERKINDS) do
         if Corners[K] = PROHIBIT_TERKINDS[I] then
           Exit(False);
+
+      if aStrictCheck then
+        for I := 0 to High(STRICT_TERKINDS) do
+          if Corners[K] = STRICT_TERKINDS[I] then
+            Exit(False);
 
       if aCheckTileFunc(BASE_TERRAIN[Corners[K]]) then
         Inc(Cnt);
@@ -1312,7 +1321,7 @@ function TKMTerrain.TileIsRoadable(const Loc: TKMPoint): Boolean;
 //  Ter: Word;
 //  TerInfo: TKMGenTerrainInfo;
 begin
-  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable);
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable, False, True);
 //  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 //  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
 //  begin
@@ -2779,6 +2788,7 @@ procedure TKMTerrain.SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType
     else begin
       Land[Loc.Y, Loc.X].BaseLayer.Terrain := aTerrain;
       Land[Loc.Y, Loc.X].BaseLayer.Rotation := 0;
+      Land[Loc.Y, Loc.X].LayersCnt := 0; //Do not show transitions under corn/wine field
     end;
 
     if aObj <> -1 then

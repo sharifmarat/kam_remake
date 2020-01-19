@@ -36,8 +36,7 @@ var
   MyRand: Cardinal;
 begin
   //This is to match up with multiplayer random check generation, so multiplayer replays can be replayed in singleplayer mode
-  if aTick > 0 then //On 0 tick we did not call for RunningTimer during the game, so no need to call it here while watching replay
-    KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer');
+  KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer');
   //There are still more commands left
   if fCursor <= Count then
   begin

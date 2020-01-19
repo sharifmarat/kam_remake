@@ -12,6 +12,7 @@ type
   private
     procedure LogStr(const aText: String);
   public
+    procedure AIArmyType(aPlayer: Byte; aType: TKMArmyType);
     function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
                          aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
                          aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
@@ -508,8 +509,6 @@ function TKMScriptActions.PlayWAV(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
@@ -530,8 +529,6 @@ function TKMScriptActions.PlayWAVFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
@@ -558,8 +555,6 @@ function TKMScriptActions.PlayWAVAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
@@ -649,8 +644,6 @@ function TKMScriptActions.PlayOGG(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
@@ -671,8 +664,6 @@ function TKMScriptActions.PlayOGGFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
@@ -699,8 +690,6 @@ function TKMScriptActions.PlayOGGAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
-
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
@@ -1028,6 +1017,25 @@ begin
     end
     else
       LogParamWarning('Actions.GiveHouseSite', [aPlayer, aHouseType, X, Y, byte(aAddMaterials)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Sets AI army type
+//* aType = (atIronThenLeather, atLeather, atIron, atIronAndLeather)
+procedure TKMScriptActions.AIArmyType(aPlayer: Byte; aType: TKMArmyType);
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1)
+    and (gHands[aPlayer].Enabled)
+    and (aType in [Low(TKMArmyType)..High(TKMArmyType)]) then
+      gHands[aPlayer].AI.Setup.ArmyType := aType
+    else
+      LogParamWarning('Actions.AIArmyType', [aPlayer, Byte(aType)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

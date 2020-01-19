@@ -117,7 +117,7 @@ uses
 
 const
   MAX_NIKNAME_LENGTH = 16;
-  IMG_COL2 = 8 + 22 + 156 + 35;
+  IMG_COL2 = 8 + 22 + 156 + 35 + 20;
   SERVER_DETAILS_W = 320;
   S_DETAILS_W_INT = SERVER_DETAILS_W - 16;
 
@@ -188,7 +188,7 @@ constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuC
 var
   I: Integer;
 begin
-  inherited Create;
+  inherited Create(gpMultiplayer);
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;
@@ -225,7 +225,10 @@ begin
     ColumnBox_Servers := TKMColumnBox.Create(Panel_MultiPlayer,45,240,620,465,fntMetal, bsMenu);
     ColumnBox_Servers.Anchors := [anLeft, anTop, anBottom];
     ColumnBox_Servers.Focusable := True;
-    ColumnBox_Servers.SetColumns(fntOutline, ['','',gResTexts[TX_MP_MENU_SERVERLIST_NAME],gResTexts[TX_MP_MENU_SERVERLIST_STATE],gResTexts[TX_MP_MENU_SERVERLIST_PLAYERS],gResTexts[TX_MP_MENU_SERVERLIST_PING]],[0,20,40,300,430,525]);
+    ColumnBox_Servers.SetColumns(fntOutline,
+                                 ['','', gResTexts[TX_MP_MENU_SERVERLIST_NAME], gResTexts[TX_MP_MENU_SERVERLIST_STATE],
+                                         gResTexts[TX_MP_MENU_SERVERLIST_PLAYERS], gResTexts[TX_MP_MENU_SERVERLIST_PING]],
+                                 [0,20,40,350,480,565]);
     ColumnBox_Servers.OnColumnClick := MP_ServersSort;
     ColumnBox_Servers.OnChange := MP_ServersClick;
     ColumnBox_Servers.OnDoubleClick := MP_ServersDoubleClick;
@@ -251,20 +254,20 @@ begin
       Label_MP_MapName := TKMLabel.Create(Panel_MPServerDetails, 8, 130, S_DETAILS_W_INT, 20, '', fntMetal, taLeft);
       Label_MP_PlayerList_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 150, S_DETAILS_W_INT, 20, gResTexts[TX_MP_MENU_PLAYER_LIST], fntOutline, taLeft);
 
-      Label_MP_Team_Header := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 156, 150, 150, 20, 'Team', fntOutline, taLeft);
+      Label_MP_Team_Header := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 176, 150, 150, 20, 'Team', fntOutline, taLeft);
       Label_MP_Team_Header.Hide;
 
       Image_MP_Host := TKMImage.Create(Panel_MPServerDetails, IMG_COL2, 148, 14, 15, 77, rxGuiMain);
       Image_MP_Host.Visible := False;
       for I := 1 to MAX_LOBBY_SLOTS do
       begin
-        Label_MP_PlayersNames[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22, 170 + 20*(I-1), 130, 20, '', fntMetal, taLeft);
+        Label_MP_PlayersNames[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22, 170 + 20*(I-1), 170, 20, '', fntMetal, taLeft);
         Label_MP_PlayersNames[I].Anchors := [anLeft, anTop, anBottom];
-        Label_MP_PlayersTeams[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 166, 170 + 20*(I-1), 20, 20, '', fntMetal, taLeft);
+        Label_MP_PlayersTeams[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 186, 170 + 20*(I-1), 20, 20, '', fntMetal, taLeft);
         Image_MP_PlayerIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8, 170 + 20*(I-1), 16, 11, 0, rxGuiMain);
         Image_MP_PlayerWolIcons[I] := TKMImage.Create(Panel_MPServerDetails, IMG_COL2, 169 + 20*(I-1), 16, 16, 0, rxGuiMain);
         Image_MP_PlayerWolIcons[I].Hide;
-        Image_MP_PlayerSpecIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8 + 22 + 160, 171 + 20*(I-1), 16, 11, 0, rxGuiMain);
+        Image_MP_PlayerSpecIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8 + 22 + 180, 171 + 20*(I-1), 16, 11, 0, rxGuiMain);
         Image_MP_PlayerSpecIcons[I].Hide;
       end;
 

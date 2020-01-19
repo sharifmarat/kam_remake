@@ -63,23 +63,23 @@ type
 
 const
   VAR_MODIFIERS: array[0..1] of String = ('out', 'var');
-  VAR_TYPE_NAME: array[0..36] of string = (
+  VAR_TYPE_NAME: array[0..41] of string = (
     'Byte', 'Shortint', 'Smallint', 'Word', 'Integer', 'Cardinal', 'Single', 'Extended', 'Boolean', 'AnsiString', 'String',
     'array of const', 'array of Boolean', 'array of String', 'array of AnsiString', 'array of Integer', 'array of Single', 'array of Extended',
-    'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType',
-    'TKMObjectiveStatus', 'TKMObjectiveType',
-    'TKMHouseFace',
+    'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType', 'TKMGroupOrder',
+    'TKMObjectiveStatus', 'TKMObjectiveType', 'TKMArmyType',
+    'TKMHouseFace', 'TKMTerrainTileBrief', 'TKMMissionDifficulty', 'TKMMissionDifficultySet',
     'array of TKMTerrainTileBrief','TKMAudioFormat','TKMAIAttackTarget',
-    'TKMHouse', 'TKMUnit', 'TKMUnitGroup', 'TKMHandIndex', 'array of TKMHandIndex', // Werewolf types
+    'TKMHouse', 'TKMUnit', 'TKMUnitGroup', 'TKMHandID', 'array of TKMHandID', // Werewolf types
     'TKMPoint','TByteSet', 'TIntegerArray', 'TAnsiStringArray' // Werewolf types
   );
 
-  VAR_TYPE_ALIAS: array[0..36] of string = (
+  VAR_TYPE_ALIAS: array[0..41] of string = (
     'Byte', 'Shortint', 'Smallint', 'Word', 'Integer', 'Cardinal', 'Single', 'Extended', 'Boolean', 'AnsiString', 'String',
     'array of const', 'array of Boolean', 'array of String', 'array of AnsiString', 'array of Integer', 'array of Single', 'array of Extended',
-    'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType',
-    'TKMObjectiveStatus', 'TKMObjectiveType',
-    'TKMHouseFace',
+    'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType', 'TKMGroupOrder',
+    'TKMObjectiveStatus', 'TKMObjectiveType', 'TKMArmyType',
+    'TKMHouseFace', 'TKMTerrainTileBrief', 'TKMMissionDifficulty', 'TKMMissionDifficultySet',
     'array of TKMTerrainTileBrief','TKMAudioFormat','TKMAIAttackTarget',
     'Integer', 'Integer', 'Integer', 'Integer', 'array of Integer', // Werewolf types
     'TKMPoint','set of Byte', 'array of Integer', 'array of AnsiString' // Werewolf types

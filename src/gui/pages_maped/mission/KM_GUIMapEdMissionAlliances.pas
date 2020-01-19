@@ -143,7 +143,8 @@ end;
 
 procedure TKMMapEdMissionAlliances.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
-  aHandled := False;
+  if aHandled then Exit;
+
   if (Key = VK_ESCAPE) and PopUp_Alliances.Visible then
   begin
     Hide;

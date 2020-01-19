@@ -238,7 +238,8 @@ type
 
     procedure SetSeed(aSeed: Integer);
 
-    procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
+    procedure Save(const aSaveName: UnicodeString); overload;
+    procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
@@ -355,7 +356,10 @@ begin
   gProjectiles := TKMProjectiles.Create;
 
   if gRandomCheckLogger <> nil then
+  begin
     gRandomCheckLogger.Clear;
+    gRandomCheckLogger.Enabled := not IsMapEditor; //Disable random check logger for MapEditor
+  end;
 
   gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
@@ -1819,6 +1823,12 @@ begin
 end;
 
 
+procedure TKMGame.Save(const aSaveName: UnicodeString);
+begin
+  Save(aSaveName, UTCNow);
+end;
+
+
 //Saves game by provided name
 procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
 var
@@ -2046,6 +2056,7 @@ begin
       try
         RngPath := ChangeFileExt(aPathName, EXT_SAVE_RNG_LOG_DOT);
         gRandomCheckLogger.LoadFromPath(RngPath);
+        gRandomCheckLogger.Enabled := not IsMapEditor;  //Disable random check logger for MapEditor
       except
         on E: Exception do
           gLog.AddTime('Error loading random checks from ' + RngPath); //Silently log error, don't propagate error further
@@ -2392,6 +2403,8 @@ begin
                       end;
         gmReplaySingle,gmReplayMulti:
                       begin
+                        IncGameTick;
+
                         fScripting.UpdateState;
                         UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                         gTerrain.UpdateState;
@@ -2438,9 +2451,6 @@ begin
                           Exit;
 
                         CheckPauseGameAtTick;
-
-                        //Increment game tick at the end, because we could have some commands even on 0 tick!
-                        IncGameTick;
 
                         Result := True;
                       end;

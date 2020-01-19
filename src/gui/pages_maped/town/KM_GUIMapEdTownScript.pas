@@ -192,6 +192,8 @@ end;
 
 procedure TKMMapEdTownScript.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   if (Key = VK_ESCAPE) and PopUp_ClassicAIParams.Visible then
   begin
     PopUp_ClassicAIParams.Hide;

@@ -85,7 +85,6 @@ object FormMain: TFormMain
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
-      ExplicitTop = 339
       object chkLogCommands: TCheckBox
         Left = 100
         Top = 8
@@ -164,7 +163,6 @@ object FormMain: TFormMain
       Caption = 'Graphic tweaks'
       Collapsed = True
       TabOrder = 1
-      ExplicitTop = 315
       ExpandedHeight = 124
       object Label1: TLabel
         Left = 101
@@ -267,7 +265,6 @@ object FormMain: TFormMain
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
-      ExplicitTop = 291
       ExpandedHeight = 72
       object chkUIControlsBounds: TCheckBox
         Left = 8
@@ -303,7 +300,6 @@ object FormMain: TFormMain
       Caption = 'AI'
       Collapsed = True
       TabOrder = 3
-      ExplicitTop = 267
       ExpandedHeight = 166
       object Label5: TLabel
         Left = 106
@@ -761,25 +757,27 @@ object FormMain: TFormMain
         Caption = 'PrintScreen'
         OnClick = Debug_PrintScreenClick
       end
-      object Debug_ShowPanel: TMenuItem
-        Caption = 'Show Debug panel'
-        OnClick = Debug_ShowPanelClick
-      end
-      object ExportMainMenu: TMenuItem
-        Caption = 'Export MainMenu'
-        OnClick = Debug_ExportMenuClick
+      object N8: TMenuItem
+        Caption = '-'
       end
       object Debug_EnableCheats: TMenuItem
         Caption = 'Debug Cheats'
         OnClick = Debug_EnableCheatsClick
       end
-      object ExportUIPages: TMenuItem
-        Caption = 'Export UI pages'
-        OnClick = Debug_ExportUIPagesClick
+      object Debug_UnlockCmpMissions: TMenuItem
+        Caption = 'Unlock campaigns missions'
+        OnClick = Debug_UnlockCmpMissionsClick
       end
-      object ShowLogistics: TMenuItem
+      object N9: TMenuItem
+        Caption = '-'
+      end
+      object Debug_ShowPanel: TMenuItem
+        Caption = 'Show Debug panel'
+        OnClick = Debug_ShowPanelClick
+      end
+      object Debug_ShowLogistics: TMenuItem
         Caption = 'Show Logistics'
-        OnClick = ShowLogisticsClick
+        OnClick = Debug_ShowLogisticsClick
       end
     end
     object Export1: TMenuItem
@@ -890,6 +888,17 @@ object FormMain: TFormMain
           Caption = 'Validate'
           OnClick = ValidateGameStatsClick
         end
+      end
+      object N10: TMenuItem
+        Caption = '-'
+      end
+      object ExportMainMenu: TMenuItem
+        Caption = 'Export MainMenu'
+        OnClick = Debug_ExportMenuClick
+      end
+      object ExportUIPages: TMenuItem
+        Caption = 'Export UI pages'
+        OnClick = Debug_ExportUIPagesClick
       end
     end
     object About1: TMenuItem

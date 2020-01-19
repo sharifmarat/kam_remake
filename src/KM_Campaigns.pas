@@ -92,6 +92,8 @@ type
     function GetMissionBriefing(aIndex: Byte): String;
     function GetBreifingAudioFile(aIndex: Byte): String;
     function GetScriptDataTypeFile: UnicodeString;
+
+    procedure UnlockAllMissions;
   end;
 
 
@@ -121,6 +123,8 @@ type
     function CampaignById(const aCampaignId: TKMCampaignId): TKMCampaign;
     procedure SetActive(aCampaign: TKMCampaign; aMap: Byte);
     procedure UnlockNextMap;
+
+    procedure UnlockAllCampaignsMissions;
   end;
 
 
@@ -352,6 +356,15 @@ begin
 end;
 
 
+procedure TKMCampaignsCollection.UnlockAllCampaignsMissions;
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+    Campaigns[I].UnlockAllMissions;
+end;
+
+
 { TKMCampaign }
 constructor TKMCampaign.Create;
 begin
@@ -538,7 +551,13 @@ begin
   LoadSprites;
 
   if UNLOCK_CAMPAIGN_MAPS then //Unlock more maps for debug
-    fUnlockedMap := fMapCount-1;
+    fUnlockedMap := fMapCount - 1;
+end;
+
+
+procedure TKMCampaign.UnlockAllMissions;
+begin
+  fUnlockedMap := fMapCount - 1;
 end;
 
 

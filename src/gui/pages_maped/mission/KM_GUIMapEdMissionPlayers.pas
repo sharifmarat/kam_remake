@@ -286,11 +286,40 @@ end;
 
 procedure TKMMapEdMissionPlayers.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
-  aHandled := False;
-  if (Key = VK_ESCAPE) and Visible then
+  if aHandled then Exit;
+
+  if Visible then
   begin
-    Hide;
-    aHandled := True;
+    if PopUp_Confirm_PlayerDelete.Visible then
+    begin
+      if Key = VK_ESCAPE then //If confirmation dialog is opened only Esc button could be handled
+      begin
+        aHandled := True;
+        PopUp_Confirm_PlayerDelete.Hide; //Hide 'delete player' confirmation dialog
+      end;
+    end
+    else
+      case Key of
+        VK_DELETE:  begin
+                      aHandled := True;
+                      if Button_PlayerDelete.Enabled then
+                        PlayerDelete_Click(Button_PlayerDelete);
+                    end;
+        VK_UP:      begin
+                      aHandled := True;
+                      if fPlayerIdToDelete > 0 then
+                        UpdatePlayer(fPlayerIdToDelete - 1);
+                    end;
+        VK_DOWN:    begin
+                      aHandled := True;
+                      if fPlayerIdToDelete < MAX_HANDS - 1 then
+                        UpdatePlayer(fPlayerIdToDelete + 1);
+                    end;
+        VK_ESCAPE:  begin
+                      aHandled := True;
+                      Hide;
+                    end;
+      end;
   end;
 end;
 

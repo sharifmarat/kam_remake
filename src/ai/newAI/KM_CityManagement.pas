@@ -30,7 +30,7 @@ type
     fRequiredWeapons: TKMWarfareArr;
     fWarriorsDemands: TKMWarriorsDemands;
 
-    fBalanceText, fUnitText: UnicodeString;
+    fBalanceText{, fUnitText}: UnicodeString;
 
     procedure CheckUnitCount(aTick: Cardinal);
     procedure CheckMarketplaces();

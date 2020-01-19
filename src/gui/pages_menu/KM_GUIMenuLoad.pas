@@ -67,7 +67,7 @@ uses
 { TKMGUIMenuLoad }
 constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
-  inherited Create;
+  inherited Create(gpLoad);
 
   fOnPageChange := aOnPageChange;
   OnKeyDown := KeyDown;

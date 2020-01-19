@@ -10,7 +10,7 @@ const
   PATH_CACHE_MAX = 12; //How many paths to cache
   PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX = 24; //Size of avoid routes cache
   PATH_CACHE_INIT_WEIGHT = 5; //New path weight
-  PATH_CACHE_NODES_MIN_CNT = 20; //Min number of noder to put route in cache
+  PATH_CACHE_NODES_MIN_CNT = 30; //Min number of noder to put route in cache
   PATH_CACHE_NO_ROUTES_AVOID_LOCKED_TTL = 100; //AvoidLockedCache item Time to live
 
 type
@@ -429,7 +429,8 @@ begin
         NodeList.Add(fLocB);
 
       //Mark the cached route as more useful
-      Inc(fCache[I].Weight);
+      //TEMP do not mark route as more usefull, force recalc route after some stime
+//      Inc(fCache[I].Weight);
 
       Result := True;
       Exit;
