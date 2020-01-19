@@ -356,7 +356,10 @@ begin
   gProjectiles := TKMProjectiles.Create;
 
   if gRandomCheckLogger <> nil then
+  begin
     gRandomCheckLogger.Clear;
+    gRandomCheckLogger.Enabled := not IsMapEditor; //Disable random check logger for MapEditor
+  end;
 
   gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
@@ -2053,6 +2056,7 @@ begin
       try
         RngPath := ChangeFileExt(aPathName, EXT_SAVE_RNG_LOG_DOT);
         gRandomCheckLogger.LoadFromPath(RngPath);
+        gRandomCheckLogger.Enabled := not IsMapEditor;  //Disable random check logger for MapEditor
       except
         on E: Exception do
           gLog.AddTime('Error loading random checks from ' + RngPath); //Silently log error, don't propagate error further
