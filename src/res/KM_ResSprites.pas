@@ -723,7 +723,7 @@ begin
       Inc(G, fRXData.RGBA[I, L * fRXData.Size[I].X + M] shr 8 and $FF);
       Inc(B, fRXData.RGBA[I, L * fRXData.Size[I].X + M] shr 16 and $FF);
     end;
-    PixelCount := fRXData.Size[I].X * fRXData.Size[I].Y;
+    PixelCount := Max(1, fRXData.Size[I].X * fRXData.Size[I].Y);
     Result[I-1].R := Round(R / PixelCount);
     Result[I-1].G := Round(G / PixelCount);
     Result[I-1].B := Round(B / PixelCount);

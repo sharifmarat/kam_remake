@@ -69,7 +69,7 @@ const
     (tkGrass,       tkMoss,         tkPaleGrass,    tkGrassDirt,    tkDirt),
     (tkCoastSand,   tkGrassSand1,   tkGrassSand2,   tkGrassSand3,   tkSand),
     (tkSwamp,       tkGrassyWater,  tkWater,        tkFastWater,    tkCustom),
-    (tkShallowSnow, tkSnow,         tkDeepSnow,     tkIce,          tkCustom),
+    (tkSnowOnGrass, tkSnowOnDirt,   tkSnow,         tkDeepSnow,     tkIce),
     (tkStone,       tkGoldMount,    tkIronMount,    tkCobbleStone,  tkGravel),
     (tkCoal,        tkGold,         tkIron,         tkLava,         tkAbyss));
   MASKS_HINTS_TX: array [TKMTileMaskKind] of Integer =

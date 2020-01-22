@@ -2895,7 +2895,7 @@ type
 
 const
   TransitionsTerKinds: array[TStoneTransitionType] of TKMTerrainKind =
-                                                      (tkGrass, tkGrass, tkCoastSand, tkDirt, tkSnow, tkShallowSnow);
+                                                      (tkGrass, tkGrass, tkCoastSand, tkDirt, tkSnow, tkSnowOnDirt);
   TranTiles: array[TStoneTransitionType] of array[0..6] of Word =
               ((  0, 139, 138, 140, 141, 274, 301),
                (  0, 139, 138, 140, 141, 274, 301),
