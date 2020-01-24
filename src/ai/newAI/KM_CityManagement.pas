@@ -346,7 +346,7 @@ begin
   for UT := Low(UnitReq) to High(UnitReq) do
   begin
     UnitReq[UT] := Max(0, UnitReq[UT] - Stats.GetUnitQty(UT));
-    Inc(fUnitReqCnt, UnitReq[UT]);
+    fUnitReqCnt := Min(fUnitReqCnt + UnitReq[UT], High(Word));
   end;
 
   // Find completed schools, decrease UnitReq by already trained citizens
