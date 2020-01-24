@@ -197,20 +197,23 @@ begin
 end;
 
 
-function IsWaterAnimTerId(aTerId: Word): Boolean;
+function IsWaterAnimTerId(aTexOffset, aTerId: Word): Boolean;
 var
-  I: Integer;
+  FullTerId: Integer;
 begin
-  Result := InRange(aTerId, 305, MAX_STATIC_TERRAIN_ID)
-    and (gGFXData[rxTiles, aTerId].Tex.ID <> 0);
-  if Result then
-    if InRange(aTerId, 305, 349) then
-    begin
-      Result := False;
-      for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
-        Result := Result or (aTerId = WATER_ANIM_BELOW_350[I])
-    end else
-      Result := Result and not InRange(aTerId, 549, 600); //Masks Ids are in that range
+  FullTerId := aTexOffset + aTerId + 1;
+  Result := (aTerId < 256)
+    and InRange(FullTerId, 5000, MAX_STATIC_TERRAIN_ID) //Animations are from 5000 to 10000
+    and (gGFXData[rxTiles, FullTerId].Tex.ID <> 0)
+    and not InRange(FullTerId, 5549, 5600);
+//  if Result then
+//    if InRange(FullTerId, 305, 349) then
+//    begin
+//      Result := False;
+//      for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
+//        Result := Result or (FullTerId = WATER_ANIM_BELOW_350[I])
+//    end else
+//      Result := Result and not InRange(FullTerId, 5549, 5600); //Masks Ids are in that range
 end;
 
 
@@ -269,7 +272,7 @@ var
       TexAnimC: TUVRect;
     begin
       Result := False;
-      if IsWaterAnimTerId(aTexOffset + aTerrain + 1) then
+      if IsWaterAnimTerId(aTexOffset, aTerrain) then
       begin
         TexAnimC := GetTileUV(aTexOffset + aTerrain, aRotation mod 4);
 
@@ -325,9 +328,9 @@ begin
 
   for AL := Low(TAnimLayer) to High(TAnimLayer) do
     case AL of
-      alWater: TexOffsetWater := 300 * (aAnimStep mod 8 + 1);       // 300..2400
-      alFalls: TexOffsetFalls := 300 * (aAnimStep mod 5 + 1 + 8);   // 2700..3900
-      alSwamp: TexOffsetSwamp := 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 4200..4800
+      alWater: TexOffsetWater := 5000 + 300 * (aAnimStep mod 8 + 1);       // 5300..7400
+      alFalls: TexOffsetFalls := 5000 + 300 * (aAnimStep mod 5 + 1 + 8);   // 7700..8900
+      alSwamp: TexOffsetSwamp := 5000 + 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 9200..9800
     end;
 
   SetLength(fTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
@@ -642,7 +645,7 @@ begin
       with gTerrain do
         for I := fClipRect.Top to fClipRect.Bottom do
           for K := fClipRect.Left to fClipRect.Right do
-          if IsWaterAnimTerId(TexOffset + Land[I,K].BaseLayer.Terrain + 1)
+          if IsWaterAnimTerId(TexOffset, Land[I,K].BaseLayer.Terrain)
             and (aFOW.CheckTileRenderRev(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
           begin
             TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID);

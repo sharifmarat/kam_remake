@@ -1423,6 +1423,8 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     BestImportance := Low(TKMDemandImportance);
     BestBid := MaxSingle;
     DeliverToUnit := fDemand[fQueue[aDeliveryId].DemandID].Loc_Unit <> nil;
+    //Mark that delivery as IsFromUnit (Serf), since we are looking for other destination while in delivery process
+    fQueue[aDeliveryId].IsFromUnit := True;
     //Try to find house or unit demand first (not storage)
     for iD := 1 to fDemandCount do
       if (fDemand[iD].Ware <> wtNone)

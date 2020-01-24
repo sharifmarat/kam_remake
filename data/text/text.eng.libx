@@ -1150,9 +1150,9 @@
 1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
 1199:Magic brush: Using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
 1200:No mask: Use exiting tiles for transitions
-1201:Softest mask: Use automatically created transitions
-1202:Soft mask: Use automatically created transitions
-1203:Hard mask: Use automatically created transitions
+1201:Soft1 mask: Use automatically created transitions
+1202:Soft2 mask: Use automatically created transitions
+1203:Soft3 mask: Use automatically created transitions
 1204:Custom TownHall units cost
 1205:Custom gold market prices
 1206:Additional options
@@ -1337,3 +1337,4 @@
 1385:Loading unsupported version could cause game not being properly loaded or even cause game crash
 1386:Unsupported version
 1387:Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?
+1388:Hard mask - use automatically created transitions

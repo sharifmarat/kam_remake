@@ -69,13 +69,24 @@ const
     (tkGrass,       tkMoss,         tkPaleGrass,    tkGrassDirt,    tkDirt),
     (tkCoastSand,   tkGrassSand1,   tkGrassSand2,   tkGrassSand3,   tkSand),
     (tkSwamp,       tkGrassyWater,  tkWater,        tkFastWater,    tkCustom),
-    (tkShallowSnow, tkSnow,         tkDeepSnow,     tkIce,          tkCustom),
+    (tkSnowOnGrass, tkSnowOnDirt,   tkSnow,         tkDeepSnow,     tkIce),
     (tkStone,       tkGoldMount,    tkIronMount,    tkCobbleStone,  tkGravel),
     (tkCoal,        tkGold,         tkIron,         tkLava,         tkAbyss));
   MASKS_HINTS_TX: array [TKMTileMaskKind] of Integer =
                             (TX_MAPED_TERRAIN_NO_MASK_HINT, TX_MAPED_TERRAIN_MASK_1_HINT,
                              TX_MAPED_TERRAIN_MASK_2_HINT,  TX_MAPED_TERRAIN_MASK_3_HINT,
-                             TX_MAPED_TERRAIN_MASK_3_HINT); //Not used
+                             TX_MAPED_TERRAIN_MASK_4_HINT);
+
+  procedure CreateBrushMaskBtn(aMK: TKMTileMaskKind);
+  begin
+    BrushMasks[aMK] := TKMButtonFlat.Create(Panel_Brushes, 9 + Byte(aMK)*36, 295 + 40, 34, 34, TILE_MASK_KINDS_PREVIEW[aMK] + 1, rxTiles);
+    BrushMasks[aMK].Tag := Byte(aMK);
+    BrushMasks[aMK].Tag2 := Byte(bbtMask);
+
+    BrushMasks[aMK].Hint := gResTexts[MASKS_HINTS_TX[aMK]];
+    BrushMasks[aMK].OnClick := BrushChange;
+  end;
+
 var
   I,K: Integer;
   MK: TKMTileMaskKind;
@@ -120,22 +131,13 @@ begin
     end;
 
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
-  begin
-    BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, 9 + Byte(MK) * 36, 295, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
-    BrushMasks[MK].Tag := Byte(MK);
-    BrushMasks[MK].Tag2 := Byte(bbtMask);
-
-    BrushMasks[MK].Hint := gResTexts[MASKS_HINTS_TX[MK]];
-    BrushMasks[MK].OnClick := BrushChange;
-  end;
-
-  BrushMasks[mkHardest].Hide;
+    CreateBrushMaskBtn(MK);
 
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*4, 295, 34, 34, 673, rxGui);
   MagicBrush.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   MagicBrush.OnClick := BrushChange;
 
-  BrushOptions := TKMButtonFlat.Create(Panel_Brushes, 9 + 2, 335, TB_WIDTH - 2, 21, 0);
+  BrushOptions := TKMButtonFlat.Create(Panel_Brushes, 9 + 2, 300, TB_WIDTH - 40, 24, 0);
   BrushOptions.Caption := gResTexts[TX_MAPED_TERRAIN_BRUSH_OPTIONS];
   BrushOptions.CapOffsetY := -11;
   BrushOptions.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT, SC_MAPEDIT_SUB_MENU_ACTION_3);
