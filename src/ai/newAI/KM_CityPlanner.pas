@@ -40,7 +40,7 @@ type
     Farms: array of record
       FieldAvailable: Boolean;
       Center: TKMPoint;
-      FieldType: TKMFieldType;
+      FieldType22: TKMFieldType;
       Points: array[0..FIELDS_PER_FARM-1] of TKMPoint;
     end;
   end;
@@ -138,7 +138,7 @@ type
 
     //procedure PlanWineFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
     //procedure PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
-    procedure PlanFields(aCnt: Word; aLoc: TKMPoint; aFieldType: TKMFieldType; var aNodeList: TKMPointList; aReplaceFarmIdx: Integer = -1; aReplaceFieldIdx: Word = 0);
+    procedure PlanFields(aCnt: Word; aLoc: TKMPoint; const aFieldType: TKMFieldType; var aNodeList: TKMPointList; aReplaceFarmIdx: Integer = -1; aReplaceFieldIdx: Word = 0);
     function FindPlaceForHouse(aIgnoreTrees: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
     function FindPlaceForMines(aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
     function FindPlaceForQuary(var StoneLocs: TKMPointTagList): Boolean;
@@ -218,10 +218,13 @@ const
 
 implementation
 uses
-  KM_Game, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
-  KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_ResUnits,
-  KM_RenderAux, KM_ResMapElements;
+  KM_Game, KM_HouseCollection,
+  KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
+  KM_AIFields, KM_Units,
+//  KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_ResUnits,
+//  KM_NavMesh, KM_HouseMarket, KM_HouseSchool,
+  KM_UnitsCollection, KM_HouseWoodcutters, KM_ResMapElements,
+  KM_RenderAux, KM_Log;
 
 
 
@@ -1157,21 +1160,34 @@ function TKMCityPlanner.CheckFields(var aFieldType: TKMFieldType; var aNodeList:
               OR ((gAIFields.Influences.AvoidBuilding[aP.Y, aP.X] = AVOID_BUILDING_NODE_LOCK_FIELD) AND (gHands[fOwner].CanAddFieldPlan(aP, ftCorn)));
   end;
 var
-  K,Cnt,ExpectedCnt: Integer;
+  K,Cnt,ExpectedCnt,Temp: Integer;
 begin
   Result := False;
   if (fFields.Count <= 0) then
     Exit;
-
+  Temp := 0;
   fFields.UpdateIdx := (fFields.UpdateIdx + 1) mod fFields.Count;
   with fFields.Farms[ fFields.UpdateIdx ] do
   begin
+    Temp := Temp * -1 + fFields.Count - 1000;
+    if Temp = 1000 then
+    begin
+      gLog.AddTime('FieldType0 = ' + IntToStr(Byte(FieldType22)));
+      gLog.AddTime('aFieldType0 = ' + IntToStr(Byte(aFieldType)));
+    end;
+
+    if Temp = 1000 then
+    begin
+      gLog.AddTime('FieldType1 = ' + IntToStr(Byte(fFields.Farms[ fFields.UpdateIdx ].FieldType22)));
+//      gLog.AddTime('aFieldType1 = ' + IntToStr(Byte(aFieldType)));
+    end;
+
     if not FieldAvailable then
       Exit;
-    ExpectedCnt := FIELDS_PER_FARM * Byte(FieldType = ftCorn) + FIELDS_PER_WINE * Byte(FieldType = ftWine);
+    ExpectedCnt := FIELDS_PER_FARM * Byte(FieldType22 = ftCorn) + FIELDS_PER_WINE * Byte(FieldType22 = ftWine);
     Cnt := ExpectedCnt;
     for K := ExpectedCnt - 1 downto Low(Points) do
-      if KMSamePoint(Points[K],KMPoint_ZERO) OR ((FieldType = ftWine) AND not IsWine(Points[K])) OR ((FieldType = ftCorn) AND not IsField(Points[K])) then
+      if KMSamePoint(Points[K],KMPoint_ZERO) OR ((FieldType22 = ftWine) AND not IsWine(Points[K])) OR ((FieldType22 = ftCorn) AND not IsField(Points[K])) then
       begin
         Cnt := Cnt - 1;
         Points[K] := Points[Cnt];
@@ -1179,8 +1195,24 @@ begin
       end;
     if (ExpectedCnt - Cnt > 1) then
     begin
-      PlanFields(ExpectedCnt-Cnt, Center, FieldType, aNodeList, fFields.UpdateIdx, Cnt);
-      aFieldType := FieldType;
+      if Temp = 1000 then
+      begin
+        gLog.AddTime('FieldType3 = ' + IntToStr(Byte(FieldType22)));
+        gLog.AddTime('aFieldType3 = ' + IntToStr(Byte(aFieldType)));
+      end;
+      PlanFields(ExpectedCnt-Cnt, Center, FieldType22, aNodeList, fFields.UpdateIdx, Cnt);
+      if Temp = 1000 then
+      begin
+        gLog.AddTime('FieldType = ' + IntToStr(Byte(FieldType22)));
+        gLog.AddTime('FieldType* = ' + IntToStr(Byte(fFields.Farms[ fFields.UpdateIdx ].FieldType22)));
+        gLog.AddTime('aFieldType = ' + IntToStr(Byte(aFieldType)));
+      end;
+      aFieldType := FieldType22;
+      if Temp = 1000 then
+      begin
+        gLog.AddTime('FieldType2 = ' + IntToStr(Byte(FieldType22)));
+        gLog.AddTime('aFieldType2 = ' + IntToStr(Byte(aFieldType)));
+      end;
     end;
   end;
 
@@ -1188,10 +1220,10 @@ begin
 end;
 
 
-procedure TKMCityPlanner.PlanFields(aCnt: Word; aLoc: TKMPoint; aFieldType: TKMFieldType; var aNodeList: TKMPointList; aReplaceFarmIdx: Integer = -1; aReplaceFieldIdx: Word = 0);
+procedure TKMCityPlanner.PlanFields(aCnt: Word; aLoc: TKMPoint; const aFieldType: TKMFieldType; var aNodeList: TKMPointList; aReplaceFarmIdx: Integer = -1; aReplaceFieldIdx: Word = 0);
 var
   Check: Boolean;
-  X,Y, X2,Y2: Integer;
+  X,Y, X2,Y2,Test: Integer;
   BelowLoc, P, P2: TKMPoint;
   Build: array[-FARM_RADIUS..FARM_RADIUS,-FARM_RADIUS..FARM_RADIUS] of Boolean;
   Price: TFieldPrice;
@@ -1208,20 +1240,31 @@ begin
   FillChar(DA3, SizeOf(DA3), #0);
   FillChar(DA4, SizeOf(DA4), #0);
   {$ENDIF}
+  Test := 0;
+  Test := Test + SizeOf(Price)*3 - 5 + FARM_RADIUS - 1000000;
+
+  if Test = 100 then Exit;
   FillChar(Price, SizeOf(Price), #0);
 
-
+  if Test = 100 then Exit;
   BuildFF := gAIFields.Eye.BuildFF;
+  if Test = 100 then Exit;
   BuildFF.UpdateState(); // BuildFF is already updated if Fields are requested in same tick like Farm
+  if Test = 100 then Exit;
   BelowLoc := KMPointBelow(aLoc);
 
+
+
+  if Test = 100 then Exit;
   fFieldEval.EvalField(FARM_RADIUS, BelowLoc, aFieldType);
 
+  if Test = 100 then Exit;
   // Find build areas (11*11 = 121)
   for Y := -FARM_RADIUS to +FARM_RADIUS do
   for X := -FARM_RADIUS to +FARM_RADIUS do
     Build[Y,X] := gTerrain.TileInMapCoords(BelowLoc.X+X, BelowLoc.Y+Y) AND (BuildFF.State[BelowLoc.Y+Y,BelowLoc.X+X] in [bsBuild, bsTree] );
 
+  if Test = 100 then Exit;
   // Evaluate fields
   for Y := -FARM_RADIUS+1 to +FARM_RADIUS-1 do
   for X := -FARM_RADIUS+1 to +FARM_RADIUS-1 do
@@ -1275,32 +1318,43 @@ begin
         end;
     end;
 
+  if Test = 100 then Exit;
   if (Length(fFields.Farms) <= fFields.Count) then
     SetLength(fFields.Farms,fFields.Count + 6);
+
+  if Test = 100 then Exit;
   TagList := TKMPointTagList.Create();
+  if Test = 100 then Exit;
   try
     for Y := -FARM_RADIUS to +FARM_RADIUS do
     for X := -FARM_RADIUS to +FARM_RADIUS do
       if (fFieldEval.FieldEval[Y,X] = feFertileTile) then
       begin
         P := KMPointAdd(KMPoint(X,Y),BelowLoc);
+        if Test <> 100 then
         TagList.Add(P, 2000 + Price[Y,X]);
         {$IFDEF DEBUG_NewAI}
         DA1[P.Y,P.X] := Price[Y,X];
         {$ENDIF}
       end;
+    if Test = 100 then Exit;
     TagList.SortByTag;
+    if Test = 100 then Exit;
     with fFields.Farms[ ifthen(aReplaceFarmIdx <> -1, aReplaceFarmIdx, fFields.Count) ] do
     begin
       X2 := aReplaceFieldIdx;
+      if Test <> 100 then
       for X := TagList.Count - 1 downto Max(0, TagList.Count - aCnt) do
       begin
         Points[X2] := TagList.Items[X];
         Inc(X2);
         aNodeList.Add(TagList.Items[X]);
       end;
+      if Test <> 100 then
       Center := aLoc;
-      FieldType := aFieldType;
+      if Test <> 100 then
+      FieldType22 := aFieldType;
+      if Test <> 100 then
       FieldAvailable := TagList.Count > aCnt;
     end;
     fFields.Count := fFields.Count + Byte(aReplaceFarmIdx = -1);

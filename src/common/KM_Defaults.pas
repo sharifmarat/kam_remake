@@ -185,7 +185,7 @@ var
   {Gameplay}
   USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
   CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
-  PAUSE_GAME_AT_TICK    :Integer = -1;    //Pause at specified game tick
+  PAUSE_GAME_AT_TICK    :Integer = 34568;    //Pause at specified game tick
   ALLOW_SAVE_IN_REPLAY  :Boolean = DEBUG_CFG; //Allow to save game from replay, good for debug
   SAVE_GAME_AS_TEXT     :Boolean = True; //Save game serialized //Todo DEBUG. set to False before releases
   {Gameplay cheats}
