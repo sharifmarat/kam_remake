@@ -1172,6 +1172,7 @@ begin
     Temp := Temp * -1 + fFields.Count - 1000;
     if Temp = 1000 then
     begin
+      gLog.AddTime('FieldType0 ADDR* = ' + IntToStr(Cardinal(@FieldType22)));
       gLog.AddTime('FieldType0 = ' + IntToStr(Byte(FieldType22)));
       gLog.AddTime('aFieldType0 = ' + IntToStr(Byte(aFieldType)));
     end;
@@ -1197,12 +1198,17 @@ begin
     begin
       if Temp = 1000 then
       begin
+        gLog.AddTime('FieldType3 ADDR* = ' + IntToStr(Cardinal(@FieldType22)));
         gLog.AddTime('FieldType3 = ' + IntToStr(Byte(FieldType22)));
         gLog.AddTime('aFieldType3 = ' + IntToStr(Byte(aFieldType)));
       end;
       PlanFields(ExpectedCnt-Cnt, Center, FieldType22, aNodeList, fFields.UpdateIdx, Cnt);
       if Temp = 1000 then
       begin
+        gLog.AddTime('FieldAvailable ADDR* = ' + IntToStr(Cardinal(@FieldAvailable)));
+        gLog.AddTime('Center ADDR* = ' + IntToStr(Cardinal(@Center)));
+        gLog.AddTime('FieldType22 ADDR* = ' + IntToStr(Cardinal(@FieldType22)));
+        gLog.AddTime('Points ADDR* = ' + IntToStr(Cardinal(@Points)));
         gLog.AddTime('FieldType = ' + IntToStr(Byte(FieldType22)));
         gLog.AddTime('FieldType* = ' + IntToStr(Byte(fFields.Farms[ fFields.UpdateIdx ].FieldType22)));
         gLog.AddTime('aFieldType = ' + IntToStr(Byte(aFieldType)));
