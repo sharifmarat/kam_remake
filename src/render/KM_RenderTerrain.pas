@@ -643,9 +643,9 @@ begin
     for AL := Low(TAnimLayer) to High(TAnimLayer) do
     begin
       case AL of
-        alWater: TexOffset := 300 * (aAnimStep mod 8 + 1);       // 300..2400
-        alFalls: TexOffset := 300 * (aAnimStep mod 5 + 1 + 8);   // 2700..3900
-        alSwamp: TexOffset := 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 4200..4800
+        alWater: TexOffset := 5000 + 300 * (aAnimStep mod 8 + 1);       // 5300..7400
+        alFalls: TexOffset := 5000 + 300 * (aAnimStep mod 5 + 1 + 8);   // 7700..8900
+        alSwamp: TexOffset := 5000 + 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 9200..9800
         else     TexOffset := 0;
       end;
 
