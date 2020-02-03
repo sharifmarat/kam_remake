@@ -60,6 +60,7 @@ type
     procedure RenderFence(aFence: TKMFenceType; Pos: TKMDirection; pX,pY: Integer);
     procedure RenderMarkup(pX, pY: Word; aFieldType: TKMFieldType);
     procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+    function DoUseVBO: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -111,7 +112,7 @@ begin
   pData[3] := $00000000;
   fTextB := TRender.GenTexture(4, 1, @pData[0], tfRGBA8);
 
-  fUseVBO := VBOSupported and not RENDER_3D;
+  fUseVBO := DoUseVBO;
 
   if fUseVBO then
   begin
@@ -147,13 +148,19 @@ begin
 end;
 
 
-function TRenderTerrain.VBOSupported:Boolean;
+function TRenderTerrain.VBOSupported: Boolean;
 begin
   //Some GPUs don't comply with OpenGL 1.5 spec on VBOs, so check Assigned instead of GL_VERSION_1_5
   Result := Assigned(glGenBuffers)        and Assigned(glBindBuffer)    and Assigned(glBufferData) and
             Assigned(glEnableClientState) and Assigned(glVertexPointer) and Assigned(glClientActiveTexture) and
             Assigned(glTexCoordPointer)   and Assigned(glDrawElements)  and Assigned(glDisableClientState) and
             Assigned(glDeleteBuffers);
+end;
+
+
+function TRenderTerrain.DoUseVBO: Boolean;
+begin
+  Result := VBOSupported and not RENDER_3D;
 end;
 
 
@@ -1059,7 +1066,7 @@ begin
   //VBO has proper vertice coords only for Light/Shadow
   //it cant handle 3D yet and because of FOW leaves terrain revealed, which is an exploit in MP
   //Thus we allow VBO only in 2D
-  fUseVBO := VBOSupported and not RENDER_3D;
+  fUseVBO := DoUseVBO;
 
   UpdateVBO(aAnimStep, aFOW);
 
@@ -1076,7 +1083,7 @@ begin
 end;
 
 
-procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; 
+procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
                                       DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
 var
   K, I: Integer;
