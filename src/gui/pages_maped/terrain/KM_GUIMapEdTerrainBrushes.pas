@@ -30,6 +30,7 @@ type
       BrushSquare: TKMButtonFlat;
       BrushTable: array [0..6, 0..4] of TKMButtonFlat;
       BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
+      Blending: TKMButtonFlat;
       MagicBrush: TKMButtonFlat;
       BrushOptions: TKMButtonFlat;
       PopUp_BrushOptions: TKMPopUpPanel;
@@ -133,11 +134,15 @@ begin
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
     CreateBrushMaskBtn(MK);
 
+  Blending := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*3, 295, 34, 34, 677, rxGui);
+  Blending.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
+  Blending.OnClick := BrushChange;
+
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*4, 295, 34, 34, 673, rxGui);
   MagicBrush.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   MagicBrush.OnClick := BrushChange;
 
-  BrushOptions := TKMButtonFlat.Create(Panel_Brushes, 9 + 2, 300, TB_WIDTH - 40, 24, 0);
+  BrushOptions := TKMButtonFlat.Create(Panel_Brushes, 9 + 2, 300, TB_WIDTH - 80, 24, 0);
   BrushOptions.Caption := gResTexts[TX_MAPED_TERRAIN_BRUSH_OPTIONS];
   BrushOptions.CapOffsetY := -11;
   BrushOptions.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT, SC_MAPEDIT_SUB_MENU_ACTION_3);
@@ -152,6 +157,10 @@ begin
     ForcePaint := TKMCheckBox.Create(PopUp_BrushOptions, 10, 35, 280, 40, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fntMetal);
     ForcePaint.OnClick := BrushChange;
     ForcePaint.Hint := gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT_HINT];
+
+//    UseBlending := TKMCheckBox.Create(PopUp_BrushOptions, 10, 60, 280, 40, gResTexts[TX_MAPED_TERRAIN_USE_BLENDING], fntMetal);
+//    UseBlending.OnClick := BrushChange;
+//    UseBlending.Hint := gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT_HINT];
 
     Button_FixTerrainBrushes := TKMButton.Create(PopUp_BrushOptions, (PopUp_BrushOptions.Width div 2) - 190, 110,
                                                  380, 30, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN], bsGame);
@@ -195,8 +204,15 @@ begin
   begin
     gGameCursor.MapEdMagicBrush := True;
     fLastMagicBrush := True;
-  end else
+  end
+  else
   begin
+    if Sender = Blending then
+    begin
+      Blending.Down := not Blending.Down;
+      gGame.MapEditor.TerrainPainter.UseBlending := Blending.Down;
+    end
+    else
     if Sender = BrushCircle then
     begin
       gGameCursor.MapEdShape := hsCircle;
@@ -234,6 +250,7 @@ begin
   BrushCircle.Down := (gGameCursor.MapEdShape = hsCircle);
   BrushSquare.Down := (gGameCursor.MapEdShape = hsSquare);
   MagicBrush.Down  := gGameCursor.MapEdMagicBrush;
+
   for I := Low(BrushTable) to High(BrushTable) do
     for K := Low(BrushTable[I]) to High(BrushTable[I]) do
       if gGameCursor.MapEdMagicBrush then

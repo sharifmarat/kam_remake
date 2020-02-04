@@ -488,6 +488,44 @@ begin
 end;
 
 
+procedure RenderQuadTextureBlended(var TexC: TUVRect; tX,tY: Word; aCorners: TKMByteSet);
+begin
+  with gTerrain do
+    if RENDER_3D then
+    begin
+      glTexCoord2fv(@TexC[1]); glVertex3f(tX-1,tY-1,-Land[tY,  tX].Height/CELL_HEIGHT_DIV);
+      glTexCoord2fv(@TexC[2]); glVertex3f(tX-1,tY  ,-Land[tY+1,tX].Height/CELL_HEIGHT_DIV);
+      glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  ,-Land[tY+1,tX+1].Height/CELL_HEIGHT_DIV);
+      glTexCoord2fv(@TexC[4]); glVertex3f(tX  ,tY-1,-Land[tY,  tX+1].Height/CELL_HEIGHT_DIV);
+    end else begin
+      if 0 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,0);
+      glTexCoord2fv(@TexC[1]); glVertex3f(tX-1,tY-1-Land[tY,  tX].Height / CELL_HEIGHT_DIV, tY-1);
+
+      if 3 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,0);
+      glTexCoord2fv(@TexC[2]); glVertex3f(tX-1,tY  -Land[tY+1,tX].Height / CELL_HEIGHT_DIV, tY-1);
+
+      if 2 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,0);
+      glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  -Land[tY+1,tX+1].Height / CELL_HEIGHT_DIV, tY-1);
+
+      if 1 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,0);
+      glTexCoord2fv(@TexC[4]); glVertex3f(tX  ,tY-1-Land[tY,  tX+1].Height / CELL_HEIGHT_DIV, tY-1);
+      glColor4f(1,1,1,1);
+    end;
+end;
+
+
 procedure TRenderTerrain.DoTiles(aFOW: TKMFogOfWarCommon);
 var
   TexC: TUVRect;
@@ -553,12 +591,15 @@ var
   I,K,L: Integer;
   SizeX, SizeY: Word;
   tX, tY: Word;
+  TerInfo: TKMGenTerrainInfo;
 begin
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
   //Draw with VBO only if all tiles are on the same texture
-  if fUseVBO and TKMResSprites.AllTilesOnOneAtlas then
+
+  //DONT USE VBO FOR LAYERS FOR NOW, SINCE WE CAN USE BLENDING HERE
+  if False and fUseVBO and TKMResSprites.AllTilesOnOneAtlas then
   begin
     if Length(fTilesLayersVtx) = 0 then Exit; //Nothing to render
     BindVBOArray(vatTileLayer);
@@ -581,6 +622,7 @@ begin
   end
   else
   begin
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     SizeX := Max(fClipRect.Right - fClipRect.Left, 0);
     SizeY := Max(fClipRect.Bottom - fClipRect.Top, 0);
     with gTerrain do
@@ -597,12 +639,20 @@ begin
                 TRender.BindTexture(gGFXData[rxTiles, Layer[L].Terrain+1].Tex.ID);
                 glBegin(GL_TRIANGLE_FAN);
                 TexC := GetTileUV(Layer[L].Terrain, Layer[L].Rotation);
-              end;
+                TerInfo := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain);
 
-              RenderQuadTexture(TexC, tX, tY);
-              glEnd;
+                if TerInfo.TerKind = tkCustom then
+                  Exit;
+
+                if UseBlending then
+                  RenderQuadTextureBlended(TexC, tX, tY, Layer[L].Corners)
+                else
+                  RenderQuadTexture(TexC, tX, tY);
+                glEnd;
+              end;
             end;
         end;
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   end;
 end;
 
@@ -659,7 +709,7 @@ begin
             TexC := GetTileUV(TexOffset + Land[I,K].BaseLayer.Terrain, Land[I,K].BaseLayer.Rotation);
 
             glBegin(GL_TRIANGLE_FAN);
-              glColor4f(1,1,1,1);
+              glColor4f(1,1,1,0.5);
               RenderQuadTexture(TexC, K, I);
             glEnd;
           end;

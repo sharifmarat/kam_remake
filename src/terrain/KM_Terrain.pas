@@ -52,6 +52,7 @@ type
     Height: Byte;
     Obj: Word;
     IsCustom: Boolean;
+    UseBlending: Boolean;
   end;
 
   TKMTerrainTile = record
@@ -62,6 +63,7 @@ type
     Height: Byte;
     Obj: Word;
     IsCustom: Boolean; //Custom tile (rotated tile, atm)
+    UseBlending: Boolean; //Use blending for layers transitions
 
     //Age of tree, another independent variable since trees can grow on fields
     TreeAge: Byte; //Not init=0 .. Full=TreeAgeFull Depending on this tree gets older and thus could be chopped
@@ -334,7 +336,7 @@ type
 
     class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
     class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
-    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
   end;
 
 const
@@ -427,7 +429,8 @@ var
   I, J, L: Integer;
   S: TKMemoryStreamBinary;
   NewX, NewY: Integer;
-  UseKaMFormat: Boolean;
+//  UseKaMFormat: Boolean;
+  GameRev: Integer;
   TileBasic: TKMTerrainTileBasic;
 begin
   fMapX := 0;
@@ -439,12 +442,14 @@ begin
 
   gLog.AddTime('Loading map file: ' + FileName);
 
-  UseKaMFormat := True;
+//  UseKaMFormat := True;
   S := TKMemoryStreamBinary.Create;
   try
     S.LoadFromFile(FileName);
 
-    LoadMapHeader(S, NewX, NewY, UseKaMFormat);
+    LoadMapHeader(S, NewX, NewY, GameRev);
+//    UseKaMFormat := ( GameRev = 0 );
+
     fMapX := NewX;
     fMapY := NewY;
 
@@ -466,13 +471,14 @@ begin
         Land[I,J].Fence        := fncNone;
         Land[I,J].FenceSide    := 0;
 
-        ReadTileFromStream(S, TileBasic, UseKaMFormat);
+        ReadTileFromStream(S, TileBasic, GameRev);
 
-        Land[I,J].BaseLayer := TileBasic.BaseLayer;
-        Land[I,J].Height := TileBasic.Height;
-        Land[I,J].Obj := TileBasic.Obj;
-        Land[I,J].LayersCnt := TileBasic.LayersCnt;
-        Land[I,J].IsCustom  := TileBasic.IsCustom;
+        Land[I,J].BaseLayer   := TileBasic.BaseLayer;
+        Land[I,J].Height      := TileBasic.Height;
+        Land[I,J].Obj         := TileBasic.Obj;
+        Land[I,J].LayersCnt   := TileBasic.LayersCnt;
+        Land[I,J].IsCustom    := TileBasic.IsCustom;
+        Land[I,J].UseBlending := TileBasic.UseBlending;
 
         for L := 0 to TileBasic.LayersCnt - 1 do
           Land[I,J].Layer[L] := TileBasic.Layer[L];
@@ -522,15 +528,17 @@ var
       TileBasic.Height    := EnsureRange(30 + KaMRandom(7, 'TKMTerrain.SaveToFile.SetNewLand 2'), 0, 100);  //variation in Height
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
+      TileBasic.UseBlending := False;
       TileBasic.LayersCnt := 0;
     end
     else
     begin
-      TileBasic.BaseLayer := Land[aFromY,aFromX].BaseLayer;
-      TileBasic.Height    := Land[aFromY,aFromX].Height;
-      TileBasic.Obj       := Land[aFromY,aFromX].Obj;
-      TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
-      TileBasic.IsCustom  := Land[aFromY,aFromX].IsCustom;
+      TileBasic.BaseLayer   := Land[aFromY,aFromX].BaseLayer;
+      TileBasic.Height      := Land[aFromY,aFromX].Height;
+      TileBasic.Obj         := Land[aFromY,aFromX].Obj;
+      TileBasic.LayersCnt   := Land[aFromY,aFromX].LayersCnt;
+      TileBasic.IsCustom    := Land[aFromY,aFromX].IsCustom;
+      TileBasic.UseBlending := Land[aFromY,aFromX].UseBlending;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
@@ -4276,11 +4284,12 @@ begin
     for K := 1 to fMapX do
     begin
       //Only save fields that cannot be recalculated after loading
-      TileBasic.BaseLayer := Land[I,K].BaseLayer;
-      TileBasic.Height    := Land[I,K].Height;
-      TileBasic.Obj       := Land[I,K].Obj;
-      TileBasic.IsCustom  := Land[I,K].IsCustom;
-      TileBasic.LayersCnt := Land[I,K].LayersCnt;
+      TileBasic.BaseLayer   := Land[I,K].BaseLayer;
+      TileBasic.Height      := Land[I,K].Height;
+      TileBasic.Obj         := Land[I,K].Obj;
+      TileBasic.IsCustom    := Land[I,K].IsCustom;
+      TileBasic.UseBlending := Land[I,K].UseBlending;
+      TileBasic.LayersCnt   := Land[I,K].LayersCnt;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
 
@@ -4535,6 +4544,7 @@ begin
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
+    S.Write(aTileBasic.UseBlending);
     Inc(aMapDataSize);
     for L := 0 to aTileBasic.LayersCnt - 1 do
     begin
@@ -4546,13 +4556,16 @@ begin
 end;
 
 
-class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
 var
   I: Integer;
   TerrainB, ObjectB, Rot, Corners: Byte;
   LayersCorners: array[0..3] of Byte;
+  UseKaMFormat: Boolean;
 begin
-  if aUseKaMFormat then
+  UseKaMFormat := ( aGameRev = 0 );
+
+  if UseKaMFormat then
   begin
     aStream.Read(TerrainB);           //1
     aTileBasic.BaseLayer.Terrain := TerrainB;
@@ -4566,6 +4579,7 @@ begin
     aTileBasic.BaseLayer.Corners := [0,1,2,3];
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
+    aTileBasic.UseBlending := False;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
@@ -4592,6 +4606,11 @@ begin
       LayersCorners[2] := (Corners shr 4) and $3;
       LayersCorners[3] := (Corners shr 6) and $3;
 
+      if aGameRev > 10744 then //Blending option appeared only after r10745
+        aStream.Read(aTileBasic.UseBlending)
+      else
+        aTileBasic.UseBlending := False;
+
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
@@ -4610,7 +4629,7 @@ begin
     end;
   end;
 
-  if aUseKaMFormat then
+  if UseKaMFormat then
     aStream.Seek(17, soFromCurrent);
 end;
 

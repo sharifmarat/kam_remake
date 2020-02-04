@@ -77,6 +77,7 @@ type
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
     ForcePaint: Boolean;
+    UseBlending: Boolean;
     procedure InitEmpty;
 
     procedure LoadFromFile(const aFileName: UnicodeString);
@@ -1108,6 +1109,9 @@ begin
   if MaskKind <> mkNone then
     ApplyMagicBrush(MaskKind);
 
+//  if gTerrain.Land[Y,X].LayersCnt > 0 then
+  gTerrain.Land[Y,X].UseBlending := UseBlending;
+
   if fReplaceLayers then
   begin
     case MaskKind of
@@ -1620,6 +1624,7 @@ var
   Chunk: AnsiString;
   MapEdChunkFound: Boolean;
   UseKaMFormat: Boolean;
+  GameRev: Integer;
   MapDataSize: Cardinal;
 begin
   if not FileExists(aFileName) then Exit;
@@ -1630,7 +1635,8 @@ begin
   try
     S.LoadFromFile(aFileName);
 
-    LoadMapHeader(S, NewX, NewY, UseKaMFormat, MapDataSize);
+    LoadMapHeader(S, NewX, NewY, GameRev, MapDataSize);
+    UseKaMFormat := ( GameRev = 0 );
 
     //Skip terrain data
     if UseKaMFormat then
@@ -1706,6 +1712,7 @@ var
     Allocated, Qty1, Qty2, x5, Len17: Integer;
   end;
   UseKaMFormat: Boolean;
+  GameRev: Integer;
   MapDataSize: Cardinal;
 begin
   if not FileExists(aFileName) then Exit;
@@ -1714,7 +1721,9 @@ begin
   try
     S.LoadFromFile(aFileName);
 
-    LoadMapHeader(S, NewX, NewY, UseKaMFormat, MapDataSize);
+    LoadMapHeader(S, NewX, NewY, GameRev, MapDataSize);
+
+    UseKaMFormat := ( GameRev = 0 );
 
     //Skip terrain data
     if UseKaMFormat then

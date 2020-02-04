@@ -1248,7 +1248,7 @@ TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during cu
 TX_MAP_CUSTOM_PARAM_TH_TROOP_COST = 1204; //Custom TownHall units cost
 TX_MAP_CUSTOM_PARAM_MARKET_PRICE = 1205; //Custom gold market prices
 
-TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1206; //Additional options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1206; //Options
 TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT = 1207; //Additional brush options
 TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1208; //Additional brush options
 
