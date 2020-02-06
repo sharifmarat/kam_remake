@@ -489,6 +489,7 @@ end;
 
 
 procedure RenderQuadTextureBlended(var TexC: TUVRect; tX,tY: Word; aCorners: TKMByteSet);
+
 begin
   with gTerrain do
     if RENDER_3D then
@@ -501,25 +502,25 @@ begin
       if 0 in aCorners then
         glColor4f(1,1,1,1)
       else
-        glColor4f(1,1,1,0);
+        glColor4f(1,1,1,BLEND_FACTOR);
       glTexCoord2fv(@TexC[1]); glVertex3f(tX-1,tY-1-Land[tY,  tX].Height / CELL_HEIGHT_DIV, tY-1);
 
       if 3 in aCorners then
         glColor4f(1,1,1,1)
       else
-        glColor4f(1,1,1,0);
+        glColor4f(1,1,1,BLEND_FACTOR);
       glTexCoord2fv(@TexC[2]); glVertex3f(tX-1,tY  -Land[tY+1,tX].Height / CELL_HEIGHT_DIV, tY-1);
 
       if 2 in aCorners then
         glColor4f(1,1,1,1)
       else
-        glColor4f(1,1,1,0);
+        glColor4f(1,1,1,BLEND_FACTOR);
       glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  -Land[tY+1,tX+1].Height / CELL_HEIGHT_DIV, tY-1);
 
       if 1 in aCorners then
         glColor4f(1,1,1,1)
       else
-        glColor4f(1,1,1,0);
+        glColor4f(1,1,1,BLEND_FACTOR);
       glTexCoord2fv(@TexC[4]); glVertex3f(tX  ,tY-1-Land[tY,  tX+1].Height / CELL_HEIGHT_DIV, tY-1);
       glColor4f(1,1,1,1);
     end;

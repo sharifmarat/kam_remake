@@ -152,6 +152,7 @@ var
   DISPLAY_SOUNDS          :Boolean = False; //Display sounds on map
   RENDER_3D               :Boolean = False; //Experimental 3D render
   HOUSE_BUILDING_STEP     :Single = 0;
+  BLEND_FACTOR            :Single = 0.5;
   OVERLAY_NAVMESH         :Boolean = False; //Show navmesh
   OVERLAY_DEFENCES        :Boolean = False; //Show AI defence perimeters
   OVERLAY_INFLUENCE       :Boolean = False; //Show influence map

@@ -236,6 +236,7 @@ type
     procedure Disable;
     procedure Show;
     procedure Hide;
+    procedure HideSilently;
     procedure DoSetVisible; //Differs from Show, that we do not force to show Parents
     procedure Focus;
     procedure Unfocus;
@@ -2386,10 +2387,13 @@ begin
   fVisible := aValue;
 
   //Only swap focus if visibility changed
-  if (OldVisible <> fVisible) and (Focusable or (Self is TKMPanel)) then
-    MasterParent.fMasterControl.UpdateFocus(Self);
+  if (OldVisible <> fVisible) then
+  begin
+    if Focusable or (Self is TKMPanel) then
+      MasterParent.fMasterControl.UpdateFocus(Self);
 
-  UpdateVisibility;
+    UpdateVisibility;
+  end;
 end;
 
 
@@ -2471,6 +2475,12 @@ end;
 procedure TKMControl.Hide;
 begin
   Visible := False;
+end;
+
+
+procedure TKMControl.HideSilently;
+begin
+  fVisible := False;
 end;
 
 
@@ -5579,7 +5589,7 @@ var
   NewPos: Integer;
 begin
   ChildsRect := GetChildsRect;
-  fScrollBarH.Hide;
+  fScrollBarH.HideSilently;
 
   if (saHorizontal in fScrollAxisSet) then
   begin
@@ -5616,7 +5626,7 @@ var
 begin
   ChildsRect := GetChildsRect;
   //Do not set Visible, avoid trigger OnChangeVisibility
-  fScrollBarV.Hide;
+  fScrollBarV.HideSilently;
 
   if (saVertical in fScrollAxisSet) then
   begin

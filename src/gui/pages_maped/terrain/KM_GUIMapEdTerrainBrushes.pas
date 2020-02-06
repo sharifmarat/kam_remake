@@ -23,8 +23,9 @@ type
     procedure BrushSettings_Click(Sender: TObject);
     procedure BrushFixTerrain_Click(Sender: TObject);
     procedure FixTerrainBrushes(Sender: TObject);
+    procedure BrushesScrollChangedVisibility(Sender: TObject; aVisible: Boolean);
   protected
-    Panel_Brushes: TKMPanel;
+    Panel_Brushes: TKMScrollPanel;
       BrushSize: TKMTrackBar;
       BrushCircle: TKMButtonFlat;
       BrushSquare: TKMButtonFlat;
@@ -59,6 +60,12 @@ uses
   TypInfo, KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI, KM_ResKeys,
   KM_TerrainPainter, KM_InterfaceGame, KM_Utils;
 
+const
+  BTN_BRUSH_SIZE = 24;
+  BTN_BRUSH_SIZE_W_SPACE = 30;
+  BTN_TKIND_W = 34;
+  BTN_TKIND_W_SP = 36;
+
 type
   TMBrushButtonType = (bbtBrush = -1, bbtMask = -2);
 
@@ -80,7 +87,8 @@ const
 
   procedure CreateBrushMaskBtn(aMK: TKMTileMaskKind);
   begin
-    BrushMasks[aMK] := TKMButtonFlat.Create(Panel_Brushes, 9 + Byte(aMK)*36, 295 + 40, 34, 34, TILE_MASK_KINDS_PREVIEW[aMK] + 1, rxTiles);
+    BrushMasks[aMK] := TKMButtonFlat.Create(Panel_Brushes, 9 + Byte(aMK)*BTN_TKIND_W_SP, 295 + 40, BTN_TKIND_W, BTN_TKIND_W,
+                                            TILE_MASK_KINDS_PREVIEW[aMK] + 1, rxTiles);
     BrushMasks[aMK].Tag := Byte(aMK);
     BrushMasks[aMK].Tag2 := Byte(bbtMask);
 
@@ -99,21 +107,25 @@ begin
   fLastBrush := Byte(SURFACES[0,0]);
   fLastMagicBrush := False;
 
-  Panel_Brushes := TKMPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH, 400);
+  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH, 300, [saVertical], bsMenu, ssCommon);
+  Panel_Brushes.AnchorsStretch;
+  Panel_Brushes.ScrollV.OnChangeVisibility := BrushesScrollChangedVisibility;
+//  TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_MAP_ED_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter);
-  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 9, 27, 36*5 - 60, 0, BRUSH_MAX_SIZE);
+  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 9, 27, BTN_TKIND_W_SP*5 - 2*BTN_BRUSH_SIZE_W_SPACE, 0, BRUSH_MAX_SIZE);
   BrushSize.Position := 4;
   BrushSize.OnChange := BrushChange;
   BrushSize.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SIZE_HINT, gResTexts[TX_KEY_CTRL_MOUSEWHEEL]);
 
-  BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*5 - 54 - 1, 25, 24, 24, 592);
+  BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 9 + BTN_TKIND_W_SP*5 - BTN_BRUSH_SIZE_W_SPACE - BTN_BRUSH_SIZE - 1,
+                                                     25, BTN_BRUSH_SIZE, BTN_BRUSH_SIZE, 592);
   BrushCircle.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_CIRCLE, SC_MAPEDIT_SUB_MENU_ACTION_1);
   BrushCircle.OnClick := BrushChange;
   BrushCircle.TexOffsetX := 1;
   BrushCircle.TexOffsetY := 1;
 
-  BrushSquare := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*5 - 24 - 1, 25, 24, 24, 593);
+  BrushSquare := TKMButtonFlat.Create(Panel_Brushes, 9 + BTN_TKIND_W_SP*5 - BTN_BRUSH_SIZE - 1, 25, BTN_BRUSH_SIZE, BTN_BRUSH_SIZE, 593);
   BrushSquare.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_SQUARE, SC_MAPEDIT_SUB_MENU_ACTION_2);
   BrushSquare.OnClick := BrushChange;
   BrushSquare.TexOffsetX := 1;
@@ -123,7 +135,7 @@ begin
     for K := Low(SURFACES[I]) to High(SURFACES[I]) do
     if SURFACES[I,K] <> tkCustom then
     begin
-      BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, 9 + K * 36, 55 + I * 40, 34, 34, Combo[SURFACES[I,K], SURFACES[I,K], 1] + 1, rxTiles); // grass
+      BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, 9 + K*BTN_TKIND_W_SP, 55 + I * 40, BTN_TKIND_W, BTN_TKIND_W, Combo[SURFACES[I,K], SURFACES[I,K], 1] + 1, rxTiles); // grass
       BrushTable[I,K].Tag := Byte(SURFACES[I,K]);
       BrushTable[I,K].Tag2 := Byte(bbtBrush);
       HintStr := GetEnumName(TypeInfo(TKMTerrainKind), Integer(SURFACES[I,K]));
@@ -134,11 +146,11 @@ begin
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
     CreateBrushMaskBtn(MK);
 
-  Blending := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*3, 295, 34, 34, 677, rxGui);
+  Blending := TKMButtonFlat.Create(Panel_Brushes, 9 + BTN_TKIND_W_SP*3, 295, BTN_TKIND_W, BTN_TKIND_W, 677, rxGui);
   Blending.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   Blending.OnClick := BrushChange;
 
-  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 9 + 36*4, 295, 34, 34, 673, rxGui);
+  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 9 + BTN_TKIND_W_SP*4, 295, BTN_TKIND_W, BTN_TKIND_W, 673, rxGui);
   MagicBrush.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   MagicBrush.OnClick := BrushChange;
 
@@ -188,6 +200,17 @@ begin
   fSubMenuActionsCtrls[0] := BrushCircle;
   fSubMenuActionsCtrls[1] := BrushSquare;
   fSubMenuActionsCtrls[2] := BrushOptions;
+end;
+
+
+procedure TKMMapEdTerrainBrushes.BrushesScrollChangedVisibility(Sender: TObject; aVisible: Boolean);
+var
+  ScrollW: Integer;
+begin
+  ScrollW := Byte(aVisible)*(Panel_Brushes.ScrollV.Width + 3);
+//  BrushSize.Width := BTN_TKIND_W_SP*5 - 2*BTN_BRUSH_SIZE_W_SPACE - ScrollW;
+//  BrushCircle.Left := 9 + BTN_TKIND_W_SP*5 - BTN_BRUSH_SIZE_W_SPACE - BTN_BRUSH_SIZE - 1 - ScrollW;
+//  BrushSquare.Left := 9 + BTN_TKIND_W_SP*5 - BTN_BRUSH_SIZE - 1 - ScrollW;
 end;
 
 

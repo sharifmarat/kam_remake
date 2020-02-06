@@ -957,7 +957,7 @@ begin
       gRenderPool.SetRotation(-tbAngleX.Position, -tbAngleZ.Position, -tbAngleY.Position);
       gMain.Render;
     end;
-    HOUSE_BUILDING_STEP := tbBuildingStep.Position / tbBuildingStep.Max;
+    BLEND_FACTOR := tbBuildingStep.Position / tbBuildingStep.Max;
   end;
 
   //Logs
