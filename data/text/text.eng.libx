@@ -1155,13 +1155,13 @@
 1203:Soft3 mask: Use automatically created transitions
 1204:Custom TownHall units cost
 1205:Custom gold market prices
-1206:Options
-1207:Additional brush options
+1206:Blending level
+1207:Blending level of terrain transitions via masks
 1208:Additional brush options
 1209:Fix terrain brushes
 1210:Try to repair internal terrain information to make brushes work
 1211:Fix terrain brushes
-1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|in spots where manual tiles were used
+1212:Are you sure want to repair|all terrain brushes internal info?||That will allow to use brushes|in spots where manual tiles were used
 1213:Def.
 1214:Human player
 1215:Classic AI Player %d

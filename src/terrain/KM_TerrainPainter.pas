@@ -77,7 +77,7 @@ type
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
     ForcePaint: Boolean;
-    UseBlending: Boolean;
+    BlendingLevel: Byte;
     procedure InitEmpty;
 
     procedure LoadFromFile(const aFileName: UnicodeString);
@@ -1110,7 +1110,7 @@ begin
     ApplyMagicBrush(MaskKind);
 
 //  if gTerrain.Land[Y,X].LayersCnt > 0 then
-  gTerrain.Land[Y,X].UseBlending := UseBlending;
+  gTerrain.Land[Y,X].BlendingLvl := BlendingLevel;
 
   if fReplaceLayers then
   begin

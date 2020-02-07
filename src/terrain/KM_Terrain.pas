@@ -52,7 +52,7 @@ type
     Height: Byte;
     Obj: Word;
     IsCustom: Boolean;
-    UseBlending: Boolean;
+    BlendingLvl: Byte;
   end;
 
   TKMTerrainTile = record
@@ -63,7 +63,7 @@ type
     Height: Byte;
     Obj: Word;
     IsCustom: Boolean; //Custom tile (rotated tile, atm)
-    UseBlending: Boolean; //Use blending for layers transitions
+    BlendingLvl: Byte; //Use blending for layers transitions
 
     //Age of tree, another independent variable since trees can grow on fields
     TreeAge: Byte; //Not init=0 .. Full=TreeAgeFull Depending on this tree gets older and thus could be chopped
@@ -478,7 +478,7 @@ begin
         Land[I,J].Obj         := TileBasic.Obj;
         Land[I,J].LayersCnt   := TileBasic.LayersCnt;
         Land[I,J].IsCustom    := TileBasic.IsCustom;
-        Land[I,J].UseBlending := TileBasic.UseBlending;
+        Land[I,J].BlendingLvl := TileBasic.BlendingLvl;
 
         for L := 0 to TileBasic.LayersCnt - 1 do
           Land[I,J].Layer[L] := TileBasic.Layer[L];
@@ -528,7 +528,7 @@ var
       TileBasic.Height    := EnsureRange(30 + KaMRandom(7, 'TKMTerrain.SaveToFile.SetNewLand 2'), 0, 100);  //variation in Height
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
-      TileBasic.UseBlending := False;
+      TileBasic.BlendingLvl := 0;
       TileBasic.LayersCnt := 0;
     end
     else
@@ -538,7 +538,7 @@ var
       TileBasic.Obj         := Land[aFromY,aFromX].Obj;
       TileBasic.LayersCnt   := Land[aFromY,aFromX].LayersCnt;
       TileBasic.IsCustom    := Land[aFromY,aFromX].IsCustom;
-      TileBasic.UseBlending := Land[aFromY,aFromX].UseBlending;
+      TileBasic.BlendingLvl := Land[aFromY,aFromX].BlendingLvl;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
@@ -4288,7 +4288,7 @@ begin
       TileBasic.Height      := Land[I,K].Height;
       TileBasic.Obj         := Land[I,K].Obj;
       TileBasic.IsCustom    := Land[I,K].IsCustom;
-      TileBasic.UseBlending := Land[I,K].UseBlending;
+      TileBasic.BlendingLvl := Land[I,K].BlendingLvl;
       TileBasic.LayersCnt   := Land[I,K].LayersCnt;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
@@ -4544,7 +4544,7 @@ begin
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
-    S.Write(aTileBasic.UseBlending);
+    S.Write(aTileBasic.BlendingLvl);
     Inc(aMapDataSize);
     for L := 0 to aTileBasic.LayersCnt - 1 do
     begin
@@ -4579,7 +4579,7 @@ begin
     aTileBasic.BaseLayer.Corners := [0,1,2,3];
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
-    aTileBasic.UseBlending := False;
+    aTileBasic.BlendingLvl := 0;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
@@ -4606,10 +4606,10 @@ begin
       LayersCorners[2] := (Corners shr 4) and $3;
       LayersCorners[3] := (Corners shr 6) and $3;
 
-      if aGameRev > 10744 then //Blending option appeared only after r10745
-        aStream.Read(aTileBasic.UseBlending)
+      if aGameRev > 10745 then //Blending option appeared only after r10745
+        aStream.Read(aTileBasic.BlendingLvl)
       else
-        aTileBasic.UseBlending := False;
+        aTileBasic.BlendingLvl := 0;
 
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do

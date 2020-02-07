@@ -250,6 +250,8 @@ var
   HITPOINT_RESTORE_PACE: Word = 100;         //1 hitpoint is restored to units every X ticks (using Humbelum's advice)
 
 const
+  TERRAIN_MAX_BLENDING_LEVEL = 100;
+
   //Here we store options that are hidden somewhere in code
   //Unit condition
   CONDITION_PACE             = 10;         //Check unit conditions only once per 10 ticks
