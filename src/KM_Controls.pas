@@ -2386,7 +2386,7 @@ begin
   OldVisible := fVisible;
   fVisible := aValue;
 
-  //Only swap focus if visibility changed
+  //Swap focus and UpdateVisibility only if visibility changed
   if (OldVisible <> fVisible) then
   begin
     if Focusable or (Self is TKMPanel) then
