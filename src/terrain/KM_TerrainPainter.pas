@@ -76,7 +76,7 @@ type
   public
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
-    ForcePaint: Boolean;
+    OverrideCustomTiles: Boolean;
     BlendingLevel: Byte;
     procedure InitEmpty;
 
@@ -469,7 +469,7 @@ begin
 //    or (LandTerKind[pY  ,pX+1].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX+1].TerKind <> tkCustom) then
-  if not ForcePaint and gTerrain.Land[pY,pX].IsCustom then Exit;
+  if not OverrideCustomTiles and gTerrain.Land[pY,pX].IsCustom then Exit;
 
   A := (LandTerKind[pY    , pX    ].TerKind);
   B := (LandTerKind[pY    , pX + 1].TerKind);
@@ -1047,7 +1047,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
     MaskType: TKMTileMaskType;
   begin
     //Do not check tile node corners when using 'force paint' mode
-    if not ForcePaint then
+    if not OverrideCustomTiles then
     begin
       TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
 
@@ -1101,7 +1101,7 @@ var
   MaskKind: TKMTileMaskKind;
   GenInfo: TKMGenTerrainInfo;
 begin
-  if not gTerrain.TileInMapCoords(X, Y) or (not ForcePaint and gTerrain.Land[Y,X].IsCustom) then Exit;
+  if not gTerrain.TileInMapCoords(X, Y) or (not OverrideCustomTiles and gTerrain.Land[Y,X].IsCustom) then Exit;
 
   MaskKind := TKMTileMaskKind(gGameCursor.MapEdBrushMask);
   if (MaskKind = mkNone) and not fReplaceLayers then Exit;

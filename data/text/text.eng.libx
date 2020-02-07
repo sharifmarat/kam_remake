@@ -1146,7 +1146,7 @@
 1194:Ctrl + Mouse wheel
 1195:Alt + Mouse wheel
 1196:Shift + Mouse wheel
-1197:Force paint
+1197:Override manually|set tiles
 1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
 1199:Magic brush: Using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
 1200:No mask: Use exiting tiles for transitions

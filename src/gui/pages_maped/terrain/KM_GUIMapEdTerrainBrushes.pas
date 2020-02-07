@@ -31,7 +31,7 @@ type
       BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
       MagicBrush: TKMButtonFlat;
       BrushBlending: TKMTrackBar;
-      RandomElements, ForcePaint: TKMCheckBox;
+      RandomElements, OverrideCustomTiles: TKMCheckBox;
       Button_FixTerrainBrushes: TKMButton;
       PopUp_FixTerrainConfirm: TKMPopUpPanel;
         Button_FixTerrain_Yes, Button_FixTerrain_No: TKMButton;
@@ -154,11 +154,11 @@ begin
   RandomElements.OnClick := BrushChange;
   RandomElements.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM];
 
-  ForcePaint := TKMCheckBox.Create(Panel_Brushes, 9, 430, 280, 40, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fntMetal);
-  ForcePaint.OnClick := BrushChange;
-  ForcePaint.Hint := gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT_HINT];
+  OverrideCustomTiles := TKMCheckBox.Create(Panel_Brushes, 9, 430, 280, 40, gResTexts[TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES], fntMetal);
+  OverrideCustomTiles.OnClick := BrushChange;
+  OverrideCustomTiles.Hint := gResTexts[TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES_HINT];
 
-  Button_FixTerrainBrushes := TKMButton.Create(Panel_Brushes, 9, 460, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN], bsGame);
+  Button_FixTerrainBrushes := TKMButton.Create(Panel_Brushes, 9, 480, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN], bsGame);
   Button_FixTerrainBrushes.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT];
   Button_FixTerrainBrushes.OnClick := BrushFixTerrain_Click;
 
@@ -184,7 +184,7 @@ procedure TKMMapEdTerrainBrushes.BrushChange(Sender: TObject);
 begin
   gGameCursor.MapEdSize := BrushSize.Position;
   gGame.MapEditor.TerrainPainter.RandomizeTiling := RandomElements.Checked;
-  gGame.MapEditor.TerrainPainter.ForcePaint := ForcePaint.Checked;
+  gGame.MapEditor.TerrainPainter.OverrideCustomTiles := OverrideCustomTiles.Checked;
   gGame.MapEditor.TerrainPainter.BlendingLevel := BrushBlending.Position;
 
   if gGameCursor.Mode <> cmBrush then
