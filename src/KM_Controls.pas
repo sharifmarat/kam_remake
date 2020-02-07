@@ -1,4 +1,4 @@
-unit KM_Controls;
+﻿unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -5580,9 +5580,10 @@ procedure TKMScrollPanel.UpdateScrollH(Sender: TObject);
 var
   ChildsRect: TKMRect;
   NewPos: Integer;
+  ShowScroll: Boolean;
 begin
   ChildsRect := GetChildsRect;
-  fScrollBarH.Hide;
+  ShowScroll := False;
 
   if (saHorizontal in fScrollAxisSet) then
   begin
@@ -5593,7 +5594,7 @@ begin
 
       if NewPos > fScrollBarH.MaxValue then
         fLeft := Left + NewPos - fScrollBarH.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
-      fScrollBarH.DoSetVisible;
+      ShowScroll := True;
     end else begin
       fScrollBarH.Position := 0;
       if Left <> fClipRect.Left then
@@ -5602,6 +5603,8 @@ begin
   end;
 
   fScrollBarH.Width := Width;
+  if ShowScroll <> fScrollBarH.Visible then
+    fScrollBarH.Visible := ShowScroll;
 end;
 
 
@@ -5616,10 +5619,11 @@ procedure TKMScrollPanel.UpdateScrollV(Sender: TObject);
 var
   ChildsRect: TKMRect;
   NewPos: Integer;
+  ShowScroll: Boolean;
 begin
   ChildsRect := GetChildsRect;
   //Do not set Visible, avoid trigger OnChangeVisibility
-  fScrollBarV.Hide;
+  ShowScroll := False;
 
   if (saVertical in fScrollAxisSet) then
   begin
@@ -5630,7 +5634,7 @@ begin
 
       if NewPos > fScrollBarV.MaxValue then
         fTop := Top + NewPos - fScrollBarV.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
-      fScrollBarV.DoSetVisible;
+      ShowScroll := True;
     end else begin
       fScrollBarV.Position := 0;
       if Top <> fClipRect.Top then
@@ -5639,6 +5643,8 @@ begin
   end;
 
   fScrollBarV.Height := Height;
+  if ShowScroll <> fScrollBarV.Visible then
+    fScrollBarV.Visible := ShowScroll;
 end;
 
 
