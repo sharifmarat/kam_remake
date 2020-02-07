@@ -203,7 +203,8 @@ begin
   fGuiExtras := TKMMapEdExtras.Create(Panel_Main, PageChanged);
   fGuiMessage := TKMMapEdMessage.Create(Panel_Main);
 
-  Panel_Common := TKMPanel.Create(Panel_Main,TB_PAD_MAP_ED,262,TB_MAP_ED_WIDTH,768);
+  Panel_Common := TKMPanel.Create(Panel_Main,TB_PAD_MAP_ED,262,TB_MAP_ED_WIDTH,Panel_Main.Height - 262);
+  Panel_Common.Anchors := [anLeft, anTop, anBottom];
 
   {5 big tabs}
   Button_Main[1] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*0, 0, BIG_TAB_W, BIG_TAB_H, 381, rxGui, bsGame);
