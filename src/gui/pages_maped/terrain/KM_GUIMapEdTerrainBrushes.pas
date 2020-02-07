@@ -102,7 +102,7 @@ begin
   fLastBrush := Byte(SURFACES[0,0]);
   fLastMagicBrush := False;
 
-  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH + 20, aParent.Height - 28, [saVertical], bsMenu, ssCommon);
+  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH + 22, aParent.Height - 28, [saVertical], bsMenu, ssCommon);
   Panel_Brushes.Anchors := [anLeft, anTop, anBottom];
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_MAP_ED_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter);
@@ -139,7 +139,8 @@ begin
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
     CreateBrushMaskBtn(MK);
 
-  TKMLabel.Create(Panel_Brushes, 9, 305 + 40, gResTexts[TX_MAPED_TERRAIN_BRUSH_BLENDING], fntMetal, taLeft);
+  with TKMLabel.Create(Panel_Brushes, 9, 305 + 40, TB_MAP_ED_WIDTH - 9, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_BLENDING], fntMetal, taLeft) do
+    Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT];
 
   BrushBlending := TKMTrackBar.Create(Panel_Brushes, 9, 305 + 60, TB_MAP_ED_WIDTH - 49, 0, TERRAIN_MAX_BLENDING_LEVEL);
   BrushBlending.Position := 0;
