@@ -80,8 +80,8 @@ begin
 
   fOnPageChange := aOnPageChange;
 
-  Panel_Terrain := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 50);
-  Panel_Terrain.AnchorsStretch;
+  Panel_Terrain := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, aParent.Height - 45);
+  Panel_Terrain.Anchors := [anLeft, anTop, anBottom];
     for I := Low(TKMTerrainTab) to High(TKMTerrainTab) do
     begin
       Button_Terrain[I] := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + SMALL_PAD_W * Byte(I), 0, SMALL_TAB_W, SMALL_TAB_H, BtnGlyph[I], rxGui, bsGame);

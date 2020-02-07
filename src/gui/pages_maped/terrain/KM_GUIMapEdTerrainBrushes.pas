@@ -23,7 +23,6 @@ type
     procedure BrushSettings_Click(Sender: TObject);
     procedure BrushFixTerrain_Click(Sender: TObject);
     procedure FixTerrainBrushes(Sender: TObject);
-    procedure BrushesScrollChangedVisibility(Sender: TObject; aVisible: Boolean);
   protected
     Panel_Brushes: TKMScrollPanel;
       BrushSize: TKMTrackBar;
@@ -107,9 +106,8 @@ begin
   fLastBrush := Byte(SURFACES[0,0]);
   fLastMagicBrush := False;
 
-  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH, 300, [saVertical], bsMenu, ssCommon);
-  Panel_Brushes.AnchorsStretch;
-  Panel_Brushes.ScrollV.OnChangeVisibility := BrushesScrollChangedVisibility;
+  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH + 20, aParent.Height - 28, [saVertical], bsMenu, ssCommon);
+  Panel_Brushes.Anchors := [anLeft, anTop, anBottom];
 //  TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_MAP_ED_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter);
@@ -200,17 +198,6 @@ begin
   fSubMenuActionsCtrls[0] := BrushCircle;
   fSubMenuActionsCtrls[1] := BrushSquare;
   fSubMenuActionsCtrls[2] := BrushOptions;
-end;
-
-
-procedure TKMMapEdTerrainBrushes.BrushesScrollChangedVisibility(Sender: TObject; aVisible: Boolean);
-var
-  ScrollW: Integer;
-begin
-  ScrollW := Byte(aVisible)*(Panel_Brushes.ScrollV.Width + 3);
-//  BrushSize.Width := BTN_TKIND_W_SP*5 - 2*BTN_BRUSH_SIZE_W_SPACE - ScrollW;
-//  BrushCircle.Left := 9 + BTN_TKIND_W_SP*5 - BTN_BRUSH_SIZE_W_SPACE - BTN_BRUSH_SIZE - 1 - ScrollW;
-//  BrushSquare.Left := 9 + BTN_TKIND_W_SP*5 - BTN_BRUSH_SIZE - 1 - ScrollW;
 end;
 
 
