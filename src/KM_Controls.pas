@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -2385,11 +2385,14 @@ begin
   OldVisible := fVisible;
   fVisible := aValue;
 
-  //Only swap focus if visibility changed
-  if (OldVisible <> fVisible) and (Focusable or (Self is TKMPanel)) then
-    MasterParent.fMasterControl.UpdateFocus(Self);
+  //Swap focus and UpdateVisibility only if visibility changed
+  if (OldVisible <> fVisible) then
+  begin
+    if Focusable or (Self is TKMPanel) then
+      MasterParent.fMasterControl.UpdateFocus(Self);
 
-  UpdateVisibility;
+    UpdateVisibility;
+  end;
 end;
 
 
