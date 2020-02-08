@@ -4545,7 +4545,7 @@ begin
   begin
     S.Write(PackLayersCorners(aTileBasic));
     S.Write(aTileBasic.BlendingLvl);
-    Inc(aMapDataSize);
+    Inc(aMapDataSize, 2);
     for L := 0 to aTileBasic.LayersCnt - 1 do
     begin
       S.Write(aTileBasic.Layer[L].Terrain);
