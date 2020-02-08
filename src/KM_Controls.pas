@@ -1,4 +1,4 @@
-unit KM_Controls;
+﻿unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -104,6 +104,7 @@ type
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
     fHint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
+    fMouseWheelStep: Integer;
 
     fPaintLayer: Integer;
 
@@ -230,6 +231,8 @@ type
     property ID: Integer read fID;
     function GetIDsStr: String;
     property Hint: UnicodeString read GetHint write SetHint; //Text that shows up when cursor is over that control, mainly for Buttons
+
+    property MouseWheelStep: Integer read fMouseWheelStep write fMouseWheelStep;
 
     // "Self" coordinates - this is the coordinates of control itself.
     // For simple controls they are equal to normal coordinates
@@ -1919,6 +1922,7 @@ begin
   fVisible      := True;
   Tag           := 0;
   fHint         := '';
+  fMouseWheelStep := 1;
   fPaintLayer   := aPaintLayer;
   fControlIndex := -1;
   AutoFocusable := True;
@@ -5319,7 +5323,7 @@ begin
   NewPos := Position;
 
   if WheelDelta <> 0 then
-    NewPos := EnsureRange(NewPos - Step*Math.Sign(WheelDelta), fMinValue, fMaxValue);
+    NewPos := EnsureRange(NewPos - Step*fMouseWheelStep*Math.Sign(WheelDelta), fMinValue, fMaxValue);
 
   if NewPos <> Position then
   begin
