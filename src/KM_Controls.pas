@@ -1,4 +1,4 @@
-unit KM_Controls;
+﻿unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -1061,6 +1061,8 @@ type
 
     function AddChild(aChild: TKMControl): Integer; override;
 
+    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
@@ -2063,7 +2065,15 @@ begin
   if Assigned(fOnMouseWheel) then
     fOnMouseWheel(Self, WheelDelta, aHandled)
   else
-    aHandled := DoHandleMouseWheelByDefault;
+  if fParent <> nil then
+  begin
+    if DoHandleMouseWheelByDefault then
+      fParent.MouseWheel(Sender, WheelDelta, aHandled)
+    else
+      aHandled := False;
+  end 
+  else
+    aHandled := False;
 end;
 
 
@@ -5620,6 +5630,17 @@ begin
   aChild.fOnPositionSet := UpdateScrolls;
   aChild.fOnChangeVisibility := UpdateScrolls;
   aChild.fOnChangeEnableStatus := UpdateScrolls;
+end;
+
+
+procedure TKMScrollPanel.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+begin
+  if saVertical in fScrollAxisSet then
+    fScrollBarV.MouseWheel(Sender, WheelDelta, aHandled)
+  else if saHorizontal in fScrollAxisSet then
+    fScrollBarH.MouseWheel(Sender, WheelDelta, aHandled)
+  else
+    inherited;
 end;
 
 
