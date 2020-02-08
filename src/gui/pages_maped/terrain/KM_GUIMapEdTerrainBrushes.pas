@@ -144,6 +144,7 @@ begin
 
   BrushBlending := TKMTrackBar.Create(Panel_Brushes, 9, 305 + 60, TB_MAP_ED_WIDTH - 49, 0, TERRAIN_MAX_BLENDING_LEVEL);
   BrushBlending.Position := 0;
+  BrushBlending.Step := 5;
   BrushBlending.OnChange := BrushChange;
   BrushBlending.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT];
 
@@ -151,11 +152,11 @@ begin
   MagicBrush.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   MagicBrush.OnClick := BrushChange;
 
-  RandomElements := TKMCheckBox.Create(Panel_Brushes, 9, 405, 280, 40, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fntMetal);
+  RandomElements := TKMCheckBox.Create(Panel_Brushes, 9, 405, TB_MAP_ED_WIDTH - 9, 40, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fntMetal);
   RandomElements.OnClick := BrushChange;
   RandomElements.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM];
 
-  OverrideCustomTiles := TKMCheckBox.Create(Panel_Brushes, 9, 430, 280, 40, gResTexts[TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES], fntMetal);
+  OverrideCustomTiles := TKMCheckBox.Create(Panel_Brushes, 9, 430, TB_MAP_ED_WIDTH - 9, 40, gResTexts[TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES], fntMetal);
   OverrideCustomTiles.OnClick := BrushChange;
   OverrideCustomTiles.Hint := gResTexts[TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES_HINT];
 
