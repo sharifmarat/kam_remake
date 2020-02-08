@@ -717,7 +717,7 @@ begin
             TexC := GetTileUV(TexOffset + Land[I,K].BaseLayer.Terrain, Land[I,K].BaseLayer.Rotation);
 
             glBegin(GL_TRIANGLE_FAN);
-              glColor4f(1,1,1,0.5);
+              glColor4f(1,1,1,1);
               RenderQuadTexture(TexC, K, I);
             glEnd;
           end;
