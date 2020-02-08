@@ -132,7 +132,7 @@ const
 
 implementation
 uses
-  KM_Resource, KM_ResKeys, KM_RenderUI;
+  SysUtils, KM_Resource, KM_ResKeys, KM_RenderUI, KM_Defaults;
 
 
 { TKMUserInterface }
@@ -197,6 +197,9 @@ begin
   else
   begin
     Label_Hint.Caption := TKMControl(Sender).Hint;
+    if SHOW_CONTROLS_ID then
+      Label_Hint.Caption := Label_Hint.Caption + ' ' + TKMControl(Sender).GetIDsStr;
+
     TxtSize := gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption);
     Bevel_HintBG.Width := 10 + TxtSize.X;
     Bevel_HintBG.Height := 2 + TxtSize.Y;
@@ -205,6 +208,7 @@ begin
     Label_Hint.Top := Bevel_HintBG.Top + 2;
     fPrevHintMessage := TKMControl(Sender).Hint;
   end;
+
   fPrevHint := Sender;
 end;
 

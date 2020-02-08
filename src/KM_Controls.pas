@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -228,6 +228,7 @@ type
     property Height: Integer read GetHeight write SetHeight;
     property Center: TKMPoint read GetCenter;
     property ID: Integer read fID;
+    function GetIDsStr: String;
     property Hint: UnicodeString read GetHint write SetHint; //Text that shows up when cursor is over that control, mainly for Buttons
 
     // "Self" coordinates - this is the coordinates of control itself.
@@ -2031,6 +2032,14 @@ begin
     end;
   // No code is allowed after DoClick, as control object could be destroyed,
   // that means we will modify freed memory, which will cause memory leaks
+end;
+
+
+function TKMControl.GetIDsStr: String;
+begin
+  if Self = nil then Exit('');
+
+  Result := IntToStr(fID) + ' ' + fParent.GetIDsStr;
 end;
 
 
