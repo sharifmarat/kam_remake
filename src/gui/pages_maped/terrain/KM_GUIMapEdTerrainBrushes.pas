@@ -145,7 +145,7 @@ begin
 
   BrushBlending := TKMTrackBar.Create(Panel_Brushes, 9, 305 + 60, TB_MAP_ED_WIDTH - 49, 0, TERRAIN_MAX_BLENDING_LEVEL);
   BrushBlending.Position := 0;
-  BrushBlending.Step := 5;
+  BrushBlending.MouseWheelStep := 5;
   BrushBlending.OnChange := BrushChange;
   BrushBlending.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT];
 
