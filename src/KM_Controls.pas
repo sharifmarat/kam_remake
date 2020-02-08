@@ -241,6 +241,7 @@ type
     property SelfHeight: Integer read GetSelfHeight;
 
     property Rect: TKMRect read GetControlRect;
+    property AbsRect: TKMRect read GetControlAbsRect;
     property Anchors: TKMAnchorsSet read fAnchors write SetAnchors;
     property Enabled: Boolean read fEnabled write SetEnabled;
     property Visible: Boolean read GetVisible write SetVisible;
