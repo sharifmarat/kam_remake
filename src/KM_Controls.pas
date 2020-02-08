@@ -166,6 +166,19 @@ type
     procedure SetTop(aValue: Integer); virtual;
     procedure SetHeight(aValue: Integer); virtual;
     procedure SetWidth(aValue: Integer); virtual;
+
+    function GetAbsDrawLeft: Integer; virtual;
+    function GetAbsDrawTop: Integer; virtual;
+    function GetAbsDrawRight: Integer; virtual;
+    function GetAbsDrawBottom: Integer; virtual;
+
+    property AbsDrawLeft: Integer read GetAbsDrawLeft;
+    property AbsDrawRight: Integer read GetAbsDrawRight;
+    property AbsDrawTop: Integer read GetAbsDrawTop;
+    property AbsDrawBottom: Integer read GetAbsDrawBottom;
+
+    function GetDrawRect: TKMRect; virtual;
+
     procedure SetVisible(aValue: Boolean); virtual;
     procedure SetEnabled(aValue: Boolean); virtual;
     procedure SetAnchors(aValue: TKMAnchorsSet); virtual;
@@ -295,6 +308,8 @@ type
     //e.g. scrollbar on a listbox
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+
+    function GetDrawRect: TKMRect; override;
     procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
     procedure ControlMouseDown(Sender: TObject; Shift: TShiftState); override;
     procedure ControlMouseUp(Sender: TObject; Shift: TShiftState); override;
@@ -1030,6 +1045,13 @@ type
     procedure SetTop(aValue: Integer); override;
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+
+    function GetDrawRect: TKMRect; override;
+    
+    function GetAbsDrawLeft: Integer; override;
+    function GetAbsDrawTop: Integer; override;
+    function GetAbsDrawRight: Integer; override;
+    function GetAbsDrawBottom: Integer; override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
                        aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
@@ -2050,8 +2072,7 @@ function TKMControl.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aI
 begin
   Result := (Hitable or aIncludeNotHitable)
             and (fEnabled or aIncludeDisabled)
-            and InRange(X, AbsLeft, AbsLeft + fWidth)
-            and InRange(Y, AbsTop, AbsTop + fHeight);
+            and KMInRect(KMPoint(X,Y), GetDrawRect);
 end;
 
 
@@ -2158,6 +2179,28 @@ begin
     Result := Round(fTop)
   else
     Result := Round(fTop * Parent.Scale) + Parent.GetAbsTop;
+end;
+//-------------------------------
+
+//AbsDrawCoordinates
+function TKMControl.GetAbsDrawLeft: Integer;
+begin
+  Result := GetAbsLeft;
+end;
+
+function TKMControl.GetAbsDrawTop: Integer;
+begin
+  Result := GetAbsTop;
+end;
+
+function TKMControl.GetAbsDrawRight: Integer;
+begin
+  Result := GetAbsRight;
+end;
+
+function TKMControl.GetAbsDrawBottom: Integer;
+begin
+  Result := GetAbsBottom;
 end;
 //-------------------------------
 
@@ -2309,6 +2352,17 @@ begin
 
   if Assigned(fOnSizeSet) then
     fOnSizeSet(Self);
+end;
+
+
+function TKMControl.GetDrawRect: TKMRect;
+begin
+  if fParent <> nil then
+  begin
+    Result := fParent.GetDrawRect;
+    Result := KMClipRect(Result, AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+  end else
+    Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
 end;
 
 
@@ -2755,6 +2809,16 @@ begin
       Childs[I].SetLeftF(Childs[I].fLeft + (aValue - fWidth) / 2);
 
   inherited;
+end;
+
+
+function TKMPanel.GetDrawRect: TKMRect;
+var
+  I: Integer;
+begin
+  Result := GetControlAbsRect;
+  for I := 0 to ChildCount - 1 do
+    KMRectIncludeRect(Result, Childs[I].GetControlAbsRect);
 end;
 
 
@@ -5771,10 +5835,36 @@ begin
 end;
 
 
+function TKMScrollPanel.GetDrawRect: TKMRect;
+begin
+  Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+end;
+
+function TKMScrollPanel.GetAbsDrawLeft: Integer;
+begin
+  Result := Parent.AbsLeft + fClipRect.Left;
+end;
+
+function TKMScrollPanel.GetAbsDrawTop: Integer;
+begin
+  Result := Parent.AbsTop + fClipRect.Top;
+end;
+
+function TKMScrollPanel.GetAbsDrawRight: Integer;
+begin
+  Result := Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible);
+end;
+
+function TKMScrollPanel.GetAbsDrawBottom: Integer;
+begin
+  Result := Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible);
+end;
+
+
 procedure TKMScrollPanel.PaintPanel(aPaintLayer: Integer);
 begin
-  TKMRenderUI.SetupClipX(Parent.AbsLeft + fClipRect.Left, Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible));
-  TKMRenderUI.SetupClipY(Parent.AbsTop + fClipRect.Top, Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible));
+  TKMRenderUI.SetupClipX(AbsDrawLeft, AbsDrawRight);
+  TKMRenderUI.SetupClipY(AbsDrawTop, AbsDrawBottom);
 
   inherited;
 
