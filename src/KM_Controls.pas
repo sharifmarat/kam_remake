@@ -5644,9 +5644,9 @@ end;
 
 procedure TKMScrollPanel.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
 begin
-  if saVertical in fScrollAxisSet then
+  if (saVertical in fScrollAxisSet) and fScrollBarV.Visible then
     fScrollBarV.MouseWheel(Sender, WheelDelta, aHandled)
-  else if saHorizontal in fScrollAxisSet then
+  else if (saHorizontal in fScrollAxisSet) and fScrollBarH.Visible then
     fScrollBarH.MouseWheel(Sender, WheelDelta, aHandled)
   else
     inherited;
