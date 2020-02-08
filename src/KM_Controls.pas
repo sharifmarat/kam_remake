@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -138,6 +138,7 @@ type
     function GetAbsTop: Integer;
     function GetAbsRight: Integer;
     function GetAbsBottom: Integer;
+
     function GetLeft: Integer;
     function GetTop: Integer;
     function GetRight: Integer;
@@ -155,6 +156,7 @@ type
     procedure SetTopF(aValue: Single);
     procedure SetLeftF(aValue: Single);
     function GetControlRect: TKMRect;
+    function GetControlAbsRect: TKMRect;
     function GetIsFocused: Boolean;
     function GetIsClickable: Boolean;
 
@@ -204,6 +206,7 @@ type
     property AbsRight: Integer read GetAbsRight;
     property AbsTop: Integer read GetAbsTop write SetAbsTop;
     property AbsBottom: Integer read GetAbsBottom;
+
     property Left: Integer read GetLeft write SetLeft;
     property Right: Integer read GetRight;
     property Top: Integer read GetTop write SetTop;
@@ -2130,6 +2133,7 @@ begin
     Top := Round((aValue - Parent.AbsTop) / Parent.Scale);
 end;
 
+//GetAbsCoordinates
 function TKMControl.GetAbsBottom: Integer;
 begin
   Result := GetAbsTop + GetHeight;
@@ -2155,6 +2159,7 @@ begin
   else
     Result := Round(fTop * Parent.Scale) + Parent.GetAbsTop;
 end;
+//-------------------------------
 
 function TKMControl.GetLeft: Integer;
 begin
@@ -2255,6 +2260,12 @@ end;
 function TKMControl.GetControlRect: TKMRect;
 begin
   Result := KMRect(Left, Top, Left + Width, Top + Height);
+end;
+
+
+function TKMControl.GetControlAbsRect: TKMRect;
+begin
+  Result := KMRect(AbsLeft, AbsTop, AbsRight, AbsBottom);
 end;
 
 
