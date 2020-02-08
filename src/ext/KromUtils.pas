@@ -52,6 +52,7 @@ function Max(const A,B,C: Single): Single; overload;
   function decs(const AText: string; Len, RunAsFunction: integer): string; overload;
   function RemoveQuotes(const Input: string): string;
   procedure SwapStr(var A, B: string);
+  procedure SwapBool(var A, B: Boolean);
   procedure SwapInt(var A, B: Byte); overload;
   procedure SwapInt(var A, B: ShortInt); overload;
   procedure SwapInt(var A, B: SmallInt); overload;
@@ -416,9 +417,17 @@ begin
 end;
 
 
+procedure SwapBool(var A, B: Boolean);
+var
+  S: Boolean;
+begin
+  S := A; A := B; B := S;
+end;
+
+
 procedure SwapInt(var A, B: byte);
 var
-  S: byte;
+  S: Byte;
 begin
   S := A; A := B; B := S;
 end;
@@ -426,47 +435,53 @@ end;
 
 procedure SwapInt(var A, B: shortint);
 var
-  S: shortint;
+  S: Shortint;
 begin
   S := A; A := B; B := S;
 end;
 
 
 procedure SwapInt(var A,B:smallint);
-var s:smallint;
+var
+  s: Smallint;
 begin
   s:=A; A:=B; B:=s;
 end;
 
 
 procedure SwapInt(var A,B:word);
-var s:word;
+var
+  s: Word;
 begin
   s:=A; A:=B; B:=s;
 end;
 
 procedure SwapInt(var A,B: Integer);
-var s:integer;
+var
+  s: Integer;
 begin
   s:=A; A:=B; B:=s;
 end;
 
 procedure SwapInt(var A,B: Cardinal);
-var s:cardinal;
+var
+  s: Cardinal;
 begin
   s:=A; A:=B; B:=s;
 end;
 
 {$IFDEF WDC}
 procedure SwapInt(var A,B: NativeUInt);
-var s: NativeUInt;
+var
+  s: NativeUInt;
 begin
   s:=A; A:=B; B:=s;
 end;
 {$ENDIF}
 
 procedure SwapFloat(var A,B:single);
-var s: Single;
+var
+  s: Single;
 begin
   s:=A; A:=B; B:=s;
 end;
