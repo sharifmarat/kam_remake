@@ -102,7 +102,8 @@ type
   function KMRectGrowBottomLeft(const aRect: TKMRect; aInset: Integer = 1): TKMRect;
   function KMRectShinkTopLeft(const aRect: TKMRect): TKMRect;
   function KMRectGrowBottomRight(const aRect: TKMRect; aInset: Integer = 1): TKMRect;
-  function KMClipRect(const aRect: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect;
+  function KMClipRect(const aRect: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect; overload;
+  function KMClipRect(const aRect1, aRect2: TKMRect): TKMRect; overload;
   function KMRectCorners(const aRect: TKMRect): TKMPointArray;
   function KMInRect(const aPoint: TKMPoint; const aRect: TKMRect): Boolean; overload;
   function KMInRect(const aPoint: TKMPointF; const aRect: TKMRect): Boolean; overload;
@@ -534,6 +535,12 @@ begin
   Result.Right  := EnsureRange(aRect.Right, X1, X2);
   Result.Top    := EnsureRange(aRect.Top, Y1, Y2);
   Result.Bottom := EnsureRange(aRect.Bottom, Y1, Y2);
+end;
+
+
+function KMClipRect(const aRect1, aRect2: TKMRect): TKMRect;
+begin
+  Result := KMClipRect(aRect1, aRect2.Left, aRect2.Top, aRect2.Right, aRect2.Bottom);
 end;
 
 
