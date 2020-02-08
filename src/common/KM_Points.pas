@@ -51,6 +51,8 @@ type
     function ToString: String;
     function Width: Integer;
     function Height: Integer;
+    class operator Equal(const A, B: TKMRect): Boolean;
+    class operator NotEqual(const A, B: TKMRect): Boolean;
   end;
 
   TKMRectF = packed record Left, Top, Right, Bottom: Single end;
@@ -258,6 +260,16 @@ end;
 function TKMRect.Height: Integer;
 begin
   Result := Bottom - Top + 1;
+end;
+
+class operator TKMRect.Equal(const A, B: TKMRect): Boolean;
+begin
+  Result := KMSameRect(A,B);
+end;
+
+class operator TKMRect.NotEqual(const A, B: TKMRect): Boolean;
+begin
+  Result := not KMSameRect(A,B);
 end;
 
 function TKMRangeInt.ToString: String;
