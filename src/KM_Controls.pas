@@ -2816,6 +2816,8 @@ function TKMPanel.GetDrawRect: TKMRect;
 var
   I: Integer;
 begin
+  //Consider DrawRect, as enlarged absRect with all its childs
+  //Need to include all childs, because sometimes childs can lay out of Panel AbsRect (f.e. on TKMScrollPanel those are scroll bars
   Result := GetControlAbsRect;
   for I := 0 to ChildCount - 1 do
     KMRectIncludeRect(Result, Childs[I].GetControlAbsRect);
