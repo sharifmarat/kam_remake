@@ -460,8 +460,8 @@ TX_MAPED_TERRAIN_OBJECTS_REMOVE = 393; //Remove an object
 TX_MAPED_TERRAIN_MAGIC_WATER = 672; //
 TX_MAPED_TERRAIN_MAGIC_WATER_HINT = 671; //Magic water - sets the direction for all tiles in a body of water
 TX_MAPED_TERRAIN_EYEDROPPER_HINT = 965; //Eyedropper - select the type of tile under the cursor
-TX_MAPED_TERRAIN_FORCE_PAINT = 1197; //Force paint
-TX_MAPED_TERRAIN_FORCE_PAINT_HINT = 1198; //Force to override manually set tiles from tiles table while painting with brushes (if possible)
+TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES = 1197; //Override manually|set tiles
+TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES_HINT = 1198; //Force to override manually set tiles from tiles table while painting with brushes (if possible)
 TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT = 1199; //Magic brush - using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
 TX_MAPED_TERRAIN_NO_MASK_HINT = 1200; //No mask - use exiting tiles for transitions
 TX_MAPED_TERRAIN_MASK_1_HINT = 1201; //Soft1 mask - use automatically created transitions
@@ -1248,14 +1248,14 @@ TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during cu
 TX_MAP_CUSTOM_PARAM_TH_TROOP_COST = 1204; //Custom TownHall units cost
 TX_MAP_CUSTOM_PARAM_MARKET_PRICE = 1205; //Custom gold market prices
 
-TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1206; //Additional options
-TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT = 1207; //Additional brush options
+TX_MAPED_TERRAIN_BRUSH_BLENDING = 1206; //Blending level
+TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT = 1207; //Blending level of terrain transitions via masks
 TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1208; //Additional brush options
 
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN = 1209; //Fix terrain brushes
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1210; //Try to repair internal terrain information to make brushes work
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE = 1211; //Fix terrain brushes
-TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|in spots where manual tiles were used
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair|all terrain brushes internal info?||That will allow to use brushes|in spots where manual tiles were used
 
 TX_MAPED_PLAYERS_DEFAULT_SHORT = 1213; //Def.
 

@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -138,6 +138,7 @@ type
     function GetAbsTop: Integer;
     function GetAbsRight: Integer;
     function GetAbsBottom: Integer;
+
     function GetLeft: Integer;
     function GetTop: Integer;
     function GetRight: Integer;
@@ -155,6 +156,7 @@ type
     procedure SetTopF(aValue: Single);
     procedure SetLeftF(aValue: Single);
     function GetControlRect: TKMRect;
+    function GetControlAbsRect: TKMRect;
     function GetIsFocused: Boolean;
     function GetIsClickable: Boolean;
 
@@ -164,6 +166,19 @@ type
     procedure SetTop(aValue: Integer); virtual;
     procedure SetHeight(aValue: Integer); virtual;
     procedure SetWidth(aValue: Integer); virtual;
+
+    function GetAbsDrawLeft: Integer; virtual;
+    function GetAbsDrawTop: Integer; virtual;
+    function GetAbsDrawRight: Integer; virtual;
+    function GetAbsDrawBottom: Integer; virtual;
+
+    property AbsDrawLeft: Integer read GetAbsDrawLeft;
+    property AbsDrawRight: Integer read GetAbsDrawRight;
+    property AbsDrawTop: Integer read GetAbsDrawTop;
+    property AbsDrawBottom: Integer read GetAbsDrawBottom;
+
+    function GetDrawRect: TKMRect; virtual;
+
     procedure SetVisible(aValue: Boolean); virtual;
     procedure SetEnabled(aValue: Boolean); virtual;
     procedure SetAnchors(aValue: TKMAnchorsSet); virtual;
@@ -204,6 +219,7 @@ type
     property AbsRight: Integer read GetAbsRight;
     property AbsTop: Integer read GetAbsTop write SetAbsTop;
     property AbsBottom: Integer read GetAbsBottom;
+
     property Left: Integer read GetLeft write SetLeft;
     property Right: Integer read GetRight;
     property Top: Integer read GetTop write SetTop;
@@ -212,6 +228,7 @@ type
     property Height: Integer read GetHeight write SetHeight;
     property Center: TKMPoint read GetCenter;
     property ID: Integer read fID;
+    function GetIDsStr: String;
     property Hint: UnicodeString read GetHint write SetHint; //Text that shows up when cursor is over that control, mainly for Buttons
 
     // "Self" coordinates - this is the coordinates of control itself.
@@ -291,6 +308,7 @@ type
     //e.g. scrollbar on a listbox
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+
     procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
     procedure ControlMouseDown(Sender: TObject; Shift: TShiftState); override;
     procedure ControlMouseUp(Sender: TObject; Shift: TShiftState); override;
@@ -298,6 +316,8 @@ type
     procedure UpdateEnableStatus; override;
     function DoPanelHandleMouseWheelByDefault: Boolean; virtual;
     procedure DoPaint(aPaintLayer: Integer); virtual;
+
+    procedure Enlarge(aChild: TKMControl);
   public
     PanelHandleMouseWheelByDefault: Boolean; //Do whole panel handle MW by default? Usually it is
     FocusedControlIndex: Integer; //Index of currently focused control on this Panel
@@ -1026,6 +1046,13 @@ type
     procedure SetTop(aValue: Integer); override;
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+
+    function GetDrawRect: TKMRect; override;
+    
+    function GetAbsDrawLeft: Integer; override;
+    function GetAbsDrawTop: Integer; override;
+    function GetAbsDrawRight: Integer; override;
+    function GetAbsDrawBottom: Integer; override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
                        aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
@@ -1034,6 +1061,8 @@ type
     property ScrollV: TKMScrollBar read fScrollBarV;
 
     function AddChild(aChild: TKMControl): Integer; override;
+
+    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
 
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
@@ -2006,6 +2035,14 @@ begin
 end;
 
 
+function TKMControl.GetIDsStr: String;
+begin
+  if Self = nil then Exit('');
+
+  Result := IntToStr(fID) + ' ' + fParent.GetIDsStr;
+end;
+
+
 function TKMControl.GetHint: UnicodeString;
 begin
   Result := fHint;
@@ -2037,7 +2074,15 @@ begin
   if Assigned(fOnMouseWheel) then
     fOnMouseWheel(Self, WheelDelta, aHandled)
   else
-    aHandled := DoHandleMouseWheelByDefault;
+  if fParent <> nil then
+  begin
+    if DoHandleMouseWheelByDefault then
+      fParent.MouseWheel(Sender, WheelDelta, aHandled)
+    else
+      aHandled := False;
+  end 
+  else
+    aHandled := False;
 end;
 
 
@@ -2046,8 +2091,7 @@ function TKMControl.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aI
 begin
   Result := (Hitable or aIncludeNotHitable)
             and (fEnabled or aIncludeDisabled)
-            and InRange(X, AbsLeft, AbsLeft + fWidth)
-            and InRange(Y, AbsTop, AbsTop + fHeight);
+            and KMInRect(KMPoint(X,Y), GetDrawRect);
 end;
 
 
@@ -2129,6 +2173,7 @@ begin
     Top := Round((aValue - Parent.AbsTop) / Parent.Scale);
 end;
 
+//GetAbsCoordinates
 function TKMControl.GetAbsBottom: Integer;
 begin
   Result := GetAbsTop + GetHeight;
@@ -2154,6 +2199,29 @@ begin
   else
     Result := Round(fTop * Parent.Scale) + Parent.GetAbsTop;
 end;
+//-------------------------------
+
+//AbsDrawCoordinates
+function TKMControl.GetAbsDrawLeft: Integer;
+begin
+  Result := GetAbsLeft;
+end;
+
+function TKMControl.GetAbsDrawTop: Integer;
+begin
+  Result := GetAbsTop;
+end;
+
+function TKMControl.GetAbsDrawRight: Integer;
+begin
+  Result := GetAbsRight;
+end;
+
+function TKMControl.GetAbsDrawBottom: Integer;
+begin
+  Result := GetAbsBottom;
+end;
+//-------------------------------
 
 function TKMControl.GetLeft: Integer;
 begin
@@ -2257,6 +2325,12 @@ begin
 end;
 
 
+function TKMControl.GetControlAbsRect: TKMRect;
+begin
+  Result := KMRect(AbsLeft, AbsTop, AbsRight, AbsBottom);
+end;
+
+
 function TKMControl.GetIsFocused: Boolean;
 begin
   Result := csFocus in State;
@@ -2297,6 +2371,18 @@ begin
 
   if Assigned(fOnSizeSet) then
     fOnSizeSet(Self);
+end;
+
+
+function TKMControl.GetDrawRect: TKMRect;
+begin
+  if fParent <> nil then
+  begin       
+    Result := fParent.GetDrawRect;
+    if Result <> KMRECT_INVALID_TILES then
+      Result := KMRectIntersect(Result, AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+  end else
+    Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
 end;
 
 
@@ -2344,6 +2430,8 @@ end;
 // Check Control including all its Parents to see if Control is actually displayed/visible
 function TKMControl.GetVisible: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fVisible and ((Parent = nil) or Parent.Visible);
 end;
 
@@ -2632,7 +2720,8 @@ end;
 
 //Focus next focusable control on this Panel
 procedure TKMPanel.FocusNext;
-var Ctrl: TKMControl;
+var
+  Ctrl: TKMControl;
 begin
   if InRange(FocusedControlIndex, 0, ChildCount - 1) then
   begin
@@ -2642,6 +2731,21 @@ begin
     //Need to update Focus only through UpdateFocus
     fMasterControl.UpdateFocus(Self);
   end;
+end;
+
+
+procedure TKMPanel.Enlarge(aChild: TKMControl);
+begin
+  if Self = nil then Exit;
+
+  fLeft := Left + Min(0, aChild.Left);
+  fTop := Top + Min(0, aChild.Top);
+  fWidth := Width - Min(0, aChild.Left);
+  fHeight := Height - Min(0, aChild.Top);
+  fWidth := Width + Max(0, aChild.Right - Right);
+  fHeight := Height + Max(0, aChild.Bottom - Bottom);
+
+  fParent.Enlarge(Self);
 end;
 
 
@@ -5523,6 +5627,12 @@ begin
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
 
+  if saHorizontal in aScrollAxisSet then
+    Enlarge(fScrollBarH);
+
+  if saVertical in aScrollAxisSet then
+    Enlarge(fScrollBarV);
+
   fClipRect := KMRect(Left, Top, Left + Width, Top + Height);
 end;
 
@@ -5536,6 +5646,17 @@ begin
   aChild.fOnPositionSet := UpdateScrolls;
   aChild.fOnChangeVisibility := UpdateScrolls;
   aChild.fOnChangeEnableStatus := UpdateScrolls;
+end;
+
+
+procedure TKMScrollPanel.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+begin
+  if (saVertical in fScrollAxisSet) and fScrollBarV.Visible then
+    fScrollBarV.MouseWheel(Sender, WheelDelta, aHandled)
+  else if (saHorizontal in fScrollAxisSet) and fScrollBarH.Visible then
+    fScrollBarH.MouseWheel(Sender, WheelDelta, aHandled)
+  else
+    inherited;
 end;
 
 
@@ -5753,10 +5874,36 @@ begin
 end;
 
 
+function TKMScrollPanel.GetDrawRect: TKMRect;
+begin
+  Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+end;
+
+function TKMScrollPanel.GetAbsDrawLeft: Integer;
+begin
+  Result := Parent.AbsLeft + fClipRect.Left;
+end;
+
+function TKMScrollPanel.GetAbsDrawTop: Integer;
+begin
+  Result := Parent.AbsTop + fClipRect.Top;
+end;
+
+function TKMScrollPanel.GetAbsDrawRight: Integer;
+begin
+  Result := Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible);
+end;
+
+function TKMScrollPanel.GetAbsDrawBottom: Integer;
+begin
+  Result := Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible);
+end;
+
+
 procedure TKMScrollPanel.PaintPanel(aPaintLayer: Integer);
 begin
-  TKMRenderUI.SetupClipX(Parent.AbsLeft + fClipRect.Left, Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible));
-  TKMRenderUI.SetupClipY(Parent.AbsTop + fClipRect.Top, Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible));
+  TKMRenderUI.SetupClipX(AbsDrawLeft, AbsDrawRight);
+  TKMRenderUI.SetupClipY(AbsDrawTop, AbsDrawBottom);
 
   inherited;
 

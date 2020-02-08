@@ -70,8 +70,8 @@ function TKMMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
   S: TKMemoryStreamBinary;
-  UseKaMFormat: Boolean;
   TileBasic: TKMTerrainTileBasic;
+  GameRev: Integer;
 begin
   Result := False;
 
@@ -80,15 +80,15 @@ begin
 
   S := TKMemoryStreamBinary.Create;
   try
-    UseKaMFormat := True;
+    GameRev := 0;
     S.LoadFromFile(aFileName);
 
-    LoadMapHeader(S, fMapX, fMapY, UseKaMFormat);
+    LoadMapHeader(S, fMapX, fMapY, GameRev);
 
     SetLength(fMapPreview, fMapX * fMapY);
      for I := 0 to fMapX * fMapY - 1 do
       begin
-        TKMTerrain.ReadTileFromStream(S, TileBasic, UseKaMFormat);
+        TKMTerrain.ReadTileFromStream(S, TileBasic, GameRev);
         fMapPreview[I].TileID := TileBasic.BaseLayer.Terrain;
         fMapPreview[I].TileHeight := TileBasic.Height;
 

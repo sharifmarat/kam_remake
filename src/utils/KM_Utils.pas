@@ -25,8 +25,8 @@ uses
   function GetMultiplicator(aShift: TShiftState): Word; overload;
 
   procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer); overload;
-  procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean); overload;
-  procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean; var aMapDataSize: Cardinal); overload;
+  procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aGameRev: Integer); overload;
+  procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aGameRev: Integer; var aMapDataSize: Cardinal); overload;
 
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandID;
 
@@ -54,31 +54,36 @@ end;
 
 procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer);
 var
-  UseKaMFormat: Boolean;
+  GameRev: Integer;
 begin
-  LoadMapHeader(aStream, aMapX, aMapY, UseKaMFormat);
+  LoadMapHeader(aStream, aMapX, aMapY, GameRev);
 end;
 
 
-procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean);
+procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aGameRev: Integer);
 var
   MapDataSize: Cardinal;
 begin
-  LoadMapHeader(aStream, aMapX, aMapY, aIsKaMFormat, MapDataSize);
+  LoadMapHeader(aStream, aMapX, aMapY, aGameRev, MapDataSize);
 end;
 
 
-procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean; var aMapDataSize: Cardinal);
+procedure LoadMapHeader(aStream: TKMemoryStreamBinary; var aMapX: Integer; var aMapY: Integer; var aGameRev: Integer; var aMapDataSize: Cardinal);
 var
   GameRevision: UnicodeString;
+  GameRev: Integer;
 begin
   aStream.Read(aMapX); //Get map header to determine old (r6720 and earlier) or newer format
 
-  aIsKaMFormat := True;
+  aGameRev := 0;
   if aMapX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
   begin
     aStream.ReadW(GameRevision);
-    aIsKaMFormat := False;
+    if TryStrToInt(Copy(GameRevision, 2, Length(GameRevision) - 1), GameRev) then
+      aGameRev := GameRev
+    else
+      raise Exception.Create('Unexpected game revision in map header');
+
     aStream.Read(aMapDataSize);
     aStream.Read(aMapX);
   end;

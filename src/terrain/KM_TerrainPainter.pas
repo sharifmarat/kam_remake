@@ -18,6 +18,7 @@ type
     Height: Byte;
     Obj: Byte;
     IsCustom: Boolean;
+    BlendingLvl: Byte;
     TerKind: TKMTerrainKind;
     Tiles: SmallInt;
     HeightAdd: Byte;
@@ -76,7 +77,8 @@ type
   public
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
-    ForcePaint: Boolean;
+    OverrideCustomTiles: Boolean;
+    BlendingLevel: Byte;
     procedure InitEmpty;
 
     procedure LoadFromFile(const aFileName: UnicodeString);
@@ -468,7 +470,7 @@ begin
 //    or (LandTerKind[pY  ,pX+1].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX+1].TerKind <> tkCustom) then
-  if not ForcePaint and gTerrain.Land[pY,pX].IsCustom then Exit;
+  if not OverrideCustomTiles and gTerrain.Land[pY,pX].IsCustom then Exit;
 
   A := (LandTerKind[pY    , pX    ].TerKind);
   B := (LandTerKind[pY    , pX + 1].TerKind);
@@ -1046,7 +1048,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
     MaskType: TKMTileMaskType;
   begin
     //Do not check tile node corners when using 'force paint' mode
-    if not ForcePaint then
+    if not OverrideCustomTiles then
     begin
       TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
 
@@ -1100,13 +1102,17 @@ var
   MaskKind: TKMTileMaskKind;
   GenInfo: TKMGenTerrainInfo;
 begin
-  if not gTerrain.TileInMapCoords(X, Y) or (not ForcePaint and gTerrain.Land[Y,X].IsCustom) then Exit;
+  if not gTerrain.TileInMapCoords(X, Y) or (not OverrideCustomTiles and gTerrain.Land[Y,X].IsCustom) then Exit;
 
   MaskKind := TKMTileMaskKind(gGameCursor.MapEdBrushMask);
   if (MaskKind = mkNone) and not fReplaceLayers then Exit;
 
   if MaskKind <> mkNone then
     ApplyMagicBrush(MaskKind);
+
+  //No need to update BlendingLvl for basic tiles (without auto transitions)
+  if gTerrain.Land[Y,X].LayersCnt > 0 then
+    gTerrain.Land[Y,X].BlendingLvl := BlendingLevel;
 
   if fReplaceLayers then
   begin
@@ -1620,6 +1626,7 @@ var
   Chunk: AnsiString;
   MapEdChunkFound: Boolean;
   UseKaMFormat: Boolean;
+  GameRev: Integer;
   MapDataSize: Cardinal;
 begin
   if not FileExists(aFileName) then Exit;
@@ -1630,7 +1637,8 @@ begin
   try
     S.LoadFromFile(aFileName);
 
-    LoadMapHeader(S, NewX, NewY, UseKaMFormat, MapDataSize);
+    LoadMapHeader(S, NewX, NewY, GameRev, MapDataSize);
+    UseKaMFormat := ( GameRev = 0 );
 
     //Skip terrain data
     if UseKaMFormat then
@@ -1706,6 +1714,7 @@ var
     Allocated, Qty1, Qty2, x5, Len17: Integer;
   end;
   UseKaMFormat: Boolean;
+  GameRev: Integer;
   MapDataSize: Cardinal;
 begin
   if not FileExists(aFileName) then Exit;
@@ -1714,7 +1723,9 @@ begin
   try
     S.LoadFromFile(aFileName);
 
-    LoadMapHeader(S, NewX, NewY, UseKaMFormat, MapDataSize);
+    LoadMapHeader(S, NewX, NewY, GameRev, MapDataSize);
+
+    UseKaMFormat := ( GameRev = 0 );
 
     //Skip terrain data
     if UseKaMFormat then
@@ -1767,14 +1778,15 @@ begin
     for J := 1 to gTerrain.MapX do
       with fUndos[fUndoPos] do
       begin
-        Data[I,J].BaseLayer := gTerrain.Land[I,J].BaseLayer;
-        Data[I,J].LayersCnt := gTerrain.Land[I,J].LayersCnt;
-        Data[I,J].Height    := gTerrain.Land[I,J].Height;
-        Data[I,J].Obj       := gTerrain.Land[I,J].Obj;
-        Data[I,J].IsCustom  := gTerrain.Land[I,J].IsCustom;
-        Data[I,J].TerKind   := LandTerKind[I,J].TerKind;
-        Data[I,J].Tiles     := LandTerKind[I,J].Tiles;
-        Data[I,J].HeightAdd := LandTerKind[I,J].HeightAdd;
+        Data[I,J].BaseLayer   := gTerrain.Land[I,J].BaseLayer;
+        Data[I,J].LayersCnt   := gTerrain.Land[I,J].LayersCnt;
+        Data[I,J].Height      := gTerrain.Land[I,J].Height;
+        Data[I,J].Obj         := gTerrain.Land[I,J].Obj;
+        Data[I,J].IsCustom    := gTerrain.Land[I,J].IsCustom;
+        Data[I,J].BlendingLvl := gTerrain.Land[I,J].BlendingLvl;
+        Data[I,J].TerKind     := LandTerKind[I,J].TerKind;
+        Data[I,J].Tiles       := LandTerKind[I,J].Tiles;
+        Data[I,J].HeightAdd   := LandTerKind[I,J].HeightAdd;
         for L := 0 to 2 do
           Data[I,J].Layer[L] := gTerrain.Land[I,J].Layer[L];
       end;
@@ -1840,6 +1852,7 @@ begin
         gTerrain.Land[I,J].Height             := Data[I,J].Height;
         gTerrain.Land[I,J].Obj                := Data[I,J].Obj;
         gTerrain.Land[I,J].IsCustom           := Data[I,J].IsCustom;
+        gTerrain.Land[I,J].BlendingLvl        := Data[I,J].BlendingLvl;
         LandTerKind[I,J].TerKind   := Data[I,J].TerKind;
         LandTerKind[I,J].Tiles     := Data[I,J].Tiles;
         LandTerKind[I,J].HeightAdd := Data[I,J].HeightAdd;
