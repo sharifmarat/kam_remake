@@ -293,6 +293,7 @@ begin
       CustomStr := '';
       if gTerrain.Land[I,J].IsCustom then
         CustomStr := '-C';
+      CustomStr := CustomStr + '-' + IntToStr(gTerrain.Land[I,J].BlendingLvl);
       if gTerrain.Land[I,J].LayersCnt = 0 then
         Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain)+ '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation) + CustomStr,
              TILE_TERRAIN_LAYERS_COLORS[0])
