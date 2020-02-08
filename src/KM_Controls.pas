@@ -1,4 +1,4 @@
-unit KM_Controls;
+﻿unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -310,7 +310,6 @@ type
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
 
-    function GetDrawRect: TKMRect; override;
     procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
     procedure ControlMouseDown(Sender: TObject; Shift: TShiftState); override;
     procedure ControlMouseUp(Sender: TObject; Shift: TShiftState); override;
@@ -318,6 +317,8 @@ type
     procedure UpdateEnableStatus; override;
     function DoPanelHandleMouseWheelByDefault: Boolean; virtual;
     procedure DoPaint(aPaintLayer: Integer); virtual;
+
+    procedure Enlarge(aChild: TKMControl);
   public
     PanelHandleMouseWheelByDefault: Boolean; //Do whole panel handle MW by default? Usually it is
     FocusedControlIndex: Integer; //Index of currently focused control on this Panel
@@ -2377,9 +2378,10 @@ end;
 function TKMControl.GetDrawRect: TKMRect;
 begin
   if fParent <> nil then
-  begin
+  begin       
     Result := fParent.GetDrawRect;
-    Result := KMClipRect(Result, AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+    if Result <> KMRECT_INVALID_TILES then
+      Result := KMRectIntersect(Result, AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
   end else
     Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
 end;
@@ -2429,6 +2431,8 @@ end;
 // Check Control including all its Parents to see if Control is actually displayed/visible
 function TKMControl.GetVisible: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fVisible and ((Parent = nil) or Parent.Visible);
 end;
 
@@ -2737,6 +2741,21 @@ begin
 end;
 
 
+procedure TKMPanel.Enlarge(aChild: TKMControl);
+begin
+  if Self = nil then Exit;
+
+  fLeft := Left + Min(0, aChild.Left);
+  fTop := Top + Min(0, aChild.Top);
+  fWidth := Width - Min(0, aChild.Left);
+  fHeight := Height - Min(0, aChild.Top);
+  fWidth := Width + Max(0, aChild.Right - Right);
+  fHeight := Height + Max(0, aChild.Bottom - Bottom);
+
+  fParent.Enlarge(Self);
+end;
+
+
 function TKMPanel.AddChild(aChild: TKMControl): Integer;
 begin
   if ChildCount >= Length(Childs) then
@@ -2829,18 +2848,6 @@ begin
       Childs[I].SetLeftF(Childs[I].fLeft + (aValue - fWidth) / 2);
 
   inherited;
-end;
-
-
-function TKMPanel.GetDrawRect: TKMRect;
-var
-  I: Integer;
-begin
-  //Consider DrawRect, as enlarged absRect with all its childs
-  //Need to include all childs, because sometimes childs can lay out of Panel AbsRect (f.e. on TKMScrollPanel those are scroll bars
-  Result := GetControlAbsRect;
-  for I := 0 to ChildCount - 1 do
-    KMRectIncludeRect(Result, Childs[I].GetControlAbsRect);
 end;
 
 
@@ -5626,6 +5633,12 @@ begin
   fScrollBarV.Hide;
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
+
+  if saHorizontal in aScrollAxisSet then
+    Enlarge(fScrollBarH);
+
+  if saVertical in aScrollAxisSet then
+    Enlarge(fScrollBarV);
 
   fClipRect := KMRect(Left, Top, Left + Width, Top + Height);
 end;
