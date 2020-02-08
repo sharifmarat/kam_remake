@@ -59,7 +59,9 @@ type
     function VBOSupported: Boolean;
     procedure RenderFence(aFence: TKMFenceType; Pos: TKMDirection; pX,pY: Integer);
     procedure RenderMarkup(pX, pY: Word; aFieldType: TKMFieldType);
-    procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+    procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
+                           DoHighlight: Boolean = False; HighlightColor: Cardinal = 0; aBlendingLvl: Byte = 0;
+                           aCorners: TKMByteSet = []);
     function DoUseVBO: Boolean;
   public
     constructor Create;
@@ -1142,15 +1144,12 @@ end;
 
 
 procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
-                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0; aBlendingLvl: Byte = 0;
+                                      aCorners: TKMByteSet = []);
 var
-  K, I: Integer;
   TexC: TUVRect; // Texture UV coordinates
 begin
   if not gTerrain.TileInMapCoords(pX,pY) then Exit;
-  
-  K := pX;
-  I := pY;
 
   if DoHighlight then
     glColor4ub(HighlightColor and $FF, (HighlightColor shr 8) and $FF, (HighlightColor shr 16) and $FF, $FF)
@@ -1166,21 +1165,13 @@ begin
     TexC := GetTileUV(aTerrainId, Rot mod 4);
 
   glBegin(GL_TRIANGLE_FAN);
-    with gTerrain do
-      if RENDER_3D then
-      begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
-      end
-      else
-      begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height/CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height/CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height/CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height/CELL_HEIGHT_DIV, I-1);
-      end;
+
+  //TODO DoHighlight and HighlightColor is not considered here, we use always glColor4f(1, 1, 1, 1);
+  if aBlendingLvl > 0 then
+    RenderQuadTextureBlended(TexC, pX, pY, aCorners, aBlendingLvl)
+  else
+    RenderQuadTexture(TexC, pX, pY);
+
   glEnd;
 end;
 
@@ -1207,13 +1198,13 @@ begin
     TRender.BindTexture(gGFXData[rxTiles, aTileBasic.BaseLayer.Terrain + 1].Tex.ID);
 
   // Render Base Layer
-  DoRenderTile(aTileBasic.BaseLayer.Terrain, pX, pY, aTileBasic.BaseLayer.Rotation, DoBindTexture, 
+  DoRenderTile(aTileBasic.BaseLayer.Terrain, pX, pY, aTileBasic.BaseLayer.Rotation, DoBindTexture,
                False, DoHighlight, HighlightColor);
 
   // Render other Layers
   for L := 0 to aTileBasic.LayersCnt - 1 do
-    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, DoBindTexture, 
-                 False, DoHighlight, HighlightColor);
+    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, DoBindTexture,
+                 False, DoHighlight, HighlightColor, aTileBasic.BlendingLvl, aTileBasic.Layer[L].Corners);
     
 end;
 

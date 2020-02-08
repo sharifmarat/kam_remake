@@ -360,6 +360,8 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
 
     SwapInt(gTerrain.Land[Y1,X1].Obj, gTerrain.Land[Y2,X2].Obj);
     SwapInt(gTerrain.Land[Y1,X1].LayersCnt, gTerrain.Land[Y2,X2].LayersCnt);
+    SwapInt(gTerrain.Land[Y1,X1].BlendingLvl, gTerrain.Land[Y2,X2].BlendingLvl);
+    SwapBool(gTerrain.Land[Y1,X1].IsCustom, gTerrain.Land[Y2,X2].IsCustom);
 
     //Heights are vertex based not tile based, so it gets flipped slightly differently
     case aAxis of
