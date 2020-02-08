@@ -2723,7 +2723,8 @@ end;
 
 //Focus next focusable control on this Panel
 procedure TKMPanel.FocusNext;
-var Ctrl: TKMControl;
+var
+  Ctrl: TKMControl;
 begin
   if InRange(FocusedControlIndex, 0, ChildCount - 1) then
   begin
