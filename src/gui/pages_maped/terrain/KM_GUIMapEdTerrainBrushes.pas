@@ -162,6 +162,7 @@ begin
   OverrideCustomTiles.Hint := gResTexts[TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES_HINT];
 
   Button_FixTerrainBrushes := TKMButton.Create(Panel_Brushes, 9, 480, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN], bsGame);
+  Button_FixTerrainBrushes.AutoHeight := True;
   Button_FixTerrainBrushes.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT];
   Button_FixTerrainBrushes.OnClick := BrushFixTerrain_Click;
 
