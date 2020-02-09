@@ -51,6 +51,10 @@ type
     function ToString: String;
     function Width: Integer;
     function Height: Integer;
+    procedure SetLeft(aLeft: Integer);
+    procedure SetRight(aRight: Integer);
+    procedure SetTop(aTop: Integer);
+    procedure SetBottom(aBottom: Integer);
     class operator Equal(const A, B: TKMRect): Boolean;
     class operator NotEqual(const A, B: TKMRect): Boolean;
   end;
@@ -262,6 +266,26 @@ end;
 function TKMRect.Height: Integer;
 begin
   Result := Bottom - Top + 1;
+end;
+
+procedure TKMRect.SetLeft(aLeft: Integer);
+begin
+  Left := aLeft;
+end;
+
+procedure TKMRect.SetRight(aRight: Integer);
+begin
+  Right := aRight;
+end;
+
+procedure TKMRect.SetTop(aTop: Integer);
+begin
+  Top := aTop;
+end;
+
+procedure TKMRect.SetBottom(aBottom: Integer);
+begin
+  Bottom := aBottom;
 end;
 
 class operator TKMRect.Equal(const A, B: TKMRect): Boolean;
