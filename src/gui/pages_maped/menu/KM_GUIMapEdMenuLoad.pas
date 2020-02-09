@@ -52,7 +52,9 @@ begin
   fMapsMP := TKMapsCollection.Create(mfMP);
   fMapsDL := TKMapsCollection.Create(mfDL);
 
-  Panel_Load := TKMPanel.Create(aParent,0,45,TB_MAP_ED_WIDTH,400);
+  Panel_Load := TKMPanel.Create(aParent,0,45,TB_MAP_ED_WIDTH,aParent.Height - 45);
+  Panel_Load.Anchors := [anLeft, anTop, anBottom];
+
   TKMLabel.Create(Panel_Load, 9, PAGE_TITLE_Y, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MAPED_LOAD_TITLE], fntOutline, taLeft);
   TKMBevel.Create(Panel_Load, 9, 30, TB_MAP_ED_WIDTH - 9, 57);
   Radio_Load_MapType := TKMRadioGroup.Create(Panel_Load,9,32,TB_MAP_ED_WIDTH - 9,54,fntGrey);

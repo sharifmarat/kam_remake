@@ -53,7 +53,9 @@ begin
   fOnDone := aOnDone;
   fOnPageChange := aOnPageChange;
 
-  Panel_Resize := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 400);
+  Panel_Resize := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, aParent.Height - 45);
+  Panel_Resize.Anchors := [anLeft, anTop, anBottom];
+
     Panel_Resize_Edit := TKMPanel.Create(Panel_Resize, 9, 0, Panel_Resize.Width - 9, Panel_Resize.Height);
 
       Y := PAGE_TITLE_Y;

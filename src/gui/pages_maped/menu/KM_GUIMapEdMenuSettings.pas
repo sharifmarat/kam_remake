@@ -46,6 +46,8 @@ begin
   fOnDone := aOnDone;
 
   Panel_Settings := TKMPanel.Create(aParent, 0, 44, TB_MAP_ED_WIDTH, 332);
+  Panel_Settings.Anchors := [anLeft, anTop, anBottom];
+
     TKMLabel.Create(Panel_Settings, 9, PAGE_TITLE_Y, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MENU_SETTINGS], fntOutline, taLeft);
     TrackBar_Settings_Brightness := TKMTrackBar.Create(Panel_Settings,PAD,40,WID,0,20);
     TrackBar_Settings_Brightness.Caption := gResTexts[TX_MENU_OPTIONS_BRIGHTNESS];

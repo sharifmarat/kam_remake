@@ -62,7 +62,8 @@ begin
   fGuiMenuQuit := TKMMapEdMenuQuit.Create(aParent, MenuDone);
   fGuiMenuSettings := TKMMapEdMenuSettings.Create(aParent, MenuDone);
 
-  Panel_Menu := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 400);
+  Panel_Menu := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, aParent.Height - 45);
+  Panel_Menu.Anchors := [anLeft, anTop, anBottom];
 
   Button_Resize := TKMButton.Create(Panel_Menu, 9, 10, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MAPED_MAP_RESIZE], bsGame);
   Button_Resize.Hint := GetHintWHotKey(TX_MAPED_MAP_RESIZE, MAPED_SUBMENU_HOTKEYS[0]);

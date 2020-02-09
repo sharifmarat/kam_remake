@@ -58,7 +58,8 @@ begin
 
   fOnPageChange := aOnPageChange;
 
-  Panel_Mission := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 28);
+  Panel_Mission := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, aParent.Height - 45);
+  Panel_Mission.Anchors := [anLeft, anTop, anBottom];
 
   for MT := Low(TKMMissionTab) to High(TKMMissionTab) do
   begin

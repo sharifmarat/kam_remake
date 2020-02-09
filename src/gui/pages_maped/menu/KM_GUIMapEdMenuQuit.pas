@@ -34,7 +34,9 @@ begin
 
   fOnDone := aOnDone;
 
-  Panel_Quit := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 400);
+  Panel_Quit := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, aParent.Height - 45);
+  Panel_Quit.Anchors := [anLeft, anTop, anBottom];
+
   TKMLabel.Create(Panel_Quit, 0, 40, TB_MAP_ED_WIDTH, 60, gResTexts[TX_MAPED_LOAD_UNSAVED], fntOutline, taCenter);
   Button_Quit_Yes := TKMButton.Create(Panel_Quit, 9, 100, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MENU_QUIT_MAPED], bsGame);
   Button_Quit_No  := TKMButton.Create(Panel_Quit, 9, 140, TB_MAP_ED_WIDTH - 9, 30, gResTexts[TX_MENU_DONT_QUIT_MISSION], bsGame);

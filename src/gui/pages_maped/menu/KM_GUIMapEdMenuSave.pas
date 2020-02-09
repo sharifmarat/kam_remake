@@ -48,6 +48,8 @@ begin
   fIsMultiplayer := False;
 
   Panel_Save := TKMPanel.Create(aParent, 0, aTopPanelInset, aControlsWidth + aLeftPanelInset, 230);
+  Panel_Save.Anchors := [anLeft, anTop, anBottom];
+
   TKMLabel.Create(Panel_Save,aLeftPanelInset,0,aControlsWidth,20,gResTexts[TX_MAPED_SAVE_TITLE],fntOutline,taLeft);
 
   TKMBevel.Create(Panel_Save, aLeftPanelInset, 25, aControlsWidth, 37);
