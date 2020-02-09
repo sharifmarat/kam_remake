@@ -102,7 +102,7 @@ begin
   fLastBrush := Byte(SURFACES[0,0]);
   fLastMagicBrush := False;
 
-  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH + 22, aParent.Height - 28, [saVertical], bsMenu, ssCommon);
+  Panel_Brushes := TKMScrollPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH + 22, aParent.Height - 28, [saVertical], bsMenu, ssCommon, True);
   Panel_Brushes.Anchors := [anLeft, anTop, anBottom];
 //  TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
 

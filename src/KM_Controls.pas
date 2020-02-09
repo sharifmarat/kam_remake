@@ -1059,7 +1059,7 @@ type
     function GetAbsDrawBottom: Integer; override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
-                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
+                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle; aEnlargeParents: Boolean = False);
 
     property ScrollH: TKMScrollBar read fScrollBarH;
     property ScrollV: TKMScrollBar read fScrollBarV;
@@ -5616,7 +5616,7 @@ end;
 
 { TKMScrollPanel }
 constructor TKMScrollPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
-                                  aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
+                                  aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle; aEnlargeParents: Boolean = False);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth - 20*Byte(saVertical in aScrollAxisSet), aHeight - 20*Byte(saHorizontal in aScrollAxisSet));
 
@@ -5632,11 +5632,14 @@ begin
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
 
-  if saHorizontal in aScrollAxisSet then
-    Enlarge(fScrollBarH);
+  if aEnlargeParents then
+  begin
+    if saHorizontal in aScrollAxisSet then
+      Enlarge(fScrollBarH);
 
-  if saVertical in aScrollAxisSet then
-    Enlarge(fScrollBarV);
+    if saVertical in aScrollAxisSet then
+      Enlarge(fScrollBarV);
+  end;
 
   fClipRect := KMRect(Left, Top, Left + Width, Top + Height);
 end;
