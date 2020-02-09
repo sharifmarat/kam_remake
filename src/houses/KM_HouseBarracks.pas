@@ -14,6 +14,7 @@ type
   private
     fRecruitsList: TList;
     fResourceCount: array [WARFARE_MIN..WARFARE_MAX] of Word;
+    procedure SetWareCnt(aWareType: TKMWareType; aValue: Word);
   protected
     function GetFlagPointTexId: Word; override;
   public
@@ -56,7 +57,7 @@ implementation
 uses
   Math, Types,
   KM_Hand, KM_HandsCollection, KM_Terrain,
-  KM_Units, KM_UnitWarrior,
+  KM_Units, KM_UnitWarrior, KM_ScriptingEvents,
   KM_ResUnits;
 
 
@@ -160,6 +161,21 @@ begin
 end;
 
 
+procedure TKMHouseBarracks.SetWareCnt(aWareType: TKMWareType; aValue: Word);
+var
+  CntChange: Integer;
+begin
+  Assert(aWareType in [WARE_MIN..WARE_MAX]);
+
+  CntChange := aValue - fResourceCount[aWareType];
+
+  fResourceCount[aWareType] := aValue;
+
+  if CntChange <> 0 then
+    gScriptEvents.ProcHouseWareCountChanged(Self, aWareType, aValue, CntChange);
+end;
+
+
 procedure TKMHouseBarracks.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
 var
   OldCnt: Integer;
@@ -167,7 +183,7 @@ begin
   Assert(aWare in [WARFARE_MIN..WARFARE_MAX], 'Invalid resource added to barracks');
 
   OldCnt := fResourceCount[aWare];
-  fResourceCount[aWare] := EnsureRange(fResourceCount[aWare] + aCount, 0, High(Word));
+  SetWareCnt(aWare, EnsureRange(fResourceCount[aWare] + aCount, 0, High(Word)));
   gHands[fOwner].Deliveries.Queue.AddOffer(Self, aWare, fResourceCount[aWare] - OldCnt);
 end;
 
@@ -199,7 +215,7 @@ begin
     end;
   end;
   Assert(aCount <= fResourceCount[aWare]);
-  Dec(fResourceCount[aWare], aCount);
+  SetWareCnt(aWare, fResourceCount[aWare] - aCount);
 end;
 
 
@@ -294,6 +310,7 @@ end;
 function TKMHouseBarracks.Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
 var
   I, K: Integer;
+  TroopWareType: TKMWareType;
   Soldier: TKMUnitWarrior;
 begin
   Result := 0;
@@ -308,7 +325,9 @@ begin
     for I := 1 to 4 do
     if TROOP_COST[aUnitType, I] <> wtNone then
     begin
-      Dec(fResourceCount[TROOP_COST[aUnitType, I]]);
+      TroopWareType := TROOP_COST[aUnitType, I];
+      SetWareCnt(TroopWareType, fResourceCount[TroopWareType] - 1);
+
       gHands[fOwner].Stats.WareConsumed(TROOP_COST[aUnitType, I]);
       gHands[fOwner].Deliveries.Queue.RemOffer(Self, TROOP_COST[aUnitType, I], 1);
     end;

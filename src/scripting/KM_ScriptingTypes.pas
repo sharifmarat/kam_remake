@@ -13,6 +13,7 @@ type
     evtHousePlanRemoved,
     evtHouseDamaged,
     evtHouseDestroyed,
+    evtHouseWareCountChanged,
     evtGroupHungry,
     evtGroupOrderAttackHouse,
     evtGroupOrderAttackUnit,

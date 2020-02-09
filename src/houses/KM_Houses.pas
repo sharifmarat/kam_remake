@@ -145,8 +145,10 @@ type
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); virtual;
     function GetResOrder(aId: Byte): Integer; virtual;
     function GetResIn(aI: Byte): Word; virtual;
+    function GetResOut(aI: Byte): Word; virtual;
     function GetResInLocked(aI: Byte): Word; virtual;
     procedure SetResIn(aI: Byte; aValue: Word); virtual;
+    procedure SetResOut(aI: Byte; aValue: Word); virtual;
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
     procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
@@ -241,6 +243,7 @@ type
     function ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean; virtual;
     property ResOrder[aId: Byte]: Integer read GetResOrder write SetResOrder;
     property ResIn[aId: Byte]: Word read GetResIn write SetResIn;
+    property ResOut[aId: Byte]: Word read GetResOut write SetResOut;
     property ResInLocked[aId: Byte]: Word read GetResInLocked;
 
     procedure PostLoadMission; virtual;
@@ -294,6 +297,7 @@ type
   TKMHouseStore = class(TKMHouse)
   private
     WaresCount: array [WARE_MIN .. WARE_MAX] of Word;
+    procedure SetWareCnt(aWareType: TKMWareType; aValue: Word);
   protected
     procedure Activate(aWasBuilt: Boolean); override;
   public
@@ -324,7 +328,6 @@ type
   private
     fAcceptWood: Boolean;
     fAcceptLeather: Boolean;
-
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
@@ -1477,7 +1480,7 @@ begin
   for I := 1 to 4 do
     if aWare = gRes.Houses[fType].ResOutput[I] then
     begin
-      inc(fResourceOut[I], aCount);
+      ResOut[I] := ResOut[I] + aCount;
 
       if (fType in HOUSE_WORKSHOP) and (aCount > 0) then
       begin
@@ -1558,6 +1561,12 @@ begin
 end;
 
 
+function TKMHouse.GetResOut(aI: Byte): Word;
+begin
+  Result := fResourceOut[aI];
+end;
+
+
 function TKMHouse.GetResInLocked(aI: Byte): Word;
 begin
   Result := 0; //By default we do not lock any In res
@@ -1567,9 +1576,11 @@ end;
 
 procedure TKMHouse.SetResIn(aI: Byte; aValue: Word);
 var
-  ResCnt: Integer;
+  CntChange: Integer;
   Res: TKMWareType;
 begin
+  Res := gRes.Houses[fType].ResInput[aI];
+  CntChange := aValue - fResourceIn[aI];
   //In case we brought smth to house with TakeOut delivery mode,
   //then we need to add it to offer
   //Usually it can happens when we changed delivery mode while serf was going inside house
@@ -1577,12 +1588,29 @@ begin
   //then it was not offered to other houses
   if fDeliveryMode = dmTakeOut then
   begin
-    Res := gRes.Houses[fType].ResInput[aI];
-    ResCnt := aValue - fResourceIn[aI];
-    if not (Res in [wtNone, wtAll, wtWarfare]) and (ResCnt > 0) then
-      gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
+    if not (Res in [wtNone, wtAll, wtWarfare]) and (CntChange > 0) then
+      gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, CntChange);
   end;
+
   fResourceIn[aI] := aValue;
+
+  if not (Res in [wtNone, wtAll, wtWarfare]) and (CntChange <> 0) then
+    gScriptEvents.ProcHouseWareCountChanged(Self, Res, aValue, CntChange);
+end;
+
+
+procedure TKMHouse.SetResOut(aI: Byte; aValue: Word);
+var
+  CntChange: Integer;
+  Res: TKMWareType;
+begin
+  Res := gRes.Houses[fType].ResOutput[aI];
+  CntChange := aValue - fResourceOut[aI];
+
+  fResourceOut[aI] := aValue;
+
+  if not (Res in [wtNone, wtAll, wtWarfare]) and (CntChange <> 0) then
+    gScriptEvents.ProcHouseWareCountChanged(Self, Res, aValue, CntChange);
 end;
 
 
@@ -1667,7 +1695,7 @@ begin
           end;
     end;
 
-    Dec(fResourceOut[I], aCount);
+    ResOut[I] := ResOut[I] - aCount;
     Exit;
   end;
 
@@ -2122,6 +2150,21 @@ begin
 end;
 
 
+procedure TKMHouseStore.SetWareCnt(aWareType: TKMWareType; aValue: Word);
+var
+  CntChange: Integer;
+begin
+  Assert(aWareType in [WARE_MIN..WARE_MAX]);
+
+  CntChange := aValue - WaresCount[aWareType];
+
+  WaresCount[aWareType] := aValue;
+
+  if CntChange <> 0 then
+    gScriptEvents.ProcHouseWareCountChanged(Self, aWareType, aValue, CntChange);
+end;
+
+
 constructor TKMHouseStore.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
@@ -2137,12 +2180,12 @@ var R: TKMWareType;
 begin
   case aWare of
     wtAll:     for R := Low(WaresCount) to High(WaresCount) do begin
-                  WaresCount[R] := EnsureRange(WaresCount[R] + aCount, 0, High(Word));
+                  SetWareCnt(R, EnsureRange(WaresCount[R] + aCount, 0, High(Word)));
                   gHands[fOwner].Deliveries.Queue.AddOffer(Self, R, aCount);
                 end;
     WARE_MIN..
     WARE_MAX:   begin
-                  WaresCount[aWare] := EnsureRange(WaresCount[aWare] + aCount, 0, High(Word));
+                  SetWareCnt(aWare, EnsureRange(WaresCount[aWare] + aCount, 0, High(Word)));
                   gHands[fOwner].Deliveries.Queue.AddOffer(Self,aWare,aCount);
                 end;
     else        raise ELocError.Create('Cant''t add ' + gRes.Wares[aWare].Title, Position);
@@ -2196,7 +2239,7 @@ begin
   end;
   Assert(aCount <= WaresCount[aWare]);
 
-  Dec(WaresCount[aWare], aCount);
+  SetWareCnt(aWare, WaresCount[aWare] - aCount);
 end;
 
 

@@ -19,9 +19,12 @@ type
     procedure SetResFrom(aRes: TKMWareType);
     procedure SetResTo(aRes: TKMWareType);
 
-    function GetMarkerResToTrade(aWare: TKMWareType): Word;
-    procedure SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
-    property MarkerResToTrade[aWare: TKMWareType]: Word read GetMarkerResToTrade write SetMarkerResToTrade;
+    procedure SetResInCnt(aWareType: TKMWareType; aValue: Word);
+    procedure SetResOutCnt(aWareType: TKMWareType; aValue: Word);
+
+    function GetResToTrade(aWare: TKMWareType): Word;
+    procedure SetResToTrade(aWare: TKMWareType; aCnt: Word);
+    property ResToTrade[aWare: TKMWareType]: Word read GetResToTrade write SetResToTrade;
   protected
     function GetResOrder(aId: Byte): Integer; override;
     procedure SetResOrder(aId: Byte; aValue: Integer); override;
@@ -148,7 +151,7 @@ begin
     Dec(fMarketDeliveryCount[aResource], aCount); //We must keep track of the number ordered, which is less now because this has arrived
   if (aResource = fResFrom) and TradeInProgress then
   begin
-    Inc(fMarketResIn[aResource], aCount); //Place the new resource in the IN list
+    SetResInCnt(aResource, fMarketResIn[aResource] + aCount); //Place the new resource in the IN list
     //As we only order 10 resources at one time, we might need to order another now to fill the gap made by the one delivered
     ResRequired := fTradeAmount*RatioFrom - (fMarketResIn[aResource]+fMarketDeliveryCount[aResource]);
     if ResRequired > 0 then
@@ -160,7 +163,7 @@ begin
   end
   else
   begin
-    Inc(fMarketResOut[aResource], aCount); //Place the new resource in the OUT list
+    SetResOutCnt(aResource, fMarketResOut[aResource] + aCount); //Place the new resource in the OUT list
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, aResource, aCount);
   end;
 end;
@@ -193,15 +196,15 @@ begin
     Exit;
   end;
 
-  if TradeInProgress and (MarkerResToTrade[fResFrom] >= RatioFrom) then
+  if TradeInProgress and (ResToTrade[fResFrom] >= RatioFrom) then
   begin
     //How much can we trade
-    TradeCount := Min((MarkerResToTrade[fResFrom] div RatioFrom), fTradeAmount);
+    TradeCount := Min((ResToTrade[fResFrom] div RatioFrom), fTradeAmount);
 
-    MarkerResToTrade[fResFrom] := MarkerResToTrade[fResFrom] - TradeCount * RatioFrom;
+    ResToTrade[fResFrom] := ResToTrade[fResFrom] - TradeCount * RatioFrom;
     gHands[fOwner].Stats.WareConsumed(fResFrom, TradeCount * RatioFrom);
     Dec(fTradeAmount, TradeCount);
-    Inc(fMarketResOut[fResTo], TradeCount * RatioTo);
+    SetResOutCnt(fResTo, fMarketResOut[fResTo] + TradeCount * RatioTo);
     gHands[fOwner].Stats.WareProduced(fResTo, TradeCount * RatioTo);
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, fResTo, TradeCount * RatioTo);
 
@@ -225,9 +228,9 @@ begin
   end;
 
   if aCount <= fMarketResOut[aWare] then
-    Dec(fMarketResOut[aWare], aCount)
+    SetResOutCnt(aWare, fMarketResOut[aWare] - aCount)
   else if (DeliveryMode = dmTakeOut) and (aCount <= fMarketResIn[aWare]) then
-    Dec(fMarketResIn[aWare], aCount)
+    SetResInCnt(aWare, fMarketResIn[aWare] - aCount)
   else
     raise Exception.Create(Format('No ware: [%s] count = %d to take from market UID = %d',
                                   [GetEnumName(TypeInfo(TKMWareType), Integer(aWare)), aCount, UID]));
@@ -281,29 +284,58 @@ begin
 end;
 
 
-function TKMHouseMarket.GetMarkerResToTrade(aWare: TKMWareType): Word;
+procedure TKMHouseMarket.SetResInCnt(aWareType: TKMWareType; aValue: Word);
+var
+  CntChange: Integer;
+begin
+  Assert(aWareType in [WARE_MIN..WARE_MAX]);
+
+  CntChange := aValue - fMarketResIn[aWareType];
+
+  fMarketResIn[aWareType] := aValue;
+
+  if CntChange <> 0 then
+    gScriptEvents.ProcHouseWareCountChanged(Self, aWareType, ResToTrade[aWareType], CntChange);
+end;
+
+
+procedure TKMHouseMarket.SetResOutCnt(aWareType: TKMWareType; aValue: Word);
+var
+  CntChange: Integer;
+begin
+  Assert(aWareType in [WARE_MIN..WARE_MAX]);
+
+  CntChange := aValue - fMarketResOut[aWareType];
+
+  fMarketResOut[aWareType] := aValue;
+
+  if CntChange <> 0 then
+    gScriptEvents.ProcHouseWareCountChanged(Self, aWareType, ResToTrade[aWareType], CntChange);
+end;
+
+
+function TKMHouseMarket.GetResToTrade(aWare: TKMWareType): Word;
 begin
   Result := fMarketResIn[aWare] + fMarketResOut[aWare];
 end;
 
 
-procedure TKMHouseMarket.SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+procedure TKMHouseMarket.SetResToTrade(aWare: TKMWareType; aCnt: Word);
 var
   CurCnt, DecFromIn, DecFromOut: Word;
-
 begin
-  CurCnt := GetMarkerResToTrade(aWare);
+  CurCnt := GetResToTrade(aWare);
   if aCnt > CurCnt then
-  begin
-    Inc(fMarketResIn[aWare], aCnt - CurCnt);
-
-  end else
+    SetResInCnt(aWare, fMarketResIn[aWare] + aCnt - CurCnt)
+  else
   if aCnt < CurCnt then
   begin
     DecFromIn := Min(fMarketResIn[aWare], CurCnt - aCnt);
-    Dec(fMarketResIn[aWare], DecFromIn);
+    Dec(fMarketResIn[aWare], DecFromIn); //Dont call SetRes func, cause we don't need double script event calls
     DecFromOut := CurCnt - aCnt - DecFromIn;
-    Dec(fMarketResOut[aWare], DecFromOut);
+    Dec(fMarketResOut[aWare], DecFromOut); //Dont call SetRes func, cause we don't need double script event calls
+
+    gScriptEvents.ProcHouseWareCountChanged(Self, aWare, ResToTrade[aWare], - DecFromIn - DecFromOut);
     gHands[fOwner].Deliveries.Queue.RemOffer(Self, aWare, DecFromOut);
   end;
 end;
@@ -333,6 +365,7 @@ begin
   //If player cancelled exchange then move all remainders of From resource to Offers list
   if (fTradeAmount = 0) and (fMarketResIn[fResFrom] > 0) then
   begin
+    //No need to call SetRes functins here, since its just moving resource from In to Out
     Inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, fResFrom, fMarketResIn[fResFrom]);
     fMarketResIn[fResFrom] := 0;
