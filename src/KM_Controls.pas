@@ -5670,6 +5670,7 @@ end;
 //To show panel properly initially. Beeter to invoke from Show Element
 procedure TKMScrollPanel.UpdateVisibility;
 begin
+  inherited;
   if Visible
     and ((fPadding.Left > 0) or (fPadding.Top > 0)) then //Update visibility only when left/top padding > 0
   begin
@@ -5870,12 +5871,6 @@ begin
   fScrollBarH.Top := fClipRect.Top + Height;
 
   UpdateScrolls(nil);
-end;
-
-
-procedure SetPaddingTop(aTop: Integer);
-begin
-
 end;
 
 
