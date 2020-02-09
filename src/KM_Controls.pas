@@ -1034,6 +1034,9 @@ type
     fScrollBarH: TKMScrollBar;
     fScrollBarV: TKMScrollBar;
     fScrollAxisSet: TKMScrollAxisSet;
+
+    fPadding: TKMRect;
+
     procedure UpdateScrolls(Sender: TObject; aValue: Boolean); overload;
     procedure UpdateScrolls(Sender: TObject); overload;
     procedure UpdateScrollV(Sender: TObject); overload;
@@ -1057,6 +1060,8 @@ type
     function GetAbsDrawTop: Integer; override;
     function GetAbsDrawRight: Integer; override;
     function GetAbsDrawBottom: Integer; override;
+
+    procedure UpdateVisibility; override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
                        aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle; aEnlargeParents: Boolean = False);
@@ -1065,6 +1070,8 @@ type
     property ScrollV: TKMScrollBar read fScrollBarV;
 
     function AddChild(aChild: TKMControl): Integer; override;
+    property ClipRect: TKMRect read fClipRect;
+    property Padding: TKMRect read fPadding write fPadding;
 
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
 
@@ -5620,6 +5627,8 @@ constructor TKMScrollPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeigh
 begin
   inherited Create(aParent, aLeft, aTop, aWidth - 20*Byte(saVertical in aScrollAxisSet), aHeight - 20*Byte(saHorizontal in aScrollAxisSet));
 
+  fPadding := KMRect(0, 0, 0, 0);
+
   fScrollAxisSet := aScrollAxisSet;
 
   fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, saHorizontal, aStyle, aScrollStyle);
@@ -5641,7 +5650,7 @@ begin
       Enlarge(fScrollBarV);
   end;
 
-  fClipRect := KMRect(Left, Top, Left + Width, Top + Height);
+  fClipRect := KMRect(Left, Top, Right, Bottom);
 end;
 
 
@@ -5654,6 +5663,28 @@ begin
   aChild.fOnPositionSet := UpdateScrolls;
   aChild.fOnChangeVisibility := UpdateScrolls;
   aChild.fOnChangeEnableStatus := UpdateScrolls;
+end;
+
+
+//Update View is usefull when use Padding Left or Top
+//To show panel properly initially. Beeter to invoke from Show Element
+procedure TKMScrollPanel.UpdateVisibility;
+begin
+  if Visible
+    and ((fPadding.Left > 0) or (fPadding.Top > 0)) then //Update visibility only when left/top padding > 0
+  begin
+    if saHorizontal in fScrollAxisSet then
+    begin
+      fScrollBarH.Position := fPadding.Left;
+      ScrollChanged(fScrollBarH);
+    end;
+
+    if saVertical in fScrollAxisSet then
+    begin
+      fScrollBarV.Position := fPadding.Top;
+      ScrollChanged(fScrollBarV);
+    end;
+  end;
 end;
 
 
@@ -5675,7 +5706,7 @@ begin
   if Sender = fScrollBarH then
   begin
     OldValue := Left;
-    Left := fClipRect.Left - fScrollBarH.Position;
+    Left := fClipRect.Left - fScrollBarH.Position + fPadding.Left;
     //To compensate changes in SetLeft
     Inc(fClipRect.Left, OldValue - Left);
     Inc(fClipRect.Right, OldValue - Left);
@@ -5683,7 +5714,7 @@ begin
   if Sender = fScrollBarV then
   begin
     OldValue := Top;
-    Top := fClipRect.Top - fScrollBarV.Position;
+    Top := fClipRect.Top - fScrollBarV.Position + fPadding.Top;
     //To compensate changes in SetTop
     Inc(fClipRect.Top, OldValue - Top);
     Inc(fClipRect.Bottom, OldValue - Top);
@@ -5716,9 +5747,9 @@ begin
 
   if (saHorizontal in fScrollAxisSet) then
   begin
-    if KMRectWidth(ChildsRect) > KMRectWidth(fClipRect) then
+    if KMRectWidth(ChildsRect) + fPadding.Left + fPadding.Right > KMRectWidth(fClipRect) then
     begin
-      fScrollBarH.MaxValue := KMRectWidth(ChildsRect) - KMRectWidth(fClipRect);
+      fScrollBarH.MaxValue := KMRectWidth(ChildsRect) - KMRectWidth(fClipRect) + fPadding.Left + fPadding.Right;
       NewPos := fClipRect.Left - Left;
 
       if NewPos > fScrollBarH.MaxValue then
@@ -5756,9 +5787,9 @@ begin
 
   if (saVertical in fScrollAxisSet) then
   begin
-    if KMRectHeight(ChildsRect) > KMRectHeight(fClipRect) then
+    if KMRectHeight(ChildsRect) + fPadding.Top + fPadding.Bottom > KMRectHeight(fClipRect) then
     begin
-      fScrollBarV.MaxValue := KMRectHeight(ChildsRect) - KMRectHeight(fClipRect);
+      fScrollBarV.MaxValue := KMRectHeight(ChildsRect) - KMRectHeight(fClipRect) + fPadding.Top + fPadding.Bottom;
       NewPos := fClipRect.Top - Top;
 
       if NewPos > fScrollBarV.MaxValue then
@@ -5839,6 +5870,12 @@ begin
   fScrollBarH.Top := fClipRect.Top + Height;
 
   UpdateScrolls(nil);
+end;
+
+
+procedure SetPaddingTop(aTop: Integer);
+begin
+
 end;
 
 
