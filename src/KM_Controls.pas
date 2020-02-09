@@ -484,12 +484,16 @@ type
   {3DButton}
   TKMButton = class(TKMControl)
   private
+    fCaption: UnicodeString;
     fTextAlign: TKMTextAlign;
     fStyle: TKMButtonStyle;
     fRX: TRXType;
+    fAutoHeight: Boolean; //Set button height automatically depending text size (height)
     procedure InitCommon(aStyle: TKMButtonStyle);
+    procedure SetCaption(aCaption: UnicodeString);
+    procedure SetAutoHeight(aValue: Boolean);
+    procedure UpdateHeight;
   public
-    Caption: UnicodeString;
     FlagColor: TColor4; //When using an image
     Font: TKMFont;
     MakesSound: Boolean;
@@ -497,13 +501,17 @@ type
     CapOffsetX: Shortint;
     CapOffsetY: Shortint;
     ShowImageEnabled: Boolean; // show picture as enabled or not (normal or darkened)
-    CenterText: Boolean;
     TextVAlign: TKMTextVAlign;
+    AutoTextPadding: Byte;      //text padding for autoHeight
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType;
                        aStyle: TKMButtonStyle; aPaintLayer: Integer = 0); overload;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
                        aStyle: TKMButtonStyle; aPaintLayer: Integer = 0); overload;
     function Click: Boolean; //Try to click a button and return TRUE if succeded
+
+    property Caption: UnicodeString read fCaption write SetCaption;
+    property AutoHeight: Boolean read fAutoHeight write SetAutoHeight;
+
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure Paint; override;
   end;
@@ -3494,6 +3502,35 @@ begin
   fStyle            := aStyle;
   MakesSound        := True;
   ShowImageEnabled  := True;
+  AutoHeight        := False;
+  AutoTextPadding   := 5;
+end;
+
+
+procedure TKMButton.UpdateHeight;
+var
+  TextY: Integer;
+begin
+  if fAutoHeight then
+  begin
+    TextY := gRes.Fonts[Font].GetTextSize(Caption).Y;
+    if TextY + AutoTextPadding > Height then
+      Height := TextY + AutoTextPadding;
+  end;
+end;
+
+
+procedure TKMButton.SetCaption(aCaption: UnicodeString);
+begin
+  fCaption := aCaption;
+  UpdateHeight;
+end;
+
+
+procedure TKMButton.SetAutoHeight(aValue: Boolean);
+begin
+  fAutoHeight := aValue;
+  UpdateHeight;
 end;
 
 
