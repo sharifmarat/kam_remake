@@ -4645,8 +4645,17 @@ begin
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
-        aStream.Read(TerIdentInfo); //Read packed info
-        GenInfo := UnpackTerrainGenInfo(TerIdentInfo);
+        if aGameRev <= 10745 then
+        begin
+          aStream.Read(aTileBasic.Layer[I].Terrain); //Old generated TerrainID
+          //Get terrain generation info for pre 10745 maps
+          GenInfo := gRes.Sprites.GetGenTerrainInfoLegacy(aTileBasic.Layer[I].Terrain);
+        end
+        else
+        begin
+          aStream.Read(TerIdentInfo); //Read packed info
+          GenInfo := UnpackTerrainGenInfo(TerIdentInfo);
+        end;
         //Get current generated terrain id by identification info
         //We could add more masks and terKinds in future, so we can't stick with generated terrainId,
         //but need to save/load its generation parameters (terKind/mask types etc)
