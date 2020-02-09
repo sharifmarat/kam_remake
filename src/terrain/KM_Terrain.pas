@@ -4527,8 +4527,22 @@ class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic
     end;
   end;
 
+  //Pack generated terrain id identification info into 2 bytes (Word)
+  //6 bits are for terKind       (supports up to 64 terKinds)
+  //2 bits for mask subType      (supports up to 4 mask subTypes)
+  //4 bits for mask Kind         (supports up to 16 mask kinds)
+  //4 bits for mask Type (MType) (supports up to 16 mask types)
+  function PackTerrainGenInfo(aGenInfo: TKMGenTerrainInfo): Word;
+  begin
+    Result := Byte(aGenInfo.TerKind) shl 10;
+    Result := Result or (Byte(aGenInfo.Mask.SubType) shl 8);
+    Result := Result or (Byte(aGenInfo.Mask.Kind) shl 4);
+    Result := Result or Byte(aGenInfo.Mask.MType);
+  end;
+
 var
   L: Integer;
+  GenInfo: TKMGenTerrainInfo;
 begin
   S.Write(aTileBasic.BaseLayer.Terrain);  //1
   //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
@@ -4545,7 +4559,10 @@ begin
     Inc(aMapDataSize, 2);
     for L := 0 to aTileBasic.LayersCnt - 1 do
     begin
-      S.Write(aTileBasic.Layer[L].Terrain);
+      //We could add more masks and terKinds in future, so we can't stick with generated terrainId,
+      //but need to save/load its generation parameters (terKind/mask types etc)
+      GenInfo := gRes.Sprites.GetGenTerrainInfo(aTileBasic.Layer[L].Terrain);
+      S.Write(PackTerrainGenInfo(GenInfo));
       S.Write(aTileBasic.Layer[L].Rotation);
       Inc(aMapDataSize, 3); // Terrain (2 bytes) + Rotation (1 byte)
     end;
@@ -4554,11 +4571,27 @@ end;
 
 
 class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
+
+  //Unpack generated terrain id identification info from 2 bytes (Word)
+  //6 bits are for terKind       (supports up to 64 terKinds)
+  //2 bits for mask subType      (supports up to 4 mask subTypes)
+  //4 bits for mask Kind         (supports up to 16 mask kinds)
+  //4 bits for mask Type (MType) (supports up to 16 mask types)
+  function UnpackTerrainGenInfo(aPackedInfo: Word): TKMGenTerrainInfo;
+  begin
+    Result.TerKind      := TKMTerrainKind((aPackedInfo shr 10) and 63);
+    Result.Mask.SubType := TKMTileMaskSubType((aPackedInfo shr 8) and 3);
+    Result.Mask.Kind    := TKMTileMaskKind((aPackedInfo shr 4) and 15);
+    Result.Mask.MType   := TKMTileMaskType(aPackedInfo and 15);
+  end;
+
 var
   I: Integer;
   TerrainB, ObjectB, Rot, Corners: Byte;
   LayersCorners: array[0..3] of Byte;
   UseKaMFormat: Boolean;
+  TerIdentInfo: Word;
+  GenInfo: TKMGenTerrainInfo;
 begin
   UseKaMFormat := ( aGameRev = 0 );
 
@@ -4612,7 +4645,13 @@ begin
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
-        aStream.Read(aTileBasic.Layer[I].Terrain);
+        aStream.Read(TerIdentInfo); //Read packed info
+        GenInfo := UnpackTerrainGenInfo(TerIdentInfo);
+        //Get current generated terrain id by identification info
+        //We could add more masks and terKinds in future, so we can't stick with generated terrainId,
+        //but need to save/load its generation parameters (terKind/mask types etc)
+        aTileBasic.Layer[I].Terrain := gGenTerrainTransitions[GenInfo.TerKind, GenInfo.Mask.Kind,
+                                                              GenInfo.Mask.MType, GenInfo.Mask.SubType];
         aStream.Read(aTileBasic.Layer[I].Rotation);
         aTileBasic.Layer[I].Corners := [];
       end;
