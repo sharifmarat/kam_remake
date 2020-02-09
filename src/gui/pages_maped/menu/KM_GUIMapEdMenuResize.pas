@@ -89,7 +89,7 @@ begin
       Button_Cancel := TKMButton.Create(Panel_Resize_Edit, 0, Y, TB_WIDTH, 30, gResTexts[TX_WORD_CANCEL], bsGame);
       Button_Cancel.OnClick   := Menu_Click;
 
-    Panel_Resize_Confirm := TKMPanel.Create(Panel_Resize, 0, 0, Panel_Resize.Width, Panel_Resize.Height);
+    Panel_Resize_Confirm := TKMPanel.Create(Panel_Resize, 9, 0, Panel_Resize.Width, Panel_Resize.Height);
       Label_Resize_Confirm := TKMLabel.Create(Panel_Resize_Confirm, 0, 0, TB_WIDTH, 20, gResTexts[TX_MAPED_MAP_RESIZE_CONFIRM_TITLE], fntOutline, taCenter);
       Label_Resize_Confirm.AutoWrap := True;
 
