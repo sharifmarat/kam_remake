@@ -237,10 +237,16 @@ begin
     Label_Servers_Status.Hide;
 
     //Server details area
+    //Bevel first, before ScrollPanel
+    with TKMBevel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465) do
+      AnchorsStretch;
+
     Panel_MPServerDetails := TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
     Panel_MPServerDetails.AnchorsStretch;
+    Panel_MPServerDetails.Padding.SetBottom(5); //Small padding at the bottom
+
     Panel_MPServerDetails.ScrollV.OnChangeVisibility := ServerDetailsScrollChangedVisibility;
-      TKMBevel.Create(Panel_MPServerDetails, 0, 0, SERVER_DETAILS_W, 465);
+
       Label_MP_ServerDetails_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 6, S_DETAILS_W_INT, 20, gResTexts[TX_MP_MENU_HEADER_SERVER_DETAILS], fntOutline, taCenter);
       Label_MP_GameInfo_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 30, S_DETAILS_W_INT, 20, gResTexts[TX_MP_MENU_GAME_INFORMATION], fntOutline, taLeft);
       Label_MP_Desc := TKMLabel.Create(Panel_MPServerDetails, 8, 50, S_DETAILS_W_INT, 40, '', fntMetal, taLeft);
