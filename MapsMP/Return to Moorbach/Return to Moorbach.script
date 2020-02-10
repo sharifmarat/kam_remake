@@ -1,0 +1,85 @@
+//-- Return to Moorbach --//
+//By Strangelove
+//v0.8.3e
+//23.12.2019
+//Developed for r10540
+//Last Tested in r10745
+
+{$I dynamicmap.script}
+{$I improvestaticai.script}
+{$I difficulty.script}
+
+
+var
+	DifficultySetting: TKMMissionDifficulty; 
+
+
+procedure OnMissionStart();
+begin
+	DifficultySetting := States.MissionDifficulty();
+
+	case DifficultySetting of
+		mdHard1, mdHard2:
+		begin
+			//Add Towers for Player6
+			GiveHouseAndConnect(6, 17, 115, 15);
+			GiveHouseAndConnect(6, 17, 114, 7);
+			GiveHouseAndConnect(6, 17, 117, 23);
+			GiveHouseAndConnect(6, 17, 140, 46);
+			GiveHouseAndConnect(6, 17, 149, 49);
+			GiveHouseAndConnect(6, 17, 132, 41);
+			GiveHouseAndConnect(6, 17, 125, 36);
+			GiveHouseAndConnect(6, 17, 155, 50);
+			GiveHouseAndConnect(6, 17, 120, 30);
+		end;
+	end;
+end;
+
+procedure OnTick();
+begin
+	//Make Waterfalls more dynamic (Change end tiles) Not automated yet...
+	if States.GameTime() mod 6 = 0 then
+	begin
+		ChangeWaterfallEndTiles(37, 38, 14);
+		ChangeWaterfallEndTiles(84, 85, 113);
+	end;
+
+	//Remove/Add Enemy Defence Positions and Groups
+	if States.GameTime() = (MAX_HANDS +1) then
+		case DifficultySetting of
+			mdEasy2:
+			begin
+				RemoveDefencePositionAndGroup(5, 83, 4);
+				RemoveDefencePositionAndGroup(3, 12, 9);
+				RemoveDefencePositionAndGroup(4, 157, 71);
+				RemoveDefencePositionAndGroup(6, 125, 10);
+				RemoveDefencePositionAndGroup(6, 144, 38);
+				RemoveDefencePositionAndGroup(5, 81, 10);
+				RemoveDefencePositionAndGroup(5, 144, 38);
+				RemoveDefencePositionAndGroup(5, 75, 13);
+				RemoveDefencePositionAndGroup(5, 78, 18);
+				RemoveDefencePositionAndGroup(4, 124, 69);
+				RemoveDefencePositionAndGroup(4, 127, 69);
+				RemoveDefencePositionAndGroup(3, 8, 41);
+			end;
+			mdEasy1: 	
+			begin
+				RemoveDefencePositionAndGroup(6, 125, 10);
+				RemoveDefencePositionAndGroup(6, 144, 38);
+				RemoveDefencePositionAndGroup(5, 81, 10);
+				RemoveDefencePositionAndGroup(5, 144, 38);
+				RemoveDefencePositionAndGroup(5, 75, 13);
+				RemoveDefencePositionAndGroup(5, 78, 18);
+				RemoveDefencePositionAndGroup(4, 124, 69);
+				RemoveDefencePositionAndGroup(4, 127, 69);
+				RemoveDefencePositionAndGroup(3, 8, 41);
+			end;
+			mdNormal:
+			begin
+				RemoveDefencePositionAndGroup(5, 75, 13);
+				RemoveDefencePositionAndGroup(5, 81, 10);
+				RemoveDefencePositionAndGroup(4, 124, 69);
+				RemoveDefencePositionAndGroup(4, 127, 69);
+			end;
+		end;
+end;
