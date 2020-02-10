@@ -1,0 +1,125 @@
+//-- The Dig --//
+//By Strangelove
+//v0.9j
+//05.12.2019
+//Developed for r10548
+
+{$I dynamicmap.script}
+{$I improvestaticai.script}
+{$I difficulty.script}
+
+
+var
+	DifficultySetting: TKMMissionDifficulty; 
+
+
+procedure OnMissionStart();
+begin
+	DifficultySetting := States.MissionDifficulty();
+
+	//Add Soundeffects
+	//Actions.PlayWAVAtLocationLooped(-1, 'Waterfall1', 0.6, 32, 108, 41);
+	//Actions.PlayWAVAtLocationLooped(-1, 'Waterfall1', 1.0, 32, 108, 91);
+	
+	//Add Enemy Knights for initial attack
+	case DifficultySetting of
+		mdEasy1: 	
+		begin
+			Actions.AIGroupsFormationSet(8, 3, 12, 4);
+			Actions.GiveGroup(8, 22, 5, 76, 0, 10, 5);
+			Actions.GiveGroup(8, 22, 11, 75, 0, 10, 5);
+		end;
+		mdNormal:
+		begin
+			Actions.AIGroupsFormationSet(8, 3, 8, 4);
+			Actions.GiveGroup(8, 22, 4, 76, 0, 8, 4);
+			Actions.GiveGroup(8, 22, 9, 75, 0, 8, 4);
+			Actions.GiveGroup(8, 22, 14, 74, 0, 8, 4);
+		end;
+		mdHard1:
+		begin
+			Actions.AIGroupsFormationSet(8, 3, 9, 3);
+			Actions.GiveGroup(8, 22, 3, 75, 0, 9, 3);
+			Actions.GiveGroup(8, 22, 8, 74, 0, 9, 3);
+			Actions.GiveGroup(8, 22, 13, 73, 0, 9, 3);
+		end;
+		mdHard2:
+		begin
+			Actions.AIGroupsFormationSet(8, 3, 8, 4);
+			Actions.GiveGroup(8, 22, 6, 74, 0, 8, 4);
+			Actions.GiveGroup(8, 22, 12, 73, 0, 8, 4);
+			Actions.GiveGroup(8, 22, 5, 77, 0, 8, 4);
+			Actions.GiveGroup(8, 22, 11, 76, 0, 8, 4);
+		end;
+	end;
+end;
+
+procedure OnTick();
+begin
+	//Make Waterfalls more dynamic (Change end tiles) Not automated yet...
+	if States.GameTime() mod 6 = 0 then
+		ChangeWaterfallEndTiles(108, 109, 91);
+		
+	//Remove/Add Enemy Defence Positions and Groups
+	if States.GameTime() = (MAX_HANDS +1) then
+		case DifficultySetting of
+			mdEasy1: 	
+			begin
+				RemoveDefencePositionAndGroup(3, 43, 100); //Pikes
+				RemoveDefencePositionAndGroup(3, 64, 72);
+				RemoveDefencePositionAndGroup(4, 84, 34); //Knights
+				RemoveDefencePositionAndGroup(4, 76, 68); //Swords
+				RemoveDefencePositionAndGroup(4, 86, 73); //Knights
+				RemoveDefencePositionAndGroup(4, 78, 51); //Pikes
+				RemoveDefencePositionAndGroup(5, 124, 24); //Knights
+				RemoveDefencePositionAndGroup(5, 119, 25); //xbow
+				RemoveDefencePositionAndGroup(6, 121, 57); //Swords
+				RemoveDefencePositionAndGroup(6, 121, 70);
+				RemoveDefencePositionAndGroup(6, 124, 57); //Xbows
+				RemoveDefencePositionAndGroup(6, 124, 70);
+				RemoveDefencePositionAndGroup(6, 120, 46); //Knights
+				RemoveDefencePositionAndGroup(6, 119, 83);
+				RemoveDefencePositionAndGroup(7, 115, 115); //Axe
+				RemoveDefencePositionAndGroup(7, 113, 119);
+				RemoveDefencePositionAndGroup(7, 113, 124); //Scout
+				RemoveDefencePositionAndGroup(7, 114, 129); //Lancer
+				RemoveDefencePositionAndGroup(7, 157, 115); //Lancer
+				RemoveDefencePositionAndGroup(7, 151, 117); //Scouts
+				RemoveDefencePositionAndGroup(8, 9, 86); //Knights
+			end;
+			mdNormal:
+			begin
+				RemoveDefencePositionAndGroup(4, 78, 51); //Pikes
+				RemoveDefencePositionAndGroup(4, 81, 71); //Knights
+				RemoveDefencePositionAndGroup(6, 120, 46); //Knights
+				RemoveDefencePositionAndGroup(6, 119, 83);
+				RemoveDefencePositionAndGroup(7, 115, 115); //Axe
+				RemoveDefencePositionAndGroup(7, 113, 119);
+				RemoveDefencePositionAndGroup(7, 113, 124); //Scout
+				RemoveDefencePositionAndGroup(7, 114, 129); //Lancer
+			end;
+			mdHard1:
+			begin
+				RemoveDefencePositionAndGroup(7, 115, 115); //Axe
+				RemoveDefencePositionAndGroup(6, 120, 46); //Knights
+				RemoveDefencePositionAndGroup(6, 119, 83);
+			end;
+			mdHard2:
+			begin
+				AddDefencePositionAndGroup(4, 20, 107, 56, 6, 21); //pike
+				AddDefencePositionAndGroup(4, 16, 104, 61, 6, 21); //Sword
+				AddDefencePositionAndGroup(4, 18, 107, 61, 6, 21); //xbow
+			end;
+		end;
+	
+	//Schedule Messages
+	if States.GameTime() = 1500 then //@2.5Minutes
+		Actions.ShowMsg(2, '<$0>');
+	if States.GameTime() = 2700 then //@4.5Minutes
+	begin
+		Actions.ShowMsg(0, '<$1>');
+		Actions.ShowMsg(1, '<$1>');
+	end;
+	if States.GameTime() = States.AIRecruitDelay(3) then
+		Actions.ShowMsg(2, '<$2>');
+end;  
