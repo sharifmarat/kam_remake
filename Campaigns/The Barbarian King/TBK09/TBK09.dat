@@ -1,4 +1,4 @@
-!SET_MAP "data\mission\smaps\TST01.map"
+!SET_MAP "data\mission\smaps\TBK09.map"
 !SET_TACTIC
 !SET_MAX_PLAYER 3
 !SET_HUMAN_PLAYER 0
@@ -190,6 +190,14 @@
 
 
 
+!SET_AI_ATTACK TYPE 0
+!SET_AI_ATTACK TOTAL_AMOUNT 1
+!SET_AI_ATTACK TAKEALL
+!SET_AI_ATTACK COUNTER 100
+!SET_AI_ATTACK TARGET 1
+!COPY_AI_ATTACK 0
+!CLEAR_AI_ATTACK
+
 
 !SET_ALLIANCE 0 0
 !SET_ALLIANCE 1 0
@@ -203,4 +211,4 @@
 
 //Animals
 
-//This mission was made with KaM Remake Map Editor version r9943 at 08/04/2019 20:28:28
+//This mission was made with KaM Remake Map Editor version r10745 at 31/12/2019 08:40:07

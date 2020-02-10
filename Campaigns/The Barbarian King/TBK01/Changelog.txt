@@ -42,3 +42,11 @@ Version 2.1b (11.04.2019)
 Version 2.1c (22.04.2019)
 - On Hard: One less village to loose before beeing defeated (from 4 to 3)
 - Added msg @12min mark that says how many villages you're allowed to loose before beeing defeated to make things more clear
+
+Version 2.2 (29.12.2019)
+- Barbarian Attacks are now handled by Static script
+- Removed "spawn buffer" for Barbarians: Barbarians can now spawn even when the old ones remain on the field
+- Can only loose 3 villages before being defeated (on all difficulties)
+- Main Script reworked to refelect those changes
+- Removed unused strings from libx and deleted outdated translations
+- Removed 'functions.script' as its not needed anymore

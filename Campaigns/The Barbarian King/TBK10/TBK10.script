@@ -1,7 +1,7 @@
 //-- TBK10 --//
 //By Strangelove
-//v2.1
-//04.03.2018
+//v2.2
+//30.12.2019
 
 {$I improvestaticai.script}
 {$I transformunits.script}
@@ -69,6 +69,9 @@ begin
 	Storehouse := Actions.GiveHouse(0, 11, 48, 83);
 	for w := 0 to 27 do 
 		Actions.HouseAddWaresTo(Storehouse, w, 900);
+	Actions.GiveRoad(0, 47, 84);
+	Actions.GiveRoad(0, 48, 84);
+	Actions.GiveRoad(0, 49, 84);
 	Actions.GiveGroup(0, 22, 56, 83, 2, 40, 10);
 	Actions.GiveUnit(0, 9, 46, 85, 4);
 	Actions.GiveUnit(0, 9, 47, 85, 4);
@@ -90,6 +93,7 @@ begin
 	iCoalBuildIndex := 0;
 	GolbalDestroyerIndex := 0;
 	
+	{$IFDEF NOSTANDALONE}
 	{$IFDEF DEBUG}
 	Actions.Log('GroupLength: ' + inttostr(Length(CampaignData.TBK09.aGroupData)));
 	Actions.Log('HouseLength: ' + inttostr(Length(CampaignData.TBK09.aHouseData)));	
@@ -98,6 +102,7 @@ begin
 	Actions.Log('TileObjectLength: ' + inttostr(Length(CampaignData.TBK09.aTileObjectData)));
 	Actions.Log('aDestroyedHouseData: ' + inttostr(Length(CampaignData.TBK09.aDestroyedHouseData)));
 	{$ENDIF}
+	{$ENDIF}
 end;
 
 procedure OnTick;
@@ -105,7 +110,7 @@ var
 	k: Integer;
 	aHouses: array of Integer;
 begin
-	if States.GameTime() = 14 then
+	if States.GameTime() = (MAX_HANDS +1) then
 		//Difficulty
 		case States.MissionDifficulty() of
 			mdEasy1:

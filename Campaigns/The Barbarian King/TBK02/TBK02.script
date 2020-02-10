@@ -1,7 +1,7 @@
 //-- TBK02 --//
 //By Strangelove
-//v2.1c
-//14.08.2019
+//v2.2
+//29.12.2019
 
 {$I improvestaticai.script}
 {$I transformunits.script}
@@ -20,7 +20,6 @@
 
 const
 	SPY_TIMING = 27000; //Default: 45min (On Normal Difficulty)
-	TIMING_MODIFIER = 0.25;
 
 Type
 	TSpy = record
@@ -32,7 +31,7 @@ var
 	Spy: TSpy;
 	aHouses: array of Integer;
 	SpyTiming: Word;
-	UnitType: Integer;
+	UnitType: Byte;
 	{$IFDEF NOSTANDALONE}
 	aDestroyedHouseBuffer: array of array[0..3] of Integer;
 	GlobalD: Integer;
@@ -60,15 +59,14 @@ begin
 	Spy.Routine := 10;
 	Spy.Group := -1;
 	UnitType := 14;
+	SpyTiming := SPY_TIMING;
 	aHouses := States.PlayerGetAllHouses(0);
 	//Actions.FogCoverAll(1);
 	Actions.UnitBlock(1, 15, true); //Disable AxeFighter
 	//Difficulty
 	case States.MissionDifficulty() of
-		mdEasy1: SpyTiming := Round(SPY_TIMING *(1 +TIMING_MODIFIER));
 		mdHard1:
 		begin
-			SpyTiming := Round(SPY_TIMING *(1 -TIMING_MODIFIER));
 			AddDefencePositionAndGroup(1, 19, 38, 24, 5, 20); //Lancer
 			AddDefencePositionAndGroup(1, 23, 11, 21, 3, 20); //Barbs
 			AddDefencePositionAndGroup(1, 23, 75, 28, 4, 20);
@@ -87,6 +85,10 @@ procedure OnTick;
 var 
 	k, iFogX, iFogY: Byte;
 begin
+
+	if States.GameTime() = 1 then //Shit doesnt work OnMissionStart...
+		SpyTiming := Round(SPY_TIMING *EquipRateMod[dMod]);
+	
 	//Show Msg at Start of the Game
 	if States.GameTime() = 300 then
 		Actions.ShowMsg(-1, '<$0>');

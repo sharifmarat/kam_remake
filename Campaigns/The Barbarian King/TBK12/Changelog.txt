@@ -40,3 +40,8 @@ Version 2.1b: (06.04.2019)
 	- Easy: Removed some of Enemy defence positions; Start of Iron Production begins later
 	- Normal: No change
 	- Hard: Added additional defence positions; Iron production start earlier and Player1 is given unlimited Iron Ore and Coal after Mines are built
+
+Version 2.2: (30.12.2019)
+- integrated newest version of 'difficulty.script'
+- 'Easy' decreases Recruit Rate by 50% instead of 33%
+- Fixed a bug that was introduced when moving the campaign to version r10745

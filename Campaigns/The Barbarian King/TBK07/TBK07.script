@@ -1,7 +1,7 @@
 //-- TBK07 --//
 //By Strangelove
-//v2.0b
-//05.04.2019
+//v2.2
+//30.12.2019
 
 
 {$I improvestaticai.script}
@@ -12,17 +12,15 @@
 //{$UNDEF DEBUG}
 
 
-procedure OnTick;
+procedure OnTick();
 begin
-	//RemoveDefencePositionAndGroup can only be applied after Tick13
-	if States.GameTime = 14 then
+	if States.GameTime = (MAX_HANDS +1) then
 		case States.MissionDifficulty() of
 			mdEasy1:
 			begin
 				RemoveDefencePositionAndGroup(2, 108, 58); //Melee
 				RemoveDefencePositionAndGroup(2, 115, 60);
 			end;
-			mdNormal: 	exit;
 			mdHard1: //Add additional Units for defence
 			begin
 				AddDefencePositionAndGroup(4, 16, 55, 45, 6, 32); //Swordies

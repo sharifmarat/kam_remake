@@ -20,3 +20,8 @@ Version 2.1b: (11.04.2019)
 - Units spawn now further away on Mission start (Enemy and Player0)
 - Get additional Data (Roadworks and Destroyed Houses)
 - Script overhauled
+
+Version 2.2 (29.12.2019)
+- Fixed difficulty settings (Now actually winnable on 'hard', easier on other difficulties)
+- Attack is now handled by static script; script modified accordingly
+- Updated Stone Mountain
