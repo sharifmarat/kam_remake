@@ -1,0 +1,230 @@
+//-- Siege of Castle Fennford --//
+//By Strangelove
+//v0.8.1d
+//28.12.2019
+//Developed for r10548
+//Last tested on r10745
+
+{$I dynamicmap.script}
+{$I improvestaticai.script}
+{$I difficulty.script}
+{$I transformunits.script}
+
+
+var
+	DifficultySetting: TKMMissionDifficulty; 
+
+
+procedure OnMissionStart();
+var
+	Cavalry: array[0..1] of Integer;
+begin
+	DifficultySetting := States.MissionDifficulty();
+	//Scale initial Fight with difficulty
+	case DifficultySetting of
+		mdEasy2:
+		begin
+			//Player9 (Leather)
+			Cavalry[0] := Actions.GiveGroup(9, 21, 74, 3, 6, 9, 3); //Scouts
+			Cavalry[1] := Actions.GiveGroup(9, 27, 76, 7, 6, 12, 4); //Vagabond
+			Actions.GiveGroup(9, 15, 75, 13, 6, 12, 4); //Axefighter
+			Actions.GiveGroup(9, 17, 78, 13, 6, 8, 4); //Bowman
+			Actions.GiveGroup(9, 19, 78, 19, 6, 9, 3); //Lancers
+			//Player10
+			Actions.GiveGroup(10, 22, 77, 54, 6, 9, 3); //Knights
+			Actions.GiveGroup(10, 22, 81, 54, 6, 9, 3); 
+			Actions.GiveGroup(10, 22, 85, 54, 6, 9, 3); 
+			//Player11
+			Actions.GiveGroup(11, 16, 104, 80, 4, 10, 5); //Swordman
+			Actions.GiveGroup(11, 20, 109, 77, 4, 9, 3); //Pikes
+			Actions.GiveGroup(11, 18, 103, 76, 4, 8, 4); //Crossbow
+			Actions.GiveGroup(11, 22, 124, 125, 6, 9, 3); //Knights
+			Actions.GiveGroup(11, 22, 128, 125, 6, 9, 3); 
+		end;
+		mdEasy1:
+		begin
+			//Player9 (Leather)
+			Cavalry[0] := Actions.GiveGroup(9, 27, 74, 3, 6, 9, 3); //Vagabond
+			Cavalry[1] := Actions.GiveGroup(9, 21, 76, 7, 6, 12, 4); //Scouts
+			Actions.GiveGroup(9, 15, 75, 13, 6, 12, 4); //Axefighter
+			Actions.GiveGroup(9, 17, 78, 13, 6, 8, 4); //Bowman
+			Actions.GiveGroup(9, 19, 78, 19, 6, 9, 3); //Lancers
+			//Player10
+			Actions.GiveGroup(10, 22, 77, 53, 6, 12, 4); //Knights
+			Actions.GiveGroup(10, 22, 81, 54, 6, 9, 3); 
+			Actions.GiveGroup(10, 22, 85, 54, 6, 9, 3); 
+			//Player11
+			Actions.GiveGroup(11, 16, 104, 80, 4, 12, 4); //Swordman
+			Actions.GiveGroup(11, 20, 109, 77, 4, 9, 3); //Pikes
+			Actions.GiveGroup(11, 18, 103, 76, 4, 8, 4); //Crossbow
+			Actions.GiveGroup(11, 22, 124, 125, 6, 9, 3); //Knights
+			Actions.GiveGroup(11, 22, 128, 125, 6, 12, 4); 
+		end;
+		mdNormal:
+		begin
+			//Player9 (Leather)
+			Cavalry[0] := Actions.GiveGroup(9, 21, 74, 3, 6, 9, 3); //Scouts
+			Cavalry[1] := Actions.GiveGroup(9, 21, 76, 7, 6, 12, 4);
+			Actions.GiveGroup(9, 23, 75, 13, 6, 12, 4); //Barbarian
+			Actions.GiveGroup(9, 17, 78, 13, 6, 8, 4); //Bowman
+			Actions.GiveGroup(9, 19, 78, 19, 6, 9, 3); //Lancers
+			//Player10
+			Actions.GiveGroup(10, 22, 77, 53, 6, 12, 4); //Knights
+			Actions.GiveGroup(10, 22, 81, 54, 6, 9, 3); 
+			Actions.GiveGroup(10, 22, 85, 53, 6, 12, 4); 
+			//Player11
+			Actions.GiveGroup(11, 16, 104, 80, 4, 12, 4); //Swordman
+			Actions.GiveGroup(11, 20, 109, 77, 4, 9, 3); //Pikes
+			Actions.GiveGroup(11, 18, 103, 76, 4, 8, 4); //Crossbow
+			Actions.GiveGroup(11, 22, 124, 125, 6, 12, 4); //Knights
+			Actions.GiveGroup(11, 22, 128, 125, 6, 12, 4); 
+		end;
+		mdHard1:
+		begin
+			//Player9 (Leather)
+			Cavalry[0] := Actions.GiveGroup(9, 21, 74, 3, 6, 9, 3); //Scouts
+			Cavalry[1] := Actions.GiveGroup(9, 21, 76, 7, 6, 12, 4);
+			Actions.GiveGroup(9, 23, 75, 13, 6, 15, 5); //Barbarian
+			Actions.GiveGroup(9, 17, 78, 13, 6, 10, 5); //Bowman
+			Actions.GiveGroup(9, 19, 78, 19, 6, 9, 3); //Lancers
+			//Player10
+			Actions.GiveGroup(10, 22, 77, 53, 6, 12, 4); //Knights
+			Actions.GiveGroup(10, 22, 81, 53, 6, 12, 4); 
+			Actions.GiveGroup(10, 22, 85, 53, 6, 12, 4); 
+			//Player11
+			Actions.GiveGroup(11, 16, 104, 80, 4, 12, 4); //Swordman
+			Actions.GiveGroup(11, 20, 109, 77, 4, 9, 3); //Pikes
+			Actions.GiveGroup(11, 18, 103, 76, 4, 8, 4); //Crossbow
+			Actions.GiveGroup(11, 22, 124, 125, 6, 12, 4); //Knights
+			Actions.GiveGroup(11, 22, 128, 125, 6, 15, 5); 
+		end;
+		mdHard2:
+		begin
+			//Player9 (Leather)
+			Cavalry[0] := Actions.GiveGroup(9, 21, 74, 3, 6, 12, 4); //Scouts
+			Cavalry[1] := Actions.GiveGroup(9, 21, 76, 7, 6, 12, 4);
+			Actions.GiveGroup(9, 23, 75, 13, 6, 15, 5); //Barbarian
+			Actions.GiveGroup(9, 17, 78, 13, 6, 10, 5); //Bowman
+			Actions.GiveGroup(9, 19, 78, 19, 6, 9, 3); //Lancers
+			//Player10
+			Actions.GiveGroup(10, 22, 77, 53, 6, 12, 4); //Knights
+			Actions.GiveGroup(10, 22, 81, 53, 6, 12, 4); 
+			Actions.GiveGroup(10, 22, 85, 53, 6, 12, 4); 
+			//Player11
+			Actions.GiveGroup(11, 16, 104, 80, 4, 12, 4); //Swordman
+			Actions.GiveGroup(11, 20, 109, 77, 4, 10, 5); //Pikes
+			Actions.GiveGroup(11, 18, 103, 76, 4, 9, 3); //Crossbow
+			Actions.GiveGroup(11, 22, 124, 125, 6, 12, 4); //Knights
+			Actions.GiveGroup(11, 22, 128, 125, 6, 15, 5); 
+		end;
+	end;
+	//Get Cavalry in Position
+	Actions.GroupOrderWalk(Cavalry[0], 25, 12, 5);
+	Actions.GroupOrderWalk(Cavalry[1], 19, 11, 4);
+	//Kill Units used for activation
+	Actions.UnitKill(States.UnitAt(145, 127), true);
+	Actions.UnitKill(States.UnitAt(146, 127), true);
+	Actions.UnitKill(States.UnitAt(147, 127), true);
+end;
+
+procedure OnTick();
+begin
+	//Make Waterfalls more dynamic (Change end tiles) Not automated yet...
+	if States.GameTime() mod 9 = 0 then
+		ChangeWaterfallEndTiles(147, 148, 98);
+
+	//Remove/Add Enemy Defence Positions and Groups
+	if States.GameTime() = (MAX_HANDS +1) then
+	begin
+		case DifficultySetting of
+			mdEasy2: //20
+			begin
+				//Leather
+				RemoveDefencePositionAndGroup(3, 81, 2);
+				RemoveDefencePositionAndGroup(3, 87, 24);
+				//Backdoor units
+				RemoveDefencePositionAndGroup(3, 126, 25);
+				RemoveDefencePositionAndGroup(3, 134, 25);
+				RemoveDefencePositionAndGroup(4, 123, 41);
+				RemoveDefencePositionAndGroup(4, 129, 42);
+				//"Drawbridge"
+				RemoveDefencePositionAndGroup(4, 79, 38);
+				RemoveDefencePositionAndGroup(4, 83, 40);
+				//Southern Bridge
+				RemoveDefencePositionAndGroup(5, 101, 65);
+				RemoveDefencePositionAndGroup(5, 111, 63);
+				RemoveDefencePositionAndGroup(5, 106, 65);
+				RemoveDefencePositionAndGroup(5, 120, 66);
+				//Across the Bridge
+				RemoveDefencePositionAndGroup(6, 159, 31);
+				RemoveDefencePositionAndGroup(7, 167, 72);
+				RemoveDefencePositionAndGroup(7, 177, 70);
+				RemoveDefencePositionAndGroup(7, 172, 73);
+				//Across the Bridge, south
+				RemoveDefencePositionAndGroup(8, 168, 95);
+				RemoveDefencePositionAndGroup(8, 185, 95);
+				RemoveDefencePositionAndGroup(8, 189, 95);
+				RemoveDefencePositionAndGroup(8, 179, 95);
+			end;
+			mdEasy1: //16
+			begin
+				//Leather
+				RemoveDefencePositionAndGroup(3, 86, 3);
+				//Backdoor units
+				RemoveDefencePositionAndGroup(3, 126, 25);
+				RemoveDefencePositionAndGroup(3, 134, 25);
+				RemoveDefencePositionAndGroup(4, 123, 41);
+				RemoveDefencePositionAndGroup(4, 129, 42);
+				//"Drawbridge"
+				RemoveDefencePositionAndGroup(4, 79, 38);
+				RemoveDefencePositionAndGroup(4, 83, 40);
+				//Southern Bridge
+				RemoveDefencePositionAndGroup(5, 101, 65);
+				RemoveDefencePositionAndGroup(5, 111, 63);
+				//Across the Bridge
+				RemoveDefencePositionAndGroup(6, 159, 31);
+				RemoveDefencePositionAndGroup(7, 167, 72);
+				RemoveDefencePositionAndGroup(7, 177, 70);
+				//Across the Bridge, south
+				RemoveDefencePositionAndGroup(8, 168, 95);
+				RemoveDefencePositionAndGroup(8, 185, 95);
+				RemoveDefencePositionAndGroup(8, 189, 95);
+				RemoveDefencePositionAndGroup(8, 179, 95);
+			end;
+			mdNormal: //11
+			begin
+				//Backdoor units
+				RemoveDefencePositionAndGroup(3, 126, 25);
+				RemoveDefencePositionAndGroup(3, 134, 25);
+				RemoveDefencePositionAndGroup(4, 123, 41);
+				RemoveDefencePositionAndGroup(4, 129, 42);
+				//"Drawbridge"
+				RemoveDefencePositionAndGroup(4, 79, 38);
+				//Southern Bridge
+				RemoveDefencePositionAndGroup(5, 106, 65);
+				//Across the Bridge
+				RemoveDefencePositionAndGroup(6, 159, 31);
+				RemoveDefencePositionAndGroup(7, 172, 73);
+				//Across the Bridge, south
+				RemoveDefencePositionAndGroup(8, 168, 95);
+				RemoveDefencePositionAndGroup(8, 185, 95);
+				RemoveDefencePositionAndGroup(8, 189, 95);
+			end;
+			mdHard1: //6
+			begin
+				//Backdoor units
+				RemoveDefencePositionAndGroup(3, 134, 25);
+				RemoveDefencePositionAndGroup(4, 192, 42);
+				//"Drawbridge"
+				RemoveDefencePositionAndGroup(4, 79, 38);
+				//Southern Bridge
+				RemoveDefencePositionAndGroup(5, 106, 65);
+				//Across the Bridge, south
+				RemoveDefencePositionAndGroup(8, 168, 95);
+				RemoveDefencePositionAndGroup(8, 189, 95);
+			end;
+			//No Defense Positions removed on mdHard2 (Harder)
+		end;
+		Actions.ShowMsg(-1, '<$0>');
+	end;
+end;
