@@ -2899,6 +2899,8 @@ type
   TStoneTransitionType = (sttNone, sttGrass, sttCoastSand, sttDirt, sttSnow, sttShallowSnow);
 
 const
+  IGNORED_STONE_WATER_TILES = [142,143,200,210,211];
+
   TransitionsTerKinds: array[TStoneTransitionType] of TKMTerrainKind =
                                                       (tkGrass, tkGrass, tkCoastSand, tkDirt, tkSnow, tkSnowOnDirt);
   TranTiles: array[TStoneTransitionType] of array[0..6] of Word =
@@ -2971,7 +2973,8 @@ var
       //or (aStep > MAX_STEPS)    //Limit for steps (no limit for now)
       or TileHasStone(X,Y)      //If tile has stone no need to change it
       or ArrayContains(KMPoint(X,Y), Visited, fVisitedCnt) //If we already changed this tile
-      or ((aStep <> 0) and not TileHasStonePart(X,Y)) then //If tile has no stone parts (except initial step)
+      or ((aStep <> 0) and not TileHasStonePart(X,Y))
+      or (Land[Y,X].BaseLayer.Terrain in IGNORED_STONE_WATER_TILES) then //If tile has no stone parts (except initial step)
       Exit;
 
     Bits := GetBits(X  ,Y-1)*1 +
