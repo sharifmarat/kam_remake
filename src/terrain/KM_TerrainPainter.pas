@@ -7,7 +7,7 @@ uses
   KM_Terrain, KM_ResTileset;
 
 const
-  MAX_UNDO = 50;
+  MAX_UNDO = 100;
 
 type
   //Tile data that we store in undo checkpoints
