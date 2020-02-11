@@ -4323,7 +4323,7 @@ begin
   for I := 1 to fMapY do
     for J := 1 to fMapX do
     begin
-      ReadTileFromStream(LoadStream, TileBasic);
+      ReadTileFromStream(LoadStream, TileBasic, GAME_REVISION_NUM);
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
