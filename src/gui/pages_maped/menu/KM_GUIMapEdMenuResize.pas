@@ -45,6 +45,9 @@ uses
 
 { TKMMapEdMenuSave }
 constructor TKMMapEdMenuResize.Create(aParent: TKMPanel; aOnDone, aOnPageChange: TNotifyEvent);
+const
+  MAX_MAP_DIF = MAX_MAP_SIZE - MIN_MAP_SIZE;
+
 var
   Y: Integer;
 begin
@@ -67,12 +70,12 @@ begin
       Inc(Y, 25);
 
       // Use left-top-right-bottom order of creation. Same order will be used for Tab focus change
-      NumEdit_Resize_Left   := TKMNumericEdit.Create(Panel_Resize_Edit, 0,   Y+30, -224, 224);
-      NumEdit_Resize_Top    := TKMNumericEdit.Create(Panel_Resize_Edit, (Panel_Resize_Edit.Width div 2) - 39,  Y,    -224, 224);
+      NumEdit_Resize_Left   := TKMNumericEdit.Create(Panel_Resize_Edit, 0,   Y+30, -MAX_MAP_DIF, MAX_MAP_DIF);
+      NumEdit_Resize_Top    := TKMNumericEdit.Create(Panel_Resize_Edit, (Panel_Resize_Edit.Width div 2) - 39, Y, -MAX_MAP_DIF, MAX_MAP_DIF);
       NumEdit_Resize_Top.Anchors := [anLeft, anTop, anRight];
-      NumEdit_Resize_Right  := TKMNumericEdit.Create(Panel_Resize_Edit, Panel_Resize_Edit.Width - 78, Y+30, -224, 224);
+      NumEdit_Resize_Right  := TKMNumericEdit.Create(Panel_Resize_Edit, Panel_Resize_Edit.Width - 78, Y+30, -MAX_MAP_DIF, MAX_MAP_DIF);
       NumEdit_Resize_Right.Anchors := [anLeft, anTop, anRight];
-      NumEdit_Resize_Bottom := TKMNumericEdit.Create(Panel_Resize_Edit, (Panel_Resize_Edit.Width div 2) - 39,  Y+60, -224, 224);
+      NumEdit_Resize_Bottom := TKMNumericEdit.Create(Panel_Resize_Edit, (Panel_Resize_Edit.Width div 2) - 39, Y+60, -MAX_MAP_DIF, MAX_MAP_DIF);
       NumEdit_Resize_Bottom.Anchors := [anLeft, anTop, anRight];
 
       NumEdit_Resize_Left.OnChange    := ResizeRefresh;
