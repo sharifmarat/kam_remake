@@ -25,6 +25,8 @@ type
     function IsDragScrollingAllowed: Boolean; virtual;
     function GetHintPositionBase: TKMPoint; override;
     function GetHintFont: TKMFont; override;
+
+    function GetToolBarWidth: Integer; virtual; abstract;
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
@@ -55,7 +57,7 @@ const
   // Toolbar pads
   TB_PAD = 9; // Picked up empirically
   TB_WIDTH = 180; // Max width of sidebar elements
-  TB_MAP_ED_WIDTH = 189;
+  TB_MAP_ED_WIDTH = 214; //Max width of sidebar elements in Map Editor
   PAGE_TITLE_Y = 5; // Page title offset
   STATS_LINES_CNT = 13; //Number of stats (F3) lines
 
@@ -147,8 +149,8 @@ const
   MARKET_RES_HEIGHT = 35;
 
   // Big tab buttons in MapEd
-  BIG_TAB_W = 36;
-  BIG_PAD_W = 36;
+  BIG_TAB_W = 41;
+  BIG_PAD_W = 41;
   BIG_TAB_H = 36;
   // Small sub-tab buttons in MapEd
   SMALL_TAB_W = 30;
@@ -170,7 +172,7 @@ begin
   inherited Create(aRender.ScreenX, aRender.ScreenY);
 
   fMinimap := TKMMinimap.Create(False, False);
-  fViewport := TKMViewport.Create(aRender.ScreenX, aRender.ScreenY);
+  fViewport := TKMViewport.Create(GetToolBarWidth, aRender.ScreenX, aRender.ScreenY);
 
   fDragScrolling := False;
   fDragScrollingCursorPos.X := 0;
@@ -192,7 +194,7 @@ end;
 
 function TKMUserInterfaceGame.GetHintPositionBase: TKMPoint;
 begin
-  Result := KMPoint(224, Panel_Main.Height);
+  Result := KMPoint(GetToolBarWidth, Panel_Main.Height);
 end;
 
 
@@ -381,7 +383,7 @@ end;
 
 function TKMUserInterfaceGame.CursorToMapCoord(X, Y: Integer): TKMPointF;
 begin
-  Result.X := fViewport.Position.X + (X-fViewport.ViewRect.Right/2-TOOLBAR_WIDTH/2)/CELL_SIZE_PX/fViewport.Zoom;
+  Result.X := fViewport.Position.X + (X-fViewport.ViewRect.Right/2-GetToolBarWidth/2)/CELL_SIZE_PX/fViewport.Zoom;
   Result.Y := fViewport.Position.Y + (Y-fViewport.ViewRect.Bottom/2)/CELL_SIZE_PX/fViewport.Zoom;
   Result.Y := gTerrain.ConvertCursorToMapCoord(Result.X, Result.Y);
 end;
