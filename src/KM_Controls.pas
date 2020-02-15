@@ -12,7 +12,7 @@ uses
 type
   TNotifyEventShift = procedure(Sender: TObject; Shift: TShiftState) of object;
   TNotifyEventMB = procedure(Sender: TObject; AButton: TMouseButton) of object;
-  TNotifyEventMW = procedure(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean) of object;
+  TNotifyEventMW = procedure(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean) of object;
   TNotifyEventKey = procedure(Sender: TObject; Key: Word) of object;
   TNotifyEventKeyFunc = function(Sender: TObject; Key: Word): Boolean of object;
   TNotifyEventKeyShift = procedure(Key: Word; Shift: TShiftState) of object;
@@ -72,7 +72,7 @@ type
     procedure MouseDown (X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
     procedure MouseMove (X,Y: Integer; Shift: TShiftState);
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
-    procedure MouseWheel(X,Y: Integer; WheelDelta: Integer; var aHandled: Boolean);
+    procedure MouseWheel(X,Y: Integer; WheelSteps: Integer; var aHandled: Boolean);
 
     procedure Paint;
 
@@ -274,7 +274,7 @@ type
     procedure MouseDown (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
     procedure MouseMove (X,Y: Integer; Shift: TShiftState); virtual;
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); virtual;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); virtual;
 
     property OnClick: TNotifyEvent read fOnClick write fOnClick;
     property OnClickShift: TNotifyEventShift read fOnClickShift write fOnClickShift;
@@ -896,7 +896,7 @@ type
     property Value: Integer read fValue write SetValue;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure Paint; override;
   end;
 
@@ -929,7 +929,7 @@ type
     property OrderCount: Integer read fOrderCount write SetOrderCount;
     property OrderRemHint: UnicodeString write SetOrderRemHint;
     property OrderAddHint: UnicodeString write SetOrderAddHint;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure Paint; override;
   end;
 
@@ -984,7 +984,7 @@ type
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure Paint; override;
   end;
 
@@ -1030,7 +1030,7 @@ type
     property Position: Integer read fPosition write SetPosition;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
@@ -1084,7 +1084,7 @@ type
     property ClipRect: TKMRect read fClipRect;
     property Padding: TKMRect read fPadding write fPadding;
 
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
 
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
@@ -1188,7 +1188,7 @@ type
     function Selected: Boolean;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
 
     procedure Paint; override;
@@ -1383,7 +1383,7 @@ type
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure DoClick(X, Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
 
@@ -1620,7 +1620,7 @@ type
     function GetVisibleRows: Integer;
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     function KeyUp(Key: Word; Shift: TShiftState): Boolean; override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -2092,15 +2092,15 @@ begin
 end;
 
 
-procedure TKMControl.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMControl.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   if Assigned(fOnMouseWheel) then
-    fOnMouseWheel(Self, WheelDelta, aHandled)
+    fOnMouseWheel(Self, WheelSteps, aHandled)
   else
   if fParent <> nil then
   begin
     if DoHandleMouseWheelByDefault then
-      fParent.MouseWheel(Sender, WheelDelta, aHandled)
+      fParent.MouseWheel(Sender, WheelSteps, aHandled)
     else
       aHandled := False;
   end 
@@ -4872,18 +4872,15 @@ begin
 end;
 
 
-procedure TKMNumericEdit.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMNumericEdit.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  if WheelDelta > 0 then
-    SetValueNCheckRange(Int64(Value) + 1 + 9*Byte(GetKeyState(VK_SHIFT) < 0));
-  if WheelDelta < 0 then
-    SetValueNCheckRange(Int64(Value) - 1 - 9*Byte(GetKeyState(VK_SHIFT) < 0));
+  SetValueNCheckRange(Int64(Value) + WheelSteps*(1 + 9*Byte(GetKeyState(VK_SHIFT) < 0)));
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 
   Focus;
 
@@ -5129,7 +5126,7 @@ begin
 end;
 
 
-procedure TKMWareOrderRow.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMWareOrderRow.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 const
   ORDER_WHEEL_AMOUNT = 5; // Amounts for placing orders
 var
@@ -5139,7 +5136,7 @@ begin
 
   if aHandled then Exit;
 
-  Amt := ORDER_WHEEL_AMOUNT * Sign(WheelDelta);
+  Amt := ORDER_WHEEL_AMOUNT * WheelSteps;
   if GetKeyState(VK_SHIFT) < 0 then
     Amt := Amt * 10;
 
@@ -5363,22 +5360,22 @@ begin
 end;
 
 
-procedure TKMTrackBar.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMTrackBar.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 var
   NewPos: Integer;
 begin
   inherited;
 
-  if aHandled or (WheelDelta = 0) then Exit;
+  if aHandled or (WheelSteps = 0) then Exit;
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 
   Focus;
 
   NewPos := Position;
 
-  if WheelDelta <> 0 then
-    NewPos := EnsureRange(NewPos - Step*fMouseWheelStep*Math.Sign(WheelDelta), fMinValue, fMaxValue);
+  if WheelSteps <> 0 then
+    NewPos := EnsureRange(NewPos - Step*fMouseWheelStep*WheelSteps, fMinValue, fMaxValue);
 
   if NewPos <> Position then
   begin
@@ -5631,16 +5628,21 @@ begin
 end;
 
 
-procedure TKMScrollBar.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMScrollBar.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  if WheelDelta < 0 then IncPosition(Self);
-  if WheelDelta > 0 then DecPosition(Self);
+  aHandled := WheelSteps <> 0;
 
-  aHandled := WheelDelta <> 0;
+  if aHandled then
+  begin
+    Position := Position - WheelSteps;
+
+    if Assigned(fOnChange) then
+      fOnChange(Self);
+  end;
 end;
 
 
@@ -5745,12 +5747,12 @@ begin
 end;
 
 
-procedure TKMScrollPanel.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMScrollPanel.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   if (saVertical in fScrollAxisSet) and fScrollBarV.Visible then
-    fScrollBarV.MouseWheel(Sender, WheelDelta, aHandled)
+    fScrollBarV.MouseWheel(Sender, WheelSteps, aHandled)
   else if (saHorizontal in fScrollAxisSet) and fScrollBarH.Visible then
-    fScrollBarH.MouseWheel(Sender, WheelDelta, aHandled)
+    fScrollBarH.MouseWheel(Sender, WheelSteps, aHandled)
   else
     inherited;
 end;
@@ -6516,15 +6518,15 @@ begin
 end;
 
 
-procedure TKMMemo.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMMemo.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  SetTopIndex(TopIndex - Sign(WheelDelta));
+  SetTopIndex(TopIndex - WheelSteps);
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 end;
 
 
@@ -6974,16 +6976,16 @@ begin
 end;
 
 
-procedure TKMListBox.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMListBox.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  SetTopIndex(TopIndex - sign(WheelDelta));
+  SetTopIndex(TopIndex - WheelSteps);
   fScrollBar.Position := TopIndex; //Make the scrollbar move too when using the wheel
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 end;
 
 
@@ -7891,16 +7893,16 @@ begin
 end;
 
 
-procedure TKMColumnBox.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMColumnBox.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  SetTopIndex(TopIndex - Sign(WheelDelta));
+  SetTopIndex(TopIndex - WheelSteps);
   fScrollBar.Position := TopIndex; //Make the scrollbar move too when using the wheel
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 end;
 
 
@@ -9895,12 +9897,12 @@ begin
 end;
 
 
-procedure TKMMasterControl.MouseWheel(X,Y: Integer; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMMasterControl.MouseWheel(X,Y: Integer; WheelSteps: Integer; var aHandled: Boolean);
 var C: TKMControl;
 begin
   C := HitControl(X, Y);
   if C <> nil then
-    C.MouseWheel(C, WheelDelta, aHandled);
+    C.MouseWheel(C, WheelSteps, aHandled);
 end;
 
 

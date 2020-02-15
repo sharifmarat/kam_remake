@@ -41,7 +41,7 @@ type
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyPress(Key: Char); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
@@ -330,7 +330,7 @@ begin
 end;
 
 
-procedure TKMUserInterfaceGame.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMUserInterfaceGame.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 var
   PrevCursor: TKMPointF;
 begin
@@ -346,7 +346,7 @@ begin
   
   UpdateGameCursor(X, Y, Shift); // Make sure we have the correct cursor position to begin with
   PrevCursor := gGameCursor.Float;
-  fViewport.Zoom := fViewport.Zoom + WheelDelta / 2000;
+  fViewport.Zoom := fViewport.Zoom + WheelSteps*3/50;
   UpdateGameCursor(X, Y, Shift); // Zooming changes the cursor position
   // Move the center of the screen so the cursor stays on the same tile, thus pivoting the zoom around the cursor
   fViewport.Position := KMPointF(fViewport.Position.X + PrevCursor.X-gGameCursor.Float.X,

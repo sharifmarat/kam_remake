@@ -210,6 +210,7 @@ type
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     function ConfirmExport: Boolean;
+    function GetMouseWheelStepsCnt(aWheelData: Integer): Integer;
     {$IFDEF MSWindows}
     function GetWindowParams: TKMWindowParamsRecord;
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -1255,13 +1256,15 @@ procedure TFormMain.WMMouseWheel(var Msg: TMessage);
 var
   MousePos : TPoint;
   KeyState : TKeyboardState;
+  WheelDelta: Integer;
 begin
   MousePos.X := SmallInt(LoWord(Msg.LParam));
   MousePos.Y := SmallInt(HiWord(Msg.LParam));
+  WheelDelta := SmallInt(HiWord(Msg.WParam));
   GetKeyboardState(KeyState);
 
   if gGameApp <> nil then
-    gGameApp.MouseWheel(KeyboardStateToShiftState(KeyState), SmallInt(HiWord(Msg.WParam)), RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+    gGameApp.MouseWheel(KeyboardStateToShiftState(KeyState), GetMouseWheelStepsCnt(WheelDelta), RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
 end;
 {$ENDIF}
 
@@ -1272,8 +1275,14 @@ begin
 //F.e. on Win10 it was reported, that we got event 3 times on single turn of mouse wheel, if use default form event handler
 {$IFNDEF MSWINDOWS}
   if gGameApp <> nil then
-    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+    gGameApp.MouseWheel(Shift, GetMouseWheelStepsCnt(WheelDelta), RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
 {$ENDIF}
+end;
+
+
+function TFormMain.GetMouseWheelStepsCnt(aWheelData: Integer): Integer;
+begin
+  Result := aWheelData div WHEEL_DELTA;
 end;
 
 
