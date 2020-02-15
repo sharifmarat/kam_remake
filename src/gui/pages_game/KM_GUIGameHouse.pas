@@ -149,6 +149,7 @@ const
   MAX_UNITS_TO_EQUIP = 100;
   HOUSE_FLAG_TEX_ID = 1159;
   HOUSE_FLAG_TEX_ID_FRAME = 5;
+  HOUSE_ORDER_ROW_MOUSEWHEEL_STEP = 5;
 
 
 constructor TKMGUIGameHouse.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
@@ -218,6 +219,7 @@ begin
         ResRow_Common_Resource[I].RX := rxGui;
 
         ResRow_Order[I] := TKMWareOrderRow.Create(Panel_House_Common, 0, 0, TB_WIDTH, 999);
+        ResRow_Order[I].MouseWheelStep := HOUSE_ORDER_ROW_MOUSEWHEEL_STEP;
         ResRow_Order[I].WareRow.RX := rxGui;
         ResRow_Order[I].OnChange := House_OrderChange;
         ResRow_Order[I].OrderRemHint := gResTexts[TX_HOUSE_ORDER_DEC_HINT];
@@ -400,6 +402,7 @@ begin
     Inc(dy, 25);
 
     ResRow_TH_MaxGold := TKMWareOrderRow.Create(Panel_HouseTownhall, 0, dy, TB_WIDTH, TH_MAX_GOLDMAX_VALUE);
+    ResRow_TH_MaxGold.MouseWheelStep := HOUSE_ORDER_ROW_MOUSEWHEEL_STEP;
     ResRow_TH_MaxGold.WareRow.RX := rxGui;
     ResRow_TH_MaxGold.WareRow.TexID := gRes.Wares[wtGold].GUIIcon;
     ResRow_TH_MaxGold.WareRow.Caption := gResTexts[TX_HOUSES_TOWNHALL_MAX_GOLD];

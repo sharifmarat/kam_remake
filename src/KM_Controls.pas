@@ -5127,8 +5127,6 @@ end;
 
 
 procedure TKMWareOrderRow.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
-const
-  ORDER_WHEEL_AMOUNT = 5; // Amounts for placing orders
 var
   Amt: Integer;
 begin
@@ -5136,7 +5134,7 @@ begin
 
   if aHandled then Exit;
 
-  Amt := ORDER_WHEEL_AMOUNT * WheelSteps;
+  Amt := MouseWheelStep * WheelSteps;
   if GetKeyState(VK_SHIFT) < 0 then
     Amt := Amt * 10;
 
