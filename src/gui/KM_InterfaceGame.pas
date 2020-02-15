@@ -33,6 +33,7 @@ type
 
     property Minimap: TKMMinimap read fMinimap;
     property Viewport: TKMViewport read fViewport;
+    property ToolbarWidth: Integer read GetToolBarWidth;
     property OnUserAction: TKMUserActionEvent read fOnUserAction write fOnUserAction;
 
     function CursorToMapCoord(X, Y: Integer): TKMPointF;
