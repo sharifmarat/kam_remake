@@ -207,6 +207,19 @@ begin
     NewCondition := U.Condition - GetMultiplicator(Shift);
     U.StartWDefaultCondition := False;
     Button_ConditionDefault.Enable;
+  end else if Sender = Button_ArmyFood then
+  begin
+    if fGroup.Condition = UNIT_MAX_CONDITION then
+    begin
+      NewCondition := TKMUnitGroup.GetDefaultCondition;
+      U.StartWDefaultCondition := True;
+      Button_ConditionDefault.Disable;
+    end else
+    begin
+      NewCondition := UNIT_MAX_CONDITION;
+      U.StartWDefaultCondition := False;
+      Button_ConditionDefault.Enable;
+    end;
   end;
 
   if fGroup <> nil then
@@ -271,13 +284,7 @@ begin
 
   //Toggle between full and half condition
   if Sender = Button_ArmyFood then
-  begin
-    if fGroup.Condition = UNIT_MAX_CONDITION then
-      fGroup.Condition := TKMUnitGroup.GetDefaultCondition
-    else
-      fGroup.Condition := UNIT_MAX_CONDITION;
-    SetPositionUnitConditions(fGroup.Condition);
-  end;
+    UnitConditionsChange(Sender, []);
 
   fGroup.MapEdOrder.Order := TKMInitialOrder(DropBox_ArmyOrder.ItemIndex);
   fGroup.MapEdOrder.Pos.Loc.X := Edit_ArmyOrderX.Value;
