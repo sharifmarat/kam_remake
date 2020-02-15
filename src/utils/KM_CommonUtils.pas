@@ -874,7 +874,7 @@ begin
   B := aRGB and $FF;
   G := aRGB shr 8 and $FF;
   R := aRGB shr 16 and $FF;
-  Result := GetBrightnessColor(R, G, B);
+  Result := GetColorBrightness(R, G, B);
 end;
 
 
