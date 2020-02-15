@@ -1039,6 +1039,7 @@ type
   TKMScrollPanel = class(TKMPanel)
   private
     fClipRect: TKMRect;
+    fChildsPanel: TKMPanel;
     fScrollBarH: TKMScrollBar;
     fScrollBarV: TKMScrollBar;
     fScrollAxisSet: TKMScrollAxisSet;
@@ -1047,9 +1048,11 @@ type
 
     procedure UpdateScrolls(Sender: TObject; aValue: Boolean); overload;
     procedure UpdateScrolls(Sender: TObject); overload;
-    procedure UpdateScrollV(Sender: TObject); overload;
+    procedure UpdateScrollV; overload;
+    procedure UpdateScrollV(aChildsRect: TKMRect); overload;
     procedure UpdateScrollV(Sender: TObject; aValue: Integer); overload;
-    procedure UpdateScrollH(Sender: TObject); overload;
+    procedure UpdateScrollH; overload;
+    procedure UpdateScrollH(aChildsRect: TKMRect); overload;
     procedure UpdateScrollH(Sender: TObject; aValue: Integer); overload;
     procedure ScrollChanged(Sender: TObject);
     function GetChildsRect: TKMRect;
@@ -5662,11 +5665,14 @@ end;
 constructor TKMScrollPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
                                   aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle; aEnlargeParents: Boolean = False);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth - 20*Byte(saVertical in aScrollAxisSet), aHeight - 20*Byte(saHorizontal in aScrollAxisSet));
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
 
   fPadding := KMRect(0, 0, 0, 0);
 
   fScrollAxisSet := aScrollAxisSet;
+
+  fChildsPanel := TKMPanel.Create(Self, aLeft, aTop, aWidth, aHeight);
+  fChildsPanel.AnchorsStretch;
 
   fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, saHorizontal, aStyle, aScrollStyle);
   fScrollBarH.Hide;
@@ -5678,14 +5684,14 @@ begin
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
 
-  if aEnlargeParents then
-  begin
-    if saHorizontal in aScrollAxisSet then
-      Enlarge(fScrollBarH);
-
-    if saVertical in aScrollAxisSet then
-      Enlarge(fScrollBarV);
-  end;
+//  if aEnlargeParents then
+//  begin
+//    if saHorizontal in aScrollAxisSet then
+//      Enlarge(fScrollBarH);
+//
+//    if saVertical in aScrollAxisSet then
+//      Enlarge(fScrollBarV);
+//  end;
 
   fClipRect := KMRect(Left, Top, Right, Bottom);
 end;
@@ -5693,13 +5699,18 @@ end;
 
 function TKMScrollPanel.AddChild(aChild: TKMControl): Integer;
 begin
-  Result := inherited AddChild(aChild);
+  if fChildsPanel = nil then
+    Result := inherited AddChild(aChild)
+  else
+  begin
+    Result := fChildsPanel.AddChild(aChild);
 
-  aChild.fOnHeightChange := UpdateScrollV;
-  aChild.fOnWidthChange := UpdateScrollH;
-  aChild.fOnPositionSet := UpdateScrolls;
-  aChild.fOnChangeVisibility := UpdateScrolls;
-  aChild.fOnChangeEnableStatus := UpdateScrolls;
+    aChild.fOnHeightChange := UpdateScrollV;
+    aChild.fOnWidthChange := UpdateScrollH;
+    aChild.fOnPositionSet := UpdateScrolls;
+    aChild.fOnChangeVisibility := UpdateScrolls;
+    aChild.fOnChangeEnableStatus := UpdateScrolls;
+  end;
 end;
 
 
@@ -5770,86 +5781,106 @@ end;
 procedure TKMScrollPanel.UpdateScrollH(Sender: TObject; aValue: Integer);
 begin
   if (Sender <> fScrollBarH) then
-    UpdateScrollH(nil);
+    UpdateScrollH;
 end;
 
 
-procedure TKMScrollPanel.UpdateScrollH(Sender: TObject);
+procedure TKMScrollPanel.UpdateScrollH;
+begin
+  if not (saHorizontal in fScrollAxisSet) then Exit;
+
+  UpdateScrollH(GetChildsRect);
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollH(aChildsRect: TKMRect);
 var
-  ChildsRect: TKMRect;
   NewPos: Integer;
   ShowScroll: Boolean;
 begin
-  ChildsRect := GetChildsRect;
+  if not (saHorizontal in fScrollAxisSet) then Exit;
+
   ShowScroll := False;
 
-  if (saHorizontal in fScrollAxisSet) then
+  if aChildsRect.Width + fPadding.Left + fPadding.Right > fClipRect.Width then
   begin
-    if KMRectWidth(ChildsRect) + fPadding.Left + fPadding.Right > KMRectWidth(fClipRect) then
-    begin
-      fScrollBarH.MaxValue := KMRectWidth(ChildsRect) - KMRectWidth(fClipRect) + fPadding.Left + fPadding.Right;
-      NewPos := fClipRect.Left - Left;
+    fScrollBarH.MaxValue := aChildsRect.Width - fClipRect.Width + fPadding.Left + fPadding.Right;
+    NewPos := fClipRect.Left - Left;
 
-      if NewPos > fScrollBarH.MaxValue then
-        fLeft := Left + NewPos - fScrollBarH.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
-      ShowScroll := True;
-    end else begin
-      fScrollBarH.Position := 0;
-      if Left <> fClipRect.Left then
-        fLeft := fClipRect.Left; //Set directrly to avoid SetLeft call
-    end;
+    if NewPos > fScrollBarH.MaxValue then
+      fLeft := Left + NewPos - fScrollBarH.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
+    ShowScroll := True;
+  end else begin
+    fScrollBarH.Position := 0;
+    if Left <> fClipRect.Left then
+      fLeft := fClipRect.Left; //Set directrly to avoid SetLeft call
   end;
 
   fScrollBarH.Width := Width;
   if ShowScroll <> fScrollBarH.Visible then
+  begin
     fScrollBarH.Visible := ShowScroll;
+    fChildsPanel.Height := Height - 20*Byte(ShowScroll);
+  end;
 end;
 
 
 procedure TKMScrollPanel.UpdateScrollV(Sender: TObject; aValue: Integer);
 begin
   if (Sender <> fScrollBarV) then
-    UpdateScrollV(nil)
+    UpdateScrollV;
 end;
 
 
-procedure TKMScrollPanel.UpdateScrollV(Sender: TObject);
+procedure TKMScrollPanel.UpdateScrollV;
+begin
+  if not (saVertical in fScrollAxisSet) then Exit;
+
+  UpdateScrollV(GetChildsRect);
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollV(aChildsRect: TKMRect);
 var
-  ChildsRect: TKMRect;
   NewPos: Integer;
   ShowScroll: Boolean;
 begin
-  ChildsRect := GetChildsRect;
+  if not (saVertical in fScrollAxisSet) then Exit;
+
   //Do not set Visible, avoid trigger OnChangeVisibility
   ShowScroll := False;
 
-  if (saVertical in fScrollAxisSet) then
+  if aChildsRect.Height + fPadding.Top + fPadding.Bottom > fClipRect.Height then
   begin
-    if KMRectHeight(ChildsRect) + fPadding.Top + fPadding.Bottom > KMRectHeight(fClipRect) then
-    begin
-      fScrollBarV.MaxValue := KMRectHeight(ChildsRect) - KMRectHeight(fClipRect) + fPadding.Top + fPadding.Bottom;
-      NewPos := fClipRect.Top - Top;
+    fScrollBarV.MaxValue := aChildsRect.Height - fClipRect.Height + fPadding.Top + fPadding.Bottom;
+    NewPos := fClipRect.Top - Top;
 
-      if NewPos > fScrollBarV.MaxValue then
-        fTop := Top + NewPos - fScrollBarV.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
-      ShowScroll := True;
-    end else begin
-      fScrollBarV.Position := 0;
-      if Top <> fClipRect.Top then
-        fTop := fClipRect.Top; //Set directrly to avoid SetTop call
-    end;
+    if NewPos > fScrollBarV.MaxValue then
+      fTop := Top + NewPos - fScrollBarV.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
+    ShowScroll := True;
+  end else begin
+    fScrollBarV.Position := 0;
+    if Top <> fClipRect.Top then
+      fTop := fClipRect.Top; //Set directrly to avoid SetTop call
   end;
 
   fScrollBarV.Height := Height;
   if ShowScroll <> fScrollBarV.Visible then
+  begin
     fScrollBarV.Visible := ShowScroll;
+    fChildsPanel.Width := Width - 20*Byte(ShowScroll);
+  end;
 end;
 
 
 procedure TKMScrollPanel.UpdateScrolls(Sender: TObject);
+var
+  ChildsRect: TKMRect;
 begin
-  UpdateScrollV(Sender);
-  UpdateScrollH(Sender);
+  ChildsRect := GetChildsRect;
+
+  UpdateScrollV(ChildsRect);
+  UpdateScrollH(ChildsRect);
 end;
 
 
@@ -5915,26 +5946,24 @@ function TKMScrollPanel.GetChildsRect: TKMRect;
 var
   I: Integer;
 begin
-  Result.Left := 0; //Its fine to have 0 here
-  Result.Top := 0;
-  Result.Right := Width;
-  Result.Bottom := Height;
-  for I := 0 to ChildCount - 1 do
+  Result := KMRECT_ZERO; //Zero rect, by default
+
+  for I := 0 to fChildsPanel.ChildCount - 1 do
   begin
-    if not Childs[I].IsPainted then
+    if not fChildsPanel.Childs[I].IsPainted then
       Continue;
 
-    if Childs[I].Left < Result.Left then
+    if fChildsPanel.Childs[I].Left < Result.Left then
       Result.Left := Childs[I].Left;
 
-    if Childs[I].Top < Result.Top then
-      Result.Top := Childs[I].Top;
+    if fChildsPanel.Childs[I].Top < Result.Top then
+      Result.Top := fChildsPanel.Childs[I].Top;
 
-    if Childs[I].Right > Result.Right then
-      Result.Right := Childs[I].Right;
+    if fChildsPanel.Childs[I].Right > Result.Right then
+      Result.Right := fChildsPanel.Childs[I].Right;
 
-    if Childs[I].Bottom > Result.Bottom then
-      Result.Bottom := Childs[I].Bottom;
+    if fChildsPanel.Childs[I].Bottom > Result.Bottom then
+      Result.Bottom := fChildsPanel.Childs[I].Bottom;
   end;
 end;
 
