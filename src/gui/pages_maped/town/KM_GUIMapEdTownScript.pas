@@ -74,7 +74,7 @@ begin
     TrackBar_SerfsPer10Houses.OnChange := Town_ScriptChange;
     TrackBar_WorkerCount := TKMTrackBar.Create(PopUp_ClassicAIParams, 10, 55, 280, 0, 50);
     TrackBar_WorkerCount.Caption := gResTexts[TX_MAPED_AI_WORKERS];
-    TrackBar_WorkerCount.Hint := gResTexts[TX_MAPED_AI_COUNT_WORKERS_HINT];
+    TrackBar_WorkerCount.Hint := gResTexts[TX_MAPED_AI_WORKERS_COUNT_HINT];
     TrackBar_WorkerCount.OnChange := Town_ScriptChange;
 
     TKMLabel.Create(PopUp_ClassicAIParams, 10, 110, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ARMY_TYPE], fntMetal, taLeft);
