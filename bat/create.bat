@@ -5,6 +5,9 @@ REM ============================================================
 REM Clean before build to avoid any side-effects from old DCUs
 call get_kam_folder.bat
 
+@echo off
+if errorlevel 2 (goto exit2)
+
 echo "%kam_folder%"
 
 REM Clean target, so if anything fails we have a clear indication (dont pack old files by mistake)
@@ -42,3 +45,14 @@ call copy_post_pack.bat
 
 @REM Build Installer
 @REM call build_installer.bat
+
+
+goto exit0
+
+:exit2
+@echo off
+exit /B 2
+
+:exit0
+@echo off
+exit /B 0
