@@ -5636,7 +5636,7 @@ begin
 
   if aHandled then
   begin
-    Position := Position - WheelSteps;
+    Position := Position - WheelStep * WheelSteps;
 
     if Assigned(fOnChange) then
       fOnChange(Self);
