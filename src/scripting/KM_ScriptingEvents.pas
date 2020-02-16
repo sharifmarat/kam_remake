@@ -624,6 +624,9 @@ end;
 
 
 //* Version: 10750
+//* Occurs when ware count is changed in house
+//* aCnt: current ware count in house (after change)
+//* aChangeCnt: ware change count. if aChangeCnt > 0 count increased, if aChangeCnt < 0 count decreased
 procedure TKMScriptEvents.ProcHouseWareCountChanged(aHouse: TKMHouse; aWare: TKMWareType; aCnt: Word; aChangeCnt: Integer);
 begin
   if MethodAssigned(evtHouseWareCountChanged) then
