@@ -1251,9 +1251,12 @@ TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during cu
 TX_MAP_CUSTOM_PARAM_TH_TROOP_COST = 1204; //Custom TownHall units cost
 TX_MAP_CUSTOM_PARAM_MARKET_PRICE = 1205; //Custom gold market prices
 
-TX_MAPED_TERRAIN_BRUSH_BLENDING = 1206; //Blending level
-TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT = 1207; //Blending level of terrain transitions via masks
+TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1206; //Options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT = 1207; //Additional brush options
 TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1208; //Additional brush options
+
+TX_MAPED_TERRAIN_BRUSH_BLENDING = 1392; //Blending level
+TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT = 1393; //Blending level of terrain transitions via masks
 
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN = 1209; //Fix terrain brushes
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1210; //Try to repair internal terrain information to make brushes work
