@@ -31,7 +31,7 @@ type
 
     procedure Show;
     procedure Hide;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean);
     function Visible: Boolean; override;
   end;
 
@@ -172,26 +172,26 @@ begin
 end;
 
 
-procedure TKMMapEdTerrainHeights.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMMapEdTerrainHeights.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 begin
   if not aHandled and Visible then
   begin
     // Do not use ssCtrl in Shift here, as it can sometimes be wrong values inside Shift (ssShift instead of ssCtrl)
     if (GetKeyState(VK_CONTROL) < 0) then
     begin
-      HeightSize.Position := Max(0, HeightSize.Position - (WheelDelta div 100)); //can't set negative number
+      HeightSize.Position := Max(0, HeightSize.Position - WheelSteps); //can't set negative number
       aHandled := True;
     end;
 
     if (GetKeyState(VK_MENU) < 0) then
     begin
-      HeightSlope.Position := Max(0, HeightSlope.Position - (WheelDelta div 100)); //can't set negative number
+      HeightSlope.Position := Max(0, HeightSlope.Position - WheelSteps); //can't set negative number
       aHandled := True;
     end;
 
     if (GetKeyState(VK_SHIFT) < 0) then
     begin
-      HeightSpeed.Position := Max(0, HeightSpeed.Position - (WheelDelta div 100)); //can't set negative number
+      HeightSpeed.Position := Max(0, HeightSpeed.Position - WheelSteps); //can't set negative number
       aHandled := True;
     end;
 

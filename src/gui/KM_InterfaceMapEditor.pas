@@ -118,7 +118,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean); override;
     procedure Resize(X,Y: Word); override;
     procedure SetLoadMode(aMultiplayer: Boolean);
 
@@ -1202,15 +1202,15 @@ begin
 end;
 
 
-procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean);
+procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean);
 begin
   if gGameCursor.Mode in [cmField, cmWine] then
   begin
     if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
 
-    gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
+    gGame.MapEditor.MouseWheel(Shift, WheelSteps, X, Y);
   end else begin
-    fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+    fGuiTerrain.MouseWheel(Shift, WheelSteps, X, Y, aHandled);
     if not aHandled then
       inherited;
   end;

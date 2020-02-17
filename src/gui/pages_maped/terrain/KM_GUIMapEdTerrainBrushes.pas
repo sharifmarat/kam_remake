@@ -41,7 +41,7 @@ type
     procedure Show;
     procedure Hide;
     function Visible: Boolean; override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean);
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure RightClickCancel;
     procedure UpdateState;
@@ -304,11 +304,11 @@ begin
 end;
 
 
-procedure TKMMapEdTerrainBrushes.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMMapEdTerrainBrushes.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 begin
   if not aHandled and Visible and (GetKeyState(VK_CONTROL) < 0) then // Do not use ssCtrl in SHift here, as it can sometimes be wrong values inside Shift (ssShift instead of ssCtrl)
   begin
-    BrushSize.Position := Max(0, BrushSize.Position - (WheelDelta div 100)); //can't set negative number
+    BrushSize.Position := Max(0, BrushSize.Position - WheelSteps); //can't set negative number
     BrushChange(nil);
     aHandled := True;
   end;

@@ -40,7 +40,7 @@ type
     destructor Destroy; override;
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean);
 
     property GuiTiles: TKMMapEdTerrainTiles read fGuiTiles;
     property GuiSelection: TKMMapEdTerrainSelection read fGuiSelection;
@@ -148,10 +148,10 @@ begin
 end;
 
 
-procedure TKMMapEdTerrain.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMMapEdTerrain.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 begin
-  fGuiBrushes.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
-  fGuiHeights.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+  fGuiBrushes.MouseWheel(Shift, WheelSteps, X, Y, aHandled);
+  fGuiHeights.MouseWheel(Shift, WheelSteps, X, Y, aHandled);
 end;
 
 
