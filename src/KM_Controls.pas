@@ -133,6 +133,8 @@ type
     fOnSizeSet: TNotifyEvent;
     fOnPositionSet: TNotifyEvent;
 
+    fIsHitTestUseDrawRect: Boolean; //Should we use DrawRect for hitTest, or AbsPositions?
+
     function PaintingBaseLayer: Boolean;
 
     function GetAbsLeft: Integer;
@@ -1946,6 +1948,7 @@ begin
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
   fLastClickPos := KMPOINT_ZERO;
+  fIsHitTestUseDrawRect := False;
 
   if aParent <> nil then
   begin
@@ -2112,9 +2115,19 @@ end;
 //fVisible is checked earlier
 function TKMControl.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean;
 begin
-  Result := (Hitable or aIncludeNotHitable)
-            and (fEnabled or aIncludeDisabled)
-            and KMInRect(KMPoint(X,Y), GetDrawRect);
+  Result := False;
+  if    (Hitable or aIncludeNotHitable)
+    and (fEnabled or aIncludeDisabled) then
+  begin
+    //DrawRect could is restricted by parent panel size and also could be restricted with parent ScrollPanel
+    //While outside of ScrollPanel its better to use Abs coordinates
+    //since some childs could be outside of its parent borders for some reason
+    if fIsHitTestUseDrawRect then
+      Result := KMInRect(KMPoint(X,Y), GetDrawRect)
+    else
+      Result := InRange(X, AbsLeft, AbsRight)
+            and InRange(Y, AbsTop, AbsBottom);
+  end;
 end;
 
 
@@ -2774,6 +2787,9 @@ end;
 
 function TKMPanel.AddChild(aChild: TKMControl): Integer;
 begin
+  //Descendants of TKMScrollPanel should all use DrawRect for HitTest
+  aChild.fIsHitTestUseDrawRect := fIsHitTestUseDrawRect;
+
   if ChildCount >= Length(Childs) then
     SetLength(Childs, ChildCount + 16);
 
@@ -5707,6 +5723,7 @@ end;
 
 function TKMScrollPanel.AddChild(aChild: TKMControl): Integer;
 begin
+  aChild.fIsHitTestUseDrawRect := True;
   if fChildsPanel = nil then
     Result := inherited AddChild(aChild)
   else
