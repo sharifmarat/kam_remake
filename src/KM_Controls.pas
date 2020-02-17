@@ -4312,7 +4312,7 @@ begin
   end;
 
 
-  TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop, Width - Height, fCaption, fFont, taLeft, Col);
+  TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop, Width - CheckSize, fCaption, fFont, taLeft, Col);
 end;
 
 
