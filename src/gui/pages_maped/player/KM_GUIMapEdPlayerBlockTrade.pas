@@ -8,7 +8,7 @@ uses
 type
   TKMMapEdPlayerBlockTrade = class
   private
-    procedure Player_BlockTradeClick(Sender: TObject);
+    procedure Player_BlockTradeClick(Sender: TObject; Shift: TShiftState);
     procedure Player_BlockTradeRefresh;
   protected
     Panel_BlockTrade: TKMPanel;
@@ -44,7 +44,7 @@ begin
     Button_BlockTrade[I] := TKMButtonFlat.Create(Panel_BlockTrade, 9 + ((I-1) mod 5)*37, 30 + ((I-1) div 5)*37,33,33, 0);
     Button_BlockTrade[I].TexID := gRes.Wares[StoreResType[I]].GUIIcon;
     Button_BlockTrade[I].Hint := gRes.Wares[StoreResType[I]].Title;
-    Button_BlockTrade[I].OnClick := Player_BlockTradeClick;
+    Button_BlockTrade[I].OnClickShift := Player_BlockTradeClick;
     Button_BlockTrade[I].Tag := I;
     Image_BlockTrade[I] := TKMImage.Create(Panel_BlockTrade, 9 + ((I-1) mod 5)*37 + 15, 30 + ((I-1) div 5)*37 + 15, 16, 16, 0, rxGuiMain);
     Image_BlockTrade[I].Hitable := False;
@@ -53,7 +53,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerBlockTrade.Player_BlockTradeClick(Sender: TObject);
+procedure TKMMapEdPlayerBlockTrade.Player_BlockTradeClick(Sender: TObject; Shift: TShiftState);
 var
   I: Integer;
   R: TKMWareType;
