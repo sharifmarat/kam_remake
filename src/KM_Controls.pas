@@ -5979,7 +5979,7 @@ begin
       Continue;
 
     if fChildsPanel.Childs[I].Left < Result.Left then
-      Result.Left := Childs[I].Left;
+      Result.Left := fChildsPanel.Childs[I].Left;
 
     if fChildsPanel.Childs[I].Top < Result.Top then
       Result.Top := fChildsPanel.Childs[I].Top;
