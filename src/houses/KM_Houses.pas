@@ -125,6 +125,7 @@ type
     fResourceDepletedMsgIssued: Boolean;
     fOrderCompletedMsgIssued: Boolean;
     fNeedIssueOrderCompletedMsg: Boolean;
+    fAllowAllyToView: Boolean;
 
     procedure CheckOnSnow;
 
@@ -193,6 +194,8 @@ type
 
     procedure IssueResourceDepletedMsg;
     function GetResourceDepletedMessageId: Word;
+
+    property AllowAllyToView: Boolean read fAllowAllyToView write fAllowAllyToView;
 
     property ResourceDepletedMsgIssued: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
@@ -505,6 +508,9 @@ begin
   fNeedIssueOrderCompletedMsg := False;
   fOrderCompletedMsgIssued := False;
 
+  //ByDefault allow to show all human player houses to allies, or AI's not in Campaign
+  fAllowAllyToView := gHands[fOwner].IsHuman or not gGame.IsCampaign;
+
   if aBuildState = hbsDone then //House was placed on map already Built e.g. in mission maker
   begin
     Activate(False);
@@ -572,6 +578,7 @@ begin
   end;
   LoadStream.Read(fResourceDepletedMsgIssued);
   LoadStream.Read(DoorwayUse);
+  LoadStream.Read(fAllowAllyToView);
 end;
 
 
@@ -1885,6 +1892,7 @@ begin
   if HasAct then CurrentAction.Save(SaveStream);
   SaveStream.Write(fResourceDepletedMsgIssued);
   SaveStream.Write(DoorwayUse);
+  SaveStream.Write(fAllowAllyToView);
 end;
 
 

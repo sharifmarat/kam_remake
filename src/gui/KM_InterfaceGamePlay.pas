@@ -3720,7 +3720,7 @@ begin
     if (Owner <> -1) and
       ((Owner = gMySpectator.HandID)
       or ((ALLOW_SELECT_ALLY_UNITS
-          or ((Obj is TKMHouse) and (gHands[Owner].IsHuman or not gGame.IsCampaign))) //Do not allow to select allied AI in campaigns
+          or ((Obj is TKMHouse) and TKMHouse(Obj).AllowAllyToView))
         and (gMySpectator.Hand.Alliances[Owner] = atAlly))
       or (ALLOW_SELECT_ENEMIES and (gMySpectator.Hand.Alliances[Owner] = atEnemy)) // Enemies can be selected for debug
       or (fUIMode in [umReplay, umSpectate])) then

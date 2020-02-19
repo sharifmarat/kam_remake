@@ -435,6 +435,7 @@ begin
     RegisterMethodCheck(c, 'function GroupType(aGroupID: Integer): Integer');
 
     RegisterMethodCheck(c, 'function HouseAt(aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'function HouseAllowAllyToView(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseBarracksRallyPointX(aBarracks: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseBarracksRallyPointY(aBarracks: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseBuildingProgress(aHouseID: Integer): Word');
@@ -636,6 +637,8 @@ begin
     RegisterMethodCheck(c, 'procedure HouseAddRepair(aHouseID: Integer; aRepair: Word)');
     RegisterMethodCheck(c, 'procedure HouseAddWaresTo(aHouseID: Integer; aType, aCount: Word)');
     RegisterMethodCheck(c, 'procedure HouseAllow(aPlayer, aHouseType: Word; aAllowed: Boolean)');
+    RegisterMethodCheck(c, 'procedure HouseAllowAllyToView(aHouseID: Integer; aAllow: Boolean)');
+    RegisterMethodCheck(c, 'procedure HouseAllowAllyToViewAll(aPlayer: Byte; aAllow: Boolean)');
     RegisterMethodCheck(c, 'function  HouseBarracksEquip(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer');
     RegisterMethodCheck(c, 'procedure HouseBarracksGiveRecruit(aHouseID: Integer)');
     RegisterMethodCheck(c, 'procedure HouseDeliveryBlock(aHouseID: Integer; aDeliveryBlocked: Boolean)');
@@ -1018,6 +1021,7 @@ begin
       RegisterMethod(@TKMScriptStates.GroupType,                                'GroupType');
 
       RegisterMethod(@TKMScriptStates.HouseAt,                                  'HouseAt');
+      RegisterMethod(@TKMScriptStates.HouseAllowAllyToView,                     'HouseAllowAllyToView');
       RegisterMethod(@TKMScriptStates.HouseBarracksRallyPointX,                 'HouseBarracksRallyPointX');
       RegisterMethod(@TKMScriptStates.HouseBarracksRallyPointY,                 'HouseBarracksRallyPointY');
       RegisterMethod(@TKMScriptStates.HouseBuildingProgress,                    'HouseBuildingProgress');
@@ -1219,6 +1223,8 @@ begin
       RegisterMethod(@TKMScriptActions.HouseAddRepair,                          'HouseAddRepair');
       RegisterMethod(@TKMScriptActions.HouseAddWaresTo,                         'HouseAddWaresTo');
       RegisterMethod(@TKMScriptActions.HouseAllow,                              'HouseAllow');
+      RegisterMethod(@TKMScriptActions.HouseAllowAllyToView,                    'HouseAllowAllyToView');
+      RegisterMethod(@TKMScriptActions.HouseAllowAllyToViewAll,                 'HouseAllowAllyToViewAll');
       RegisterMethod(@TKMScriptActions.HouseBarracksEquip,                      'HouseBarracksEquip');
       RegisterMethod(@TKMScriptActions.HouseBarracksGiveRecruit,                'HouseBarracksGiveRecruit');
       RegisterMethod(@TKMScriptActions.HouseDeliveryBlock,                      'HouseDeliveryBlock');

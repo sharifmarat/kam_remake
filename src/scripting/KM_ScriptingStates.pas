@@ -52,6 +52,7 @@ type
     function GroupType(aGroupID: Integer): Integer;
 
     function HouseAt(aX, aY: Word): Integer;
+    function HouseAllowAllyToView(aHouseID: Integer): Boolean;
     function HouseBarracksRallyPointX(aBarracks: Integer): Integer;
     function HouseBarracksRallyPointY(aBarracks: Integer): Integer;
     function HouseBuildingProgress(aHouseID: Integer): Word;
@@ -1463,6 +1464,30 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+end;
+
+
+//* Version: 10940
+//* Return if specified house is allowed to be viewed by his allies
+function TKMScriptStates.HouseAllowAllyToView(aHouseID: Integer): Boolean;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := False;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if (H <> nil) and not H.IsDestroyed  and (H.IsComplete) then
+        Result := H.AllowAllyToView;
+    end
+    else
+      LogParamWarning('States.HouseAllowAllyToView', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+
 end;
 
 
