@@ -203,6 +203,8 @@ type
     FDropBox: TKMDropList;
     FLastIndex: Integer;
 
+    FItemsPanel: TKMScrollPanel;
+
     FOnJumpToPlayer: TIntegerEvent;
     FSetViewportPos: TPointFEvent;
 
@@ -921,20 +923,23 @@ begin
 
   FLastIndex := 0;
 
+  FItemsPanel := TKMScrollPanel.Create(aParent, aParent.Right, 32, 0, 0, [saVertical], bsMenu, ssCommon, True);
+  FItemsPanel.Anchors := [anRight, anTop];
+
   SetLength(FLines, LINES_CNT);
   SetLength(FLinesAggregator, LINES_CNT);
 
-  AddLineType(aParent, 0, nil);
-  AddLineType(aParent, 1, TKMGUIGameSpectatorItemLineResources);
-  AddLineType(aParent, 2, TKMGUIGameSpectatorItemLineWarFare);
-  AddLineType(aParent, 3, TKMGUIGameSpectatorItemLineHouses);
-  AddLineType(aParent, 4, TKMGUIGameSpectatorItemLineConstructing);
-  AddLineType(aParent, 5, TKMGUIGameSpectatorItemLinePopulationSLR);
-  AddLineType(aParent, 6, TKMGUIGameSpectatorItemLinePopulationHouseWorkers);
-  AddLineType(aParent, 7, TKMGUIGameSpectatorItemLineArmyInstantenious);
-  AddLineType(aParent, 8, TKMGUIGameSpectatorItemLineArmyTotal);
-  AddLineType(aParent, 9, TKMGUIGameSpectatorItemLineArmyKilling);
-  AddLineType(aParent, 10, TKMGUIGameSpectatorItemLineArmyLost);
+  AddLineType(FItemsPanel, 0, nil);
+  AddLineType(FItemsPanel, 1, TKMGUIGameSpectatorItemLineResources);
+  AddLineType(FItemsPanel, 2, TKMGUIGameSpectatorItemLineWarFare);
+  AddLineType(FItemsPanel, 3, TKMGUIGameSpectatorItemLineHouses);
+  AddLineType(FItemsPanel, 4, TKMGUIGameSpectatorItemLineConstructing);
+  AddLineType(FItemsPanel, 5, TKMGUIGameSpectatorItemLinePopulationSLR);
+  AddLineType(FItemsPanel, 6, TKMGUIGameSpectatorItemLinePopulationHouseWorkers);
+  AddLineType(FItemsPanel, 7, TKMGUIGameSpectatorItemLineArmyInstantenious);
+  AddLineType(FItemsPanel, 8, TKMGUIGameSpectatorItemLineArmyTotal);
+  AddLineType(FItemsPanel, 9, TKMGUIGameSpectatorItemLineArmyKilling);
+  AddLineType(FItemsPanel, 10, TKMGUIGameSpectatorItemLineArmyLost);
 
   //Create DropBox after pages, to show it above them
   FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - DROPBOX_W - 10, 0, DROPBOX_W + 10, 30);

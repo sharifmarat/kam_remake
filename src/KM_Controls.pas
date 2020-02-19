@@ -5708,14 +5708,14 @@ begin
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
 
-//  if aEnlargeParents then
-//  begin
-//    if saHorizontal in aScrollAxisSet then
-//      Enlarge(fScrollBarH);
-//
-//    if saVertical in aScrollAxisSet then
-//      Enlarge(fScrollBarV);
-//  end;
+  if aEnlargeParents then
+  begin
+    if saHorizontal in aScrollAxisSet then
+      Enlarge(fScrollBarH);
+
+    if saVertical in aScrollAxisSet then
+      Enlarge(fScrollBarV);
+  end;
 
   fClipRect := KMRect(Left, Top, Right, Bottom);
 end;
