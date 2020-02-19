@@ -337,6 +337,7 @@ Improvements:
  +    Added functions to check if group or warrior is in fight
  +    Added action HouseTownHallEquip
  +    Added event OnHouseWareChange
+ +    Added actions HouseAllowAllyToView/HouseAllowAllyToViewAll, state HouseAllowAllyToView
  
  Other: 
  +  L Saving and restoring games window position on restart
