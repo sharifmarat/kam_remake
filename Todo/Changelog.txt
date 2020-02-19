@@ -128,6 +128,7 @@ Improvements:
  +    Holding shift while destroy house will keep destroy mode on
  +  L Pressing LMB over placed plans and dragging it - will remove plans
  +    Do not show owner of corn/wine tile on minimap
+ +    Depletable houses (mines/quary/fisherhut) should display they're depleted when you click the building
  +  L Unit group: Splitting one soldier from the group by pressing Ctrl+Separate warrior order
  +  L Unit group: do not change UnitsPerRow of a group that is exiting Barracks if player has manually changed it at least once
  +    Unit group: feed or split command should not cancel group previous order
@@ -335,6 +336,7 @@ Improvements:
  +    Added shortcuts for Actions/States/Utils as A/S/U
  +    Added functions to check if group or warrior is in fight
  +    Added action HouseTownHallEquip
+ +    Added event OnHouseWareChange
  
  Other: 
  +  L Saving and restoring games window position on restart
