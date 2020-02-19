@@ -1258,13 +1258,14 @@ var
   KeyState : TKeyboardState;
   WheelDelta: Integer;
 begin
-  MousePos.X := SmallInt(LoWord(Msg.LParam));
-  MousePos.Y := SmallInt(HiWord(Msg.LParam));
-  WheelDelta := SmallInt(HiWord(Msg.WParam));
+  MousePos.X := SmallInt(Msg.LParamLo);
+  MousePos.Y := SmallInt(Msg.LParamHi);
+  WheelDelta := SmallInt(Msg.WParamHi);
   GetKeyboardState(KeyState);
 
   if gGameApp <> nil then
-    gGameApp.MouseWheel(KeyboardStateToShiftState(KeyState), GetMouseWheelStepsCnt(WheelDelta), RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+    gGameApp.MouseWheel(KeyboardStateToShiftState(KeyState), GetMouseWheelStepsCnt(WheelDelta),
+                        RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
 end;
 {$ENDIF}
 
