@@ -3173,7 +3173,7 @@ begin
     145: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 144;
     146: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 145;
     147: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 146;
-    308: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 147;
+    307: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 147;
     148: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 160 + KaMRandom(4, 'TKMTerrain.DecOreDeposit 2'); //Iron
     149: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 148;
     150: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 149;
