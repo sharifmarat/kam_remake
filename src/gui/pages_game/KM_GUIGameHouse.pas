@@ -79,6 +79,8 @@ type
       ResRow_Common_Resource: array [1..4] of TKMWaresRow; //4 bars is the maximum
       ResRow_Order: array [1..4] of TKMWareOrderRow; //3 bars is the maximum
       ResRow_Costs: array [1..4] of TKMCostsRow; //3 bars is the maximum
+      Label_DepletedMsg: TKMLabel;
+
     Panel_HouseMarket: TKMPanel;
       Button_Market: array [0..STORE_RES_COUNT-1] of TKMButtonFlat;
       Shape_Market_From, Shape_Market_To: TKMShape;
@@ -227,6 +229,10 @@ begin
 
         ResRow_Costs[I] := TKMCostsRow.Create(Panel_House_Common, 0, 0, TB_WIDTH, 21);
         ResRow_Costs[I].RX := rxGui;
+
+        Label_DepletedMsg := TKMLabel.Create(Panel_House_Common,0,0,TB_WIDTH,0,'',fntGrey,taLeft);
+        Label_DepletedMsg.AutoWrap := True;
+        Label_DepletedMsg.Hide;
       end;
 
   Create_HouseMarket;
@@ -801,6 +807,11 @@ begin
         Inc(Line);
         Inc(RowRes);
       end;
+
+      Label_DepletedMsg.Top := Base + Line * LINE_HEIGHT + 5;
+      Label_DepletedMsg.Visible := aHouse.ResourceDepletedMsgIssued;
+      if aHouse.ResourceDepletedMsgIssued then
+        Label_DepletedMsg.Caption := gResTexts[aHouse.GetResourceDepletedMessageId];
     end;
 end;
 

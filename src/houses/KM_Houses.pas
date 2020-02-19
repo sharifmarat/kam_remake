@@ -191,6 +191,9 @@ type
     procedure SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
     function AllowDeliveryModeChange: Boolean;
 
+    procedure IssueResourceDepletedMsg;
+    function GetResourceDepletedMessageId: Word;
+
     property ResourceDepletedMsgIssued: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
@@ -880,6 +883,38 @@ end;
 function TKMHouse.AllowDeliveryModeChange: Boolean;
 begin
   Result := gRes.Houses[fType].AcceptsWares;
+end;
+
+
+procedure TKMHouse.IssueResourceDepletedMsg;
+var
+  MsgID: Word;
+begin
+  MsgID := GetResourceDepletedMessageId;
+  Assert(MsgID <> 0, gRes.Houses[HouseType].HouseName + ' resource cant possibly deplete');
+
+  gGame.ShowMessage(mkHouse, MsgID, Entrance, fOwner);
+  ResourceDepletedMsgIssued := True;
+end;
+
+
+function TKMHouse.GetResourceDepletedMessageId: Word;
+begin
+  Result := 0;
+  case HouseType of
+    htQuary:       Result := TX_MSG_STONE_DEPLETED;
+    htCoalMine:    Result := TX_MSG_COAL_DEPLETED;
+    htIronMine:    Result := TX_MSG_IRON_DEPLETED;
+    htGoldMine:    Result := TX_MSG_GOLD_DEPLETED;
+    htWoodcutters: if TKMHouseWoodcutters(Self).WoodcutterMode = wcmPlant then
+                      Result := TX_MSG_WOODCUTTER_PLANT_DEPLETED
+                    else
+                      Result := TX_MSG_WOODCUTTER_DEPLETED;
+    htFisherHut:   if not gTerrain.CanFindFishingWater(PointBelowEntrance, gRes.Units[utFisher].MiningRange) then
+                      Result := TX_MSG_FISHERMAN_TOO_FAR
+                    else
+                      Result := TX_MSG_FISHERMAN_CANNOT_CATCH;
+  end;
 end;
 
 

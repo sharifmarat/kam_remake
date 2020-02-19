@@ -631,29 +631,8 @@ end;
 
 
 procedure TKMUnitCitizen.IssueResourceDepletedMessage;
-var
-  Msg: Word;
 begin
-  case fHome.HouseType of
-    htQuary:       Msg := TX_MSG_STONE_DEPLETED;
-    htCoalMine:    Msg := TX_MSG_COAL_DEPLETED;
-    htIronMine:    Msg := TX_MSG_IRON_DEPLETED;
-    htGoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
-    htWoodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcmPlant then
-                      Msg := TX_MSG_WOODCUTTER_PLANT_DEPLETED
-                    else
-                      Msg := TX_MSG_WOODCUTTER_DEPLETED;
-    htFisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fType].MiningRange) then
-                      Msg := TX_MSG_FISHERMAN_TOO_FAR
-                    else
-                      Msg := TX_MSG_FISHERMAN_CANNOT_CATCH;
-    else            Msg := 0;
-  end;
-
-  Assert(Msg <> 0, gRes.Houses[fHome.HouseType].HouseName + ' resource cant possibly deplet');
-
-  gGame.ShowMessage(mkHouse, Msg, fHome.Entrance, fOwner);
-  fHome.ResourceDepletedMsgIssued := True;
+  fHome.IssueResourceDepletedMsg;
 end;
 
 
