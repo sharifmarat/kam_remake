@@ -720,6 +720,11 @@ begin
           ResRow_Common_Resource[1].Hint := gRes.Wares[gRes.Houses[aHouse.HouseType].ResOutput[1]].Title;
           ResRow_Common_Resource[1].Show;
           ResRow_Common_Resource[1].Top := 2 + LINE_HEIGHT;
+
+          Label_DepletedMsg.Top := Radio_Woodcutter.Bottom + 5;
+          Label_DepletedMsg.Visible := aHouse.ResourceDepleted;
+          if aHouse.ResourceDepleted then
+            Label_DepletedMsg.Caption := gResTexts[aHouse.GetResourceDepletedMessageId];
         end;
     htArmorWorkshop: ShowArmorWorkshop(aHouse);
     htTownHall:      ShowTownHall(aHouse);
