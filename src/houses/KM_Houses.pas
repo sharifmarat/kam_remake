@@ -197,7 +197,7 @@ type
 
     property AllowAllyToView: Boolean read fAllowAllyToView write fAllowAllyToView;
 
-    property ResourceDepletedMsgIssued: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
+    property ResourceDepleted: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; virtual;
@@ -898,10 +898,10 @@ var
   MsgID: Word;
 begin
   MsgID := GetResourceDepletedMessageId;
-  Assert(MsgID <> 0, gRes.Houses[HouseType].HouseName + ' resource cant possibly deplete');
+  Assert(MsgID <> 0, gRes.Houses[HouseType].HouseName + ' resource can''t be depleted');
 
   gGame.ShowMessage(mkHouse, MsgID, Entrance, fOwner);
-  ResourceDepletedMsgIssued := True;
+  ResourceDepleted := True;
 end;
 
 

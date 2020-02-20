@@ -2056,7 +2056,7 @@ begin
     begin
       if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.HasOwner
           and (gRes.Houses[H.HouseType].OwnerType <> utNone) and (H.HouseType <> htBarracks))
-        or H.ResourceDepletedMsgIssued
+        or H.ResourceDepleted
         or H.OrderCompletedMsgIssued then
       begin
         gMySpectator.Highlight := H;

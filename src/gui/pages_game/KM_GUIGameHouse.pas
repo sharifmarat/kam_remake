@@ -809,8 +809,8 @@ begin
       end;
 
       Label_DepletedMsg.Top := Base + Line * LINE_HEIGHT + 5;
-      Label_DepletedMsg.Visible := aHouse.ResourceDepletedMsgIssued;
-      if aHouse.ResourceDepletedMsgIssued then
+      Label_DepletedMsg.Visible := aHouse.ResourceDepleted;
+      if aHouse.ResourceDepleted then
         Label_DepletedMsg.Caption := gResTexts[aHouse.GetResourceDepletedMessageId];
     end;
 end;

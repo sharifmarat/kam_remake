@@ -1615,7 +1615,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := not H.ResourceDepletedMsgIssued;
+        Result := not H.ResourceDepleted;
     end
     else
       LogParamWarning('States.HouseCanReachResources', [aHouseID]);

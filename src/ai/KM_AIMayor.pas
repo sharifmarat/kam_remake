@@ -678,7 +678,7 @@ begin
   //Wait until resource is depleted and output is empty
   for I := 0 to Houses.Count - 1 do
   if not Houses[I].IsDestroyed
-  and Houses[I].ResourceDepletedMsgIssued
+  and Houses[I].ResourceDepleted
   and (Houses[I].CheckResOut(wtAll) = 0) then
   begin
     //Set it so we can build over coal that was removed
