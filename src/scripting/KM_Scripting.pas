@@ -516,6 +516,7 @@ begin
     RegisterMethodCheck(c, 'function PeaceTime: Cardinal');
 
     RegisterMethodCheck(c, 'function PlayerAllianceCheck(aPlayer1, aPlayer2: Byte): Boolean');
+    RegisterMethodCheck(c, 'function PlayerColorFlag(aPlayer: Byte): AnsiString');
     RegisterMethodCheck(c, 'function PlayerColorText(aPlayer: Byte): AnsiString');
     RegisterMethodCheck(c, 'function PlayerDefeated(aPlayer: Byte): Boolean');
     RegisterMethodCheck(c, 'function PlayerEnabled(aPlayer: Byte): Boolean');
@@ -530,6 +531,7 @@ begin
     RegisterMethodCheck(c, 'function StatAIDefencePositionsCount(aPlayer: Byte): Integer');
     RegisterMethodCheck(c, 'function StatArmyCount(aPlayer: Byte): Integer');
     RegisterMethodCheck(c, 'function StatCitizenCount(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function StatHouseCount(aPlayer: Byte): Integer');
     RegisterMethodCheck(c, 'function StatHouseMultipleTypesCount(aPlayer: Byte; aTypes: TByteSet): Integer');
     RegisterMethodCheck(c, 'function StatHouseTypeCount(aPlayer, aHouseType: Byte): Integer');
     RegisterMethodCheck(c, 'function StatHouseTypePlansCount(aPlayer, aHouseType: Byte): Integer');
@@ -746,6 +748,8 @@ begin
 
     RegisterMethodCheck(c, 'function BoolToStr(aBool: Boolean): AnsiString');
 
+    RegisterMethodCheck(c, 'function ColorBrightness(aHexColor: string): Single');
+
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
 
@@ -777,6 +781,9 @@ begin
 
     RegisterMethodCheck(c, 'function Power(Base, Exponent: Extended): Extended');
 
+    RegisterMethodCheck(c, 'function RGBDecToBGRHex(aR, aG, aB: Byte): AnsiString');
+    RegisterMethodCheck(c, 'function RGBToBGRHex(aHexColor: string): AnsiString');
+
     RegisterMethodCheck(c, 'function RoundToDown(aValue: Single; aBase: Integer): Integer');
     RegisterMethodCheck(c, 'function RoundToUp(aValue: Single; aBase: Integer): Integer');
 
@@ -786,6 +793,7 @@ begin
     RegisterMethodCheck(c, 'function SumS(aArray: array of Single): Single');
 
     RegisterMethodCheck(c, 'function TimeToString(aTicks: Integer): AnsiString');
+    RegisterMethodCheck(c, 'function TimeToTick(aHours, aMinutes, aSeconds: Integer): Cardinal');
 
     // Register objects
     AddImportedClassVariable(Sender, 'States', AnsiString(fStates.ClassName));
@@ -1102,6 +1110,7 @@ begin
       RegisterMethod(@TKMScriptStates.PeaceTime,                                'PeaceTime');
 
       RegisterMethod(@TKMScriptStates.PlayerAllianceCheck,                      'PlayerAllianceCheck');
+      RegisterMethod(@TKMScriptStates.PlayerColorFlag,                          'PlayerColorFlag');
       RegisterMethod(@TKMScriptStates.PlayerColorText,                          'PlayerColorText');
       RegisterMethod(@TKMScriptStates.PlayerDefeated,                           'PlayerDefeated');
       RegisterMethod(@TKMScriptStates.PlayerEnabled,                            'PlayerEnabled');
@@ -1116,6 +1125,7 @@ begin
       RegisterMethod(@TKMScriptStates.StatAIDefencePositionsCount,              'StatAIDefencePositionsCount');
       RegisterMethod(@TKMScriptStates.StatArmyCount,                            'StatArmyCount');
       RegisterMethod(@TKMScriptStates.StatCitizenCount,                         'StatCitizenCount');
+      RegisterMethod(@TKMScriptStates.StatHouseCount,                           'StatHouseCount');
       RegisterMethod(@TKMScriptStates.StatHouseMultipleTypesCount,              'StatHouseMultipleTypesCount');
       RegisterMethod(@TKMScriptStates.StatHouseTypeCount,                       'StatHouseTypeCount');
       RegisterMethod(@TKMScriptStates.StatHouseTypePlansCount,                  'StatHouseTypePlansCount');
@@ -1333,6 +1343,8 @@ begin
 
       RegisterMethod(@TKMScriptUtils.BoolToStr,                                 'BoolToStr');
 
+      RegisterMethod(@TKMScriptUtils.ColorBrightness,                           'ColorBrightness');
+
       RegisterMethod(@TKMScriptUtils.EnsureRangeI,                              'EnsureRangeI');
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
 
@@ -1364,6 +1376,9 @@ begin
 
       RegisterMethod(@TKMScriptUtils.Power,                                     'Power');
 
+      RegisterMethod(@TKMScriptUtils.RGBDecToBGRHex,                            'RGBDecToBGRHex');
+      RegisterMethod(@TKMScriptUtils.RGBToBGRHex,                               'RGBToBGRHex');
+
       RegisterMethod(@TKMScriptUtils.RoundToDown,                               'RoundToDown');
       RegisterMethod(@TKMScriptUtils.RoundToUp,                                 'RoundToUp');
 
@@ -1373,6 +1388,8 @@ begin
       RegisterMethod(@TKMScriptUtils.Sqr,                                       'Sqr');
 
       RegisterMethod(@TKMScriptUtils.TimeToString,                              'TimeToString');
+      RegisterMethod(@TKMScriptUtils.TimeToTick,                                'TimeToTick');
+
     end;
 
     //Append classes info to Exec
