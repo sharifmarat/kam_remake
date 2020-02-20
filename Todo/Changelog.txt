@@ -147,6 +147,7 @@ Improvements:
  +    Limit number of units appeared after house destroy to 50 (was 255)
  +    Limit max number of equpped units at once to 100
  +    Idle units now will try to free popular routes after being pushed
+ +    Mines (and other resource gathering houses) should display they're depleted when you click the building
  +    Reduce AttackAlert 'Fight distance' from 24 to 12 and duration from 6 to 5 sec (to avoid markers at locs, where battle is over for a long time already)
  +    Game statistics:
         Ability to see stats while watching replay / spectating. Or allied players stats while playing
