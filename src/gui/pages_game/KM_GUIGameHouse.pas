@@ -79,6 +79,8 @@ type
       ResRow_Common_Resource: array [1..4] of TKMWaresRow; //4 bars is the maximum
       ResRow_Order: array [1..4] of TKMWareOrderRow; //3 bars is the maximum
       ResRow_Costs: array [1..4] of TKMCostsRow; //3 bars is the maximum
+      Label_DepletedMsg: TKMLabel;
+
     Panel_HouseMarket: TKMPanel;
       Button_Market: array [0..STORE_RES_COUNT-1] of TKMButtonFlat;
       Shape_Market_From, Shape_Market_To: TKMShape;
@@ -149,6 +151,7 @@ const
   MAX_UNITS_TO_EQUIP = 100;
   HOUSE_FLAG_TEX_ID = 1159;
   HOUSE_FLAG_TEX_ID_FRAME = 5;
+  HOUSE_ORDER_ROW_MOUSEWHEEL_STEP = 5;
 
 
 constructor TKMGUIGameHouse.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
@@ -218,6 +221,7 @@ begin
         ResRow_Common_Resource[I].RX := rxGui;
 
         ResRow_Order[I] := TKMWareOrderRow.Create(Panel_House_Common, 0, 0, TB_WIDTH, 999);
+        ResRow_Order[I].MouseWheelStep := HOUSE_ORDER_ROW_MOUSEWHEEL_STEP;
         ResRow_Order[I].WareRow.RX := rxGui;
         ResRow_Order[I].OnChange := House_OrderChange;
         ResRow_Order[I].OrderRemHint := gResTexts[TX_HOUSE_ORDER_DEC_HINT];
@@ -225,6 +229,10 @@ begin
 
         ResRow_Costs[I] := TKMCostsRow.Create(Panel_House_Common, 0, 0, TB_WIDTH, 21);
         ResRow_Costs[I].RX := rxGui;
+
+        Label_DepletedMsg := TKMLabel.Create(Panel_House_Common,0,0,TB_WIDTH,0,'',fntGrey,taLeft);
+        Label_DepletedMsg.AutoWrap := True;
+        Label_DepletedMsg.Hide;
       end;
 
   Create_HouseMarket;
@@ -400,6 +408,7 @@ begin
     Inc(dy, 25);
 
     ResRow_TH_MaxGold := TKMWareOrderRow.Create(Panel_HouseTownhall, 0, dy, TB_WIDTH, TH_MAX_GOLDMAX_VALUE);
+    ResRow_TH_MaxGold.MouseWheelStep := HOUSE_ORDER_ROW_MOUSEWHEEL_STEP;
     ResRow_TH_MaxGold.WareRow.RX := rxGui;
     ResRow_TH_MaxGold.WareRow.TexID := gRes.Wares[wtGold].GUIIcon;
     ResRow_TH_MaxGold.WareRow.Caption := gResTexts[TX_HOUSES_TOWNHALL_MAX_GOLD];
@@ -711,6 +720,11 @@ begin
           ResRow_Common_Resource[1].Hint := gRes.Wares[gRes.Houses[aHouse.HouseType].ResOutput[1]].Title;
           ResRow_Common_Resource[1].Show;
           ResRow_Common_Resource[1].Top := 2 + LINE_HEIGHT;
+
+          Label_DepletedMsg.Top := Radio_Woodcutter.Bottom + 5;
+          Label_DepletedMsg.Visible := aHouse.ResourceDepleted;
+          if aHouse.ResourceDepleted then
+            Label_DepletedMsg.Caption := gResTexts[aHouse.GetResourceDepletedMessageId];
         end;
     htArmorWorkshop: ShowArmorWorkshop(aHouse);
     htTownHall:      ShowTownHall(aHouse);
@@ -798,6 +812,11 @@ begin
         Inc(Line);
         Inc(RowRes);
       end;
+
+      Label_DepletedMsg.Top := Base + Line * LINE_HEIGHT + 5;
+      Label_DepletedMsg.Visible := aHouse.ResourceDepleted;
+      if aHouse.ResourceDepleted then
+        Label_DepletedMsg.Caption := gResTexts[aHouse.GetResourceDepletedMessageId];
     end;
 end;
 

@@ -296,6 +296,8 @@ type
         Button_ReturnToMapEd: TKMButton;
 
       function IsDragScrollingAllowed: Boolean; override;
+
+      function GetToolBarWidth: Integer; override;
   public
     constructor Create(aRender: TRender; aUIMode: TUIMode); reintroduce;
     destructor Destroy; override;
@@ -2054,7 +2056,7 @@ begin
     begin
       if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.HasOwner
           and (gRes.Houses[H.HouseType].OwnerType <> utNone) and (H.HouseType <> htBarracks))
-        or H.ResourceDepletedMsgIssued
+        or H.ResourceDepleted
         or H.OrderCompletedMsgIssued then
       begin
         gMySpectator.Highlight := H;
@@ -3150,6 +3152,12 @@ begin
 end;
 
 
+function TKMGamePlayInterface.GetToolBarWidth: Integer;
+begin
+  Result := TOOLBAR_WIDTH;
+end;
+
+
 function TKMGamePlayInterface.CanShowChat: Boolean;
 begin
   Result := (fUIMode in [umMP, umSpectate]) or ((fUIMode = umSP) and gScriptEvents.HasConsoleCommands);
@@ -3712,7 +3720,7 @@ begin
     if (Owner <> -1) and
       ((Owner = gMySpectator.HandID)
       or ((ALLOW_SELECT_ALLY_UNITS
-          or ((Obj is TKMHouse) and (gHands[Owner].IsHuman or not gGame.IsCampaign))) //Do not allow to select allied AI in campaigns
+          or ((Obj is TKMHouse) and TKMHouse(Obj).AllowAllyToView))
         and (gMySpectator.Hand.Alliances[Owner] = atAlly))
       or (ALLOW_SELECT_ENEMIES and (gMySpectator.Hand.Alliances[Owner] = atEnemy)) // Enemies can be selected for debug
       or (fUIMode in [umReplay, umSpectate])) then

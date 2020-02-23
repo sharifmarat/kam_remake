@@ -45,3 +45,6 @@ Version 2.1b (22.04.2019)
 - Reduced Defence Radius from 21 to 16
 - Fixed a bug where Msg wouldnt be displayed to player (Set defeat condition for Player2)
 - Reduced Recruits in Barracks fo Player4 from 15 to 5
+
+Version 2.2 (30.12.2019)
+- Integrated newest 'difficulty.script' version

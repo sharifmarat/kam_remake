@@ -264,8 +264,6 @@ type
 
   //This is a common class for all units, who can work in house
   TKMUnitCitizen = class(TKMSettledUnit)
-  private
-    procedure IssueResourceDepletedMessage;
   protected
     function InitiateActivity: TKMUnitTask; override;
   public
@@ -630,33 +628,6 @@ begin
 end;
 
 
-procedure TKMUnitCitizen.IssueResourceDepletedMessage;
-var
-  Msg: Word;
-begin
-  case fHome.HouseType of
-    htQuary:       Msg := TX_MSG_STONE_DEPLETED;
-    htCoalMine:    Msg := TX_MSG_COAL_DEPLETED;
-    htIronMine:    Msg := TX_MSG_IRON_DEPLETED;
-    htGoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
-    htWoodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcmPlant then
-                      Msg := TX_MSG_WOODCUTTER_PLANT_DEPLETED
-                    else
-                      Msg := TX_MSG_WOODCUTTER_DEPLETED;
-    htFisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fType].MiningRange) then
-                      Msg := TX_MSG_FISHERMAN_TOO_FAR
-                    else
-                      Msg := TX_MSG_FISHERMAN_CANNOT_CATCH;
-    else            Msg := 0;
-  end;
-
-  Assert(Msg <> 0, gRes.Houses[fHome.HouseType].HouseName + ' resource cant possibly deplet');
-
-  gGame.ShowMessage(mkHouse, Msg, fHome.Entrance, fOwner);
-  fHome.ResourceDepletedMsgIssued := True;
-end;
-
-
 function TKMUnitCitizen.InitiateActivity: TKMUnitTask;
 var
   Res: Integer;
@@ -685,8 +656,15 @@ begin
 
   TM := TKMTaskMining.Create(Self, gRes.Houses[fHome.HouseType].ResOutput[Res]);
 
-  if TM.WorkPlan.ResourceDepleted and not fHome.ResourceDepletedMsgIssued then
-    IssueResourceDepletedMessage;
+  if TM.WorkPlan.ResourceDepleted then
+  begin
+    if not fHome.ResourceDepleted then
+      fHome.IssueResourceDepletedMsg;
+  end
+  else
+    //Reset resource depleted state for home, if we find any resource
+    //(it could appear again, f.e. by script)
+    fHome.ResourceDepleted := False;
 
   if TM.WorkPlan.IsIssued
     and ((TM.WorkPlan.Resource1 = wtNone) or (fHome.CheckResIn(TM.WorkPlan.Resource1) >= TM.WorkPlan.Count1))

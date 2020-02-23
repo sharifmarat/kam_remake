@@ -1,7 +1,7 @@
 ﻿Since r6720:
 <===================================================================================>
 Todo:
-  Update translation for labels: 152, 153, 270, 276, 413, 457, 537, 548, 549, 624, 642, 775, 802, 964
+  Update translation for labels: 152, 153, 270, 276, 413, 457, 537, 548, 549, 624, 642, 775, 802, 964, 1206, 1207; 1208 - EMPTY
 Bugs:
  +  Lobby map list should show 8 locations at most, since only 8 locations can be used by humans at once
  +  Armour smithy has iron as 1st input, weapon smithy has iron as 2nd input (iron/coal swapped). Would make sense to match them (note: simpply swapping in KM_ResourceHouses causes game logic to be swapped with GUI)
@@ -128,6 +128,7 @@ Improvements:
  +    Holding shift while destroy house will keep destroy mode on
  +  L Pressing LMB over placed plans and dragging it - will remove plans
  +    Do not show owner of corn/wine tile on minimap
+ +    Depletable houses (mines/quary/fisherhut) should display they're depleted when you click the building
  +  L Unit group: Splitting one soldier from the group by pressing Ctrl+Separate warrior order
  +  L Unit group: do not change UnitsPerRow of a group that is exiting Barracks if player has manually changed it at least once
  +    Unit group: feed or split command should not cancel group previous order
@@ -146,6 +147,7 @@ Improvements:
  +    Limit number of units appeared after house destroy to 50 (was 255)
  +    Limit max number of equpped units at once to 100
  +    Idle units now will try to free popular routes after being pushed
+ +    Mines (and other resource gathering houses) should display they're depleted when you click the building
  +    Reduce AttackAlert 'Fight distance' from 24 to 12 and duration from 6 to 5 sec (to avoid markers at locs, where battle is over for a long time already)
  +    Game statistics:
         Ability to see stats while watching replay / spectating. Or allied players stats while playing
@@ -335,6 +337,8 @@ Improvements:
  +    Added shortcuts for Actions/States/Utils as A/S/U
  +    Added functions to check if group or warrior is in fight
  +    Added action HouseTownHallEquip
+ +    Added event OnHouseWareChange
+ +    Added actions HouseAllowAllyToView/HouseAllowAllyToViewAll, state HouseAllowAllyToView
  
  Other: 
  +  L Saving and restoring games window position on restart

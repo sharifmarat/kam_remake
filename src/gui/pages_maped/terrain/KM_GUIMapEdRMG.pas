@@ -200,7 +200,7 @@ begin
 
 
 // RMG panel
-  Panel_Settings := TKMPanel.Create(Panel_RMG, 0,  40, SIZE_X, SIZE_Y - 110);
+  Panel_Settings := TKMPanel.Create(Panel_RMG, 0,  40, SIZE_X, SIZE_Y - 40);
 
 // COLUMN 1: Locs + Resources
   Column_X := Column_1_X;

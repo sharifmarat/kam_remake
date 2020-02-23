@@ -1,3 +1,6 @@
+@echo off
+if not exist rsvars_local.bat (goto exit2)
+
 call rsvars_local.bat
 
 @SET BDS=%BDS_LOCAL%
@@ -14,3 +17,20 @@ call rsvars_local.bat
 @SET kam_version=Beta
 
 @SET IncludeScriptingEditor=False
+
+goto exit0
+
+:exit2
+@echo !
+@echo !
+@echo ================================================================================
+@echo ###########          FILE `RSVARS_LOCAL.BAT` NOT FOUND !!!!!         ###########
+@echo ================================================================================
+@echo !  
+@echo !
+@echo off
+exit /B 2
+
+:exit0
+@echo off
+exit /B 0

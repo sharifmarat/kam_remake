@@ -40,7 +40,7 @@ type
     destructor Destroy; override;
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean);
 
     property GuiTiles: TKMMapEdTerrainTiles read fGuiTiles;
     property GuiSelection: TKMMapEdTerrainSelection read fGuiSelection;
@@ -80,7 +80,8 @@ begin
 
   fOnPageChange := aOnPageChange;
 
-  Panel_Terrain := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 50);
+  Panel_Terrain := TKMPanel.Create(aParent, 0, 45, aParent.Width, aParent.Height - 45);
+  Panel_Terrain.AnchorsStretch;
     for I := Low(TKMTerrainTab) to High(TKMTerrainTab) do
     begin
       Button_Terrain[I] := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + SMALL_PAD_W * Byte(I), 0, SMALL_TAB_W, SMALL_TAB_H, BtnGlyph[I], rxGui, bsGame);
@@ -88,10 +89,10 @@ begin
       Button_Terrain[I].OnClick := PageChange;
     end;
 
-    Button_TerrainUndo := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + 151, 0, 15, SMALL_TAB_H, '<', bsGame);
+    Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 36, 0, 18, SMALL_TAB_H, '<', bsGame);
     Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl+Z'')';
     Button_TerrainUndo.OnClick := UnRedoClick;
-    Button_TerrainRedo := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + 166, 0, 15, SMALL_TAB_H, '>', bsGame);
+    Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 18, 0, 18, SMALL_TAB_H, '>', bsGame);
     Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl+Y'' or ''Ctrl+Shift+Z'')';
     Button_TerrainRedo.OnClick := UnRedoClick;
 
@@ -147,10 +148,10 @@ begin
 end;
 
 
-procedure TKMMapEdTerrain.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMMapEdTerrain.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 begin
-  fGuiBrushes.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
-  fGuiHeights.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+  fGuiBrushes.MouseWheel(Shift, WheelSteps, X, Y, aHandled);
+  fGuiHeights.MouseWheel(Shift, WheelSteps, X, Y, aHandled);
 end;
 
 

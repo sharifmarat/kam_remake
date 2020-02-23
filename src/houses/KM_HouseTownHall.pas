@@ -16,7 +16,8 @@ type
     fGoldCnt: Word;
     fGoldMaxCnt: Word;
     function GetTHUnitOrderIndex(aUnitType: TKMUnitType): Integer;
-    procedure SetGoldCnt(aValue: Word);
+    procedure SetGoldCnt(aValue: Word); overload;
+    procedure SetGoldCnt(aValue: Word; aLimitMaxGoldCnt: Boolean); overload;
     procedure SetGoldMaxCnt(aValue: Word); overload;
     procedure AddInitialDemands;
   protected
@@ -53,7 +54,7 @@ implementation
 uses
   Math,
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_Terrain,
-  KM_UnitWarrior, KM_ResUnits,
+  KM_UnitWarrior, KM_ResUnits, KM_ScriptingEvents,
   KM_InterfaceGame;
 
 {TKMHouseTownHall}
@@ -93,7 +94,20 @@ end;
 
 procedure TKMHouseTownHall.SetGoldCnt(aValue: Word);
 begin
-  fGoldCnt := EnsureRange(aValue, 0, fGoldMaxCnt);
+  SetGoldCnt(aValue, True);
+end;
+
+
+procedure TKMHouseTownHall.SetGoldCnt(aValue: Word; aLimitMaxGoldCnt: Boolean);
+var
+  OldValue: Integer;
+begin
+  OldValue := fGoldCnt;
+
+  fGoldCnt := EnsureRange(aValue, 0, IfThen(aLimitMaxGoldCnt, fGoldMaxCnt, High(Word)));
+
+  if OldValue <> fGoldCnt then
+    gScriptEvents.ProcHouseWareCountChanged(Self, wtGold, fGoldCnt, fGoldCnt - OldValue);
 end;
 
 
@@ -162,18 +176,14 @@ begin
   THUnitIndex := GetTHUnitOrderIndex(aUnitType);
   if THUnitIndex = -1 then Exit;
   
-  
   for K := 0 to aCount - 1 do
   begin
     //Make sure we have enough resources to equip a unit
     if not CanEquip(aUnitType) then Exit;
 
     //Take resources
-    for I := 0 to TH_TROOP_COST[THUnitIndex] - 1 do
-    begin  
-      ResTakeFromIn(wtGold); //Do the goldtaking
-      gHands[fOwner].Stats.WareConsumed(wtGold);
-    end;
+    ResTakeFromIn(wtGold, TH_TROOP_COST[THUnitIndex]); //Do the goldtaking
+    gHands[fOwner].Stats.WareConsumed(wtGold, TH_TROOP_COST[THUnitIndex]);
       
     //Make new unit
     Soldier := TKMUnitWarrior(gHands[fOwner].TrainUnit(aUnitType, Entrance));
@@ -254,7 +264,8 @@ begin
   if aFromScript and (fGoldMaxCnt < fGoldCnt + aCount) then
     SetGoldMaxCnt(fGoldCnt + aCount, True);
 
-  fGoldCnt := EnsureRange(fGoldCnt + aCount, 0, High(Word));
+  SetGoldCnt(fGoldCnt + aCount, False);
+
   if aFromScript then
     gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, aWare, aCount);
 end;
@@ -266,7 +277,7 @@ begin
   if aFromScript then
     gHands[Owner].Stats.WareConsumed(aWare, aCount);
 
-  Dec(fGoldCnt, aCount);
+  SetGoldCnt(fGoldCnt - aCount, False);
   //Only request a new resource if it is allowed by the distribution of wares for our parent player
   gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
 end;
@@ -285,7 +296,7 @@ begin
     end;
   end;
   Assert(aCount <= fGoldCnt);
-  Dec(fGoldCnt, aCount);
+  SetGoldCnt(fGoldCnt - aCount, False);
   if gHands[fOwner].Deliveries.Queue.GetDemandsCnt(Self, aWare, dtOnce, diNorm) < fGoldMaxCnt then
     gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
 end;

@@ -214,10 +214,8 @@ begin
   begin
     if OwnerIndex <> fHandIndex then  // check if we selected our unit/ally's or enemy's
     begin
-      if (ALLOW_SELECT_ALLY_UNITS or
-          ((gHands[OwnerIndex].IsHuman or not gGame.IsCampaign) //Do not allow to select allied AI in campaigns
-            and aAllowSelectAllies)
-        and (Hand.Alliances[OwnerIndex] = atAlly))
+      if ((ALLOW_SELECT_ALLY_UNITS or aAllowSelectAllies) 
+            and (Hand.Alliances[OwnerIndex] = atAlly))
           or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = atEnemy)) then // Enemies can be selected for debug
         fIsSelectedMyObj := False
       else
@@ -265,7 +263,8 @@ begin
       NewSelected := gHands.HousesHitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
 
       //In-game player can select only own and ally Units
-      UpdateNewSelected(NewSelected, True);
+      if (NewSelected is TKMHouse) then
+        UpdateNewSelected(NewSelected, TKMHouse(NewSelected).AllowAllyToView);
 
       //Don't allow the player to select destroyed houses
       if (NewSelected is TKMHouse) and TKMHouse(NewSelected).IsDestroyed then

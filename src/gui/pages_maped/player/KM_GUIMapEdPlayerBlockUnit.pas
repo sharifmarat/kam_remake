@@ -8,9 +8,9 @@ uses
 type
   TKMMapEdPlayerBlockUnit = class
   private
-    procedure Player_BlockUnitClick(Sender: TObject);
-    procedure Player_BlockBarracksWarriorsClick(Sender: TObject);
-    procedure Player_BlockTHWarriorsClick(Sender: TObject);
+    procedure Player_BlockUnitClick(Sender: TObject; Shift: TShiftState);
+    procedure Player_BlockBarracksWarriorsClick(Sender: TObject; Shift: TShiftState);
+    procedure Player_BlockTHWarriorsClick(Sender: TObject; Shift: TShiftState);
     procedure Player_BlockUnitRefresh;
     procedure Player_BlockBarracksWarriorsRefresh;
     procedure Player_BlockTHWarriorsRefresh;
@@ -44,12 +44,13 @@ var
 begin
   inherited Create;
 
-  Panel_BlockUnit := TKMPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH, 400);
-  TKMLabel.Create(Panel_BlockUnit, 0, PAGE_TITLE_Y, TB_MAP_ED_WIDTH, 0, gResTexts[TX_MAPED_BLOCK_UNITS], fntOutline, taCenter);
+  Panel_BlockUnit := TKMPanel.Create(aParent, 9, 28, aParent.Width - 9, 400);
+  with TKMLabel.Create(Panel_BlockUnit, 0, PAGE_TITLE_Y, Panel_BlockUnit.Width, 0, gResTexts[TX_MAPED_BLOCK_UNITS], fntOutline, taCenter) do
+    Anchors := [anLeft, anTop, anRight];
   for I := 0 to High(Button_BlockUnit) do
   begin
     Button_BlockUnit[I] := TKMButtonFlat.Create(Panel_BlockUnit, 9 + (I mod 5)*37,30+(I div 5)*37,33,33,gRes.Units[School_Order[I]].GUIIcon);
-    Button_BlockUnit[I].OnClick := Player_BlockUnitClick;
+    Button_BlockUnit[I].OnClickShift := Player_BlockUnitClick;
     Button_BlockUnit[I].Tag := I;
     Button_BlockUnit[I].Hint := gRes.Units[School_Order[I]].GUIName;
     Image_BlockUnit[I] := TKMImage.Create(Panel_BlockUnit, 9 + (I mod 5)*37 + 15,30+(I div 5)*37 + 15, 16, 16, 0, rxGuiMain);
@@ -57,26 +58,26 @@ begin
     Image_BlockUnit[I].ImageCenter;
   end;
 
-  TKMLabel.Create(Panel_BlockUnit, 9, 146, TB_MAP_ED_WIDTH - 9, 0, gResTexts[TX_MAPED_BLOCK_UNITS_IN_BARRACKS], fntMetal, taLeft);
+  TKMLabel.Create(Panel_BlockUnit, 9, 146, Panel_BlockUnit.Width - 9, 0, gResTexts[TX_MAPED_BLOCK_UNITS_IN_BARRACKS], fntMetal, taLeft);
   for I := 0 to High(Button_BlockBarracksWarriors) do
   begin
     Button_BlockBarracksWarriors[I] := TKMButtonFlat.Create(Panel_BlockUnit,9 + (I mod 5)*37,20+146+(I div 5)*37,33,33,
                                                             gRes.Units[Barracks_Order[I]].GUIIcon, rxGui);
     Button_BlockBarracksWarriors[I].Hint := gRes.Units[Barracks_Order[I]].GUIName;
     Button_BlockBarracksWarriors[I].Tag := I;
-    Button_BlockBarracksWarriors[I].OnClick := Player_BlockBarracksWarriorsClick;
+    Button_BlockBarracksWarriors[I].OnClickShift := Player_BlockBarracksWarriorsClick;
     Image_BlockBarracksWarriors[I] := TKMImage.Create(Panel_BlockUnit, 9 + (I mod 5)*37 + 15,20+146+(I div 5)*37 + 15, 16, 16, 0, rxGuiMain);
     Image_BlockBarracksWarriors[I].Hitable := False;
     Image_BlockBarracksWarriors[I].ImageCenter;
   end;
 
-  TKMLabel.Create(Panel_BlockUnit, 9, 245, TB_MAP_ED_WIDTH - 9, 0, gResTexts[TX_MAPED_BLOCK_UNITS_IN_TOWNHALL], fntMetal, taLeft);
+  TKMLabel.Create(Panel_BlockUnit, 9, 245, Panel_BlockUnit.Width - 9, 0, gResTexts[TX_MAPED_BLOCK_UNITS_IN_TOWNHALL], fntMetal, taLeft);
   for I := 0 to High(Button_BlockTHWarriors) do
   begin
     Button_BlockTHWarriors[I] := TKMButtonFlat.Create(Panel_BlockUnit, 9 + (I mod 5)*37,265+(I div 5)*37,33,33, gRes.Units[TownHall_Order[I]].GUIIcon, rxGui);
     Button_BlockTHWarriors[I].Hint := gRes.Units[TownHall_Order[I]].GUIName;
     Button_BlockTHWarriors[I].Tag := I;
-    Button_BlockTHWarriors[I].OnClick := Player_BlockTHWarriorsClick;
+    Button_BlockTHWarriors[I].OnClickShift := Player_BlockTHWarriorsClick;
     Image_BlockTHWarriors[I] := TKMImage.Create(Panel_BlockUnit, 9 + (I mod 5)*37 + 15,265+(I div 5)*37 + 15, 16, 16, 0, rxGuiMain);
     Image_BlockTHWarriors[I].Hitable := False;
     Image_BlockTHWarriors[I].ImageCenter;
@@ -84,7 +85,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerBlockUnit.Player_BlockUnitClick(Sender: TObject);
+procedure TKMMapEdPlayerBlockUnit.Player_BlockUnitClick(Sender: TObject; Shift: TShiftState);
 var
   I: Integer;
   U: TKMUnitType;
@@ -98,7 +99,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerBlockUnit.Player_BlockBarracksWarriorsClick(Sender: TObject);
+procedure TKMMapEdPlayerBlockUnit.Player_BlockBarracksWarriorsClick(Sender: TObject; Shift: TShiftState);
 var
   K: Integer;
   W: TKMUnitType;
@@ -112,7 +113,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerBlockUnit.Player_BlockTHWarriorsClick(Sender: TObject);
+procedure TKMMapEdPlayerBlockUnit.Player_BlockTHWarriorsClick(Sender: TObject; Shift: TShiftState);
 var
   K: Integer;
   W: TKMUnitType;

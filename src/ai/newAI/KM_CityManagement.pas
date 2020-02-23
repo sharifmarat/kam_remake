@@ -591,7 +591,7 @@ begin
   begin
     H := gHands[fOwner].Houses[I];
     if not H.IsDestroyed
-      AND H.ResourceDepletedMsgIssued
+      AND H.ResourceDepleted
       AND (H.CheckResOut(wtAll) = 0) then
     begin
       Loc := H.Entrance;

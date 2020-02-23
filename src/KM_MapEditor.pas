@@ -71,7 +71,7 @@ type
     procedure MouseDown(Button: TMouseButton);
     procedure MouseMove;
     procedure MouseUp(Button: TMouseButton; aOverMap: Boolean);
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer);
     procedure UpdateState;
     procedure UpdateStateIdle;
     procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
@@ -454,9 +454,9 @@ begin
 end;
 
 
-procedure TKMMapEditor.MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
+procedure TKMMapEditor.MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer);
 begin
-  UpdateField(Sign(WheelDelta), False);
+  UpdateField(WheelSteps, False);
 end;
 
 

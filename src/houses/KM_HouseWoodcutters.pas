@@ -73,7 +73,7 @@ begin
   inherited;
 
   if not KMSamePoint(OldFlagPoint, fCuttingPoint) then
-    ResourceDepletedMsgIssued := False; //Reset resource depleted msg, if player changed CuttingPoint
+    ResourceDepleted := False; //Reset resource depleted msg, if player changed CuttingPoint
 end;
 
 
@@ -83,7 +83,7 @@ begin
   //we should reshow the depleted message if we are changed to cut and run out of trees
   if (fWoodcutterMode <> aWoodcutterMode)
     and (aWoodcutterMode in [wcmChop, wcmPlant]) then
-    ResourceDepletedMsgIssued := False;
+    ResourceDepleted := False;
 
   fWoodcutterMode := aWoodcutterMode;
 end;

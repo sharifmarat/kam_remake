@@ -69,6 +69,7 @@ type
     procedure ProcHousePlanRemoved(aPlayer: TKMHandID; aX, aY: Word; aType: TKMHouseType);
     procedure ProcHouseDamaged(aHouse: TKMHouse; aAttacker: TKMUnit);
     procedure ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandID);
+    procedure ProcHouseWareCountChanged(aHouse: TKMHouse; aWare: TKMWareType; aCnt: Word; aChangeCnt: Integer);
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderAttackHouse(aGroup: TKMUnitGroup; aHouse: TKMHouse);
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
@@ -182,6 +183,7 @@ begin
   AddEventHandlerName(evtHousePlanRemoved,      'OnHousePlanRemoved');
   AddEventHandlerName(evtHouseDamaged,          'OnHouseDamaged');
   AddEventHandlerName(evtHouseDestroyed,        'OnHouseDestroyed');
+  AddEventHandlerName(evtHouseWareCountChanged, 'OnHouseWareCountChanged');
   AddEventHandlerName(evtGroupHungry,           'OnGroupHungry');
   AddEventHandlerName(evtGroupOrderAttackHouse, 'OnGroupOrderAttackHouse');
   AddEventHandlerName(evtGroupOrderAttackUnit,  'OnGroupOrderAttackUnit');
@@ -617,6 +619,20 @@ begin
   begin
     fIDCache.CacheHouse(aHouse, aHouse.UID); //Improves cache efficiency since aHouse will probably be accessed soon
     CallEventHandlers(evtHouseDestroyed, [aHouse.UID, aDestroyerIndex]);
+  end;
+end;
+
+
+//* Version: 10750
+//* Occurs when ware count is changed in house
+//* aCnt: current ware count in house (after change)
+//* aChangeCnt: ware change count. if aChangeCnt > 0 count increased, if aChangeCnt < 0 count decreased
+procedure TKMScriptEvents.ProcHouseWareCountChanged(aHouse: TKMHouse; aWare: TKMWareType; aCnt: Word; aChangeCnt: Integer);
+begin
+  if MethodAssigned(evtHouseWareCountChanged) then
+  begin
+    fIDCache.CacheHouse(aHouse, aHouse.UID); //Improves cache efficiency since aHouse will probably be accessed soon
+    CallEventHandlers(evtHouseWareCountChanged, [aHouse.UID, WareTypeToIndex[aWare], aCnt, aChangeCnt]);
   end;
 end;
 

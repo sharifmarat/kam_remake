@@ -8,7 +8,7 @@ uses
 type
   TKMMapEdPlayerBlockTrade = class
   private
-    procedure Player_BlockTradeClick(Sender: TObject);
+    procedure Player_BlockTradeClick(Sender: TObject; Shift: TShiftState);
     procedure Player_BlockTradeRefresh;
   protected
     Panel_BlockTrade: TKMPanel;
@@ -36,14 +36,15 @@ var
 begin
   inherited Create;
 
-  Panel_BlockTrade := TKMPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH, 400);
-  TKMLabel.Create(Panel_BlockTrade, 0, PAGE_TITLE_Y, TB_MAP_ED_WIDTH, 0, gResTexts[TX_MAPED_BLOCK_TRADE], fntOutline, taCenter);
+  Panel_BlockTrade := TKMPanel.Create(aParent, 9, 28, aParent.Width - 9, 400);
+  with TKMLabel.Create(Panel_BlockTrade, 0, PAGE_TITLE_Y, Panel_BlockTrade.Width, 0, gResTexts[TX_MAPED_BLOCK_TRADE], fntOutline, taCenter) do
+    Anchors := [anLeft, anTop, anRight];
   for I := 1 to STORE_RES_COUNT do
   begin
     Button_BlockTrade[I] := TKMButtonFlat.Create(Panel_BlockTrade, 9 + ((I-1) mod 5)*37, 30 + ((I-1) div 5)*37,33,33, 0);
     Button_BlockTrade[I].TexID := gRes.Wares[StoreResType[I]].GUIIcon;
     Button_BlockTrade[I].Hint := gRes.Wares[StoreResType[I]].Title;
-    Button_BlockTrade[I].OnClick := Player_BlockTradeClick;
+    Button_BlockTrade[I].OnClickShift := Player_BlockTradeClick;
     Button_BlockTrade[I].Tag := I;
     Image_BlockTrade[I] := TKMImage.Create(Panel_BlockTrade, 9 + ((I-1) mod 5)*37 + 15, 30 + ((I-1) div 5)*37 + 15, 16, 16, 0, rxGuiMain);
     Image_BlockTrade[I].Hitable := False;
@@ -52,7 +53,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerBlockTrade.Player_BlockTradeClick(Sender: TObject);
+procedure TKMMapEdPlayerBlockTrade.Player_BlockTradeClick(Sender: TObject; Shift: TShiftState);
 var
   I: Integer;
   R: TKMWareType;

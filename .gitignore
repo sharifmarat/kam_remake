@@ -55,3 +55,5 @@ __recovery
 /Utils/*/*.drc
 /Test*/*.res
 /Utils/*/KaM_Remake_Server_Status.*
+
+Logs/PerfLog.txt

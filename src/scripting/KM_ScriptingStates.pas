@@ -52,6 +52,7 @@ type
     function GroupType(aGroupID: Integer): Integer;
 
     function HouseAt(aX, aY: Word): Integer;
+    function HouseAllowAllyToView(aHouseID: Integer): Boolean;
     function HouseBarracksRallyPointX(aBarracks: Integer): Integer;
     function HouseBarracksRallyPointY(aBarracks: Integer): Integer;
     function HouseBuildingProgress(aHouseID: Integer): Word;
@@ -130,6 +131,7 @@ type
     function PeaceTime: Cardinal;
 
     function PlayerAllianceCheck(aPlayer1, aPlayer2: Byte): Boolean;
+    function PlayerColorFlag(aPlayer: Byte): AnsiString;
     function PlayerColorText(aPlayer: Byte): AnsiString;
     function PlayerDefeated(aPlayer: Byte): Boolean;
     function PlayerEnabled(aPlayer: Byte): Boolean;
@@ -144,6 +146,7 @@ type
     function StatAIDefencePositionsCount(aPlayer: Byte): Integer;
     function StatArmyCount(aPlayer: Byte): Integer;
     function StatCitizenCount(aPlayer: Byte): Integer;
+    function StatHouseCount(aPlayer: Byte): Integer;
     function StatHouseMultipleTypesCount(aPlayer: Byte; aTypes: TByteSet): Integer;
     function StatHouseTypeCount(aPlayer, aHouseType: Byte): Integer;
     function StatHouseTypePlansCount(aPlayer, aHouseType: Byte): Integer;
@@ -875,6 +878,25 @@ begin
   end;
 end;
 
+//* Version: 10940
+//* Returns the number of houses of the specified player
+//* Result: Number of houses
+function TKMScriptStates.StatHouseCount(aPlayer: Byte): Integer;
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].Stats.GetHouseQty(htAny)
+    else
+    begin
+      Result := 0;
+      LogParamWarning('States.StatHouseCount', [aPlayer]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
 
 //* Version: 6328
 //* Returns number of specified house types for specified player.
@@ -1375,9 +1397,29 @@ begin
 end;
 
 
+//* Version: 10940
+//* Get players color in hex format
+//* Result: Player color
+function TKMScriptStates.PlayerColorFlag(aPlayer: Byte): AnsiString;
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := AnsiString(Format('%.6x', [gHands[aPlayer].FlagColor and $FFFFFF]))
+    else
+    begin
+      Result := '';
+      LogParamWarning('States.PlayerColorFlag', [aPlayer]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 4758
 //* Get players color as text in hex format
-//* Result: Player color
+//* Result: Player color as text
 function TKMScriptStates.PlayerColorText(aPlayer: Byte): AnsiString;
 begin
   try
@@ -1463,6 +1505,30 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+end;
+
+
+//* Version: 10940
+//* Return if specified house is allowed to be viewed by his allies
+function TKMScriptStates.HouseAllowAllyToView(aHouseID: Integer): Boolean;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := False;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if (H <> nil) and not H.IsDestroyed  and (H.IsComplete) then
+        Result := H.AllowAllyToView;
+    end
+    else
+      LogParamWarning('States.HouseAllowAllyToView', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+
 end;
 
 
@@ -1590,7 +1656,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := not H.ResourceDepletedMsgIssued;
+        Result := not H.ResourceDepleted;
     end
     else
       LogParamWarning('States.HouseCanReachResources', [aHouseID]);

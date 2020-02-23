@@ -51,6 +51,12 @@ type
     function ToString: String;
     function Width: Integer;
     function Height: Integer;
+    procedure SetLeft(aLeft: Integer);
+    procedure SetRight(aRight: Integer);
+    procedure SetTop(aTop: Integer);
+    procedure SetBottom(aBottom: Integer);
+    class operator Equal(const A, B: TKMRect): Boolean;
+    class operator NotEqual(const A, B: TKMRect): Boolean;
   end;
 
   TKMRectF = packed record Left, Top, Right, Bottom: Single end;
@@ -102,7 +108,10 @@ type
   function KMRectGrowBottomLeft(const aRect: TKMRect; aInset: Integer = 1): TKMRect;
   function KMRectShinkTopLeft(const aRect: TKMRect): TKMRect;
   function KMRectGrowBottomRight(const aRect: TKMRect; aInset: Integer = 1): TKMRect;
-  function KMClipRect(const aRect: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect;
+  function KMClipRect(const aRect: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect; overload;
+  function KMClipRect(const aRect1, aRect2: TKMRect): TKMRect; overload;
+  function KMRectIntersect(const aRect1: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect; overload;
+  function KMRectIntersect(const aRect1, aRect2: TKMRect): TKMRect; overload;
   function KMRectCorners(const aRect: TKMRect): TKMPointArray;
   function KMInRect(const aPoint: TKMPoint; const aRect: TKMRect): Boolean; overload;
   function KMInRect(const aPoint: TKMPointF; const aRect: TKMRect): Boolean; overload;
@@ -257,6 +266,36 @@ end;
 function TKMRect.Height: Integer;
 begin
   Result := Bottom - Top + 1;
+end;
+
+procedure TKMRect.SetLeft(aLeft: Integer);
+begin
+  Left := aLeft;
+end;
+
+procedure TKMRect.SetRight(aRight: Integer);
+begin
+  Right := aRight;
+end;
+
+procedure TKMRect.SetTop(aTop: Integer);
+begin
+  Top := aTop;
+end;
+
+procedure TKMRect.SetBottom(aBottom: Integer);
+begin
+  Bottom := aBottom;
+end;
+
+class operator TKMRect.Equal(const A, B: TKMRect): Boolean;
+begin
+  Result := KMSameRect(A,B);
+end;
+
+class operator TKMRect.NotEqual(const A, B: TKMRect): Boolean;
+begin
+  Result := not KMSameRect(A,B);
 end;
 
 function TKMRangeInt.ToString: String;
@@ -534,6 +573,30 @@ begin
   Result.Right  := EnsureRange(aRect.Right, X1, X2);
   Result.Top    := EnsureRange(aRect.Top, Y1, Y2);
   Result.Bottom := EnsureRange(aRect.Bottom, Y1, Y2);
+end;
+
+
+function KMClipRect(const aRect1, aRect2: TKMRect): TKMRect;
+begin
+  Result := KMClipRect(aRect1, aRect2.Left, aRect2.Top, aRect2.Right, aRect2.Bottom);
+end;
+
+
+function KMRectIntersect(const aRect1: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect;
+begin
+  if   (aRect1.Right  < X1) 
+    or (aRect1.Left   > X2)
+    or (aRect1.Bottom < Y1)
+    or (aRect1.Top    > Y2) then
+    Result := KMRECT_INVALID_TILES
+  else
+    Result := KMClipRect(aRect1, X1,Y1,X2,Y2);
+end;
+
+
+function KMRectIntersect(const aRect1, aRect2: TKMRect): TKMRect;
+begin
+  Result := KMRectIntersect(aRect1, aRect2.Left, aRect2.Top, aRect2.Right, aRect2.Bottom); 
 end;
 
 

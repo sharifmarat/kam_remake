@@ -33,3 +33,9 @@ Version 2.0b (02.04.2019)
 Version 2.0c (14.08.2019)
 - Some small script optimizations and formating fixes
 - Increased amount of allied Knights from 9 to 12 each group (only on normal and easy)
+
+Version 2.2 (30.12.2019)
+- Fixed a bug in the script that made Player1s Defense Positions appear too late (@1hour instead of 35min)
+- Integrated newest version of 'difficulty.scipt'
+- Removed 2 defense positions on 'Easy' difficutly
+- Changed main script to reflect those changes

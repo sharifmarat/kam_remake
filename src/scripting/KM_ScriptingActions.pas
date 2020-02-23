@@ -80,6 +80,8 @@ type
     procedure HouseAddRepair(aHouseID: Integer; aRepair: Word);
     procedure HouseAddWaresTo(aHouseID: Integer; aType, aCount: Word);
     procedure HouseAllow(aPlayer, aHouseType: Word; aAllowed: Boolean);
+    procedure HouseAllowAllyToView(aHouseID: Integer; aAllow: Boolean);
+    procedure HouseAllowAllyToViewAll(aPlayer: Byte; aAllow: Boolean);
     function  HouseBarracksEquip(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer;
     procedure HouseBarracksGiveRecruit(aHouseID: Integer);
     procedure HouseDestroy(aHouseID: Integer; aSilent: Boolean);
@@ -1875,6 +1877,50 @@ begin
       gHands[aPlayer].Locks.HouseBlocked[HouseIndexToType[aHouseType]] := not aAllowed
     else
       LogParamWarning('Actions.HouseAllow', [aPlayer, aHouseType, Byte(aAllowed)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 10940
+//* Allows allies to view specified house
+procedure TKMScriptActions.HouseAllowAllyToView(aHouseID: Integer; aAllow: Boolean);
+var
+  H: TKMHouse;
+begin
+  try
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if (H <> nil) and not H.IsDestroyed and H.IsComplete then
+      begin
+        H.AllowAllyToView := aAllow;
+      end;
+      //Silently ignore if house doesn't exist
+    end
+    else
+      LogParamWarning('Actions.HouseAllowAllyView', [aHouseID, Byte(aAllow)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 10940
+//* Allows allies to view all houses of specified player
+procedure TKMScriptActions.HouseAllowAllyToViewAll(aPlayer: Byte; aAllow: Boolean);
+var
+  I: Integer;
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      for I := 0 to gHands[aPlayer].Houses.Count - 1 do
+        gHands[aPlayer].Houses[I].AllowAllyToView := aAllow
+    else
+      LogParamWarning('Actions.HouseAllowAllyToViewAll', [aPlayer, Byte(aAllow)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

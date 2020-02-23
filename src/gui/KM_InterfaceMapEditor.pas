@@ -101,6 +101,8 @@ type
       Label_MissionName: TKMLabel;
       Image_Extra: TKMImage;
       Image_Message: TKMImage;
+
+    function GetToolBarWidth: Integer; override;
   public
     constructor Create(aRender: TRender);
     destructor Destroy; override;
@@ -116,7 +118,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean); override;
     procedure Resize(X,Y: Word); override;
     procedure SetLoadMode(aMultiplayer: Boolean);
 
@@ -155,18 +157,18 @@ begin
   fMinimap.PaintVirtualGroups := True;
 
   ResetDragObject;
+  //                                   224
+  TKMImage.Create(Panel_Main, 0,    0, MAPED_TOOLBAR_WIDTH, 200, 407, rxGui, 0, [anLeft, anTop, anRight]); //Minimap place
+  TKMImage.Create(Panel_Main, 0,  200, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]);
+  TKMImage.Create(Panel_Main, 0,  600, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]);
+  TKMImage.Create(Panel_Main, 0, 1000, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]); //For 1600x1200 this is needed
 
-  TKMImage.Create(Panel_Main, 0,    0, 224, 200, 407); //Minimap place
-  TKMImage.Create(Panel_Main, 0,  200, 224, 400, 404);
-  TKMImage.Create(Panel_Main, 0,  600, 224, 400, 404);
-  TKMImage.Create(Panel_Main, 0, 1000, 224, 400, 404); //For 1600x1200 this is needed
-
-  MinimapView := TKMMinimapView.Create(Panel_Main, 10, 10, 176, 176);
+  MinimapView := TKMMinimapView.Create(Panel_Main, 10, 10, MAPED_TOOLBAR_WIDTH - 48, 176);
   MinimapView.OnChange := Minimap_OnUpdate;
 
-  Label_MissionName := TKMLabel.Create(Panel_Main, 230, 10, 500, 10, NO_TEXT, fntGrey, taLeft);
-  Label_Coordinates := TKMLabel.Create(Panel_Main, 230, 30, 'X: Y:', fntGrey, taLeft);
-  Label_Stat := TKMLabel.Create(Panel_Main, 230, 50, 0, 0, '', fntOutline, taLeft);
+  Label_MissionName := TKMLabel.Create(Panel_Main, MAPED_TOOLBAR_WIDTH + 4, 10, 500, 10, NO_TEXT, fntGrey, taLeft);
+  Label_Coordinates := TKMLabel.Create(Panel_Main, MAPED_TOOLBAR_WIDTH + 4, 30, 'X: Y:', fntGrey, taLeft);
+  Label_Stat := TKMLabel.Create(Panel_Main, MAPED_TOOLBAR_WIDTH + 4, 50, 0, 0, '', fntOutline, taLeft);
 
 //  TKMLabel.Create(Panel_Main, TB_PAD, 190, TB_WIDTH, 0, gResTexts[TX_MAPED_PLAYERS], fntOutline, taLeft);
   for I := 0 to MAX_HANDS - 1 do
@@ -177,23 +179,23 @@ begin
   end;
   Button_PlayerSelect[0].Down := True; //First player selected by default
 
-  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 203, 26, 26, 662);
+  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 33 + TB_PAD, 190, 32, 32, 662);
   Button_ChangeOwner.Down := False;
   Button_ChangeOwner.OnClick := ChangeOwner_Click;
   Button_ChangeOwner.Hint := GetHintWHotKey(TX_MAPED_PAINT_BUCKET_CH_OWNER, SC_MAPEDIT_PAINT_BUCKET);
 
-  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 231, 26, 26, 340);
+  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 33 + TB_PAD, 227, 32, 32, 340);
   Button_UniversalEraser.Down := False;
   Button_UniversalEraser.OnClick := UniversalEraser_Click;
   Button_UniversalEraser.Hint := GetHintWHotKey(TX_MAPED_UNIVERSAL_ERASER, SC_MAPEDIT_UNIV_ERASOR);
 
-  Image_Extra := TKMImage.Create(Panel_Main, TOOLBAR_WIDTH, Panel_Main.Height - 48, 30, 48, 494);
+  Image_Extra := TKMImage.Create(Panel_Main, MAPED_TOOLBAR_WIDTH, Panel_Main.Height - 48, 30, 48, 494);
   Image_Extra.Anchors := [anLeft, anBottom];
   Image_Extra.HighlightOnMouseOver := True;
   Image_Extra.OnClick := Message_Click;
   Image_Extra.Hint := GetHintWHotKey(TX_KEY_FUNC_MAPEDIT_EXTRA, SC_MAPEDIT_EXTRA);
 
-  Image_Message := TKMImage.Create(Panel_Main, TOOLBAR_WIDTH, Panel_Main.Height - 48*2, 30, 48, 496);
+  Image_Message := TKMImage.Create(Panel_Main, MAPED_TOOLBAR_WIDTH, Panel_Main.Height - 48*2, 30, 48, 496);
   Image_Message.Anchors := [anLeft, anBottom];
   Image_Message.HighlightOnMouseOver := True;
   Image_Message.OnClick := Message_Click;
@@ -203,7 +205,8 @@ begin
   fGuiExtras := TKMMapEdExtras.Create(Panel_Main, PageChanged);
   fGuiMessage := TKMMapEdMessage.Create(Panel_Main);
 
-  Panel_Common := TKMPanel.Create(Panel_Main,TB_PAD_MAP_ED,262,TB_MAP_ED_WIDTH,768);
+  Panel_Common := TKMPanel.Create(Panel_Main,TB_PAD_MAP_ED,262,TB_MAP_ED_WIDTH,Panel_Main.Height - 262);
+  Panel_Common.Anchors := [anLeft, anTop, anBottom];
 
   {5 big tabs}
   Button_Main[1] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*0, 0, BIG_TAB_W, BIG_TAB_H, 381, rxGui, bsGame);
@@ -702,6 +705,12 @@ begin
 end;
 
 
+function TKMapEdInterface.GetToolBarWidth: Integer;
+begin
+  Result := MAPED_TOOLBAR_WIDTH;
+end;
+
+
 procedure TKMapEdInterface.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
   KeyHandled, KeyPassedToModal: Boolean;
@@ -1193,15 +1202,15 @@ begin
 end;
 
 
-procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean);
+procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean);
 begin
   if gGameCursor.Mode in [cmField, cmWine] then
   begin
     if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
 
-    gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
+    gGame.MapEditor.MouseWheel(Shift, WheelSteps, X, Y);
   end else begin
-    fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+    fGuiTerrain.MouseWheel(Shift, WheelSteps, X, Y, aHandled);
     if not aHandled then
       inherited;
   end;

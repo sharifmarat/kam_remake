@@ -19,6 +19,7 @@ type
                     Height: Byte;
                     Obj: Byte;
                     IsCustom: Boolean;
+                    BlendingLvl: Byte;
                     TerKind: TKMTerrainKind; //Used for brushes
                   end;
 
@@ -221,10 +222,12 @@ begin
         fSelectionBuffer[By,Bx].BaseLayer.Terrain  := gTerrain.Land[I+1, K+1].BaseLayer.Terrain;
         fSelectionBuffer[By,Bx].BaseLayer.Rotation := gTerrain.Land[I+1, K+1].BaseLayer.Rotation;
         fSelectionBuffer[By,Bx].BaseLayer.Corners  := gTerrain.Land[I+1, K+1].BaseLayer.Corners;
-        fSelectionBuffer[By,Bx].LayersCnt := gTerrain.Land[I+1, K+1].LayersCnt;
-        fSelectionBuffer[By,Bx].Height    := gTerrain.Land[I+1, K+1].Height;
-        fSelectionBuffer[By,Bx].Obj       := gTerrain.Land[I+1, K+1].Obj;
-        fSelectionBuffer[By,Bx].TerKind   := fTerrainPainter.LandTerKind[I+1, K+1].TerKind;
+        fSelectionBuffer[By,Bx].LayersCnt   := gTerrain.Land[I+1, K+1].LayersCnt;
+        fSelectionBuffer[By,Bx].Height      := gTerrain.Land[I+1, K+1].Height;
+        fSelectionBuffer[By,Bx].Obj         := gTerrain.Land[I+1, K+1].Obj;
+        fSelectionBuffer[By,Bx].IsCustom    := gTerrain.Land[I+1, K+1].IsCustom;
+        fSelectionBuffer[By,Bx].BlendingLvl := gTerrain.Land[I+1, K+1].BlendingLvl;
+        fSelectionBuffer[By,Bx].TerKind     := fTerrainPainter.LandTerKind[I+1, K+1].TerKind;
         for L := 0 to 2 do
         begin
           fSelectionBuffer[By,Bx].Layer[L].Terrain  := gTerrain.Land[I+1, K+1].Layer[L].Terrain;
@@ -308,6 +311,8 @@ begin
         gTerrain.Land[I+1, K+1].LayersCnt   := fSelectionBuffer[By,Bx].LayersCnt;
         gTerrain.Land[I+1, K+1].Height      := fSelectionBuffer[By,Bx].Height;
         gTerrain.Land[I+1, K+1].Obj         := fSelectionBuffer[By,Bx].Obj;
+        gTerrain.Land[I+1, K+1].IsCustom    := fSelectionBuffer[By,Bx].IsCustom;
+        gTerrain.Land[I+1, K+1].BlendingLvl := fSelectionBuffer[By,Bx].BlendingLvl;
         fTerrainPainter.LandTerKind[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
         for L := 0 to 2 do
         begin
@@ -355,6 +360,8 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
 
     SwapInt(gTerrain.Land[Y1,X1].Obj, gTerrain.Land[Y2,X2].Obj);
     SwapInt(gTerrain.Land[Y1,X1].LayersCnt, gTerrain.Land[Y2,X2].LayersCnt);
+    SwapInt(gTerrain.Land[Y1,X1].BlendingLvl, gTerrain.Land[Y2,X2].BlendingLvl);
+    SwapBool(gTerrain.Land[Y1,X1].IsCustom, gTerrain.Land[Y2,X2].IsCustom);
 
     //Heights are vertex based not tile based, so it gets flipped slightly differently
     case aAxis of
@@ -528,11 +535,12 @@ procedure TKMSelection.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
   var
     L: Integer;
   begin
-    Result.BaseLayer := aBufferData.BaseLayer;
-    Result.LayersCnt := aBufferData.LayersCnt;
-    Result.Height    := aBufferData.Height;
-    Result.Obj       := aBufferData.Obj;
-    Result.IsCustom  := aBufferData.IsCustom;
+    Result.BaseLayer    := aBufferData.BaseLayer;
+    Result.LayersCnt    := aBufferData.LayersCnt;
+    Result.Height       := aBufferData.Height;
+    Result.Obj          := aBufferData.Obj;
+    Result.IsCustom     := aBufferData.IsCustom;
+    Result.BlendingLvl  := aBufferData.BlendingLvl;
     for L := 0 to 2 do
       Result.Layer[L] := aBufferData.Layer[L];
   end;

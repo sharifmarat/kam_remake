@@ -12,6 +12,7 @@ const
   CELL_SIZE_PX          = 40;           //Single cell size in pixels (width)
   CELL_HEIGHT_DIV       = 33.333;       //Height divider, controlls terrains pseudo-3d look
   TOOLBAR_WIDTH         = 224;          //Toolbar width in game
+  MAPED_TOOLBAR_WIDTH   = 250;          //Toolbar width in map editor
   TERRAIN_PACE          = 200;          //Each tile gets updated once per ** ticks (100 by default), Warning, it affects field/tree growth rate
   FOW_PACE              = 10;           //Each tile gets updated once per ** ticks (10 by default)
 
@@ -249,6 +250,8 @@ var
   HITPOINT_RESTORE_PACE: Word = 100;         //1 hitpoint is restored to units every X ticks (using Humbelum's advice)
 
 const
+  TERRAIN_MAX_BLENDING_LEVEL = 100;
+
   //Here we store options that are hidden somewhere in code
   //Unit condition
   CONDITION_PACE             = 10;         //Check unit conditions only once per 10 ticks

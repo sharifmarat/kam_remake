@@ -18,3 +18,6 @@ Version 2.0 (04.03.2018)
 Version 2.1 (06.04.2019)
 - Amount of Enemy Units and Player0 Reinforcements now scale with difficulty settings
 - Disabled Defend Allies for Player1
+
+Version 2.2 (30.12.2019)
+- Integrated newest version of 'difficulty.script'

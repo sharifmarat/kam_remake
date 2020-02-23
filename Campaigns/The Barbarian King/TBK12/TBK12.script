@@ -1,7 +1,7 @@
 //-- TBK12 --//
 //By Strangelove
-//v2.0
-//04.03.2018
+//v2.2
+//30.12.2019
 
 {$I improvestaticai.script}
 {$I transformunits.script}
@@ -25,20 +25,18 @@ procedure OnMissionStart();
 begin
 	iCoalBuildIndex := 0;
 	bExpand := false;
+	Start := DEFAULT_SCHEDULER;
 	GlobalDifficulty := States.MissionDifficulty();
-	case GlobalDifficulty of
-		mdEasy1:		Start := Round(DEFAULT_SCHEDULER *(1 +MODIFIER_EQUIPRATE));
-		mdNormal: 	exit;
-		mdHard1:		Start := Round(DEFAULT_SCHEDULER *(1 -MODIFIER_EQUIPRATE));
-	end;
 end;
 
-procedure OnTick;
+procedure OnTick();
 var
 	k: SmallInt;
 	aHouses: array of Integer;
 begin
-	if States.GameTime() = 14 then
+	if States.GameTime() = (MAX_HANDS +1) then
+	begin
+		Start := Round(DEFAULT_SCHEDULER *EquipRateMod[dMod]); //Modify Schedule
 		case GlobalDifficulty of
 			mdEasy1:
 			begin
@@ -49,7 +47,6 @@ begin
 				RemoveDefencePositionAndGroup(4, 99, 38); //swords
 				RemoveDefencePositionAndGroup(4, 105, 51); //xbows
 			end;
-			mdNormal: 	exit;
 			mdHard1:
 			begin
 				AddDefencePositionAndGroup(1, 21, 69, 110, 7, 21); //Scouts
@@ -59,6 +56,7 @@ begin
 				AddDefencePositionAndGroup(4, 20, 118, 48, 6, 18); //Pikes
 			end;
 		end;
+	end;
 	//AI1 starts building Iron Production after 1hour (see OnHouseBuilt-procedure)
 	if States.GameTime() = Start then
 	begin

@@ -1146,7 +1146,7 @@
 1194:Ctrl + Mouse wheel
 1195:Alt + Mouse wheel
 1196:Shift + Mouse wheel
-1197:Force paint
+1197:Override manually|set tiles
 1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
 1199:Magic brush: Using chosen mask, fixes tile transitions, for tiles that don't have transition graphics from one to the other type of terrain
 1200:No mask: Use exiting tiles for transitions
@@ -1155,13 +1155,13 @@
 1203:Soft3 mask: Use automatically created transitions
 1204:Custom TownHall units cost
 1205:Custom gold market prices
-1206:Additional options
+1206:Options
 1207:Additional brush options
 1208:Additional brush options
 1209:Fix terrain brushes
 1210:Try to repair internal terrain information to make brushes work
 1211:Fix terrain brushes
-1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|in spots where manual tiles were used
+1212:Are you sure want to repair|all terrain brushes internal info?||That will allow to use brushes|in spots where manual tiles were used
 1213:Def.
 1214:Human player
 1215:Classic AI Player %d
@@ -1338,3 +1338,8 @@
 1386:Unsupported version
 1387:Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?
 1388:Hard mask - use automatically created transitions
+1389:Delay in seconds before AI equips a leather troops
+1390:Delay in seconds before AI equips an iron troops
+1391:Sets the number of AI workers
+1392:Blending level
+1393:Blending level of terrain transitions via masks

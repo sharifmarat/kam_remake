@@ -212,7 +212,9 @@ begin
   glLoadIdentity; // Reset The View
   glTranslatef(fViewport.ViewportClip.X/2, fViewport.ViewportClip.Y/2, 0);
   glScalef(fViewport.Zoom*CELL_SIZE_PX, fViewport.Zoom*CELL_SIZE_PX, 1 / 256);
-  glTranslatef(-fViewport.Position.X+TOOLBAR_WIdTH/CELL_SIZE_PX/fViewport.Zoom, -fViewport.Position.Y, 0);
+
+  glTranslatef(-fViewport.Position.X + gGame.ActiveInterface.ToolbarWidth/CELL_SIZE_PX/fViewport.Zoom, -fViewport.Position.Y, 0);
+
   if RENDER_3D then
   begin
     fRender.SetRenderMode(rm3D);
@@ -221,7 +223,7 @@ begin
     glRotatef(rHeading,1,0,0);
     glRotatef(rPitch  ,0,1,0);
     glRotatef(rBank   ,0,0,1);
-    glTranslatef(-fViewport.Position.X+TOOLBAR_WIdTH/CELL_SIZE_PX/fViewport.Zoom, -fViewport.Position.Y-8, 10);
+    glTranslatef(-fViewport.Position.X + gGame.ActiveInterface.ToolBarWidth/CELL_SIZE_PX/fViewport.Zoom, -fViewport.Position.Y - 8, 10);
     glScalef(fViewport.Zoom, fViewport.Zoom, 1);
   end;
 

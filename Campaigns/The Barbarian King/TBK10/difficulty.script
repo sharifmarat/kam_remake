@@ -1,40 +1,37 @@
 //-- Difficulty --//
 //By Strangelove
-//v0.8
-//14.08.2019
-//Developed for KaM Remake r10240
+//v0.8.5b
+//23.12.2019
+//Developed for KaM Remake r10745
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Normal Missions:
+//AUTOMATIC/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//ECO Missions:
 //Modifies Recruitment Rate, Recruitment Delay, Recruit Limit and Worker Limit of AI Players that arent allied to Human Player accorinding to set difficulty
-//Modifies Resource Amount of Human Player Storehouses
-//
-//Tactical Missions:
-//Easy: Increases Human Players Groups by Column Count
-//Normal: No change
-//Hard: Increases AI Players Groups by Column Count
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 {$EVENT evtMissionStart:DifficultyOnMissionStart}
+{$EVENT evtWareProduced:DifficultyOnWareProduced}
 
 {$DEFINE TESTMODE}
 {$UNDEF TESTMODE}
 
 
 const
-	AUTOMATIC = true; //Turn script ON/OFF
-	//AI Modifiers (Varibale Type: Single)
-	MODIFIER_EQUIPRATE = 0.33;
-	MODIFIER_RECRUITDELAY = 0; //Recommended Value: 0 (Equiprate already modifies Attacktimings by nature)
-	MODIFIER_RECRUITLIMIT = MODIFIER_EQUIPRATE; //Recommended Vale: MODIFIER_EQUIPRATE
-	MODIFIER_WORKERLIMIT = 0; //Recommended Value: 0
-	//Player Modifiers
-	MODIFIER_RESOURCEAMOUNT = 0; //Single
-	OFFSET_RESOURCEAMOUNT = 0; //Integer (No Scaling)
-  
+	MAX_HANDS = 18; //Number of Max Possible Players
+	
+	AUTOMATIC = true; //Turn automatic appliance of script ON/OFF (including AI_CHEAT)
+	AI_CHEAT = false; //This option may be necessary for maps where AI relys on Weapon production to make units
+	
+	
 var
-  NORMAL_DIFFICULTY: TKMMissionDifficulty;
+	EquipRateMod, RecruitDelayMod, RecruitLimitMod, WorkerLimitMod: array of Single;
+	dMod: Byte;
+	
+	aSavedWeaponHouses: array of Integer;
+	bAICheat: Boolean;
 	
 
 function GetHumanPlayer(): Byte; //Identify human player in SP maps (in the unlikely case its not Player0)
@@ -49,7 +46,16 @@ begin
 		end;
 end;
 
-	
+function IsWeaponProduction(aHouseID: Integer): Boolean;
+begin
+	case States.HouseType(aHouseID) of
+		2,10,12,19,20: Result := true;
+		else
+			Result := false;
+	end;
+end;
+
+
 procedure SetEquipRate(aPlayer: Byte; Modifier: Single; Offset: Integer);
 var
 	EquipRate: Integer;
@@ -61,7 +67,7 @@ begin
 		{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '|EquipRate' +inttostr(t) +': ' +inttostr(EquipRate));{$ENDIF}
 		if EquipRate <> -1 then
 		begin
-			EquipRate := Round(EquipRate *(1 -Modifier) +Offset);
+			EquipRate := Round(EquipRate *Modifier) +Offset;
 			Actions.AIEquipRate(aPlayer, t, EquipRate);
 			{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, ' -> ' +inttostr(EquipRate));{$ENDIF}
 		end else
@@ -77,7 +83,7 @@ begin
 	{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '|RecruitDelay: ' +inttostr(RecruitDelay));{$ENDIF}
 	if RecruitDelay <> -1 then
 	begin
-		RecruitDelay := Round((RecruitDelay *(1 -Modifier)) +Offset);
+		RecruitDelay := Round(RecruitDelay *Modifier) +Offset;
 		{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, ' -> ' +inttostr(RecruitDelay));{$ENDIF}
 		Actions.AIRecruitDelay(aPlayer, RecruitDelay);
 	end else
@@ -92,7 +98,7 @@ begin
 	if RecruitLimit <> -1 then
 	begin
 		{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '|RecruitLimit: ' +inttostr(RecruitLimit));{$ENDIF}
-		RecruitLimit := Round((RecruitLimit *(1 +Modifier)) +Offset);
+		RecruitLimit := Round(RecruitLimit *Modifier) +Offset;
 		{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, ' -> ' +inttostr(RecruitLimit));{$ENDIF}
 		Actions.AIRecruitLimit(aPlayer, RecruitLimit);
 	end else
@@ -107,7 +113,7 @@ begin
 	{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '|WorkerLimit: ' +inttostr(WorkerLimit));{$ENDIF}
 	if WorkerLimit <> -1 then
 	begin
-		WorkerLimit := Round((WorkerLimit *(1 +Modifier)) +Offset);
+		WorkerLimit := Round(WorkerLimit *Modifier) +Offset;
 		{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, ' -> ' +inttostr(WorkerLimit));{$ENDIF}
 		Actions.AIWorkerLimit(aPlayer, WorkerLimit);
 	end else
@@ -129,17 +135,18 @@ begin
 				if Wares <> 0 then
 				begin
 					Actions.HouseTakeWaresFrom(aHouses[h], t, Wares); //Delete Wares
-					Actions.HouseAddWaresTo(aHouses[h], t, Round(Wares *(1 -Modifier) +Offset)); //Add updated Amount
+					Actions.HouseAddWaresTo(aHouses[h], t, Round(Wares *Modifier) +Offset); //Add updated Amount
 				end;
 			end;
 end;
 
-//Increases Group size by Column Count (+Offset) of target Group
+//Increases Group size by Column Count (+Offset) of all Groups target Player controlls
 procedure IncreaseGroupSize(aPlayer: Byte; Offset: ShortInt);
 var 
 	aGroups: array of Integer;
 	aX, aY: array of ShortInt;
-	g, X, Y, Calc: ShortInt;
+	g, Calc: ShortInt;
+	X, Y: Word;
 	iGroupLeader, GroupID: Integer;
 	D, GroupColumnCount: Byte;
 begin
@@ -158,6 +165,35 @@ begin
 		Actions.GroupHungerSet(GroupID, States.UnitHunger(iGroupLeader));
 		Actions.GroupOrderLink(GroupID, aGroups[g]); //Link newly created Units to Group
 	end;
+end;
+
+
+//Increases Group size by Column Count (+Offset) of target Group
+procedure IncreaseTargetGroupSize(aPlayer, GroupPosX, GroupPosY: Byte; Offset: ShortInt);
+var 
+	aGroups: array of Integer;
+	aX, aY: array of ShortInt;
+	g, Calc: ShortInt;
+	X, Y: Word;
+	iGroupLeader, GroupID: Integer;
+	D, GroupColumnCount: Byte;
+begin
+	aX := [0, -1, -1, -1, 0, 1, 1, 1];
+	aY := [1, 1, 0, -1, -1, -1, 0, 1];
+	aGroups := States.PlayerGetAllGroups(aPlayer);
+	for g := 0 to Length(aGroups) -1 do
+		if States.GroupAt(GroupPosX, GroupPosY) = aGroups[g] then
+		begin
+			iGroupLeader := States.GroupMember(aGroups[g], 0);
+			GroupColumnCount := States.GroupColumnCount(aGroups[g]);
+			D := States.UnitDirection(iGroupLeader);
+			Calc := Round(States.GroupMemberCount(aGroups[g]) /GroupColumnCount); //Calculate where to spawn new groups to make it more aestheticly pleasing (right behind group)
+			X := States.UnitPositionX(iGroupLeader) +(Calc *aX[D]);
+			Y := States.UnitPositionY(iGroupLeader) +(Calc *aY[D]);
+			GroupID := Actions.GiveGroup(aPlayer, States.UnitType(iGroupLeader), X, Y, D, GroupColumnCount, GroupColumnCount +Offset);
+			Actions.GroupHungerSet(GroupID, States.UnitHunger(iGroupLeader));
+			Actions.GroupOrderLink(GroupID, aGroups[g]); //Link newly created Units to Group
+		end;
 end;
 
 //Remove DefencePosition and the Group assigned to it
@@ -214,65 +250,85 @@ begin
 		Actions.Log('House could not be added!' + ' Player:' + inttostr(Player) + ' X:' + inttostr(X) + ' Y:' + inttostr(Y));
 end;
 
-	
+
+procedure HouseUpdateWares(X, Y, WareType: Byte; Count: Word);
+var
+	HouseID: Integer;
+begin
+	HouseID := States.HouseAt(X, Y);
+	Actions.HouseTakeWaresFrom(HouseID, WareType, States.HouseResourceAmount(HouseID, WareType)); //Remove all of specified WareType
+	Actions.HouseAddWaresTo(HouseID, WareType, Count); //Add set amount/count
+end;
+
+
 procedure DifficultyOnMissionStart();
 var
-	iPlayer, p: Byte;
-	dMod: ShortInt;
 	Difficulty: TKMMissionDifficulty;
+	aHouses: array of Integer;
+	p: Byte;
+	h: Integer;
+	h2: Word;
 begin
-  NORMAL_DIFFICULTY := mdNormal;
+	//Define Modifiers [Easy3, Easy2, Easy1, Normal, Hard1, Hard2, Hard3]
+	EquipRateMod := [3, 2, 1.5, 1, 0.66, 0.5, 0.3]; //Schools are usually the limiting factor
+	RecruitDelayMod := [1, 1, 1, 1, 1, 1, 1];
+	RecruitLimitMod := [1, 1, 1, 1, 1.33, 1.66, 2];
+	WorkerLimitMod := [1, 1, 1, 1, 1.33, 1.66, 2];
+	
+	//---
+	SetLength(aSavedWeaponHouses, 0);
+	bAICheat := false;
+	//Check and apply difficulty modifiers
 	Difficulty := States.MissionDifficulty();
-  
-  //Shrink all 7 difficulties into 3 we currently use
-	if (Difficulty = mdEasy3) or (Difficulty = mdEasy2) then
-		Difficulty := mdEasy1
-	else 
-	if (Difficulty = mdHard3) or (Difficulty = mdHard2) then
-		Difficulty := mdHard1;
-  
 	if (Difficulty <> mdNone) then
 	begin
+		dMod := Byte(Difficulty) -1; 
+		{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, 'dMod=' + inttostr(dMod));{$ENDIF}
 		if AUTOMATIC then
-		begin
-			iPlayer := GetHumanPlayer();
-			if States.IsMissionFightType() then //Tactial Map
-			begin
-				for p := 0 to States.StatPlayerCount() -1 do
-					case Difficulty of
-						mdNormal: 	exit;
-						mdEasy1: 	if States.PlayerIsAI(p) then 
-									begin
-										if States.PlayerAllianceCheck(iPlayer, p) then	
-											IncreaseGroupSize(p, 0);
-										end else
-											IncreaseGroupSize(p, 0);
-						mdHard1:		if States.PlayerIsAI(p) then
-										if not States.PlayerAllianceCheck(iPlayer, p) then
-											IncreaseGroupSize(p, 0);
-					end;
-			end else
-			begin //Normal Map 
-        dMod := Byte(Difficulty) - Byte(NORMAL_DIFFICULTY); // allowed values are: -1, 0, 1
-				{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, 'dMod=' + inttostr(dMod));{$ENDIF}
-				for p := 0 to States.StatPlayerCount() -1 do
-					if States.PlayerIsAI(p) then
+			for p := 0 to States.StatPlayerCount() -1 do
+				if States.PlayerIsAI(p) then
+					if not States.PlayerAllianceCheck(GetHumanPlayer(), p) then //Only Modify EquipRate for AIPlayers that arent allied to HumanPlayer
 					begin
-						if not States.PlayerAllianceCheck(iPlayer, p) then //Only Modify EquipRate for AIPlayers that arent allied to HumanPlayer
-						begin
-							{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '||Player ' + inttostr(p));{$ENDIF}
-							//Update Enemy AI Values
-							SetEquipRate(p, MODIFIER_EQUIPRATE *dMod, 0);
-							SetRecruitDelay(p, MODIFIER_RECRUITDELAY *dMod, 0);
-							SetRecruitLimit(p, MODIFIER_RECRUITLIMIT *dMod, 0);
-							SetWorkerLimit(p, MODIFIER_WORKERLIMIT *dMod, 0);
-						end;
-					end else
-						//Human Player
-						SetResourceAmount(p, 11, MODIFIER_RESOURCEAMOUNT *dMod, OFFSET_RESOURCEAMOUNT); //Storehouse only
-			end;
-		end;
+						{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '||Player ' + inttostr(p));{$ENDIF}
+						//Update Enemy AI Values
+						SetEquipRate(p, EquipRateMod[dMod], 0);
+						SetRecruitDelay(p, RecruitDelayMod[dMod], 0);
+						SetRecruitLimit(p, RecruitLimitMod[dMod], 0);
+						SetWorkerLimit(p, WorkerLimitMod[dMod], 0);
+						{$IFDEF TESTMODE}Actions.OverlayTextAppend(-1, '|Schools: ' +inttostr(States.StatHouseTypeCount(p, 13))); {$ENDIF}
+						if AI_CHEAT then
+							if EquipRateMod[dMod] < 1 then //Only if necessary
+							begin
+								aHouses := States.PlayerGetAllHouses(p);
+								SetLength(aSavedWeaponHouses, Length(aSavedWeaponHouses) +Length(aHouses));
+								for h := 0 to Length(aHouses) -1 do
+									if IsWeaponProduction(aHouses[h]) then
+									begin
+										aSavedWeaponHouses[h2] := aHouses[h];
+										Inc(h2);
+									end;
+								bAICheat := true;
+							end else
+								bAICheat := false;
+					end;
+		SetLength(aSavedWeaponHouses, h2); //Trimm Array to lowest possible size
 	end else
 		Actions.ShowMsg(-1, 'Error in "difficulty.script". Please check if Difficulty level has been enabled in the Map Editor!');
-		
+end;
+
+
+procedure DifficultyOnWareProduced(aHouse: Integer; aType: Byte; aCount: Word);
+var
+	HouseIndexer: Integer;
+	dHouseOwner: Byte;
+begin
+	if bAICheat then
+		if IsWeaponProduction(aHouse) then
+		begin
+			dHouseOwner := States.HouseOwner(aHouse);
+			if States.PlayerIsAI(dHouseOwner) then
+				for HouseIndexer := 0 to Length(aSavedWeaponHouses) -1 do
+					if aSavedWeaponHouses[HouseIndexer] = aHouse then
+						Actions.GiveWeapons(dHouseOwner, aType, Round((2 -EquipRateMod[dMod]) *States.KaMRandom())); //Add Weapons to 1. Barracks
+		end;
 end;

@@ -1,0 +1,161 @@
+//-- Consts.script --//
+//By Alexandr_5
+//v1.0
+//11.02.2020
+//Developed for KaM Remake r10745+
+
+{$IFNDEF CONSTS_SCRIPT} //To block second include
+{$DEFINE CONSTS_SCRIPT}
+
+const
+  //Group type
+  GT_MELEE      =  0;
+  GT_ANTI_HORSE =  1;
+  GT_RANGED     =  2;
+  GT_MOUNTED    =  3;
+  
+const
+  //Unit Type
+  
+  //Regular units
+  UT_SERF           =  0;
+  UT_WOODCUTTER     =  1;
+  UT_MINER          =  2;
+  UT_ANIMAL_BREEDER =  3;
+  UT_FARMER         =  4;
+  UT_CARPENTER      =  5;
+  UT_BAKER          =  6;
+  UT_BUTCHER        =  7;
+  UT_FISHERMAN      =  8;
+  UT_LABORER        =  9;
+  UT_STONE_MASON    = 10;
+  UT_BLACKSMITH     = 11;
+  UT_METALLURGIST   = 12;
+  UT_RECRUIT        = 13;
+  
+  //Attacking units (Barracks)
+  UT_MILITIA        = 14;
+  UT_AXE_FIGHTER    = 15;
+  UT_SWORD_FIGHTER  = 16;
+  UT_BOWMAN         = 17;
+  UT_CROSSBOWMAN    = 18;
+  UT_LANCE_CARRIER  = 19;
+  UT_PIKEMAN        = 20;
+  UT_SCOUT          = 21;
+  UT_KNIGHT         = 22;
+  
+  //Attacking units (Town Hall)
+  UT_BARBARIAN      = 23;
+  UT_REBEL          = 24;
+  UT_ROGUE          = 25;
+  UT_WARRIOR        = 26;
+  UT_VAGABOND       = 27;
+  
+  //Animals
+  UT_WOLF           = 30;
+  UT_FISH           = 31;
+  UT_WATER_SNAKE    = 32;
+  UT_SEASTAR        = 33;
+  UT_CRAB           = 34;
+  UT_DUCK           = 37;
+  
+  //Other units
+  UT_WATER_FLOWER   = 35;
+  UT_WATER_LEAF     = 36;
+  
+const
+  //House Types
+  
+  //Food related houses
+  HT_INN               = 27;
+  HT_VINEYARD          = 28;
+  HT_BUTCHERS          = 24;
+  HT_MILL              = 22;
+  HT_BAKERY            =  7;
+  HT_FISHERMANS        =  6;
+  
+  //Unit training houses
+  HT_SCHOOL            = 13;
+  HT_BARRACKS          = 21;
+  HT_TOWN_HALL         = 18;
+  
+  //Military wares production
+  HT_WEAPONS_WORKSHOP  = 19;
+  HT_ARMORY_WORKSHOP   = 20;
+  HT_WEAPON_SMITHY     =  2;
+  HT_ARMOR_SMITHY      = 10;
+  
+  //Other wares production
+  HT_SAWMILL           =  0;
+  HT_METALLURGISTS     = 15;
+  HT_IRON_SMITHY       =  1;
+  HT_STABLES           = 12;
+  HT_SWINE_FARM        = 16;
+  HT_TANNERY           = 25;
+  
+  //Resource mining
+  HT_WOODCUTTERS       =  9;
+  HT_QUARRY            = 14;
+  HT_FARM              =  8;
+  HT_COAL_MINE         =  3;
+  HT_IRON_MINE         =  4;
+  HT_GOLD_MINE         =  5;
+  
+  //Other
+  HT_STOREHOUSE        = 11;
+  HT_WATCHTOWER        = 17;
+  HT_SIEGE_WORKSHOP    = 23;
+  HT_MARKETPLACE       = 29;
+  
+const
+  //Ware Types
+  
+  //Food
+  WT_WINE          =  8;
+  WT_LOAVES        = 10;
+  WT_SAUSAGES      = 13;
+  WT_FISH          = 27;
+  
+  //Construction
+  WT_STONES        =  1;
+  WT_TIMBER        =  2;
+  
+  //Weapons / soldiers equipment
+  WT_WOODEN_SHIELD = 16;
+  WT_IRON_SHIELD   = 17;
+  WT_LEATHER_ARMOR = 18;
+  WT_IRON_ARMOR    = 19;
+  WT_HAND_AXES     = 20;
+  WT_SWORDS        = 21;
+  WT_LANCES        = 22;
+  WT_PIKES         = 23;
+  WT_LONGBOWS      = 24;
+  WT_CROSSBOWS     = 25;
+  WT_HORSES        = 26;
+  
+  //Production 
+  WT_TREE_TRUNK    =  0;
+  WT_IRON_ORE      =  3;
+  WT_GOLD_ORE      =  4;
+  WT_COAL          =  5;
+  WT_IRON          =  6;
+  WT_GOLD          =  7;
+  WT_CORN          =  9;
+  WT_FLOUR         = 11;
+  WT_LEATHER       = 12;
+  WT_PIGS          = 14;
+  WT_SKINS         = 15;
+  
+const
+  //Direction of units and groups
+  DIR_UP     =  0;
+  DIR_URIGHT =  1;
+  DIR_RIGHT  =  2;
+  DIR_DRIGHT =  3;
+  DIR_DOWN   =  4;
+  DIR_DLEFT  =  5;
+  DIR_LEFT   =  6;
+  DIR_ULEFT  =  7;
+
+{$ENDIF}
+  

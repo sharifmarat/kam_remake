@@ -435,6 +435,7 @@ begin
     RegisterMethodCheck(c, 'function GroupType(aGroupID: Integer): Integer');
 
     RegisterMethodCheck(c, 'function HouseAt(aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'function HouseAllowAllyToView(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseBarracksRallyPointX(aBarracks: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseBarracksRallyPointY(aBarracks: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseBuildingProgress(aHouseID: Integer): Word');
@@ -515,6 +516,7 @@ begin
     RegisterMethodCheck(c, 'function PeaceTime: Cardinal');
 
     RegisterMethodCheck(c, 'function PlayerAllianceCheck(aPlayer1, aPlayer2: Byte): Boolean');
+    RegisterMethodCheck(c, 'function PlayerColorFlag(aPlayer: Byte): AnsiString');
     RegisterMethodCheck(c, 'function PlayerColorText(aPlayer: Byte): AnsiString');
     RegisterMethodCheck(c, 'function PlayerDefeated(aPlayer: Byte): Boolean');
     RegisterMethodCheck(c, 'function PlayerEnabled(aPlayer: Byte): Boolean');
@@ -529,6 +531,7 @@ begin
     RegisterMethodCheck(c, 'function StatAIDefencePositionsCount(aPlayer: Byte): Integer');
     RegisterMethodCheck(c, 'function StatArmyCount(aPlayer: Byte): Integer');
     RegisterMethodCheck(c, 'function StatCitizenCount(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function StatHouseCount(aPlayer: Byte): Integer');
     RegisterMethodCheck(c, 'function StatHouseMultipleTypesCount(aPlayer: Byte; aTypes: TByteSet): Integer');
     RegisterMethodCheck(c, 'function StatHouseTypeCount(aPlayer, aHouseType: Byte): Integer');
     RegisterMethodCheck(c, 'function StatHouseTypePlansCount(aPlayer, aHouseType: Byte): Integer');
@@ -636,6 +639,8 @@ begin
     RegisterMethodCheck(c, 'procedure HouseAddRepair(aHouseID: Integer; aRepair: Word)');
     RegisterMethodCheck(c, 'procedure HouseAddWaresTo(aHouseID: Integer; aType, aCount: Word)');
     RegisterMethodCheck(c, 'procedure HouseAllow(aPlayer, aHouseType: Word; aAllowed: Boolean)');
+    RegisterMethodCheck(c, 'procedure HouseAllowAllyToView(aHouseID: Integer; aAllow: Boolean)');
+    RegisterMethodCheck(c, 'procedure HouseAllowAllyToViewAll(aPlayer: Byte; aAllow: Boolean)');
     RegisterMethodCheck(c, 'function  HouseBarracksEquip(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer');
     RegisterMethodCheck(c, 'procedure HouseBarracksGiveRecruit(aHouseID: Integer)');
     RegisterMethodCheck(c, 'procedure HouseDeliveryBlock(aHouseID: Integer; aDeliveryBlocked: Boolean)');
@@ -743,6 +748,8 @@ begin
 
     RegisterMethodCheck(c, 'function BoolToStr(aBool: Boolean): AnsiString');
 
+    RegisterMethodCheck(c, 'function ColorBrightness(aHexColor: string): Single');
+
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
 
@@ -774,6 +781,9 @@ begin
 
     RegisterMethodCheck(c, 'function Power(Base, Exponent: Extended): Extended');
 
+    RegisterMethodCheck(c, 'function RGBDecToBGRHex(aR, aG, aB: Byte): AnsiString');
+    RegisterMethodCheck(c, 'function RGBToBGRHex(aHexColor: string): AnsiString');
+
     RegisterMethodCheck(c, 'function RoundToDown(aValue: Single; aBase: Integer): Integer');
     RegisterMethodCheck(c, 'function RoundToUp(aValue: Single; aBase: Integer): Integer');
 
@@ -783,6 +793,7 @@ begin
     RegisterMethodCheck(c, 'function SumS(aArray: array of Single): Single');
 
     RegisterMethodCheck(c, 'function TimeToString(aTicks: Integer): AnsiString');
+    RegisterMethodCheck(c, 'function TimeToTick(aHours, aMinutes, aSeconds: Integer): Cardinal');
 
     // Register objects
     AddImportedClassVariable(Sender, 'States', AnsiString(fStates.ClassName));
@@ -815,7 +826,7 @@ end;
   A result type of 0 means no result}
 function TKMScripting.ScriptOnExportCheck(Sender: TPSPascalCompiler; Proc: TPSInternalProcedure; const ProcDecl: AnsiString): Boolean;
 const
-  Procs: array [0..32] of record
+  Procs: array [0..33] of record
     Names: AnsiString;
     ParamCount: Byte;
     Typ: array [0..4] of Byte;
@@ -834,6 +845,7 @@ const
   (Names: 'OnHouseBuilt';           ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnHouseDamaged';         ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnHouseDestroyed';       ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnHouseWareCountChanged';ParamCount: 4; Typ: (0, btS32, btS32, btS32, btS32); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnHousePlanPlaced';      ParamCount: 4; Typ: (0, btS32, btS32, btS32, btS32); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnHousePlanRemoved';     ParamCount: 4; Typ: (0, btS32, btS32, btS32, btS32); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
@@ -1017,6 +1029,7 @@ begin
       RegisterMethod(@TKMScriptStates.GroupType,                                'GroupType');
 
       RegisterMethod(@TKMScriptStates.HouseAt,                                  'HouseAt');
+      RegisterMethod(@TKMScriptStates.HouseAllowAllyToView,                     'HouseAllowAllyToView');
       RegisterMethod(@TKMScriptStates.HouseBarracksRallyPointX,                 'HouseBarracksRallyPointX');
       RegisterMethod(@TKMScriptStates.HouseBarracksRallyPointY,                 'HouseBarracksRallyPointY');
       RegisterMethod(@TKMScriptStates.HouseBuildingProgress,                    'HouseBuildingProgress');
@@ -1097,6 +1110,7 @@ begin
       RegisterMethod(@TKMScriptStates.PeaceTime,                                'PeaceTime');
 
       RegisterMethod(@TKMScriptStates.PlayerAllianceCheck,                      'PlayerAllianceCheck');
+      RegisterMethod(@TKMScriptStates.PlayerColorFlag,                          'PlayerColorFlag');
       RegisterMethod(@TKMScriptStates.PlayerColorText,                          'PlayerColorText');
       RegisterMethod(@TKMScriptStates.PlayerDefeated,                           'PlayerDefeated');
       RegisterMethod(@TKMScriptStates.PlayerEnabled,                            'PlayerEnabled');
@@ -1111,6 +1125,7 @@ begin
       RegisterMethod(@TKMScriptStates.StatAIDefencePositionsCount,              'StatAIDefencePositionsCount');
       RegisterMethod(@TKMScriptStates.StatArmyCount,                            'StatArmyCount');
       RegisterMethod(@TKMScriptStates.StatCitizenCount,                         'StatCitizenCount');
+      RegisterMethod(@TKMScriptStates.StatHouseCount,                           'StatHouseCount');
       RegisterMethod(@TKMScriptStates.StatHouseMultipleTypesCount,              'StatHouseMultipleTypesCount');
       RegisterMethod(@TKMScriptStates.StatHouseTypeCount,                       'StatHouseTypeCount');
       RegisterMethod(@TKMScriptStates.StatHouseTypePlansCount,                  'StatHouseTypePlansCount');
@@ -1218,6 +1233,8 @@ begin
       RegisterMethod(@TKMScriptActions.HouseAddRepair,                          'HouseAddRepair');
       RegisterMethod(@TKMScriptActions.HouseAddWaresTo,                         'HouseAddWaresTo');
       RegisterMethod(@TKMScriptActions.HouseAllow,                              'HouseAllow');
+      RegisterMethod(@TKMScriptActions.HouseAllowAllyToView,                    'HouseAllowAllyToView');
+      RegisterMethod(@TKMScriptActions.HouseAllowAllyToViewAll,                 'HouseAllowAllyToViewAll');
       RegisterMethod(@TKMScriptActions.HouseBarracksEquip,                      'HouseBarracksEquip');
       RegisterMethod(@TKMScriptActions.HouseBarracksGiveRecruit,                'HouseBarracksGiveRecruit');
       RegisterMethod(@TKMScriptActions.HouseDeliveryBlock,                      'HouseDeliveryBlock');
@@ -1326,6 +1343,8 @@ begin
 
       RegisterMethod(@TKMScriptUtils.BoolToStr,                                 'BoolToStr');
 
+      RegisterMethod(@TKMScriptUtils.ColorBrightness,                           'ColorBrightness');
+
       RegisterMethod(@TKMScriptUtils.EnsureRangeI,                              'EnsureRangeI');
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
 
@@ -1357,6 +1376,9 @@ begin
 
       RegisterMethod(@TKMScriptUtils.Power,                                     'Power');
 
+      RegisterMethod(@TKMScriptUtils.RGBDecToBGRHex,                            'RGBDecToBGRHex');
+      RegisterMethod(@TKMScriptUtils.RGBToBGRHex,                               'RGBToBGRHex');
+
       RegisterMethod(@TKMScriptUtils.RoundToDown,                               'RoundToDown');
       RegisterMethod(@TKMScriptUtils.RoundToUp,                                 'RoundToUp');
 
@@ -1366,6 +1388,8 @@ begin
       RegisterMethod(@TKMScriptUtils.Sqr,                                       'Sqr');
 
       RegisterMethod(@TKMScriptUtils.TimeToString,                              'TimeToString');
+      RegisterMethod(@TKMScriptUtils.TimeToTick,                                'TimeToTick');
+
     end;
 
     //Append classes info to Exec

@@ -12,7 +12,7 @@ uses
 type
   TNotifyEventShift = procedure(Sender: TObject; Shift: TShiftState) of object;
   TNotifyEventMB = procedure(Sender: TObject; AButton: TMouseButton) of object;
-  TNotifyEventMW = procedure(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean) of object;
+  TNotifyEventMW = procedure(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean) of object;
   TNotifyEventKey = procedure(Sender: TObject; Key: Word) of object;
   TNotifyEventKeyFunc = function(Sender: TObject; Key: Word): Boolean of object;
   TNotifyEventKeyShift = procedure(Key: Word; Shift: TShiftState) of object;
@@ -72,7 +72,7 @@ type
     procedure MouseDown (X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
     procedure MouseMove (X,Y: Integer; Shift: TShiftState);
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
-    procedure MouseWheel(X,Y: Integer; WheelDelta: Integer; var aHandled: Boolean);
+    procedure MouseWheel(X,Y: Integer; WheelSteps: Integer; var aHandled: Boolean);
 
     procedure Paint;
 
@@ -104,6 +104,7 @@ type
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
     fHint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
+    fMouseWheelStep: Integer;
 
     fPaintLayer: Integer;
 
@@ -132,12 +133,15 @@ type
     fOnSizeSet: TNotifyEvent;
     fOnPositionSet: TNotifyEvent;
 
+    fIsHitTestUseDrawRect: Boolean; //Should we use DrawRect for hitTest, or AbsPositions?
+
     function PaintingBaseLayer: Boolean;
 
     function GetAbsLeft: Integer;
     function GetAbsTop: Integer;
     function GetAbsRight: Integer;
     function GetAbsBottom: Integer;
+
     function GetLeft: Integer;
     function GetTop: Integer;
     function GetRight: Integer;
@@ -155,6 +159,7 @@ type
     procedure SetTopF(aValue: Single);
     procedure SetLeftF(aValue: Single);
     function GetControlRect: TKMRect;
+    function GetControlAbsRect: TKMRect;
     function GetIsFocused: Boolean;
     function GetIsClickable: Boolean;
 
@@ -164,6 +169,19 @@ type
     procedure SetTop(aValue: Integer); virtual;
     procedure SetHeight(aValue: Integer); virtual;
     procedure SetWidth(aValue: Integer); virtual;
+
+    function GetAbsDrawLeft: Integer; virtual;
+    function GetAbsDrawTop: Integer; virtual;
+    function GetAbsDrawRight: Integer; virtual;
+    function GetAbsDrawBottom: Integer; virtual;
+
+    property AbsDrawLeft: Integer read GetAbsDrawLeft;
+    property AbsDrawRight: Integer read GetAbsDrawRight;
+    property AbsDrawTop: Integer read GetAbsDrawTop;
+    property AbsDrawBottom: Integer read GetAbsDrawBottom;
+
+    function GetDrawRect: TKMRect; virtual;
+
     procedure SetVisible(aValue: Boolean); virtual;
     procedure SetEnabled(aValue: Boolean); virtual;
     procedure SetAnchors(aValue: TKMAnchorsSet); virtual;
@@ -204,6 +222,7 @@ type
     property AbsRight: Integer read GetAbsRight;
     property AbsTop: Integer read GetAbsTop write SetAbsTop;
     property AbsBottom: Integer read GetAbsBottom;
+
     property Left: Integer read GetLeft write SetLeft;
     property Right: Integer read GetRight;
     property Top: Integer read GetTop write SetTop;
@@ -212,7 +231,10 @@ type
     property Height: Integer read GetHeight write SetHeight;
     property Center: TKMPoint read GetCenter;
     property ID: Integer read fID;
+    function GetIDsStr: String;
     property Hint: UnicodeString read GetHint write SetHint; //Text that shows up when cursor is over that control, mainly for Buttons
+
+    property MouseWheelStep: Integer read fMouseWheelStep write fMouseWheelStep;
 
     // "Self" coordinates - this is the coordinates of control itself.
     // For simple controls they are equal to normal coordinates
@@ -224,6 +246,7 @@ type
     property SelfHeight: Integer read GetSelfHeight;
 
     property Rect: TKMRect read GetControlRect;
+    property AbsRect: TKMRect read GetControlAbsRect;
     property Anchors: TKMAnchorsSet read fAnchors write SetAnchors;
     property Enabled: Boolean read fEnabled write SetEnabled;
     property Visible: Boolean read GetVisible write SetVisible;
@@ -253,7 +276,7 @@ type
     procedure MouseDown (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
     procedure MouseMove (X,Y: Integer; Shift: TShiftState); virtual;
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); virtual;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); virtual;
 
     property OnClick: TNotifyEvent read fOnClick write fOnClick;
     property OnClickShift: TNotifyEventShift read fOnClickShift write fOnClickShift;
@@ -291,6 +314,7 @@ type
     //e.g. scrollbar on a listbox
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+
     procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
     procedure ControlMouseDown(Sender: TObject; Shift: TShiftState); override;
     procedure ControlMouseUp(Sender: TObject; Shift: TShiftState); override;
@@ -298,6 +322,8 @@ type
     procedure UpdateEnableStatus; override;
     function DoPanelHandleMouseWheelByDefault: Boolean; virtual;
     procedure DoPaint(aPaintLayer: Integer); virtual;
+
+    procedure Enlarge(aChild: TKMControl);
   public
     PanelHandleMouseWheelByDefault: Boolean; //Do whole panel handle MW by default? Usually it is
     FocusedControlIndex: Integer; //Index of currently focused control on this Panel
@@ -405,7 +431,7 @@ type
     Lightness: Single;
     ClipToBounds: Boolean;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui;
-                       aPaintLayer: Integer = 0);
+                       aPaintLayer: Integer = 0; aImageAnchors: TKMAnchorsSet = [anLeft, anTop]);
     property RX: TRXType read fRX write fRX;
     property TexID: Word read fTexID write fTexID;
     property FlagColor: TColor4 read fFlagColor write fFlagColor;
@@ -460,12 +486,16 @@ type
   {3DButton}
   TKMButton = class(TKMControl)
   private
+    fCaption: UnicodeString;
     fTextAlign: TKMTextAlign;
     fStyle: TKMButtonStyle;
     fRX: TRXType;
+    fAutoHeight: Boolean; //Set button height automatically depending text size (height)
     procedure InitCommon(aStyle: TKMButtonStyle);
+    procedure SetCaption(aCaption: UnicodeString);
+    procedure SetAutoHeight(aValue: Boolean);
+    procedure UpdateHeight;
   public
-    Caption: UnicodeString;
     FlagColor: TColor4; //When using an image
     Font: TKMFont;
     MakesSound: Boolean;
@@ -473,13 +503,17 @@ type
     CapOffsetX: Shortint;
     CapOffsetY: Shortint;
     ShowImageEnabled: Boolean; // show picture as enabled or not (normal or darkened)
-    CenterText: Boolean;
     TextVAlign: TKMTextVAlign;
+    AutoTextPadding: Byte;      //text padding for autoHeight
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType;
                        aStyle: TKMButtonStyle; aPaintLayer: Integer = 0); overload;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
                        aStyle: TKMButtonStyle; aPaintLayer: Integer = 0); overload;
     function Click: Boolean; //Try to click a button and return TRUE if succeded
+
+    property Caption: UnicodeString read fCaption write SetCaption;
+    property AutoHeight: Boolean read fAutoHeight write SetAutoHeight;
+
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure Paint; override;
   end;
@@ -864,7 +898,7 @@ type
     property Value: Integer read fValue write SetValue;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure Paint; override;
   end;
 
@@ -897,7 +931,7 @@ type
     property OrderCount: Integer read fOrderCount write SetOrderCount;
     property OrderRemHint: UnicodeString write SetOrderRemHint;
     property OrderAddHint: UnicodeString write SetOrderAddHint;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure Paint; override;
   end;
 
@@ -952,7 +986,7 @@ type
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure Paint; override;
   end;
 
@@ -998,7 +1032,7 @@ type
     property Position: Integer read fPosition write SetPosition;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
@@ -1007,14 +1041,20 @@ type
   TKMScrollPanel = class(TKMPanel)
   private
     fClipRect: TKMRect;
+    fChildsPanel: TKMPanel;
     fScrollBarH: TKMScrollBar;
     fScrollBarV: TKMScrollBar;
     fScrollAxisSet: TKMScrollAxisSet;
+
+    fPadding: TKMRect;
+
     procedure UpdateScrolls(Sender: TObject; aValue: Boolean); overload;
     procedure UpdateScrolls(Sender: TObject); overload;
-    procedure UpdateScrollV(Sender: TObject); overload;
+    procedure UpdateScrollV; overload;
+    procedure UpdateScrollV(aChildsRect: TKMRect); overload;
     procedure UpdateScrollV(Sender: TObject; aValue: Integer); overload;
-    procedure UpdateScrollH(Sender: TObject); overload;
+    procedure UpdateScrollH; overload;
+    procedure UpdateScrollH(aChildsRect: TKMRect); overload;
     procedure UpdateScrollH(Sender: TObject; aValue: Integer); overload;
     procedure ScrollChanged(Sender: TObject);
     function GetChildsRect: TKMRect;
@@ -1026,14 +1066,27 @@ type
     procedure SetTop(aValue: Integer); override;
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+
+    function GetDrawRect: TKMRect; override;
+    
+    function GetAbsDrawLeft: Integer; override;
+    function GetAbsDrawTop: Integer; override;
+    function GetAbsDrawRight: Integer; override;
+    function GetAbsDrawBottom: Integer; override;
+
+    procedure UpdateVisibility; override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
-                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
+                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle; aEnlargeParents: Boolean = False);
 
     property ScrollH: TKMScrollBar read fScrollBarH;
     property ScrollV: TKMScrollBar read fScrollBarV;
 
     function AddChild(aChild: TKMControl): Integer; override;
+    property ClipRect: TKMRect read fClipRect;
+    property Padding: TKMRect read fPadding write fPadding;
+
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
 
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
@@ -1137,7 +1190,7 @@ type
     function Selected: Boolean;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
 
     procedure Paint; override;
@@ -1332,7 +1385,7 @@ type
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure DoClick(X, Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
 
@@ -1569,7 +1622,7 @@ type
     function GetVisibleRows: Integer;
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     function KeyUp(Key: Word; Shift: TShiftState): Boolean; override;
-    procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean); override;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -1889,11 +1942,13 @@ begin
   fVisible      := True;
   Tag           := 0;
   fHint         := '';
+  fMouseWheelStep := 1;
   fPaintLayer   := aPaintLayer;
   fControlIndex := -1;
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
   fLastClickPos := KMPOINT_ZERO;
+  fIsHitTestUseDrawRect := False;
 
   if aParent <> nil then
   begin
@@ -2006,6 +2061,14 @@ begin
 end;
 
 
+function TKMControl.GetIDsStr: String;
+begin
+  if Self = nil then Exit('');
+
+  Result := IntToStr(fID) + ' ' + fParent.GetIDsStr;
+end;
+
+
 function TKMControl.GetHint: UnicodeString;
 begin
   Result := fHint;
@@ -2032,22 +2095,39 @@ begin
 end;
 
 
-procedure TKMControl.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMControl.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   if Assigned(fOnMouseWheel) then
-    fOnMouseWheel(Self, WheelDelta, aHandled)
+    fOnMouseWheel(Self, WheelSteps, aHandled)
   else
-    aHandled := DoHandleMouseWheelByDefault;
+  if fParent <> nil then
+  begin
+    if DoHandleMouseWheelByDefault then
+      fParent.MouseWheel(Sender, WheelSteps, aHandled)
+    else
+      aHandled := False;
+  end 
+  else
+    aHandled := False;
 end;
 
 
 //fVisible is checked earlier
 function TKMControl.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean;
 begin
-  Result := (Hitable or aIncludeNotHitable)
-            and (fEnabled or aIncludeDisabled)
-            and InRange(X, AbsLeft, AbsLeft + fWidth)
-            and InRange(Y, AbsTop, AbsTop + fHeight);
+  Result := False;
+  if    (Hitable or aIncludeNotHitable)
+    and (fEnabled or aIncludeDisabled) then
+  begin
+    //DrawRect could is restricted by parent panel size and also could be restricted with parent ScrollPanel
+    //While outside of ScrollPanel its better to use Abs coordinates
+    //since some childs could be outside of its parent borders for some reason
+    if fIsHitTestUseDrawRect then
+      Result := KMInRect(KMPoint(X,Y), GetDrawRect)
+    else
+      Result := InRange(X, AbsLeft, AbsRight)
+            and InRange(Y, AbsTop, AbsBottom);
+  end;
 end;
 
 
@@ -2129,6 +2209,7 @@ begin
     Top := Round((aValue - Parent.AbsTop) / Parent.Scale);
 end;
 
+//GetAbsCoordinates
 function TKMControl.GetAbsBottom: Integer;
 begin
   Result := GetAbsTop + GetHeight;
@@ -2154,6 +2235,29 @@ begin
   else
     Result := Round(fTop * Parent.Scale) + Parent.GetAbsTop;
 end;
+//-------------------------------
+
+//AbsDrawCoordinates
+function TKMControl.GetAbsDrawLeft: Integer;
+begin
+  Result := GetAbsLeft;
+end;
+
+function TKMControl.GetAbsDrawTop: Integer;
+begin
+  Result := GetAbsTop;
+end;
+
+function TKMControl.GetAbsDrawRight: Integer;
+begin
+  Result := GetAbsRight;
+end;
+
+function TKMControl.GetAbsDrawBottom: Integer;
+begin
+  Result := GetAbsBottom;
+end;
+//-------------------------------
 
 function TKMControl.GetLeft: Integer;
 begin
@@ -2257,6 +2361,12 @@ begin
 end;
 
 
+function TKMControl.GetControlAbsRect: TKMRect;
+begin
+  Result := KMRect(AbsLeft, AbsTop, AbsRight, AbsBottom);
+end;
+
+
 function TKMControl.GetIsFocused: Boolean;
 begin
   Result := csFocus in State;
@@ -2297,6 +2407,18 @@ begin
 
   if Assigned(fOnSizeSet) then
     fOnSizeSet(Self);
+end;
+
+
+function TKMControl.GetDrawRect: TKMRect;
+begin
+  if fParent <> nil then
+  begin       
+    Result := fParent.GetDrawRect;
+    if Result <> KMRECT_INVALID_TILES then
+      Result := KMRectIntersect(Result, AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+  end else
+    Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
 end;
 
 
@@ -2344,6 +2466,8 @@ end;
 // Check Control including all its Parents to see if Control is actually displayed/visible
 function TKMControl.GetVisible: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fVisible and ((Parent = nil) or Parent.Visible);
 end;
 
@@ -2385,11 +2509,14 @@ begin
   OldVisible := fVisible;
   fVisible := aValue;
 
-  //Only swap focus if visibility changed
-  if (OldVisible <> fVisible) and (Focusable or (Self is TKMPanel)) then
-    MasterParent.fMasterControl.UpdateFocus(Self);
+  //Swap focus and UpdateVisibility only if visibility changed
+  if (OldVisible <> fVisible) then
+  begin
+    if Focusable or (Self is TKMPanel) then
+      MasterParent.fMasterControl.UpdateFocus(Self);
 
-  UpdateVisibility;
+    UpdateVisibility;
+  end;
 end;
 
 
@@ -2629,7 +2756,8 @@ end;
 
 //Focus next focusable control on this Panel
 procedure TKMPanel.FocusNext;
-var Ctrl: TKMControl;
+var
+  Ctrl: TKMControl;
 begin
   if InRange(FocusedControlIndex, 0, ChildCount - 1) then
   begin
@@ -2642,8 +2770,26 @@ begin
 end;
 
 
+procedure TKMPanel.Enlarge(aChild: TKMControl);
+begin
+  if Self = nil then Exit;
+
+  fLeft := Left + Min(0, aChild.Left);
+  fTop := Top + Min(0, aChild.Top);
+  fWidth := Width - Min(0, aChild.Left);
+  fHeight := Height - Min(0, aChild.Top);
+  fWidth := Width + Max(0, aChild.Right - Right);
+  fHeight := Height + Max(0, aChild.Bottom - Bottom);
+
+  fParent.Enlarge(Self);
+end;
+
+
 function TKMPanel.AddChild(aChild: TKMControl): Integer;
 begin
+  //Descendants of TKMScrollPanel should all use DrawRect for HitTest
+  aChild.fIsHitTestUseDrawRect := fIsHitTestUseDrawRect;
+
   if ChildCount >= Length(Childs) then
     SetLength(Childs, ChildCount + 16);
 
@@ -3113,13 +3259,13 @@ end;
 
 { TKMImage }
 constructor TKMImage.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui;
-                            aPaintLayer: Integer = 0);
+                            aPaintLayer: Integer = 0; aImageAnchors: TKMAnchorsSet = [anLeft, anTop]);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   fRX := aRX;
   fTexID := aTexID;
   fFlagColor := $FFFF00FF;
-  ImageAnchors := [anLeft, anTop];
+  ImageAnchors := aImageAnchors;
   Highlight := False;
   HighlightOnMouseOver := False;
   HighlightCoef := DEFAULT_HIGHLIGHT_COEF;
@@ -3318,7 +3464,9 @@ end;
 
 
 procedure TKMColorSwatch.Paint;
-var i,Start: Integer;
+var
+  i,Start: Integer;
+  selColor: TColor4;
 begin
   inherited;
 
@@ -3337,9 +3485,15 @@ begin
   for i:=Start to Length(Colors)-1 do
     TKMRenderUI.WriteShape(AbsLeft+(i mod fColumnCount)*fCellSize, AbsTop+(i div fColumnCount)*fCellSize, fCellSize, fCellSize, Colors[i]);
 
+  if fColorIndex < 0 then Exit;
+
+  if GetColorBrightness(Colors[fColorIndex]) >= 0.5 then
+    selColor := $FF000000
+  else
+    selColor := $FFFFFFFF;
+
   //Paint selection
-  if fColorIndex <> -1 then
-    TKMRenderUI.WriteOutline(AbsLeft+(fColorIndex mod fColumnCount)*fCellSize, AbsTop+(fColorIndex div fColumnCount)*fCellSize, fCellSize, fCellSize, 1, $FFFFFFFF);
+  TKMRenderUI.WriteOutline(AbsLeft+(fColorIndex mod fColumnCount)*fCellSize, AbsTop+(fColorIndex div fColumnCount)*fCellSize, fCellSize, fCellSize, 1, selColor);
 end;
 
 
@@ -3375,6 +3529,35 @@ begin
   fStyle            := aStyle;
   MakesSound        := True;
   ShowImageEnabled  := True;
+  AutoHeight        := False;
+  AutoTextPadding   := 5;
+end;
+
+
+procedure TKMButton.UpdateHeight;
+var
+  TextY: Integer;
+begin
+  if fAutoHeight then
+  begin
+    TextY := gRes.Fonts[Font].GetTextSize(Caption).Y;
+    if TextY + AutoTextPadding > Height then
+      Height := TextY + AutoTextPadding;
+  end;
+end;
+
+
+procedure TKMButton.SetCaption(aCaption: UnicodeString);
+begin
+  fCaption := aCaption;
+  UpdateHeight;
+end;
+
+
+procedure TKMButton.SetAutoHeight(aValue: Boolean);
+begin
+  fAutoHeight := aValue;
+  UpdateHeight;
 end;
 
 
@@ -4129,7 +4312,7 @@ begin
   end;
 
 
-  TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop, Width - Height, fCaption, fFont, taLeft, Col);
+  TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop, Width - CheckSize, fCaption, fFont, taLeft, Col);
 end;
 
 
@@ -4705,18 +4888,15 @@ begin
 end;
 
 
-procedure TKMNumericEdit.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMNumericEdit.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  if WheelDelta > 0 then
-    SetValueNCheckRange(Int64(Value) + 1 + 9*Byte(GetKeyState(VK_SHIFT) < 0));
-  if WheelDelta < 0 then
-    SetValueNCheckRange(Int64(Value) - 1 - 9*Byte(GetKeyState(VK_SHIFT) < 0));
+  SetValueNCheckRange(Int64(Value) + WheelSteps*(1 + 9*Byte(GetKeyState(VK_SHIFT) < 0)));
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 
   Focus;
 
@@ -4962,9 +5142,7 @@ begin
 end;
 
 
-procedure TKMWareOrderRow.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
-const
-  ORDER_WHEEL_AMOUNT = 5; // Amounts for placing orders
+procedure TKMWareOrderRow.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 var
   Amt: Integer;
 begin
@@ -4972,7 +5150,7 @@ begin
 
   if aHandled then Exit;
 
-  Amt := ORDER_WHEEL_AMOUNT * Sign(WheelDelta);
+  Amt := MouseWheelStep * WheelSteps;
   if GetKeyState(VK_SHIFT) < 0 then
     Amt := Amt * 10;
 
@@ -5196,22 +5374,22 @@ begin
 end;
 
 
-procedure TKMTrackBar.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMTrackBar.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 var
   NewPos: Integer;
 begin
   inherited;
 
-  if aHandled or (WheelDelta = 0) then Exit;
+  if aHandled or (WheelSteps = 0) then Exit;
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 
   Focus;
 
   NewPos := Position;
 
-  if WheelDelta <> 0 then
-    NewPos := EnsureRange(NewPos - Step*Math.Sign(WheelDelta), fMinValue, fMaxValue);
+  if WheelSteps <> 0 then
+    NewPos := EnsureRange(NewPos - Step*fMouseWheelStep*WheelSteps, fMinValue, fMaxValue);
 
   if NewPos <> Position then
   begin
@@ -5464,16 +5642,21 @@ begin
 end;
 
 
-procedure TKMScrollBar.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMScrollBar.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  if WheelDelta < 0 then IncPosition(Self);
-  if WheelDelta > 0 then DecPosition(Self);
+  aHandled := WheelSteps <> 0;
 
-  aHandled := WheelDelta <> 0;
+  if aHandled then
+  begin
+    Position := Position - WheelStep * WheelSteps;
+
+    if Assigned(fOnChange) then
+      fOnChange(Self);
+  end;
 end;
 
 
@@ -5504,11 +5687,16 @@ end;
 
 { TKMScrollPanel }
 constructor TKMScrollPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
-                                  aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
+                                  aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle; aEnlargeParents: Boolean = False);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth - 20*Byte(saVertical in aScrollAxisSet), aHeight - 20*Byte(saHorizontal in aScrollAxisSet));
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+
+  fPadding := KMRect(0, 0, 0, 0);
 
   fScrollAxisSet := aScrollAxisSet;
+
+  fChildsPanel := TKMPanel.Create(Self, aLeft, aTop, aWidth, aHeight);
+  fChildsPanel.AnchorsStretch;
 
   fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, saHorizontal, aStyle, aScrollStyle);
   fScrollBarH.Hide;
@@ -5520,19 +5708,68 @@ begin
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
 
-  fClipRect := KMRect(Left, Top, Left + Width, Top + Height);
+//  if aEnlargeParents then
+//  begin
+//    if saHorizontal in aScrollAxisSet then
+//      Enlarge(fScrollBarH);
+//
+//    if saVertical in aScrollAxisSet then
+//      Enlarge(fScrollBarV);
+//  end;
+
+  fClipRect := KMRect(Left, Top, Right, Bottom);
 end;
 
 
 function TKMScrollPanel.AddChild(aChild: TKMControl): Integer;
 begin
-  Result := inherited AddChild(aChild);
+  aChild.fIsHitTestUseDrawRect := True;
+  if fChildsPanel = nil then
+    Result := inherited AddChild(aChild)
+  else
+  begin
+    Result := fChildsPanel.AddChild(aChild);
 
-  aChild.fOnHeightChange := UpdateScrollV;
-  aChild.fOnWidthChange := UpdateScrollH;
-  aChild.fOnPositionSet := UpdateScrolls;
-  aChild.fOnChangeVisibility := UpdateScrolls;
-  aChild.fOnChangeEnableStatus := UpdateScrolls;
+    aChild.fOnHeightChange := UpdateScrollV;
+    aChild.fOnWidthChange := UpdateScrollH;
+    aChild.fOnPositionSet := UpdateScrolls;
+    aChild.fOnChangeVisibility := UpdateScrolls;
+    aChild.fOnChangeEnableStatus := UpdateScrolls;
+  end;
+end;
+
+
+//Update View is usefull when use Padding Left or Top
+//To show panel properly initially. Beeter to invoke from Show Element
+procedure TKMScrollPanel.UpdateVisibility;
+begin
+  inherited;
+  if Visible
+    and ((fPadding.Left > 0) or (fPadding.Top > 0)) then //Update visibility only when left/top padding > 0
+  begin
+    if saHorizontal in fScrollAxisSet then
+    begin
+      fScrollBarH.Position := fPadding.Left;
+      ScrollChanged(fScrollBarH);
+    end;
+
+    if saVertical in fScrollAxisSet then
+    begin
+      fScrollBarV.Position := fPadding.Top;
+      ScrollChanged(fScrollBarV);
+    end;
+  end;
+end;
+
+
+procedure TKMScrollPanel.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
+begin
+  if (saVertical in fScrollAxisSet) and fScrollBarV.Visible then
+    fScrollBarV.MouseWheel(Sender, WheelSteps, aHandled)
+  else if (saHorizontal in fScrollAxisSet) and fScrollBarH.Visible then
+    fScrollBarH.MouseWheel(Sender, WheelSteps, aHandled)
+  else
+    inherited;
 end;
 
 
@@ -5543,7 +5780,7 @@ begin
   if Sender = fScrollBarH then
   begin
     OldValue := Left;
-    Left := fClipRect.Left - fScrollBarH.Position;
+    Left := fClipRect.Left - fScrollBarH.Position + fPadding.Left;
     //To compensate changes in SetLeft
     Inc(fClipRect.Left, OldValue - Left);
     Inc(fClipRect.Right, OldValue - Left);
@@ -5551,7 +5788,7 @@ begin
   if Sender = fScrollBarV then
   begin
     OldValue := Top;
-    Top := fClipRect.Top - fScrollBarV.Position;
+    Top := fClipRect.Top - fScrollBarV.Position + fPadding.Top;
     //To compensate changes in SetTop
     Inc(fClipRect.Top, OldValue - Top);
     Inc(fClipRect.Bottom, OldValue - Top);
@@ -5569,80 +5806,106 @@ end;
 procedure TKMScrollPanel.UpdateScrollH(Sender: TObject; aValue: Integer);
 begin
   if (Sender <> fScrollBarH) then
-    UpdateScrollH(nil);
+    UpdateScrollH;
 end;
 
 
-procedure TKMScrollPanel.UpdateScrollH(Sender: TObject);
-var
-  ChildsRect: TKMRect;
-  NewPos: Integer;
+procedure TKMScrollPanel.UpdateScrollH;
 begin
-  ChildsRect := GetChildsRect;
-  fScrollBarH.Hide;
+  if not (saHorizontal in fScrollAxisSet) then Exit;
 
-  if (saHorizontal in fScrollAxisSet) then
+  UpdateScrollH(GetChildsRect);
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollH(aChildsRect: TKMRect);
+var
+  NewPos: Integer;
+  ShowScroll: Boolean;
+begin
+  if not (saHorizontal in fScrollAxisSet) then Exit;
+
+  ShowScroll := False;
+
+  if aChildsRect.Width + fPadding.Left + fPadding.Right > fClipRect.Width then
   begin
-    if KMRectWidth(ChildsRect) > KMRectWidth(fClipRect) then
-    begin
-      fScrollBarH.MaxValue := KMRectWidth(ChildsRect) - KMRectWidth(fClipRect);
-      NewPos := fClipRect.Left - Left;
+    fScrollBarH.MaxValue := aChildsRect.Width - fClipRect.Width + fPadding.Left + fPadding.Right;
+    NewPos := fClipRect.Left - Left;
 
-      if NewPos > fScrollBarH.MaxValue then
-        fLeft := Left + NewPos - fScrollBarH.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
-      fScrollBarH.DoSetVisible;
-    end else begin
-      fScrollBarH.Position := 0;
-      if Left <> fClipRect.Left then
-        fLeft := fClipRect.Left; //Set directrly to avoid SetLeft call
-    end;
+    if NewPos > fScrollBarH.MaxValue then
+      fLeft := Left + NewPos - fScrollBarH.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
+    ShowScroll := True;
+  end else begin
+    fScrollBarH.Position := 0;
+    if Left <> fClipRect.Left then
+      fLeft := fClipRect.Left; //Set directrly to avoid SetLeft call
   end;
 
   fScrollBarH.Width := Width;
+  if ShowScroll <> fScrollBarH.Visible then
+  begin
+    fScrollBarH.Visible := ShowScroll;
+    fChildsPanel.Height := Height - 20*Byte(ShowScroll);
+  end;
 end;
 
 
 procedure TKMScrollPanel.UpdateScrollV(Sender: TObject; aValue: Integer);
 begin
   if (Sender <> fScrollBarV) then
-    UpdateScrollV(nil)
+    UpdateScrollV;
 end;
 
 
-procedure TKMScrollPanel.UpdateScrollV(Sender: TObject);
-var
-  ChildsRect: TKMRect;
-  NewPos: Integer;
+procedure TKMScrollPanel.UpdateScrollV;
 begin
-  ChildsRect := GetChildsRect;
+  if not (saVertical in fScrollAxisSet) then Exit;
+
+  UpdateScrollV(GetChildsRect);
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollV(aChildsRect: TKMRect);
+var
+  NewPos: Integer;
+  ShowScroll: Boolean;
+begin
+  if not (saVertical in fScrollAxisSet) then Exit;
+
   //Do not set Visible, avoid trigger OnChangeVisibility
-  fScrollBarV.Hide;
+  ShowScroll := False;
 
-  if (saVertical in fScrollAxisSet) then
+  if aChildsRect.Height + fPadding.Top + fPadding.Bottom > fClipRect.Height then
   begin
-    if KMRectHeight(ChildsRect) > KMRectHeight(fClipRect) then
-    begin
-      fScrollBarV.MaxValue := KMRectHeight(ChildsRect) - KMRectHeight(fClipRect);
-      NewPos := fClipRect.Top - Top;
+    fScrollBarV.MaxValue := aChildsRect.Height - fClipRect.Height + fPadding.Top + fPadding.Bottom;
+    NewPos := fClipRect.Top - Top;
 
-      if NewPos > fScrollBarV.MaxValue then
-        fTop := Top + NewPos - fScrollBarV.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
-      fScrollBarV.DoSetVisible;
-    end else begin
-      fScrollBarV.Position := 0;
-      if Top <> fClipRect.Top then
-        fTop := fClipRect.Top; //Set directrly to avoid SetTop call
-    end;
+    if NewPos > fScrollBarV.MaxValue then
+      fTop := Top + NewPos - fScrollBarV.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
+    ShowScroll := True;
+  end else begin
+    fScrollBarV.Position := 0;
+    if Top <> fClipRect.Top then
+      fTop := fClipRect.Top; //Set directrly to avoid SetTop call
   end;
 
   fScrollBarV.Height := Height;
+  if ShowScroll <> fScrollBarV.Visible then
+  begin
+    fScrollBarV.Visible := ShowScroll;
+    fChildsPanel.Width := Width - 20*Byte(ShowScroll);
+  end;
 end;
 
 
 procedure TKMScrollPanel.UpdateScrolls(Sender: TObject);
+var
+  ChildsRect: TKMRect;
 begin
-  UpdateScrollV(Sender);
-  UpdateScrollH(Sender);
+  ChildsRect := GetChildsRect;
+
+  UpdateScrollV(ChildsRect);
+  UpdateScrollH(ChildsRect);
 end;
 
 
@@ -5708,26 +5971,24 @@ function TKMScrollPanel.GetChildsRect: TKMRect;
 var
   I: Integer;
 begin
-  Result.Left := 0; //Its fine to have 0 here
-  Result.Top := 0;
-  Result.Right := Width;
-  Result.Bottom := Height;
-  for I := 0 to ChildCount - 1 do
+  Result := KMRECT_ZERO; //Zero rect, by default
+
+  for I := 0 to fChildsPanel.ChildCount - 1 do
   begin
-    if not Childs[I].IsPainted then
+    if not fChildsPanel.Childs[I].IsPainted then
       Continue;
 
-    if Childs[I].Left < Result.Left then
-      Result.Left := Childs[I].Left;
+    if fChildsPanel.Childs[I].Left < Result.Left then
+      Result.Left := fChildsPanel.Childs[I].Left;
 
-    if Childs[I].Top < Result.Top then
-      Result.Top := Childs[I].Top;
+    if fChildsPanel.Childs[I].Top < Result.Top then
+      Result.Top := fChildsPanel.Childs[I].Top;
 
-    if Childs[I].Right > Result.Right then
-      Result.Right := Childs[I].Right;
+    if fChildsPanel.Childs[I].Right > Result.Right then
+      Result.Right := fChildsPanel.Childs[I].Right;
 
-    if Childs[I].Bottom > Result.Bottom then
-      Result.Bottom := Childs[I].Bottom;
+    if fChildsPanel.Childs[I].Bottom > Result.Bottom then
+      Result.Bottom := fChildsPanel.Childs[I].Bottom;
   end;
 end;
 
@@ -5744,10 +6005,36 @@ begin
 end;
 
 
+function TKMScrollPanel.GetDrawRect: TKMRect;
+begin
+  Result := KMRect(AbsDrawLeft, AbsDrawTop, AbsDrawRight, AbsDrawBottom);
+end;
+
+function TKMScrollPanel.GetAbsDrawLeft: Integer;
+begin
+  Result := Parent.AbsLeft + fClipRect.Left;
+end;
+
+function TKMScrollPanel.GetAbsDrawTop: Integer;
+begin
+  Result := Parent.AbsTop + fClipRect.Top;
+end;
+
+function TKMScrollPanel.GetAbsDrawRight: Integer;
+begin
+  Result := Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible);
+end;
+
+function TKMScrollPanel.GetAbsDrawBottom: Integer;
+begin
+  Result := Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible);
+end;
+
+
 procedure TKMScrollPanel.PaintPanel(aPaintLayer: Integer);
 begin
-  TKMRenderUI.SetupClipX(Parent.AbsLeft + fClipRect.Left, Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible));
-  TKMRenderUI.SetupClipY(Parent.AbsTop + fClipRect.Top, Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible));
+  TKMRenderUI.SetupClipX(AbsDrawLeft, AbsDrawRight);
+  TKMRenderUI.SetupClipY(AbsDrawTop, AbsDrawBottom);
 
   inherited;
 
@@ -6246,15 +6533,15 @@ begin
 end;
 
 
-procedure TKMMemo.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMMemo.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  SetTopIndex(TopIndex - Sign(WheelDelta));
+  SetTopIndex(TopIndex - WheelSteps);
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 end;
 
 
@@ -6704,16 +6991,16 @@ begin
 end;
 
 
-procedure TKMListBox.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMListBox.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  SetTopIndex(TopIndex - sign(WheelDelta));
+  SetTopIndex(TopIndex - WheelSteps);
   fScrollBar.Position := TopIndex; //Make the scrollbar move too when using the wheel
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 end;
 
 
@@ -7621,16 +7908,16 @@ begin
 end;
 
 
-procedure TKMColumnBox.MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMColumnBox.MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
 begin
   inherited;
 
   if aHandled then Exit;
 
-  SetTopIndex(TopIndex - Sign(WheelDelta));
+  SetTopIndex(TopIndex - WheelSteps);
   fScrollBar.Position := TopIndex; //Make the scrollbar move too when using the wheel
 
-  aHandled := WheelDelta <> 0;
+  aHandled := WheelSteps <> 0;
 end;
 
 
@@ -9625,12 +9912,12 @@ begin
 end;
 
 
-procedure TKMMasterControl.MouseWheel(X,Y: Integer; WheelDelta: Integer; var aHandled: Boolean);
+procedure TKMMasterControl.MouseWheel(X,Y: Integer; WheelSteps: Integer; var aHandled: Boolean);
 var C: TKMControl;
 begin
   C := HitControl(X, Y);
   if C <> nil then
-    C.MouseWheel(C, WheelDelta, aHandled);
+    C.MouseWheel(C, WheelSteps, aHandled);
 end;
 
 

@@ -59,7 +59,10 @@ type
     function VBOSupported: Boolean;
     procedure RenderFence(aFence: TKMFenceType; Pos: TKMDirection; pX,pY: Integer);
     procedure RenderMarkup(pX, pY: Word; aFieldType: TKMFieldType);
-    procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+    procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
+                           DoHighlight: Boolean = False; HighlightColor: Cardinal = 0; aBlendingLvl: Byte = 0;
+                           aCorners: TKMByteSet = []);
+    function DoUseVBO: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -80,6 +83,9 @@ uses
 
 type
   TAnimLayer = (alWater, alFalls, alSwamp);
+
+const
+  TILE_LAYERS_USE_VBO = False;
 
 
 constructor TRenderTerrain.Create;
@@ -111,7 +117,7 @@ begin
   pData[3] := $00000000;
   fTextB := TRender.GenTexture(4, 1, @pData[0], tfRGBA8);
 
-  fUseVBO := VBOSupported and not RENDER_3D;
+  fUseVBO := DoUseVBO;
 
   if fUseVBO then
   begin
@@ -147,13 +153,19 @@ begin
 end;
 
 
-function TRenderTerrain.VBOSupported:Boolean;
+function TRenderTerrain.VBOSupported: Boolean;
 begin
   //Some GPUs don't comply with OpenGL 1.5 spec on VBOs, so check Assigned instead of GL_VERSION_1_5
   Result := Assigned(glGenBuffers)        and Assigned(glBindBuffer)    and Assigned(glBufferData) and
             Assigned(glEnableClientState) and Assigned(glVertexPointer) and Assigned(glClientActiveTexture) and
             Assigned(glTexCoordPointer)   and Assigned(glDrawElements)  and Assigned(glDisableClientState) and
             Assigned(glDeleteBuffers);
+end;
+
+
+function TRenderTerrain.DoUseVBO: Boolean;
+begin
+  Result := VBOSupported and not RENDER_3D;
 end;
 
 
@@ -481,6 +493,47 @@ begin
 end;
 
 
+procedure RenderQuadTextureBlended(var TexC: TUVRect; tX,tY: Word; aCorners: TKMByteSet; aBlendingLevel: Byte);
+var
+  BlendFactor: Single;
+begin
+  BlendFactor := 1 - Max(0, Min(1, aBlendingLevel / TERRAIN_MAX_BLENDING_LEVEL));
+  with gTerrain do
+    if RENDER_3D then
+    begin
+      glTexCoord2fv(@TexC[1]); glVertex3f(tX-1,tY-1,-Land[tY,  tX].Height/CELL_HEIGHT_DIV);
+      glTexCoord2fv(@TexC[2]); glVertex3f(tX-1,tY  ,-Land[tY+1,tX].Height/CELL_HEIGHT_DIV);
+      glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  ,-Land[tY+1,tX+1].Height/CELL_HEIGHT_DIV);
+      glTexCoord2fv(@TexC[4]); glVertex3f(tX  ,tY-1,-Land[tY,  tX+1].Height/CELL_HEIGHT_DIV);
+    end else begin
+      if 0 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,BlendFactor);
+      glTexCoord2fv(@TexC[1]); glVertex3f(tX-1,tY-1-Land[tY,  tX].Height / CELL_HEIGHT_DIV, tY-1);
+
+      if 3 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,BlendFactor);
+      glTexCoord2fv(@TexC[2]); glVertex3f(tX-1,tY  -Land[tY+1,tX].Height / CELL_HEIGHT_DIV, tY-1);
+
+      if 2 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,BlendFactor);
+      glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  -Land[tY+1,tX+1].Height / CELL_HEIGHT_DIV, tY-1);
+
+      if 1 in aCorners then
+        glColor4f(1,1,1,1)
+      else
+        glColor4f(1,1,1,BlendFactor);
+      glTexCoord2fv(@TexC[4]); glVertex3f(tX  ,tY-1-Land[tY,  tX+1].Height / CELL_HEIGHT_DIV, tY-1);
+      glColor4f(1,1,1,1);
+    end;
+end;
+
+
 procedure TRenderTerrain.DoTiles(aFOW: TKMFogOfWarCommon);
 var
   TexC: TUVRect;
@@ -546,12 +599,17 @@ var
   I,K,L: Integer;
   SizeX, SizeY: Word;
   tX, tY: Word;
+  TerInfo: TKMGenTerrainInfo;
 begin
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
   //Draw with VBO only if all tiles are on the same texture
-  if fUseVBO and TKMResSprites.AllTilesOnOneAtlas then
+
+  //DONT USE VBO FOR LAYERS FOR NOW, SINCE WE CAN USE BLENDING HERE
+  if TILE_LAYERS_USE_VBO
+    and fUseVBO
+    and TKMResSprites.AllTilesOnOneAtlas then
   begin
     if Length(fTilesLayersVtx) = 0 then Exit; //Nothing to render
     BindVBOArray(vatTileLayer);
@@ -574,6 +632,7 @@ begin
   end
   else
   begin
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     SizeX := Max(fClipRect.Right - fClipRect.Left, 0);
     SizeY := Max(fClipRect.Bottom - fClipRect.Top, 0);
     with gTerrain do
@@ -590,12 +649,20 @@ begin
                 TRender.BindTexture(gGFXData[rxTiles, Layer[L].Terrain+1].Tex.ID);
                 glBegin(GL_TRIANGLE_FAN);
                 TexC := GetTileUV(Layer[L].Terrain, Layer[L].Rotation);
-              end;
+                TerInfo := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain);
 
-              RenderQuadTexture(TexC, tX, tY);
-              glEnd;
+                if TerInfo.TerKind = tkCustom then
+                  Exit;
+
+                if BlendingLvl > 0 then
+                  RenderQuadTextureBlended(TexC, tX, tY, Layer[L].Corners, BlendingLvl)
+                else
+                  RenderQuadTexture(TexC, tX, tY);
+                glEnd;
+              end;
             end;
         end;
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Just in case...
   end;
 end;
 
@@ -636,9 +703,9 @@ begin
     for AL := Low(TAnimLayer) to High(TAnimLayer) do
     begin
       case AL of
-        alWater: TexOffset := 300 * (aAnimStep mod 8 + 1);       // 300..2400
-        alFalls: TexOffset := 300 * (aAnimStep mod 5 + 1 + 8);   // 2700..3900
-        alSwamp: TexOffset := 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 4200..4800
+        alWater: TexOffset := 5000 + 300 * (aAnimStep mod 8 + 1);       // 5300..7400
+        alFalls: TexOffset := 5000 + 300 * (aAnimStep mod 5 + 1 + 8);   // 7700..8900
+        alSwamp: TexOffset := 5000 + 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 9200..9800
         else     TexOffset := 0;
       end;
 
@@ -1059,7 +1126,7 @@ begin
   //VBO has proper vertice coords only for Light/Shadow
   //it cant handle 3D yet and because of FOW leaves terrain revealed, which is an exploit in MP
   //Thus we allow VBO only in 2D
-  fUseVBO := VBOSupported and not RENDER_3D;
+  fUseVBO := DoUseVBO;
 
   UpdateVBO(aAnimStep, aFOW);
 
@@ -1076,16 +1143,13 @@ begin
 end;
 
 
-procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; 
-                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
+                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0; aBlendingLvl: Byte = 0;
+                                      aCorners: TKMByteSet = []);
 var
-  K, I: Integer;
   TexC: TUVRect; // Texture UV coordinates
 begin
   if not gTerrain.TileInMapCoords(pX,pY) then Exit;
-  
-  K := pX;
-  I := pY;
 
   if DoHighlight then
     glColor4ub(HighlightColor and $FF, (HighlightColor shr 8) and $FF, (HighlightColor shr 16) and $FF, $FF)
@@ -1101,21 +1165,13 @@ begin
     TexC := GetTileUV(aTerrainId, Rot mod 4);
 
   glBegin(GL_TRIANGLE_FAN);
-    with gTerrain do
-      if RENDER_3D then
-      begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
-      end
-      else
-      begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height/CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height/CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height/CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height/CELL_HEIGHT_DIV, I-1);
-      end;
+
+  //TODO DoHighlight and HighlightColor is not considered here, we use always glColor4f(1, 1, 1, 1);
+  if aBlendingLvl > 0 then
+    RenderQuadTextureBlended(TexC, pX, pY, aCorners, aBlendingLvl)
+  else
+    RenderQuadTexture(TexC, pX, pY);
+
   glEnd;
 end;
 
@@ -1142,13 +1198,13 @@ begin
     TRender.BindTexture(gGFXData[rxTiles, aTileBasic.BaseLayer.Terrain + 1].Tex.ID);
 
   // Render Base Layer
-  DoRenderTile(aTileBasic.BaseLayer.Terrain, pX, pY, aTileBasic.BaseLayer.Rotation, DoBindTexture, 
+  DoRenderTile(aTileBasic.BaseLayer.Terrain, pX, pY, aTileBasic.BaseLayer.Rotation, DoBindTexture,
                False, DoHighlight, HighlightColor);
 
   // Render other Layers
   for L := 0 to aTileBasic.LayersCnt - 1 do
-    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, DoBindTexture, 
-                 False, DoHighlight, HighlightColor);
+    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, DoBindTexture,
+                 False, DoHighlight, HighlightColor, aTileBasic.BlendingLvl, aTileBasic.Layer[L].Corners);
     
 end;
 

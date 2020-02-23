@@ -7,7 +7,7 @@ uses
 
 
 const
-  TILES_CNT = 346;
+  TILES_CNT = 349;
   MAX_TILE_TO_SHOW = TILES_CNT;
   MAX_STATIC_TERRAIN_ID = 9997;
 //  WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
@@ -329,7 +329,7 @@ const
   (tkCobbleStone,tkCobbleStone,tkCobbleStone,tkCobbleStone),
   (tkCustom,tkCustom,tkCustom,tkWater), (tkCustom,tkCustom,tkWater,tkCustom),
    //200
-  (tkStone,tkStone,tkWater,tkWater),//(?)
+  (tkWater,tkWater,tkWater,tkWater),//(?)
   (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount), (tkCustom,tkCustom,tkCustom,tkCustom),
    //203
   (tkSnow,tkDeepSnow,tkSnow,tkSnow), (tkDeepSnow,tkDeepSnow,tkSnow,tkSnow), (tkDeepSnow,tkDeepSnow,tkDeepSnow,tkSnow),
@@ -338,7 +338,7 @@ const
    //208
   (tkWater,tkWater,tkWater,tkWater), (tkFastWater,tkFastWater,tkFastWater,tkFastWater),
    //210
-  (tkStone,tkStone,tkWater,tkWater),(tkStone,tkStone,tkWater,tkWater),//(?)
+  (tkWater,tkWater,tkWater,tkWater),(tkWater,tkWater,tkWater,tkWater),//(?)
    //212
   (tkSnow,tkSnow,tkSnowOnDirt,tkSnowOnDirt), (tkSnow,tkSnow,tkSnow,tkSnowOnDirt),
    //214
@@ -421,22 +421,24 @@ const
   (tkSnowOnGrass,tkSnowOnGrass,tkGrass,tkGrass),(tkSnowOnGrass,tkSnowOnGrass,tkSnowOnGrass,tkGrass),
    //319
   (tkCoastSand,tkGrassSand3,tkCoastSand,tkCoastSand),(tkGrassSand3,tkGrassSand3,tkCoastSand,tkCoastSand),(tkGrassSand3,tkGrassSand3,tkGrassSand3,tkCoastSand),
-   //324
+   //322
   (tkGoldMount,tkIronMount,tkGoldMount,tkGoldMount),(tkIronMount,tkIronMount,tkGoldMount,tkGoldMount),(tkIronMount,tkIronMount,tkIronMount,tkGoldMount),
-   //327
+   //325
   (tkGold,tkIron,tkGold,tkGold),(tkIron,tkIron,tkGold,tkGold),(tkIron,tkIron,tkIron,tkGold),
-   //330
+   //328
   (tkIronMount,tkIron,tkIronMount,tkIronMount),(tkIron,tkIron,tkIronMount,tkIronMount),(tkIron,tkIron,tkIron,tkIronMount),
-   //333
+   //331
   (tkStone,tkIronMount,tkStone,tkStone),(tkIronMount,tkIronMount,tkStone,tkStone),(tkIronMount,tkIronMount,tkIronMount,tkStone),
-   //336
+   //334
   (tkStone,tkIron,tkStone,tkStone),(tkIron,tkIron,tkStone,tkStone),(tkIron,tkIron,tkIron,tkStone),
-   //339
+   //337
   (tkGrass,tkIron,tkGrass,tkGrass),(tkIron,tkIron,tkGrass,tkGrass),(tkIron,tkIron,tkIron,tkGrass),
-   //342
+   //340
   (tkStone,tkGoldMount,tkStone,tkStone),(tkGoldMount,tkGoldMount,tkStone,tkStone),(tkGoldMount,tkGoldMount,tkGoldMount,tkStone),
-   //345
-  (tkStone,tkGold,tkStone,tkStone),(tkGold,tkGold,tkStone,tkStone),(tkGold,tkGold,tkGold,tkStone)
+   //343
+  (tkStone,tkGold,tkStone,tkStone),(tkGold,tkGold,tkStone,tkStone),(tkGold,tkGold,tkGold,tkStone),
+   //346
+  (tkGoldMount,tkAbyss,tkGoldMount,tkGoldMount),(tkAbyss,tkAbyss,tkGoldMount,tkGoldMount),(tkAbyss,tkAbyss,tkAbyss,tkGoldMount)
   );
 
 type
@@ -517,9 +519,9 @@ const
                                             320,321,322,338);
   WalkNoBuild:   array[0..22] of Integer = (258,263,269,270,271,272,278,279,280,281,286,287,288,289,294,295,296,297,309,310,//20
                                             311,312,339);
-  NoWalkNoBuild: array[0..43] of Integer = (259,260,261,265,266,267,268,269,273,276,277,282,284,285,290,292,293,298,300,301,//20
-                                            307,308,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,340,341,342,//40
-                                            343,344,345,346);
+  NoWalkNoBuild: array[0..42] of Integer = (259,260,261,265,266,267,268,273,276,277,282,284,285,290,292,293,298,300,301,307,//20
+                                            308,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,340,341,342,343,//40
+                                            344,345,346);
 var
   I: Integer;
 begin

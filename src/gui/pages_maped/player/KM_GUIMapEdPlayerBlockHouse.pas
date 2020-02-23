@@ -8,7 +8,7 @@ uses
 type
   TKMMapEdPlayerBlockHouse = class
   private
-    procedure Player_BlockHouseClick(Sender: TObject);
+    procedure Player_BlockHouseClick(Sender: TObject; Shift: TShiftState);
     procedure Player_BlockHouseRefresh;
   protected
     Panel_BlockHouse: TKMPanel;
@@ -36,14 +36,15 @@ var
 begin
   inherited Create;
 
-  Panel_BlockHouse := TKMPanel.Create(aParent, 0, 28, TB_MAP_ED_WIDTH, 400);
-  TKMLabel.Create(Panel_BlockHouse, 0, PAGE_TITLE_Y, TB_MAP_ED_WIDTH, 0, gResTexts[TX_MAPED_BLOCK_HOUSES], fntOutline, taCenter);
+  Panel_BlockHouse := TKMPanel.Create(aParent, 9, 28, aParent.Width - 9, 400);
+  with TKMLabel.Create(Panel_BlockHouse, 0, PAGE_TITLE_Y, Panel_BlockHouse.Width, 0, gResTexts[TX_MAPED_BLOCK_HOUSES], fntOutline, taCenter) do
+    Anchors := [anLeft, anTop, anRight];
   for I := 1 to GUI_HOUSE_COUNT do
   if GUIHouseOrder[I] <> htNone then
   begin
     Button_BlockHouse[I] := TKMButtonFlat.Create(Panel_BlockHouse, 9 + ((I-1) mod 5)*37, 30 + ((I-1) div 5)*37,33,33,gRes.Houses[GUIHouseOrder[I]].GUIIcon);
     Button_BlockHouse[I].Hint := gRes.Houses[GUIHouseOrder[I]].HouseName;
-    Button_BlockHouse[I].OnClick := Player_BlockHouseClick;
+    Button_BlockHouse[I].OnClickShift := Player_BlockHouseClick;
     Button_BlockHouse[I].Tag := I;
     Image_BlockHouse[I] := TKMImage.Create(Panel_BlockHouse, 9 + ((I-1) mod 5)*37 + 15, 30 + ((I-1) div 5)*37 + 15, 16, 16, 0, rxGuiMain);
     Image_BlockHouse[I].Hitable := False;
@@ -52,7 +53,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerBlockHouse.Player_BlockHouseClick(Sender: TObject);
+procedure TKMMapEdPlayerBlockHouse.Player_BlockHouseClick(Sender: TObject; Shift: TShiftState);
 var
   I: Integer;
   H: TKMHouseType;
@@ -63,20 +64,42 @@ begin
 
   locks := gMySpectator.Hand.Locks;
 
-  //Loop through states CanBuild > CantBuild > Released
-  if not locks.HouseBlocked[H] and not locks.HouseGranted[H] then
+  if ssLeft in Shift then
   begin
-    locks.HouseBlocked[H] := True;
-    locks.HouseGranted[H] := False;
-  end else
-  if locks.HouseBlocked[H] and not locks.HouseGranted[H] then
+    //Loop through states CanBuild > CantBuild > Released
+    if not locks.HouseBlocked[H] and not locks.HouseGranted[H] then
+    begin
+      locks.HouseBlocked[H] := True;
+      locks.HouseGranted[H] := False;
+    end else
+    if locks.HouseBlocked[H] and not locks.HouseGranted[H] then
+    begin
+      locks.HouseBlocked[H] := False;
+      locks.HouseGranted[H] := True;
+    end else
+    begin
+      locks.HouseBlocked[H] := False;
+      locks.HouseGranted[H] := False;
+    end;
+  end
+  else
+  if ssRight in Shift then
   begin
-    locks.HouseBlocked[H] := False;
-    locks.HouseGranted[H] := True;
-  end else
-  begin
-    locks.HouseBlocked[H] := False;
-    locks.HouseGranted[H] := False;
+    //Loop through states CanBuild < CantBuild < Released
+    if not locks.HouseBlocked[H] and not locks.HouseGranted[H] then
+    begin
+      locks.HouseBlocked[H] := False;
+      locks.HouseGranted[H] := True;
+    end else
+    if locks.HouseBlocked[H] and not locks.HouseGranted[H] then
+    begin
+      locks.HouseBlocked[H] := False;
+      locks.HouseGranted[H] := False;
+    end else
+    begin
+      locks.HouseBlocked[H] := True;
+      locks.HouseGranted[H] := False;
+    end;
   end;
 
   Player_BlockHouseRefresh;

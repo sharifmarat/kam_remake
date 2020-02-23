@@ -25,12 +25,15 @@ type
     function IsDragScrollingAllowed: Boolean; virtual;
     function GetHintPositionBase: TKMPoint; override;
     function GetHintFont: TKMFont; override;
+
+    function GetToolBarWidth: Integer; virtual; abstract;
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
 
     property Minimap: TKMMinimap read fMinimap;
     property Viewport: TKMViewport read fViewport;
+    property ToolbarWidth: Integer read GetToolBarWidth;
     property OnUserAction: TKMUserActionEvent read fOnUserAction write fOnUserAction;
 
     function CursorToMapCoord(X, Y: Integer): TKMPointF;
@@ -38,7 +41,7 @@ type
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyPress(Key: Char); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean); override;
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
@@ -55,7 +58,7 @@ const
   // Toolbar pads
   TB_PAD = 9; // Picked up empirically
   TB_WIDTH = 180; // Max width of sidebar elements
-  TB_MAP_ED_WIDTH = 189;
+  TB_MAP_ED_WIDTH = 214; //Max width of sidebar elements in Map Editor
   PAGE_TITLE_Y = 5; // Page title offset
   STATS_LINES_CNT = 13; //Number of stats (F3) lines
 
@@ -147,8 +150,8 @@ const
   MARKET_RES_HEIGHT = 35;
 
   // Big tab buttons in MapEd
-  BIG_TAB_W = 36;
-  BIG_PAD_W = 36;
+  BIG_TAB_W = 41;
+  BIG_PAD_W = 41;
   BIG_TAB_H = 36;
   // Small sub-tab buttons in MapEd
   SMALL_TAB_W = 30;
@@ -170,7 +173,7 @@ begin
   inherited Create(aRender.ScreenX, aRender.ScreenY);
 
   fMinimap := TKMMinimap.Create(False, False);
-  fViewport := TKMViewport.Create(aRender.ScreenX, aRender.ScreenY);
+  fViewport := TKMViewport.Create(GetToolBarWidth, aRender.ScreenX, aRender.ScreenY);
 
   fDragScrolling := False;
   fDragScrollingCursorPos.X := 0;
@@ -192,7 +195,7 @@ end;
 
 function TKMUserInterfaceGame.GetHintPositionBase: TKMPoint;
 begin
-  Result := KMPoint(224, Panel_Main.Height);
+  Result := KMPoint(GetToolBarWidth, Panel_Main.Height);
 end;
 
 
@@ -327,7 +330,7 @@ begin
 end;
 
 
-procedure TKMUserInterfaceGame.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMUserInterfaceGame.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 var
   PrevCursor: TKMPointF;
 begin
@@ -343,7 +346,7 @@ begin
   
   UpdateGameCursor(X, Y, Shift); // Make sure we have the correct cursor position to begin with
   PrevCursor := gGameCursor.Float;
-  fViewport.Zoom := fViewport.Zoom + WheelDelta / 2000;
+  fViewport.Zoom := fViewport.Zoom + WheelSteps*3/50;
   UpdateGameCursor(X, Y, Shift); // Zooming changes the cursor position
   // Move the center of the screen so the cursor stays on the same tile, thus pivoting the zoom around the cursor
   fViewport.Position := KMPointF(fViewport.Position.X + PrevCursor.X-gGameCursor.Float.X,
@@ -381,7 +384,7 @@ end;
 
 function TKMUserInterfaceGame.CursorToMapCoord(X, Y: Integer): TKMPointF;
 begin
-  Result.X := fViewport.Position.X + (X-fViewport.ViewRect.Right/2-TOOLBAR_WIDTH/2)/CELL_SIZE_PX/fViewport.Zoom;
+  Result.X := fViewport.Position.X + (X-fViewport.ViewRect.Right/2-GetToolBarWidth/2)/CELL_SIZE_PX/fViewport.Zoom;
   Result.Y := fViewport.Position.Y + (Y-fViewport.ViewRect.Bottom/2)/CELL_SIZE_PX/fViewport.Zoom;
   Result.Y := gTerrain.ConvertCursorToMapCoord(Result.X, Result.Y);
 end;

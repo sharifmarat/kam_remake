@@ -77,7 +77,7 @@ type
     procedure MouseMove(Shift: TShiftState; X,Y: Integer); overload;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); overload; virtual; abstract;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); virtual; abstract;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean); virtual;
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean); virtual;
     procedure Resize(X,Y: Word); virtual;
     procedure UpdateState(aTickCount: Cardinal); virtual;
     procedure Paint; virtual;
@@ -132,7 +132,7 @@ const
 
 implementation
 uses
-  KM_Resource, KM_ResKeys, KM_RenderUI;
+  SysUtils, KM_Resource, KM_ResKeys, KM_RenderUI, KM_Defaults;
 
 
 { TKMUserInterface }
@@ -197,6 +197,9 @@ begin
   else
   begin
     Label_Hint.Caption := TKMControl(Sender).Hint;
+    if SHOW_CONTROLS_ID then
+      Label_Hint.Caption := Label_Hint.Caption + ' ' + TKMControl(Sender).GetIDsStr;
+
     TxtSize := gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption);
     Bevel_HintBG.Width := 10 + TxtSize.X;
     Bevel_HintBG.Height := 2 + TxtSize.Y;
@@ -205,6 +208,7 @@ begin
     Label_Hint.Top := Bevel_HintBG.Top + 2;
     fPrevHintMessage := TKMControl(Sender).Hint;
   end;
+
   fPrevHint := Sender;
 end;
 
@@ -222,9 +226,9 @@ begin
 end;
 
 
-procedure TKMUserInterfaceCommon.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+procedure TKMUserInterfaceCommon.MouseWheel(Shift: TShiftState; WheelSteps, X, Y: Integer; var aHandled: Boolean);
 begin
-  fMyControls.MouseWheel(X, Y, WheelDelta, aHandled);
+  fMyControls.MouseWheel(X, Y, WheelSteps, aHandled);
 end;
 
 

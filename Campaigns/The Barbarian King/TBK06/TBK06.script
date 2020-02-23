@@ -1,7 +1,7 @@
 //-- TBK06 --//
 //By Strangelove
-//v2.0c
-//14.08.2019
+//v2.2
+//30.12.2019
 
 
 {$I improvestaticai.script}
@@ -40,18 +40,13 @@ begin
 	iDefendCounter := 0;
 	bAttack := false;
 	bDefend := true;
-	AllyKnightCount := 12;
+	Tick := TICKER;
 	//Difficulty
 	case States.MissionDifficulty() of
-		mdEasy1:	
-			Tick := Round(TICKER *(1 +MODIFIER_EQUIPRATE));
-		mdNormal:	
-			Tick := TICKER;
 		mdHard1:		
-		begin
-			Tick := Round(TICKER *(1 -MODIFIER_EQUIPRATE));
 			AllyKnightCount := 9; //Decrease amount of Ally Knights
-		end;
+		else
+			AllyKnightCount := 12;
 	end;
 	//Set Length of array
 	SetLength(aAllyKnights, 3);
@@ -118,6 +113,19 @@ begin
 		end;
 	end;
 	
+	//Difficulty
+	if States.GameTime() = (MAX_HANDS +1) then
+	begin
+		Tick := Round(TICKER *EquipRateMod[dMod]); //Modify Tick according to Difficulty
+		case States.MissionDifficulty() of
+			mdEasy1:
+			begin
+				RemoveDefencePositionAndGroup(3, 64, 8);
+				RemoveDefencePositionAndGroup(2, 99, 12);
+			end;
+		end;
+	end;
+	
 	//Initial Msg
 	if States.GameTime() = 30 then
 		Actions.ShowMsg(-1, '<$0>');
@@ -144,7 +152,7 @@ begin
 		Actions.AIDefencePositionAdd(1, 96, 106, 6, 0, 20, 1);
 		Actions.AIDefencePositionAdd(1, 100, 106, 6, 2, 20, 1);
 	end;
-	if States.GameTime() = Tick *60 then //@35min (up from 33min)
+	if States.GameTime() = Tick *35 then //@35min (up from 33min) (fixed a bug here; was set to 60 on version 2.0c)
 	begin
 		Actions.AIDefencePositionAdd(1, 96, 65, 6, 0, 20, 1);
 		Actions.AIDefencePositionAdd(1, 97, 58, 6, 0, 20, 1);

@@ -210,11 +210,13 @@ type
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     function ConfirmExport: Boolean;
+    function GetMouseWheelStepsCnt(aWheelData: Integer): Integer;
     {$IFDEF MSWindows}
     function GetWindowParams: TKMWindowParamsRecord;
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMExitSizeMove(var Msg: TMessage) ; message WM_EXITSIZEMOVE;
     procedure WMAppCommand(var Msg: TMessage); message WM_APPCOMMAND;
+    procedure WMMouseWheel(var Msg: TMessage); message WM_MOUSEWHEEL;
   protected
     procedure WndProc(var Message : TMessage); override;
     {$ENDIF}
@@ -423,13 +425,6 @@ begin
     else
       gGameApp.MouseUp(Button, Shift, X, Y);
   end;
-end;
-
-
-procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin
-  if gGameApp <> nil then
-    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
 end;
 
 
@@ -1253,7 +1248,43 @@ procedure TFormMain.WMExitSizeMove(var Msg: TMessage) ;
 begin
   gMain.Move(GetWindowParams);
 end;
+
+
+//We use WM_MOUSEWHEEL message handler on Windows, since it prevents some bugs from happaning
+//F.e. on Win10 it was reported, that we got event 3 times on single turn of mouse wheel, if use default form event handler
+procedure TFormMain.WMMouseWheel(var Msg: TMessage);
+var
+  MousePos : TPoint;
+  KeyState : TKeyboardState;
+  WheelDelta: Integer;
+begin
+  MousePos.X := SmallInt(Msg.LParamLo);
+  MousePos.Y := SmallInt(Msg.LParamHi);
+  WheelDelta := SmallInt(Msg.WParamHi);
+  GetKeyboardState(KeyState);
+
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(KeyboardStateToShiftState(KeyState), GetMouseWheelStepsCnt(WheelDelta),
+                        RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+end;
 {$ENDIF}
+
+
+procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+//We use WM_MOUSEWHEEL message handler on Windows, since it prevents some bugs from happaning
+//F.e. on Win10 it was reported, that we got event 3 times on single turn of mouse wheel, if use default form event handler
+{$IFNDEF MSWINDOWS}
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, GetMouseWheelStepsCnt(WheelDelta), RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+{$ENDIF}
+end;
+
+
+function TFormMain.GetMouseWheelStepsCnt(aWheelData: Integer): Integer;
+begin
+  Result := aWheelData div WHEEL_DELTA;
+end;
 
 
 procedure TFormMain.Debug_ExportMenuClick(Sender: TObject);

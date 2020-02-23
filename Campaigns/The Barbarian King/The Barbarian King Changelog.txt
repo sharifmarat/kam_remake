@@ -445,3 +445,79 @@ TBK06: Version 2.0c (14.08.2019)
 TBK07: Version 2.0c: (14.08.2019)
 - Added some starting units for Player0
 
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Version 0.9.8b (31.12.2019):
+
+
+TBK01: Version 2.2 (29.12.2019)
+- Barbarian Attacks are now handled by Static script
+- Removed "spawn buffer" for Barbarians: Barbarians can now spawn even when the old ones remain on the field
+- Can only loose 3 villages before being defeated (on all difficulties)
+- Main Script reworked to refelect those changes
+- Removed unused strings from libx and deleted outdated translations
+- Removed 'functions.script' as its not needed anymore
+
+TBK02: Version 2.2 (29.12.2019)
+- Integrated newest version of Difficulty.script (v0.8.5b)
+- SpyTiming is now modified by EquipRateMod-variable (from 25% to 33%), making the map easier on 'Easy' and harder of 'Hard'
+
+TBK03: No Changes
+
+TBK04: Version 2.2 (30.12.2019)
+- Integrated newest 'difficulty.script' version
+
+TBK05: Version 2.2 (30.12.2019)
+- Integrated newest version of 'difficulty.script'
+
+TBK06: Version 2.2 (30.12.2019)
+- Fixed a bug in the script that made Player1s Defense Positions appear too late (@1hour instead of 35min)
+- Integrated newest version of 'difficulty.scipt'
+- Removed 2 defense positions on 'Easy' difficutly
+- Changed main script to reflect those changes
+
+TBK07: Version 2.2: (30.12.2019)
+- integrated newest version of 'difficulty.script'
+- 'Easy' decreases Recruit Rate by 50% instead of 33%
+- Fixed a bug that was introduced when moving the campaign to version r10745
+- Updated Elevation of Stone mountain in enemy base
+
+TBK08: Version 2.2: (30.12.2019)
+- Integrated newest version of 'difficulty.script'
+- Fixed a bug that was introduced with r10745
+- 'Easy' reduces Enemy Recruit Rate by 50% instead of 33%
+- Diversified Hunger Level of Starting Units
+- Updated Elevation of Stone mountain
++ Initial AI Attack changes:
+  - Removed Player5
+  - Attack is now carried out by Player1
+  - Knights are added by script instead of in MapEd
+  - This Fight is now easier on 'Hard'
+  
+TBK09: Version 2.2 (29.12.2019)
+- Fixed difficulty settings (Now actually winnable on 'hard', easier on other difficulties)
+- Attack is now handled by static script; script modified accordingly
+- Updated Stone Mountain
+
+TBK10: Version 2.2: (29.12.2019)
+- Fixed script so testing version works again
+- Fixed a 'bug' that was introduced with beta r10745
+- 'Easy' now decreases Recruit Rate by 50% instead of 33%
+- Updated Stone Mountain
++ AI Balance
+  - Fixed attack pattern of Player1
+  - Increased Recruit Delay of Player1 from 0 to 10
+  - Increased Recruit Delay of Player2 from 60 to 75
+  - Decreased Recruit Delay of Player3 from 55 to 45
+  
+TBK11: Version 2.2 (31.12.2019)
+- Updated Iron Mountains
+- Fixed a 'bug' that was introduced with beta r10745
+- 'Easy' now decreases Recruit Rate by 50% instead of 33%
+
+TBK12: Version 2.2: (30.12.2019)
+- integrated newest version of 'difficulty.script'
+- 'Easy' decreases Recruit Rate by 50% instead of 33%
+- Fixed a bug that was introduced when moving the campaign to version r10745

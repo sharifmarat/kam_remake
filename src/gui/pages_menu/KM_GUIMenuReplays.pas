@@ -420,10 +420,7 @@ begin
 
     for I := 0 to fSaves.Count - 1 do
       if (fSaves[I].FileName = fSelectedSaveName) then
-      begin
         ColumnBox_Replays.ItemIndex := I;
-        LoadMinimap(I);
-      end;
   finally
     fSaves.Unlock;
   end;
@@ -440,6 +437,9 @@ begin
       ColumnBox_Replays.TopIndex := ColumnBox_Replays.ItemIndex - ColumnBox_Replays.GetVisibleRows + 1;
 
   UpdateUI;
+
+  if ColumnBox_Replays.IsSelected then
+    LoadMinimap(ColumnBox_Replays.ItemIndex);
 end;
 
 

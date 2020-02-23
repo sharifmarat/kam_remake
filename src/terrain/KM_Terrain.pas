@@ -52,6 +52,7 @@ type
     Height: Byte;
     Obj: Word;
     IsCustom: Boolean;
+    BlendingLvl: Byte;
   end;
 
   TKMTerrainTile = record
@@ -62,6 +63,7 @@ type
     Height: Byte;
     Obj: Word;
     IsCustom: Boolean; //Custom tile (rotated tile, atm)
+    BlendingLvl: Byte; //Use blending for layers transitions
 
     //Age of tree, another independent variable since trees can grow on fields
     TreeAge: Byte; //Not init=0 .. Full=TreeAgeFull Depending on this tree gets older and thus could be chopped
@@ -270,7 +272,9 @@ type
     function TileHasIron(X, Y: Word): Boolean;
     function TileHasGold(X, Y: Word): Boolean;
 
-    function TileHasStonePart(X, Y: Word): Boolean;
+    function TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind): Boolean; overload;
+    function TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind; aDir: TKMDirection): Boolean; overload;
+    function TileHasOnlyTerrainKinds(X, Y: Word; const aTerKinds: array of TKMTerrainKind): Boolean;
 
     function TileIsSand(const Loc: TKMPoint): Boolean;
     function TileIsSoil(X,Y: Word): Boolean; overload;
@@ -334,7 +338,7 @@ type
 
     class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
     class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
-    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
   end;
 
 const
@@ -427,7 +431,7 @@ var
   I, J, L: Integer;
   S: TKMemoryStreamBinary;
   NewX, NewY: Integer;
-  UseKaMFormat: Boolean;
+  GameRev: Integer;
   TileBasic: TKMTerrainTileBasic;
 begin
   fMapX := 0;
@@ -439,12 +443,12 @@ begin
 
   gLog.AddTime('Loading map file: ' + FileName);
 
-  UseKaMFormat := True;
   S := TKMemoryStreamBinary.Create;
   try
     S.LoadFromFile(FileName);
 
-    LoadMapHeader(S, NewX, NewY, UseKaMFormat);
+    LoadMapHeader(S, NewX, NewY, GameRev);
+
     fMapX := NewX;
     fMapY := NewY;
 
@@ -466,13 +470,14 @@ begin
         Land[I,J].Fence        := fncNone;
         Land[I,J].FenceSide    := 0;
 
-        ReadTileFromStream(S, TileBasic, UseKaMFormat);
+        ReadTileFromStream(S, TileBasic, GameRev);
 
-        Land[I,J].BaseLayer := TileBasic.BaseLayer;
-        Land[I,J].Height := TileBasic.Height;
-        Land[I,J].Obj := TileBasic.Obj;
-        Land[I,J].LayersCnt := TileBasic.LayersCnt;
-        Land[I,J].IsCustom  := TileBasic.IsCustom;
+        Land[I,J].BaseLayer   := TileBasic.BaseLayer;
+        Land[I,J].Height      := TileBasic.Height;
+        Land[I,J].Obj         := TileBasic.Obj;
+        Land[I,J].LayersCnt   := TileBasic.LayersCnt;
+        Land[I,J].IsCustom    := TileBasic.IsCustom;
+        Land[I,J].BlendingLvl := TileBasic.BlendingLvl;
 
         for L := 0 to TileBasic.LayersCnt - 1 do
           Land[I,J].Layer[L] := TileBasic.Layer[L];
@@ -522,15 +527,17 @@ var
       TileBasic.Height    := EnsureRange(30 + KaMRandom(7, 'TKMTerrain.SaveToFile.SetNewLand 2'), 0, 100);  //variation in Height
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
+      TileBasic.BlendingLvl := 0;
       TileBasic.LayersCnt := 0;
     end
     else
     begin
-      TileBasic.BaseLayer := Land[aFromY,aFromX].BaseLayer;
-      TileBasic.Height    := Land[aFromY,aFromX].Height;
-      TileBasic.Obj       := Land[aFromY,aFromX].Obj;
-      TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
-      TileBasic.IsCustom  := Land[aFromY,aFromX].IsCustom;
+      TileBasic.BaseLayer   := Land[aFromY,aFromX].BaseLayer;
+      TileBasic.Height      := Land[aFromY,aFromX].Height;
+      TileBasic.Obj         := Land[aFromY,aFromX].Obj;
+      TileBasic.LayersCnt   := Land[aFromY,aFromX].LayersCnt;
+      TileBasic.IsCustom    := Land[aFromY,aFromX].IsCustom;
+      TileBasic.BlendingLvl := Land[aFromY,aFromX].BlendingLvl;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
@@ -1219,7 +1226,7 @@ begin
 end;
 
 
-function TKMTerrain.TileHasStonePart(X, Y: Word): Boolean;
+function TKMTerrain.TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind): Boolean;
 var
   K: Integer;
   CornersTerKinds: TKMTerrainKindsArray;
@@ -1227,11 +1234,56 @@ begin
   Result := False;
   CornersTerKinds := TileCornersTerKinds(X,Y);
   for K := 0 to 3 do
-    if CornersTerKinds[K] = tkStone then
+    if CornersTerKinds[K] = aTerKind then
     begin
       Result := True;
       Exit;
     end;
+end;
+
+
+
+function TKMTerrain.TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind; aDir: TKMDirection): Boolean;
+var
+  CornersTKinds: TKMTerrainKindsArray;
+begin
+  Result := False;
+  CornersTKinds := TileCornersTerKinds(X,Y);
+
+  case aDir of
+    dirNA:  Result := TileHasStone(X, Y);
+    dirN:   Result := (CornersTKinds[0] = aTerKind) and (CornersTKinds[1] = aTerKind);
+    dirNE:  Result := (CornersTKinds[1] = aTerKind);
+    dirE:   Result := (CornersTKinds[1] = aTerKind) and (CornersTKinds[2] = aTerKind);
+    dirSE:  Result := (CornersTKinds[2] = aTerKind);
+    dirS:   Result := (CornersTKinds[2] = aTerKind) and (CornersTKinds[3] = aTerKind);
+    dirSW:  Result := (CornersTKinds[3] = aTerKind);
+    dirW:   Result := (CornersTKinds[3] = aTerKind) and (CornersTKinds[0] = aTerKind);
+    dirNW:  Result := (CornersTKinds[0] = aTerKind);
+  end;
+end;
+
+function TerKindArrayContains(aElement: TKMTerrainKind; const aArray: array of TKMTerrainKind): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aElement = aArray[I] then
+      Exit (True);
+end;
+
+
+function TKMTerrain.TileHasOnlyTerrainKinds(X, Y: Word; const aTerKinds: array of TKMTerrainKind): Boolean;
+var
+  I: Integer;
+  CornersTerKinds: TKMTerrainKindsArray;
+begin
+  Result := True;
+  CornersTerKinds := TileCornersTerKinds(X,Y);
+  for I := 0 to 3 do
+    if not TerKindArrayContains(CornersTerKinds[I], aTerKinds) then
+      Exit(False);
 end;
 
 
@@ -2891,7 +2943,7 @@ end;
 {Extract one unit of stone}
 procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
 type
-  TStoneTransitionType = (sttNone, sttGrass, sttCoastSand, sttDirt, sttSnow, sttShallowSnow);
+  TStoneTransitionType = (sttNone, sttGrass, sttCoastSand, sttDirt, sttSnow, sttSnowOnDirt);
 
 const
   TransitionsTerKinds: array[TStoneTransitionType] of TKMTerrainKind =
@@ -2901,15 +2953,22 @@ const
                (  0, 139, 138, 140, 141, 274, 301),
                ( 32, 269, 268, 270, 271, 273, 302),
                ( 35, 278, 277, 279, 280, 282, 303),
-               ( 46, 286, 285, 287, 288, 290, 305),
-               ( 47, 294, 293, 295, 296, 298, 306));
+               ( 46, 286, 285, 287, 288, 290, 304),
+               ( 47, 294, 293, 295, 296, 298, 305));
 
   TileIDIndex: array[1..14] of Word = (1,1,2,1,3,2,4,1,2,3,4,2,4,4);
   RotID:       array[1..14] of Byte = (0,1,0,2,0,1,3,3,3,1,2,2,1,0);
   TileIDDiagIndex: array[1..15] of Word = (5,5,6,5,5,6,5,5,6,5,5,6,5,5,5);
   RotIdDiag:       array[1..15] of Byte = (3,0,0,1,3,1,3,2,3,0,0,2,0,0,0);
 
-  MAX_STEPS = 255; //No steps limit for now
+  NO_REPL = High(Word);
+  WaterDiagRepl: array[TStoneTransitionType] of Word =
+              (127, 127, 118, 105, NO_REPL, NO_REPL);
+
+  WaterDiagReplRot: array[TStoneTransitionType] of Byte =
+              (1, 1, 1, 3, 100, 100);
+
+  MAX_STEPS = 5; //steps limit
 
 var
   Visited: TKMPointArray;
@@ -2943,58 +3002,110 @@ var
   begin
     Result := sttNone;
     case Land[Y,X].BaseLayer.Terrain of
-      0, 138,139,142:  Result := sttGrass;
-      32,268,269,271:  Result := sttCoastSand;
-      35,277,278,280:  Result := sttDirt;
-      46,285,286,288:  Result := sttSnow;
-      47,293,294,296:  Result := sttShallowSnow;
+      0, 138,139,140,141,142,274,301:  Result := sttGrass;
+      32,268,269,270,271,272,273,302:  Result := sttCoastSand;
+      35,277,278,279,280,281,282,303:  Result := sttDirt;
+      46,285,286,287,288,289,290,304:  Result := sttSnow;
+      47,293,294,295,296,297,298,305:  Result := sttSnowOnDirt;
     end;
   end;
 
-  function UpdateTransition(X,Y: Integer; aTransitionType: TStoneTransitionType; aStep: Byte): Boolean;
+  function UpdateTransition(X,Y: Integer; aStep: Byte): Boolean;
 
-    function GetBits(aX,aY: Integer): Byte;
+    function GetBits(aX,aY: Integer; aTransition: TStoneTransitionType; aDir: TKMDirection = dirNA): Byte;
+    var
+      Dir: TKMDirection;
     begin
-      Result := Byte(TileInMapCoords(aX,aY) and TileHasStone(aX,aY));
+      if not TileInMapCoords(aX, aY) then Exit(0);
+
+      Dir := dirNA;
+      //if tile has no other terrain types, then check if it has stone, via dirNA
+      //otherwise check only tile corners, usign direction
+      if not TileHasOnlyTerrainKinds(aX, aY, [tkStone, TransitionsTerKinds[aTransition]]) then
+        Dir := aDir;
+
+      //Check is there anything stone-related (stone tile or corner at least)
+      Result := Byte(TileHasTerrainKindPart(aX, aY, tkStone, Dir));
     end;
 
   var
+    Transition: TStoneTransitionType;
     Bits, BitsDiag: Byte;
+    TerRot, Repl: Integer;
   begin
     Result := False;
     if not TileInMapCoords(X,Y) //Skip for tiles not in map coords
-      //or (aStep > MAX_STEPS)    //Limit for steps (no limit for now)
+      or (aStep > MAX_STEPS)  //Limit for steps (no limit for now)
       or TileHasStone(X,Y)      //If tile has stone no need to change it
       or ArrayContains(KMPoint(X,Y), Visited, fVisitedCnt) //If we already changed this tile
-      or ((aStep <> 0) and not TileHasStonePart(X,Y)) then //If tile has no stone parts (except initial step)
+      or ((aStep <> 0) and not TileHasTerrainKindPart(X, Y, tkStone)) //If tile has no stone parts (except initial step)
+      or not TileHasOnlyTerrainKinds(X, Y, [tkStone, tkGrass, tkCoastSand, tkDirt, tkSnow, tkSnowOnDirt]) then //Do not update transitions with other terrains (mountains f.e.)
       Exit;
 
-    Bits := GetBits(X  ,Y-1)*1 +
-            GetBits(X+1,Y  )*2 +
-            GetBits(X  ,Y+1)*4 +
-            GetBits(X-1,Y  )*8;
+    Transition := GetStoneTransitionType(X,Y);
+
+    Bits := GetBits(X  , Y-1, Transition, dirS)*1 +
+            GetBits(X+1, Y  , Transition, dirW)*2 +
+            GetBits(X  , Y+1, Transition, dirN)*4 +
+            GetBits(X-1, Y  , Transition, dirE)*8;
 
     if Bits = 0 then
     begin
-      BitsDiag := GetBits(X-1,Y-1)*1 +
-                  GetBits(X+1,Y-1)*2 +
-                  GetBits(X+1,Y+1)*4 +
-                  GetBits(X-1,Y+1)*8;
+      BitsDiag := GetBits(X-1, Y-1, Transition, dirSE)*1 +
+                  GetBits(X+1, Y-1, Transition, dirSW)*2 +
+                  GetBits(X+1, Y+1, Transition, dirNW)*4 +
+                  GetBits(X-1, Y+1, Transition, dirNE)*8;
 
-      if BitsDiag = 0 then
-      begin
-        Land[Y,X].BaseLayer.Terrain  := TKMTerrainPainter.GetRandomTile(TransitionsTerKinds[aTransitionType]);
-        Land[Y,X].BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.DecStoneDeposit.UpdateTransition'); //Randomise the direction of no-stone terrain tiles
-      end else begin
-        Land[Y,X].BaseLayer.Terrain := TranTiles[aTransitionType, TileIDDiagIndex[BitsDiag]];
-        Land[Y,X].BaseLayer.Rotation := RotIdDiag[BitsDiag];
+      //This part is not actually used, looks like
+      case Land[Y,X].BaseLayer.Terrain of
+        142,
+        143:  begin
+                TerRot := (Land[Y,X].BaseLayer.Terrain + Land[Y,X].BaseLayer.Rotation) mod 4;
+                case TerRot of
+                  0,1:  Exit;
+                  2,3:  begin
+                          Repl := WaterDiagRepl[Transition];
+                          if Repl <> NO_REPL then
+                          begin
+                            Land[Y,X].BaseLayer.Terrain := Repl;
+                            Land[Y,X].BaseLayer.Rotation := (TerRot + WaterDiagReplRot[Transition]) mod 4;
+                          end
+                          else
+                          begin
+                            Land[Y,X].BaseLayer.Terrain := 192;
+                            Land[Y,X].BaseLayer.Corners := [1];
+                            Land[Y,X].LayersCnt := 1;
+                            Land[Y,X].Layer[0].Terrain := gGenTerrainTransitions[TransitionsTerKinds[Transition],
+                                                                                 mkSoft, mt_2Diagonal, mstMain];
+                            Land[Y,X].Layer[0].Rotation := TerRot;
+                            Land[Y,X].Layer[0].Corners := [0,2,3];
+                          end;
+                        end;
+                end;
+              end;
+        else
+        begin
+          if BitsDiag = 0 then
+          begin
+            Land[Y,X].BaseLayer.Terrain  := TKMTerrainPainter.GetRandomTile(TransitionsTerKinds[Transition]);
+            Land[Y,X].BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.DecStoneDeposit.UpdateTransition'); //Randomise the direction of no-stone terrain tiles
+          end else begin
+            if Land[Y,X].BaseLayer.Terrain in [142,143] then
+              Exit;
+            Land[Y,X].BaseLayer.Terrain := TranTiles[Transition, TileIDDiagIndex[BitsDiag]];
+            Land[Y,X].BaseLayer.Rotation := RotIdDiag[BitsDiag];
+          end;
+        end;
       end;
     end else
     begin
+      if Land[Y,X].BaseLayer.Terrain in [142,143] then
+        Exit;
+      
       //If tile is surrounded with other stone tiles no need to change it
       if Bits <> 15 then
       begin
-        Land[Y,X].BaseLayer.Terrain  := TranTiles[aTransitionType,TileIDIndex[Bits]];
+        Land[Y,X].BaseLayer.Terrain  := TranTiles[Transition, TileIDIndex[Bits]];
         Land[Y,X].BaseLayer.Rotation := RotID[Bits];
       end;
     end;
@@ -3002,14 +3113,14 @@ var
     AddToVisited(X,Y);
 
     //Floodfill through around tiles
-    UpdateTransition(X,  Y-1, aTransitionType, aStep + 1); //  x x x
-    UpdateTransition(X+1,Y,   aTransitionType, aStep + 1); //  x   x
-    UpdateTransition(X,  Y+1, aTransitionType, aStep + 1); //  x x x
-    UpdateTransition(X-1,Y,   aTransitionType, aStep + 1);
-    UpdateTransition(X-1,Y-1, aTransitionType, aStep + 1);
-    UpdateTransition(X+1,Y-1, aTransitionType, aStep + 1);
-    UpdateTransition(X+1,Y+1, aTransitionType, aStep + 1);
-    UpdateTransition(X-1,Y+1, aTransitionType, aStep + 1);
+    UpdateTransition(X,  Y-1, aStep + 1); //  x x x
+    UpdateTransition(X+1,Y,   aStep + 1); //  x   x
+    UpdateTransition(X,  Y+1, aStep + 1); //  x x x
+    UpdateTransition(X-1,Y,   aStep + 1);
+    UpdateTransition(X-1,Y-1, aStep + 1);
+    UpdateTransition(X+1,Y-1, aStep + 1);
+    UpdateTransition(X+1,Y+1, aStep + 1);
+    UpdateTransition(X-1,Y+1, aStep + 1);
   end;
 
 var
@@ -3028,7 +3139,7 @@ begin
                 sttCoastSand:   Land[Loc.Y,Loc.X].BaseLayer.Terrain := 266 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 5');
                 sttDirt:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 275 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 6');
                 sttSnow:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 283 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 7');
-                sttShallowSnow: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 291 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 8');
+                sttSnowOnDirt:  Land[Loc.Y,Loc.X].BaseLayer.Terrain := 291 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 8');
               end;
     128, 133,
     266, 267,
@@ -3040,7 +3151,7 @@ begin
 
                 InitVisited;
                 //Tile type has changed and we need to update these 5 tiles transitions:
-                UpdateTransition(Loc.X,  Loc.Y,   Transition, 0);
+                UpdateTransition(Loc.X,  Loc.Y, 0);
               end;
     else      Exit;
   end;
@@ -3062,7 +3173,7 @@ begin
     145: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 144;
     146: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 145;
     147: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 146;
-    308: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 147;
+    307: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 147;
     148: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 160 + KaMRandom(4, 'TKMTerrain.DecOreDeposit 2'); //Iron
     149: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 148;
     150: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 149;
@@ -4276,11 +4387,12 @@ begin
     for K := 1 to fMapX do
     begin
       //Only save fields that cannot be recalculated after loading
-      TileBasic.BaseLayer := Land[I,K].BaseLayer;
-      TileBasic.Height    := Land[I,K].Height;
-      TileBasic.Obj       := Land[I,K].Obj;
-      TileBasic.IsCustom  := Land[I,K].IsCustom;
-      TileBasic.LayersCnt := Land[I,K].LayersCnt;
+      TileBasic.BaseLayer   := Land[I,K].BaseLayer;
+      TileBasic.Height      := Land[I,K].Height;
+      TileBasic.Obj         := Land[I,K].Obj;
+      TileBasic.IsCustom    := Land[I,K].IsCustom;
+      TileBasic.BlendingLvl := Land[I,K].BlendingLvl;
+      TileBasic.LayersCnt   := Land[I,K].LayersCnt;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
 
@@ -4317,7 +4429,7 @@ begin
   for I := 1 to fMapY do
     for J := 1 to fMapX do
     begin
-      ReadTileFromStream(LoadStream, TileBasic);
+      ReadTileFromStream(LoadStream, TileBasic, GAME_REVISION_NUM);
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
@@ -4521,8 +4633,22 @@ class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic
     end;
   end;
 
+  //Pack generated terrain id identification info into 2 bytes (Word)
+  //6 bits are for terKind       (supports up to 64 terKinds)
+  //2 bits for mask subType      (supports up to 4 mask subTypes)
+  //4 bits for mask Kind         (supports up to 16 mask kinds)
+  //4 bits for mask Type (MType) (supports up to 16 mask types)
+  function PackTerrainGenInfo(aGenInfo: TKMGenTerrainInfo): Word;
+  begin
+    Result := Byte(aGenInfo.TerKind) shl 10;
+    Result := Result or (Byte(aGenInfo.Mask.SubType) shl 8);
+    Result := Result or (Byte(aGenInfo.Mask.Kind) shl 4);
+    Result := Result or Byte(aGenInfo.Mask.MType);
+  end;
+
 var
   L: Integer;
+  GenInfo: TKMGenTerrainInfo;
 begin
   S.Write(aTileBasic.BaseLayer.Terrain);  //1
   //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
@@ -4535,10 +4661,14 @@ begin
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
-    Inc(aMapDataSize);
+    S.Write(aTileBasic.BlendingLvl);
+    Inc(aMapDataSize, 2);
     for L := 0 to aTileBasic.LayersCnt - 1 do
     begin
-      S.Write(aTileBasic.Layer[L].Terrain);
+      //We could add more masks and terKinds in future, so we can't stick with generated terrainId,
+      //but need to save/load its generation parameters (terKind/mask types etc)
+      GenInfo := gRes.Sprites.GetGenTerrainInfo(aTileBasic.Layer[L].Terrain);
+      S.Write(PackTerrainGenInfo(GenInfo));
       S.Write(aTileBasic.Layer[L].Rotation);
       Inc(aMapDataSize, 3); // Terrain (2 bytes) + Rotation (1 byte)
     end;
@@ -4546,13 +4676,32 @@ begin
 end;
 
 
-class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
+
+  //Unpack generated terrain id identification info from 2 bytes (Word)
+  //6 bits are for terKind       (supports up to 64 terKinds)
+  //2 bits for mask subType      (supports up to 4 mask subTypes)
+  //4 bits for mask Kind         (supports up to 16 mask kinds)
+  //4 bits for mask Type (MType) (supports up to 16 mask types)
+  function UnpackTerrainGenInfo(aPackedInfo: Word): TKMGenTerrainInfo;
+  begin
+    Result.TerKind      := TKMTerrainKind((aPackedInfo shr 10) and 63);
+    Result.Mask.SubType := TKMTileMaskSubType((aPackedInfo shr 8) and 3);
+    Result.Mask.Kind    := TKMTileMaskKind((aPackedInfo shr 4) and 15);
+    Result.Mask.MType   := TKMTileMaskType(aPackedInfo and 15);
+  end;
+
 var
   I: Integer;
   TerrainB, ObjectB, Rot, Corners: Byte;
   LayersCorners: array[0..3] of Byte;
+  UseKaMFormat: Boolean;
+  TerIdentInfo: Word;
+  GenInfo: TKMGenTerrainInfo;
 begin
-  if aUseKaMFormat then
+  UseKaMFormat := ( aGameRev = 0 );
+
+  if UseKaMFormat then
   begin
     aStream.Read(TerrainB);           //1
     aTileBasic.BaseLayer.Terrain := TerrainB;
@@ -4566,6 +4715,7 @@ begin
     aTileBasic.BaseLayer.Corners := [0,1,2,3];
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
+    aTileBasic.BlendingLvl := 0;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
@@ -4573,6 +4723,7 @@ begin
     aStream.Read(aTileBasic.Height);            //4
     aStream.Read(aTileBasic.Obj);               //5
     aStream.Read(aTileBasic.IsCustom);          //7
+    aTileBasic.BlendingLvl := 0; //Default value;
 
     // Load all layers info
     // First get layers count
@@ -4592,10 +4743,30 @@ begin
       LayersCorners[2] := (Corners shr 4) and $3;
       LayersCorners[3] := (Corners shr 6) and $3;
 
+      if aGameRev > 10745 then //Blending option appeared only after r10745
+        aStream.Read(aTileBasic.BlendingLvl)
+      else
+        aTileBasic.BlendingLvl := 0;
+
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
-        aStream.Read(aTileBasic.Layer[I].Terrain);
+        if aGameRev <= 10745 then
+        begin
+          aStream.Read(aTileBasic.Layer[I].Terrain); //Old generated TerrainID
+          //Get terrain generation info for pre 10745 maps
+          GenInfo := gRes.Sprites.GetGenTerrainInfoLegacy(aTileBasic.Layer[I].Terrain);
+        end
+        else
+        begin
+          aStream.Read(TerIdentInfo); //Read packed info
+          GenInfo := UnpackTerrainGenInfo(TerIdentInfo);
+        end;
+        //Get current generated terrain id by identification info
+        //We could add more masks and terKinds in future, so we can't stick with generated terrainId,
+        //but need to save/load its generation parameters (terKind/mask types etc)
+        aTileBasic.Layer[I].Terrain := gGenTerrainTransitions[GenInfo.TerKind, GenInfo.Mask.Kind,
+                                                              GenInfo.Mask.MType, GenInfo.Mask.SubType];
         aStream.Read(aTileBasic.Layer[I].Rotation);
         aTileBasic.Layer[I].Corners := [];
       end;
@@ -4610,7 +4781,7 @@ begin
     end;
   end;
 
-  if aUseKaMFormat then
+  if UseKaMFormat then
     aStream.Seek(17, soFromCurrent);
 end;
 

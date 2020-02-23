@@ -1,7 +1,7 @@
 //-- TBK11 --//
 //By Strangelove
-//v2.1b
-//06.04.2019
+//v2.2
+//31.12.2019
 
 {$I improvestaticai.script}
 {$I transformunits.script}
@@ -35,7 +35,7 @@ end;
 
 procedure OnTick();
 begin
-	if States.GameTime() = 14 then
+	if States.GameTime() = (MAX_HANDS +1) then
 	case States.MissionDifficulty() of
 		mdEasy1:
 		begin
@@ -45,7 +45,6 @@ begin
 			RemoveDefencePositionAndGroup(2, 86, 38);
 		end;
 		mdNormal: RemoveDefencePositionAndGroup(2, 77, 42);
-		mdHard1: exit;
 	end;
 	if States.GameTime() mod  61 = 30 then
 		ChangeWaterfallEndTiles(43, 45, 28);

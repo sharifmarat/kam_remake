@@ -1,7 +1,7 @@
 //-- TBK09 --//
 //By Strangelove
-//v2.1
-//11.04.2019
+//v2.2
+//29.12.2019
 
 {$I functions.script}
 
@@ -9,12 +9,11 @@
 //{$UNDEF NOSTANDALONE} //For limited testing! Turn this on if you want to extract that map from the campaign folder!
 
 
+{$IFDEF NOSTANDALONE}
 var
-	aEnemyGroups: array of Integer;
-	{$IFDEF NOSTANDALONE}
 	aDestroyedHouseBuffer: array of array[0..3] of Integer;
 	GlobalD: Integer;
-	{$ENDIF}
+{$ENDIF}
 
 
 {$IFDEF NOSTANDALONE}
@@ -35,53 +34,32 @@ begin
 	case States.MissionDifficulty() of
 		mdEasy1:
 		begin
-			Actions.GiveGroup(2, 23, 93, 27, 5, 12, 4);
+			Actions.GiveGroup(2, 23, 101, 4, 4, 9, 3);
 			Actions.GiveGroup(2, 23, 108, 17, 6, 12, 4);
-			Actions.GiveGroup(2, 23, 101, 4, 4, 12, 4);
+			Actions.GiveGroup(2, 23, 93, 27, 5, 9, 3);
 		end;
 		mdNormal:
 		begin
-			Actions.GiveGroup(2, 23, 88, 31, 5, 12, 4);
-			Actions.GiveGroup(2, 23, 98, 22, 5, 12, 4);
-			Actions.GiveGroup(2, 23, 108, 17, 6, 12, 4);
-			Actions.GiveGroup(2, 23, 101, 4, 4, 12, 4);
+			Actions.GiveGroup(2, 23, 101, 4, 4, 9, 3);
+			Actions.GiveGroup(2, 23, 108, 17, 6, 9, 3);
+			Actions.GiveGroup(2, 23, 98, 22, 5, 9, 3);
+			Actions.GiveGroup(2, 23, 88, 31, 5, 9, 3);
 		end;
 		mdHard1:
 		begin
-			Actions.GiveGroup(2, 23, 88, 31, 5, 12, 4);
-			Actions.GiveGroup(2, 23, 93, 27, 5, 12, 4);
-			Actions.GiveGroup(2, 23, 98, 22, 5, 12, 4);
-			Actions.GiveGroup(2, 23, 108, 17, 6, 12, 4);
-			Actions.GiveGroup(2, 23, 100, 8, 4, 12, 4);
 			Actions.GiveGroup(2, 23, 101, 4, 4, 12, 4);
+			//Actions.GiveGroup(2, 23, 100, 8, 4, 9, 3);
+			Actions.GiveGroup(2, 23, 108, 17, 6, 9, 3);
+			//Actions.GiveGroup(2, 23, 98, 22, 5, 9, 3);
+			Actions.GiveGroup(2, 23, 93, 27, 5, 12, 4);
+			//Actions.GiveGroup(2, 23, 88, 31, 5, 9, 3);
+			Actions.GiveGroup(2, 23, 83, 36, 5, 9, 3);
 		end;
 	end;
 	{$IFDEF NOSTANDALONE}
 	GlobalD := 0;
 	SetLength(aDestroyedHouseBuffer, 12); //Only 12 Buildings on the Map
 	{$ENDIF}
-	aEnemyGroups := States.PlayerGetAllGroups(2);
-end;
-
-
-procedure OnTick();
-var
-    i: ShortInt;
-    T, GroupLeader, ClosestHouse: Integer;
-begin
-    T := States.GameTime() mod 30;
-    if (T >= 1) and (T <= Length(aEnemyGroups)) then
-    begin
-        i := T mod Length(aEnemyGroups);
-        if aEnemyGroups[i] <> -1 then
-            if States.GroupIdle(aEnemyGroups[i]) then
-            begin
-                GroupLeader := States.GroupMember(aEnemyGroups[i], 0);
-                ClosestHouse := States.ClosestHouse(1, States.UnitPositionX(GroupLeader), States.UnitPositionY(GroupLeader), -1);
-                    if ClosestHouse <> -1 then
-                        Actions.GroupOrderAttackHouse(aEnemyGroups[i], ClosestHouse);
-            end;
-    end;
 end;
 
 

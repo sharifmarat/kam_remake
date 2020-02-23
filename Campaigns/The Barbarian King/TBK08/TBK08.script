@@ -1,7 +1,7 @@
 //-- TBK08 --//
 //By Strangelove
-//v2.0
-//04.03.2018
+//v2.2
+//30.12.2018
 
 {$I improvestaticai.script}
 {$I transformunits.script}
@@ -27,6 +27,32 @@ begin
 	Actions.PlayerShareFog(2, 4, false);
 	Actions.PlayerShareFog(3, 4, false);
 	Actions.FogCoverAll(4); //Hide everything
+	//Groups for Initial Fight
+	case States.MissionDifficulty() of
+		mdEasy1:
+		begin
+			Actions.GiveGroup(1, 22, 83, 45, 4, 9, 3);
+			Actions.GiveGroup(1, 22, 89, 44, 4, 9, 3);
+			Actions.GiveGroup(1, 22, 95, 43, 4, 9, 3);
+		end;
+		mdNormal:
+		begin
+			Actions.GiveGroup(1, 22, 83, 45, 4, 12, 4);
+			Actions.GiveGroup(1, 22, 89, 44, 4, 12, 4);
+			Actions.GiveGroup(1, 22, 95, 43, 4, 12, 4);
+		end;
+		mdHard1:
+		begin
+			Actions.GiveGroup(1, 22, 86, 43, 4, 10, 5);
+			Actions.GiveGroup(1, 22, 84, 46, 4, 10, 5);
+			Actions.GiveGroup(1, 22, 94, 42, 4, 10, 5);
+			Actions.GiveGroup(1, 22, 92, 45, 4, 10, 5);
+			{Actions.GiveGroup(1, 22, 82, 45, 4, 12, 4);
+			Actions.GiveGroup(1, 22, 86, 44, 4, 12, 4);
+			Actions.GiveGroup(1, 22, 90, 43, 4, 12, 4);
+			Actions.GiveGroup(1, 22, 94, 42, 4, 12, 4); }
+		end;
+	end;
 end;
 
 procedure OnPlayerDefeated(aIndex: Integer);
@@ -40,26 +66,23 @@ begin
 		iBackstabSheduler := 1;	//Grab Groups again and attack
 end;
 
-procedure OnTick;
+procedure OnTick();
 var
 	iClosestGroup, iClosestGroupLeader, iAttackGroupLeader: Integer;
 	i, h, k, iClosestGroupX, iClosestGroupY: Byte;
 begin
 	//Difficulty-scaling
-	if States.GameTime() = 14 then
+	if States.GameTime() = (MAX_HANDS +1) then
 		case States.MissionDifficulty() of
 			mdEasy1: 
 			begin
-				Actions.GiveGroup(0, 20, 112, 122, 0, 6, 3);
 				RemoveDefencePositionAndGroup(1, 32, 32); //Remove some troops from the reserve
 				RemoveDefencePositionAndGroup(2, 30, 62);
 				RemoveDefencePositionAndGroup(3, 138, 18);
 				RemoveDefencePositionAndGroup(3, 122, 16);
 			end;
-			mdNormal: 	exit;
 			mdHard1:
 			begin
-				IncreaseGroupSize(5, 0);
 				GiveHouseAndConnect(2, 17, 41, 71); //Add Towers
 				GiveHouseAndConnect(2, 17, 41, 62);
 			end;

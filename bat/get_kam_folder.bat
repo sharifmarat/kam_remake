@@ -1,8 +1,14 @@
-REM ============================================================
-REM Create new build folder
-REM ============================================================
 
+@echo #                                                          # 
+@echo #==========================================================#
+@echo #               Create new build folder                    #  
+@echo #==========================================================# 
+@echo #                                                          #
+
+@echo off
 call rsvars.bat
+
+if errorlevel 2 (goto exit2)
 
 @echo off
 for /f "delims=" %%a in ('wmic OS Get localdatetime  ^| find "."') do set dt=%%a
@@ -16,9 +22,9 @@ set Min=%dt:~10,2%
 set Sec=%dt:~12,2%
 
 set stamp=%YYYY%-%MM%-%DD%_%HH%-%Min%-%Sec%
-echo stamp: "%stamp%"
-echo datestamp: "%datestamp%"
-echo timestamp: "%timestamp%"
+REM echo stamp: "%stamp%"
+REM echo datestamp: "%datestamp%"
+REM echo timestamp: "%timestamp%"
 
 REM Read last line from the file
 REM for /F "delims=" %%i in (KM_Revision.inc) do set "verinfo=%%i"
@@ -32,9 +38,23 @@ FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-list --count HEAD`) DO (
   SET kam_revision=%%F
 )
 
-REM Now we can have a constant with the right folder name
+@REM Now we can have a constant with the right folder name
 @SET build_full_kmr_dir=%BuildFullDir%\kmr%YYYY%-%MM%-%DD% (%kam_version% r%kam_revision%)
 @SET installer_kmr_build_full_dir=..\Installer\BuildFull
 
 @REM default kam_folder is build full directory
 @SET kam_folder=%build_full_kmr_dir%
+
+echo #
+echo kam_folder = `%kam_folder%`
+
+
+goto exit0
+
+:exit2
+@echo off
+exit /B 2
+
+:exit0
+@echo off
+exit /B 0
