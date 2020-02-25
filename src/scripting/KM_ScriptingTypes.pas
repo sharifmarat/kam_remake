@@ -58,7 +58,7 @@ type
     LogMessage: UnicodeString;  // Printed to Log (could be more detailed)
   end;
 
-  TKMScriptErrorType = (seInvalidParameter, seException, sePreprocessorError, seCompileError, seCompileWarning, seLog);
+  TKMScriptErrorType = (seInvalidParameter, seException, sePreprocessorError, seCompileError, seCompileWarning, seCompileHint, seLog);
 
   TKMScriptErrorEvent = procedure (aType: TKMScriptErrorType; aErrorString: UnicodeString; const aDetailedErrorString: UnicodeString = '') of object;
 

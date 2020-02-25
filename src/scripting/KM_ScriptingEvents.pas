@@ -4,7 +4,7 @@ unit KM_ScriptingEvents;
 interface
 uses
   Generics.Collections,
-  Classes, Math, SysUtils, StrUtils, uPSRuntime, uPSDebugger,
+  Classes, Math, SysUtils, StrUtils, uPSRuntime, uPSDebugger, uPSPreProcessor,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_ScriptingConsoleCommands,
   KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes, KM_CommonClasses;
 
@@ -29,6 +29,7 @@ type
   TKMScriptEvents = class(TKMScriptEntity)
   private
     fExec: TPSDebugExec;
+    fPreProcessor: TPSPreProcessor;
 
     fEventHandlers: array[TKMScriptEventType] of array of TKMCustomEventHandler;
 
@@ -46,7 +47,7 @@ type
   public
     ExceptionOutsideScript: Boolean; //Flag that the exception occured in a State or Action call not script
 
-    constructor Create(aExec: TPSDebugExec; aIDCache: TKMScriptingIdCache);
+    constructor Create(aExec: TPSDebugExec; aPreProcessor: TPSPreProcessor; aIDCache: TKMScriptingIdCache);
     destructor Destroy; override;
 
     procedure AddEventHandlerName(aEventType: TKMScriptEventType; const aEventHandlerName: AnsiString);
@@ -146,11 +147,12 @@ end;
 
 
 { TKMScriptEvents }
-constructor TKMScriptEvents.Create(aExec: TPSDebugExec; aIDCache: TKMScriptingIdCache);
+constructor TKMScriptEvents.Create(aExec: TPSDebugExec; aPreProcessor: TPSPreProcessor; aIDCache: TKMScriptingIdCache);
 begin
   inherited Create(aIDCache);
 
   fExec := aExec;
+  fPreProcessor := aPreProcessor;
   fConsoleCommands := TDictionary<AnsiString, TKMConsoleCommand>.Create;
 
   AddDefaultEventHandlersNames;
@@ -462,8 +464,9 @@ var
   InternalProc: TPSInternalProcRec;
   MainErrorStr, ErrorStr, DetailedErrorStr: UnicodeString;
   Pos, Row, Col: Cardinal;
-  TBTFileName: tbtstring;
+  FileName: tbtstring;
   ErrorMessage: TKMScriptErrorMessage;
+  Res: TPSLineInfoResults;
 begin
   if ExceptionOutsideScript then
   begin
@@ -478,11 +481,19 @@ begin
     if ExceptionProc is TPSInternalProcRec then
     begin
       InternalProc := TPSInternalProcRec(ExceptionProc);
-      MainErrorStr := MainErrorStr + EolW + 'in procedure ''' + UnicodeString(InternalProc.ExportName) + '''' + EolW;
+      MainErrorStr := MainErrorStr + EolW + 'in method ''' + UnicodeString(InternalProc.ExportName) + '''' + EolW;
       // With the help of uPSDebugger get information about error position in script code
-      if fExec.TranslatePositionEx(fExec.LastExProc, fExec.LastExPos, Pos, Row, Col, TBTFileName) then
+      if fExec.TranslatePositionEx(fExec.LastExProc, fExec.LastExPos, Pos, Row, Col, FileName) then
       begin
-        ErrorMessage := gGame.Scripting.GetErrorMessage('Error', '', Row, Col);
+        //Get line according to preprocessor (includes and defines could affect error row/col)
+        if fPreProcessor.CurrentLineInfo.GetLineInfo('', Pos, Res) then
+        begin
+          Pos := Res.Pos;
+          Row := Res.Row;
+          Col := Res.Col;
+          FileName := Res.Name;
+        end;
+        ErrorMessage := gGame.Scripting.GetErrorMessage('Error', '', ExtractFileName(FileName), Row, Col, Pos);
         ErrorStr := MainErrorStr + ErrorMessage.GameMessage;
         DetailedErrorStr := MainErrorStr + ErrorMessage.LogMessage;
       end;
