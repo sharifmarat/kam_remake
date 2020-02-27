@@ -302,7 +302,7 @@ end;
 procedure TKMScriptEvents.AddConsoleCommand(const aCmdName, aProcName: AnsiString);
 begin
   Assert((Trim(aCmdName) <> '') and (Trim(aProcName) <> ''),
-         Format('Console command name and procedure name should be specidied: [CmdName = %s] [ProcName = [', [aCmdName, aProcName]));
+         Format('Console command name and procedure name should be specified: [CmdName = %s] [ProcName = [', [aCmdName, aProcName]));
 
 
   if fConsoleCommands.ContainsKey(AnsiString(LowerCase(aCmdName))) then
