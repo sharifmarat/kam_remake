@@ -364,7 +364,7 @@ begin
     //Commands destruction will be handled by fConsoleCommands Tictionary in TKMScriptEvents.Destry
     Command := TKMConsoleCommand.Create;
     Command.Load(LoadStream);
-    fConsoleCommands.Add(Command.Name, Command);
+    fConsoleCommands.Add(AnsiString(LowerCase(Command.Name)), Command);
   end;
 end;
 
