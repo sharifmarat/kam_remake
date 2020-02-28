@@ -4648,6 +4648,9 @@ end;
 
 procedure TKMReplayBar.AddMark(aMark: Integer);
 begin
+  Assert(Self <> nil, 'ReplayBar is not initialized');
+  Assert(fMarks <> nil, 'Marks is not initilized');
+
   fMarks.Add(aMark);
   fIsDirty := True;
 end;
