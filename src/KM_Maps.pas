@@ -723,12 +723,14 @@ end;
 
 
 function TKMapInfo.DetermineReadmeFilePath: String;
-var Path: String;
-    Locale: AnsiString;
+var
+  Path: String;
 begin
+  Assert(gGameApp <> nil, 'gGameApp = nil!');
+  Assert(gGameApp.GameSettings <> nil, 'gGameApp.GameSettings = nil!');
+
   Result := '';
-  Locale := gGameApp.GameSettings.Locale;
-  Path := fPath + fFileName + '.' + String(Locale) + '.pdf'; // Try to file with our locale first
+  Path := fPath + fFileName + '.' + String(gGameApp.GameSettings.Locale) + '.pdf'; // Try to file with our locale first
   if FileExists(Path) then
     Result := Path
   else
