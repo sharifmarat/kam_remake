@@ -144,7 +144,8 @@ end;
 
 
 procedure TKMHouseMarket.ResAddToIn(aResource: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
-var ResRequired: Integer;
+var
+  ResRequired, OrdersToDo: Integer;
 begin
   //If user cancelled the exchange (or began new one with different resources already)
   //then incoming resourced should be added to Offer list immediately
@@ -158,8 +159,9 @@ begin
     ResRequired := fTradeAmount*RatioFrom - (fMarketResIn[aResource]+fMarketDeliveryCount[aResource]);
     if ResRequired > 0 then
     begin
-      Inc(fMarketDeliveryCount[aResource], Min(aCount, ResRequired));
-      gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, fResFrom, Min(aCount, ResRequired), dtOnce, diNorm);
+      OrdersToDo := Min(aCount, ResRequired);
+      Inc(fMarketDeliveryCount[aResource], OrdersToDo);
+      gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, fResFrom, OrdersToDo, dtOnce, diNorm);
     end;
     AttemptExchange;
   end
