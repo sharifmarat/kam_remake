@@ -1504,9 +1504,7 @@ begin
     begin
       // Remove old demand
       Dec(fDemand[OldDemandId].BeingPerformed);
-      if (fDemand[OldDemandId].BeingPerformed = 0)
-        and (fDemand[OldDemandId].IsDeleted
-          or ((fDemand[OldDemandId].Loc_House <> nil) and (fDemand[OldDemandId].Loc_House.HouseType = htTownHall))) then
+      if (fDemand[OldDemandId].BeingPerformed = 0) and fDemand[OldDemandId].IsDeleted then
         CloseDemand(OldDemandId);
 
       UpdateDemandItem(OldDemandId);
