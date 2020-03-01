@@ -1491,7 +1491,8 @@ end;
 //Maybe it's better to rule out In/Out? No, it is required to separate what can be taken out of the house and what not.
 //But.. if we add "Evacuate" button to all house the separation becomes artificial..
 procedure TKMHouse.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
-var I,OrdersRemoved: Integer;
+var
+  I,OrdersRemoved: Integer;
 begin
   Assert(aWare <> wtNone);
 

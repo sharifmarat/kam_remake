@@ -32,6 +32,7 @@ type
     property FromHouse: TKMHouse read fFrom write fFrom;
     property ToHouse: TKMHouse read fToHouse write fToHouse;
     property ToUnit: TKMUnit read fToUnit write fToUnit;
+    function CanAbandonWalk: Boolean;
   public
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToHouse: TKMHouse; Res: TKMWareType; aID: Integer); overload;
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToUnit: TKMUnit; Res: TKMWareType; aID: Integer); overload;
@@ -179,7 +180,7 @@ function TKMTaskDeliver.WalkShouldAbandon: Boolean;
 begin
   Result := False;
 
-  if fPhase2 <> 0 then //we are at 'go to road' stage, no need to cancel that action
+  if not CanAbandonWalk then
     Exit;
 
   //After step 2 we don't care if From is destroyed or doesn't have the ware
@@ -191,15 +192,10 @@ begin
 
   //do not abandon the delivery if target is destroyed/dead, we will find new target later
   case fDeliverKind of
-    dkToHouse:         if fPhase <= 8 then
-                        begin
-                          Result := Result or fToHouse.IsDestroyed
-                                   or (not fForceDelivery and fToHouse.ShouldAbandonDeliveryTo(fWareType));
-                        end;
-    dkToConstruction:  if fPhase <= 7 then
-                          Result := Result or fToHouse.IsDestroyed;
-    dkToUnit:          if fPhase <= 6 then
-                          Result := Result or (fToUnit = nil) or fToUnit.IsDeadOrDying;
+    dkToHouse:        Result := Result or fToHouse.IsDestroyed
+                                or (not fForceDelivery and fToHouse.ShouldAbandonDeliveryTo(fWareType));
+    dkToConstruction: Result := Result or fToHouse.IsDestroyed;
+    dkToUnit:         Result := Result or (fToUnit = nil) or fToUnit.IsDeadOrDying;
   end;
 end;
 
@@ -323,6 +319,17 @@ begin
 end;
 
 
+function TKMTaskDeliver.CanAbandonWalk: Boolean;
+begin
+  case fDeliverKind of
+    dkToHouse:         Result := fPhase <= 8;
+    dkToConstruction:  Result := fPhase <= 7;
+    dkToUnit:          Result := fPhase <= 6;
+    else               Result := True; //Make compiler happy
+  end;
+end;
+
+
 //Delegate delivery task to other serf
 procedure TKMTaskDeliver.DelegateToOtherSerf(aToSerf: TKMUnitSerf);
 begin
@@ -343,10 +350,7 @@ begin
   Result := trTaskContinues;
 
   if WalkShouldAbandon and fUnit.Visible and not FindBestDestination then
-  begin
-    Result := trTaskDone;
-    Exit;
-  end;
+    Exit(trTaskDone);
 
   with TKMUnitSerf(fUnit) do
   case fPhase of

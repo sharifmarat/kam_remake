@@ -1413,22 +1413,23 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
 
   function FindBestDemandId(): Integer;
   var
-    iD: Integer;
+    iD, OldDemandId: Integer;
     Bid, BestBid: Single;
     BestImportance: TKMDemandImportance;
     DeliverToUnit: Boolean;
   begin
     Result := -1;
     aForceDelivery := False;
+    OldDemandId := fQueue[aDeliveryId].DemandID;
     BestImportance := Low(TKMDemandImportance);
     BestBid := MaxSingle;
-    DeliverToUnit := fDemand[fQueue[aDeliveryId].DemandID].Loc_Unit <> nil;
+    DeliverToUnit := fDemand[OldDemandId].Loc_Unit <> nil;
     //Mark that delivery as IsFromUnit (Serf), since we are looking for other destination while in delivery process
     fQueue[aDeliveryId].IsFromUnit := True;
     //Try to find house or unit demand first (not storage)
     for iD := 1 to fDemandCount do
       if (fDemand[iD].Ware <> wtNone)
-        and (iD <> fQueue[aDeliveryId].DemandID)
+        and (iD <> OldDemandId)
         and (fDemand[iD].Importance >= BestImportance)
         and ValidBestDemand(iD)
         and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
@@ -1444,7 +1445,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     if Result = -1 then
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wtAll)
-          and (iD <> fQueue[aDeliveryId].DemandID)
+          and (iD <> OldDemandId)
           and (fDemand[iD].Loc_House.DeliveryMode = dmDelivery)
           and (fDemand[iD].Loc_House is TKMHouseStore)
           and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource]
