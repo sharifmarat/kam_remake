@@ -66,7 +66,7 @@ type
 implementation
 uses
   Math,
-  KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
+  KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux, KM_AIInfluences,
   KM_AIFields, KM_NavMesh, KM_CommonUtils;
 
 type
