@@ -183,6 +183,9 @@ begin
   if not CanAbandonWalk then
     Exit;
 
+  if not gHands[fUnit.Owner].Deliveries.Queue.IsDeliveryAlowed(fDeliverID) then
+    Exit(True);
+
   //After step 2 we don't care if From is destroyed or doesn't have the ware
   if fPhase <= 2 then
     Result := Result

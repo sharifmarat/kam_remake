@@ -42,6 +42,8 @@ type
     function ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean; override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
 
+    procedure DecResourceDelivery(aWare: TKMWareType); override;
+
     function AllowedToTrade(aRes: TKMWareType): Boolean;
     function TradeInProgress: Boolean;
     function GetResTotal(aWare: TKMWareType): Word; overload;
@@ -344,6 +346,12 @@ end;
 function TKMHouseMarket.TradeInProgress: Boolean;
 begin
   Result := fTradeAmount > 0;
+end;
+
+
+procedure TKMHouseMarket.DecResourceDelivery(aWare: TKMWareType);
+begin
+  fMarketDeliveryCount[aWare] := Max(0, fMarketDeliveryCount[aWare] - 1);
 end;
 
 
