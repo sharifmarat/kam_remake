@@ -1432,6 +1432,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     for iD := 1 to fDemandCount do
       if (fDemand[iD].Ware <> wtNone)
         and (iD <> OldDemandId)
+        and not fDemand[iD].IsDeleted
         and (fDemand[iD].Importance >= BestImportance)
         and ValidBestDemand(iD, OldDemandId)
         and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
@@ -1448,6 +1449,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wtAll)
           and (iD <> OldDemandId)
+          and not fDemand[iD].IsDeleted
           and (fDemand[iD].Loc_House.DeliveryMode = dmDelivery)
           and (fDemand[iD].Loc_House is TKMHouseStore)
           and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource]
@@ -1463,6 +1465,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     if Result = -1 then
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wtAll)
+          and not fDemand[iD].IsDeleted
           and not fDemand[iD].Loc_House.IsDestroyed //choose between all storages, including current delivery. But not destroyed
           and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
                                    DeliverToUnit or fQueue[aDeliveryId].IsFromUnit) //Choose the closest storage
