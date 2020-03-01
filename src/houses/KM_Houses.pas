@@ -233,6 +233,8 @@ type
     procedure SetState(aState: TKMHouseState);
     function GetState: TKMHouseState;
 
+    procedure DecResourceDelivery(aWare: TKMWareType); virtual;
+
     function CheckResIn(aWare: TKMWareType): Word; virtual;
     function CheckResOut(aWare: TKMWareType): Word; virtual;
     function PickOrder: Byte;
@@ -1488,6 +1490,19 @@ begin
 end;
 
 
+procedure TKMHouse.DecResourceDelivery(aWare: TKMWareType);
+var
+  I: Integer;
+begin
+  for I := 1 to 4 do
+    if aWare = gRes.Houses[fType].ResInput[I] then
+    begin
+      fResourceDeliveryCount[I] := Max(0, fResourceDeliveryCount[I] - 1);
+      Exit;
+    end;
+end;
+
+
 //Maybe it's better to rule out In/Out? No, it is required to separate what can be taken out of the house and what not.
 //But.. if we add "Evacuate" button to all house the separation becomes artificial..
 procedure TKMHouse.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
@@ -1965,9 +1980,8 @@ begin
       //Too many resources ordered, attempt to remove demand if nobody has taken it yet
       if fResourceDeliveryCount[I] > GetResDistribution(I) then
       begin
-        Excess := fResourceDeliveryCount[I]-GetResDistribution(I);
-        Count := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(
-                   Self, gRes.Houses[fType].ResInput[I], Excess);
+        Excess := fResourceDeliveryCount[I] - GetResDistribution(I);
+        Count := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, gRes.Houses[fType].ResInput[I], Excess);
 
         Dec(fResourceDeliveryCount[I], Count); //Only reduce it by the number that were actually removed
       end;

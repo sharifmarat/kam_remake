@@ -31,6 +31,7 @@ type
     procedure Save(SaveStream: TKMemoryStream); override;
 
     procedure SetGoldMaxCnt(aValue: Word; aFromScript: Boolean); overload;
+    procedure DecResourceDelivery(aWare: TKMWareType); override;
 
     property GoldCnt: Word read fGoldCnt write SetGoldCnt;
     property GoldMaxCnt: Word read fGoldMaxCnt write SetGoldMaxCnt;
@@ -108,6 +109,12 @@ begin
 
   if OldValue <> fGoldCnt then
     gScriptEvents.ProcHouseWareCountChanged(Self, wtGold, fGoldCnt, fGoldCnt - OldValue);
+end;
+
+
+procedure TKMHouseTownHall.DecResourceDelivery(aWare: TKMWareType);
+begin
+  //override default behaviour - do nothing here
 end;
 
 
