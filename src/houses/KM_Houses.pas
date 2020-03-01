@@ -1501,7 +1501,7 @@ begin
     begin
       //Don't allow the script to overfill houses
       if aFromScript then
-        aCount := Min(aCount, GetMaxInRes - fResourceIn[I]);
+        aCount := Max(0, Min(aCount, GetMaxInRes - fResourceIn[I]));
       ResIn[I] := ResIn[I] + aCount;
       if aFromScript then
       begin
