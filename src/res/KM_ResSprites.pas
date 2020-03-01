@@ -1067,7 +1067,7 @@ begin
 end;
 
 
-//aTempGeneration - support for maps with rev <= r10745, where transitions were written as generated terrain Id
+//aLegacyGeneration - support for maps with rev <= r10745, where transitions were written as generated terrain Id
 //instead of generation parameters (TekKind + FullMaskType)
 //Also there was no mkSoft mask and tkSnowOnTerrain terrain kind
 procedure TKMResSprites.GenerateTerrainTransitions(aSprites: TKMSpritePack; aLegacyGeneration: Boolean = False);

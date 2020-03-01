@@ -353,7 +353,7 @@ const
   //Maximum number of Demands we can place at once (stops the delivery queue from becoming clogged with 1500 items)
   MAX_RES_ORDERED = 10;
 var
-  ResRequired, OrdersAllowed, OrdersRemoved: Integer;
+  ResRequired, OrdersAllowed, OrdersRemoved, OrderToDo: Integer;
 begin
   if (fResFrom = wtNone) or (fResTo = wtNone) or (fResFrom = fResTo) then Exit;
 
@@ -387,8 +387,9 @@ begin
   //Order as many as we can within our limit
   if (ResRequired > 0) and (OrdersAllowed > 0) then
   begin
-    Inc(fMarketDeliveryCount[fResFrom], Min(ResRequired,OrdersAllowed));
-    gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, fResFrom, Min(ResRequired,OrdersAllowed), dtOnce, diNorm)
+    OrderToDo := Min(ResRequired, OrdersAllowed);
+    Inc(fMarketDeliveryCount[fResFrom], OrderToDo);
+    gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, fResFrom, OrderToDo, dtOnce, diNorm)
   end
   else
     //There are too many resources ordered, so remove as many as we can from the delivery list (some will be being performed)
