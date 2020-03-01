@@ -1374,7 +1374,7 @@ end;
 procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType;
                                                out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
 
-  function ValidBestDemand(iD: Integer): Boolean;
+  function ValidBestDemand(iD, iOldID: Integer): Boolean;
   var
     I: Integer;
     H: TKMHouse;
@@ -1384,12 +1384,14 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
               ((fDemand[iD].Ware = wtFood) and (aResource in [wtBread, wtSausages, wtWine, wtFish]));
 
     //Check if unit is alive
-    Result := Result and ((fDemand[iD].Loc_Unit = nil) or not fDemand[iD].Loc_Unit.IsDeadOrDying);
+    Result := Result and ((fDemand[iD].Loc_Unit = nil)
+                          or (not fDemand[iD].Loc_Unit.IsDeadOrDying and (fDemand[iD].Loc_Unit <> fDemand[iOldID].Loc_Unit)));
 
     //If Demand house should abandon delivery
     Result := Result and ((fDemand[iD].Loc_House = nil)
                           or not fDemand[iD].Loc_House.IsComplete
-                          or not fDemand[iD].Loc_House.ShouldAbandonDeliveryTo(aResource));
+                          or (not fDemand[iD].Loc_House.ShouldAbandonDeliveryTo(aResource)
+                             and (fDemand[iD].Loc_House <> fDemand[iOldID].Loc_House)));
 
     //If Demand aren't reserved already
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
@@ -1431,7 +1433,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
       if (fDemand[iD].Ware <> wtNone)
         and (iD <> OldDemandId)
         and (fDemand[iD].Importance >= BestImportance)
-        and ValidBestDemand(iD)
+        and ValidBestDemand(iD, OldDemandId)
         and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid, nil,
                                  DeliverToUnit or fQueue[aDeliveryId].IsFromUnit)
         and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then //Calc bid to find the best demand
