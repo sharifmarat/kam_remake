@@ -51,6 +51,7 @@ type
     fDisableHungerMessage: Boolean;
     fBlockOrders: Boolean;
     fManualFormation: Boolean;
+    fMembersPushbackCommandsCnt: Word; //Number of 'push back' commands ordered to group members when executing goWalkTo
 
     fOrder: TKMGroupOrder; //Remember last order incase we need to repeat it (e.g. to joined members)
     fOrderLoc: TKMPointDir; //Dir is the direction to face after order
@@ -61,6 +62,8 @@ type
     fOrderTargetGroup: TKMUnitGroup; //Unit we are ordered to attack. This property should never be accessed, use public OrderTarget instead.
     fOrderTargetHouse: TKMHouse; //House we are ordered to attack. This property should never be accessed, use public OrderHouseTarget instead.
 
+    //don't saved:
+    fPushbackLimit: Integer; //Locally stored limit, save it just to avoid its calculation every time
     fMapEdCount: Word;
 
     function GetCount: Integer;
@@ -80,6 +83,9 @@ type
 
     function GetFlagPositionF: TKMPointF;
     function GetFlagColor: Cardinal;
+
+    procedure SetGroupOrder(aOrder: TKMGroupOrder);
+    procedure UpdatePushbackLimit;
 
     function GetOrderTargetUnit: TKMUnit;
     function GetOrderTargetGroup: TKMUnitGroup;
@@ -117,7 +123,7 @@ type
 
     function  GetGroupPointer: TKMUnitGroup;
     procedure ReleaseGroupPointer;
-    procedure AddMember(aWarrior: TKMUnitWarrior; aIndex: Integer = -1);
+    procedure AddMember(aWarrior: TKMUnitWarrior; aIndex: Integer = -1; aOnlyWarrior: Boolean = True);
     function  MemberByUID(aUID: Integer): TKMUnitWarrior;
     function  HitTest(X,Y: Integer): Boolean;
     procedure SelectFlagBearer;
@@ -269,6 +275,7 @@ begin
 
   AddMember(aCreator);
   UnitsPerRow := 1;
+  fMembersPushbackCommandsCnt := 0;
 end;
 
 
@@ -324,13 +331,15 @@ begin
 
       Warrior.Direction := aDir;
       Warrior.AnimStep  := UnitStillFrames[aDir];
-      AddMember(Warrior);
+      AddMember(Warrior, -1, False);
       Warrior.Condition := NewCondition;
     end;
+    UpdatePushbackLimit; //After all members were added
   end;
 
   //We could not set it earlier cos it's limited by Count
   UnitsPerRow := aUnitPerRow;
+  fMembersPushbackCommandsCnt := 0;
 end;
 
 
@@ -375,6 +384,9 @@ begin
   LoadStream.Read(fDisableHungerMessage);
   LoadStream.Read(fBlockOrders);
   LoadStream.Read(fManualFormation);
+  LoadStream.Read(fMembersPushbackCommandsCnt);
+
+  UpdatePushbackLimit; //Need to update pushback limit after Count is loaded
 end;
 
 
@@ -463,6 +475,7 @@ begin
   SaveStream.Write(fDisableHungerMessage);
   SaveStream.Write(fBlockOrders);
   SaveStream.Write(fManualFormation);
+  SaveStream.Write(fMembersPushbackCommandsCnt);
 end;
 
 
@@ -634,6 +647,13 @@ begin
 end;
 
 
+procedure TKMUnitGroup.SetGroupOrder(aOrder: TKMGroupOrder);
+begin
+  fOrder := aOrder;
+  fMembersPushbackCommandsCnt := 0;
+end;
+
+
 procedure TKMUnitGroup.SetCondition(aValue: Integer);
 var I: Integer;
 begin
@@ -668,7 +688,20 @@ begin
 end;
 
 
-procedure TKMUnitGroup.AddMember(aWarrior: TKMUnitWarrior; aIndex: Integer = -1);
+//Locally stored limit, save it just to avoid its calculation every time
+procedure TKMUnitGroup.UpdatePushbackLimit;
+const
+  //Const values were received from tests
+  ORDERWALK_PUSHBACK_PER_MEMBER_MAX_CNT = 2.5;
+  COUNT_POWER_COEF = 1.07;
+begin
+  //Progressive formula, since for very large groups (>100 members) we neen to allow more pushbacks,
+  //otherwise it will be hard to group to get to its position on a crowed areas
+  fPushbackLimit := Round(Math.Power(Count, COUNT_POWER_COEF) * ORDERWALK_PUSHBACK_PER_MEMBER_MAX_CNT);
+end;
+
+
+procedure TKMUnitGroup.AddMember(aWarrior: TKMUnitWarrior; aIndex: Integer = -1; aOnlyWarrior: Boolean = True);
 begin
   Assert(fMembers.IndexOf(aWarrior) = -1, 'We already have this Warrior in group');
   if aIndex <> -1 then
@@ -680,6 +713,9 @@ begin
   aWarrior.OnPickedFight := Member_PickedFight;
   aWarrior.OnWarriorDied := Member_Died;
   aWarrior.SetGroup(Self);
+
+  if aOnlyWarrior then
+    UpdatePushbackLimit; //Update pushlimit only when we added only 1 warrior at time, not when we added pack of them
 end;
 
 
@@ -776,6 +812,8 @@ begin
 
   SetUnitsPerRow(fUnitsPerRow);
 
+  UpdatePushbackLimit;
+
   //If Group has died report to owner
   if IsDead and Assigned(OnGroupDied) then
     OnGroupDied(Self);
@@ -858,6 +896,12 @@ var
   OrderExecuted: Boolean;
   P: TKMPointExact;
   U: TKMUnitWarrior;
+
+  function PushbackLimitReached: Boolean;
+  begin
+    Result := fMembersPushbackCommandsCnt > fPushbackLimit;
+  end;
+
 begin
   OrderExecuted := False;
 
@@ -869,7 +913,7 @@ begin
                       OrderExecuted := True;
                       for I := 0 to Count - 1 do
                       begin
-                        OrderExecuted := OrderExecuted and Members[I].IsIdle and Members[I].OrderDone;
+                        OrderExecuted := OrderExecuted and Members[I].IsIdle and (Members[I].OrderDone or PushbackLimitReached);
 
                         if Members[I].OrderDone then
                         begin
@@ -883,11 +927,13 @@ begin
                         end
                         else
                           //Guide Idle and pushed units back to their places
-                          if Members[I].IsIdle
-                          or ((Members[I].Action is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].Action).WasPushed) then
+                          if not PushbackLimitReached
+                            and (Members[I].IsIdle
+                                 or ((Members[I].Action is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].Action).WasPushed)) then
                           begin
                             P := GetMemberLoc(I);
                             Members[I].OrderWalk(P.Loc, P.Exact);
+                            fMembersPushbackCommandsCnt := Min(fMembersPushbackCommandsCnt + 1, High(Word));
                           end;
                       end;
                     end;
@@ -1197,7 +1243,7 @@ begin
 
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
-  fOrder := goAttackHouse;
+  SetGroupOrder(goAttackHouse);
   fOrderLoc := KMPointDir(0, 0, dirNA);
   OrderTargetHouse := aHouse;
 
@@ -1229,7 +1275,7 @@ begin
   if IsRanged then
   begin
     //Ranged units should walk in formation to within range of the enemy
-    fOrder := goAttackUnit;
+    SetGroupOrder(goAttackUnit);
     OrderTargetUnit := aUnit;
 
     //First choose fOrderLoc, which is where the leader will stand to shoot
@@ -1246,7 +1292,7 @@ begin
         else
         begin
           OrderTargetUnit := nil; //Target cannot be reached, so abort completely
-          fOrder := goNone;
+          SetGroupOrder(goNone);
           FreeAndNil(NodeList);
           Exit;
         end;
@@ -1298,7 +1344,7 @@ begin
     OrderWalk(aUnit.NextPosition, False, wtokNone, dirNA, aForced);
 
     //Revert Order to proper one (we disguise Walk)
-    fOrder := goAttackUnit;
+    SetGroupOrder(goAttackUnit);
     fOrderLoc := KMPointDir(aUnit.NextPosition, dirNA); //Remember where unit stand
     OrderTargetUnit := aUnit;
   end;
@@ -1381,10 +1427,12 @@ begin
   while (fMembers.Count <> 0) do
   begin
     U := Members[0];
-    aTargetGroup.AddMember(Members[0]);
+    aTargetGroup.AddMember(Members[0], -1, False);
     gHands.CleanUpUnitPointer(U);
     fMembers.Delete(0);
   end;
+
+  UpdatePushbackLimit; //When all members were deleted
 
   //In MP commands execution may be delayed, check if we still selected
   if gMySpectator.Selected = Self then
@@ -1413,7 +1461,7 @@ procedure TKMUnitGroup.OrderNone;
 var
   I: Integer;
 begin
-  fOrder := goNone;
+  SetGroupOrder(goNone);
   //fOrderLoc remains old
   ClearOrderTarget;
 
@@ -1425,7 +1473,7 @@ end;
 //Copy order from specified aGroup
 procedure TKMUnitGroup.CopyOrderFrom(aGroup: TKMUnitGroup; aUpdateOrderLoc: Boolean; aForced: Boolean = True);
 begin
-  fOrder := aGroup.fOrder;
+  SetGroupOrder(aGroup.fOrder);
 
   if aUpdateOrderLoc then
   begin
@@ -1518,9 +1566,13 @@ begin
       begin
         U := Members[I];
         gHands.CleanUpUnitPointer(U);
-        NewGroup.AddMember(Members[I], 1); // Join new group (insert next to commander)
+        NewGroup.AddMember(Members[I], 1, False); // Join new group (insert next to commander)
         fMembers.Delete(I); // Leave this group
       end;
+
+  //Update pushback limits when groups sizes are calculated
+  UpdatePushbackLimit;
+  NewGroup.UpdatePushbackLimit;
 
   //Keep the selected unit Selected
   if not SelectedUnit.IsDeadOrDying and NewGroup.HasMember(SelectedUnit) then
@@ -1581,6 +1633,7 @@ begin
   NewLeader := TKMUnitWarrior(aUnit);
   fMembers.Remove(NewLeader);
   NewLeader.ReleaseUnitPointer;
+  UpdatePushbackLimit;
 
   //Give new group
   NewGroup := gHands[Owner].UnitGroups.AddGroup(NewLeader);
@@ -1627,12 +1680,13 @@ begin
   begin
     U := Members[I];
     gHands.CleanUpUnitPointer(U);
-    aGroup.AddMember(Members[I]);
+    aGroup.AddMember(Members[I], -1, False);
     fMembers.Delete(I);
   end;
 
   //Make sure units per row is still valid
   SetUnitsPerRow(UnitsPerRow);
+  UpdatePushbackLimit;
 
   //Tell both groups to reposition
   OrderHalt(False);
@@ -1647,7 +1701,7 @@ begin
   if not CanTakeOrders then Exit;
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
-  fOrder := goStorm;
+  SetGroupOrder(goStorm);
   fOrderLoc := KMPointDir(0, 0, dirNA);
   ClearOrderTarget;
 
@@ -1685,7 +1739,7 @@ begin
   if IsPositioned(aLoc, NewDir) then
     Exit; //No need to actually walk, all members are at the correct location and direction
 
-  fOrder := goWalkTo;
+  SetGroupOrder(goWalkTo);
   HungarianReorderMembers;
 
   for I := 0 to Count - 1 do
@@ -1965,7 +2019,7 @@ begin
 
   Result := ObjToStringShort +
             Format('%sOwner = %d%sUnitsPerRow = %d%sGroupOrder = %s%sOrderLoc = %s%s' +
-                   'OrderTargetUnit = [%s]%sOrderTargetGroup = [%s]%sOrderTargetHouse = [%s]',
+                   'OrderTargetUnit = [%s]%sOrderTargetGroup = [%s]%sOrderTargetHouse = [%s]%sPushbackCommandsCnt = [%d]',
                    [aSeparator,
                     fOwner, aSeparator,
                     fUnitsPerRow, aSeparator,
@@ -1973,7 +2027,8 @@ begin
                     TypeToString(fOrderLoc), aSeparator,
                     TargetUnitStr, aSeparator,
                     TargetGroupStr, aSeparator,
-                    TargetHouseStr]);
+                    TargetHouseStr, aSeparator,
+                    fMembersPushbackCommandsCnt]);
 end;
 
 
