@@ -18,8 +18,14 @@ type
     function GetTHUnitOrderIndex(aUnitType: TKMUnitType): Integer;
     procedure SetGoldCnt(aValue: Word); overload;
     procedure SetGoldCnt(aValue: Word; aLimitMaxGoldCnt: Boolean); overload;
-    procedure SetGoldMaxCnt(aValue: Word); overload;
-    procedure AddInitialDemands;
+    procedure UpdateDemands;
+
+    procedure SetGoldMaxCnt(aValue: Word);
+
+    function GetGoldDeliveryCnt: Word;
+    procedure SetGoldDeliveryCnt(aCount: Word);
+
+    property GoldDeliveryCnt: Word read GetGoldDeliveryCnt write SetGoldDeliveryCnt;
   protected
     function GetFlagPointTexId: Word; override;
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); override;
@@ -30,7 +36,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
-    procedure SetGoldMaxCnt(aValue: Word; aFromScript: Boolean); overload;
+
     procedure DecResourceDelivery(aWare: TKMWareType); override;
 
     property GoldCnt: Word read fGoldCnt write SetGoldCnt;
@@ -114,32 +120,14 @@ end;
 
 procedure TKMHouseTownHall.DecResourceDelivery(aWare: TKMWareType);
 begin
-  //override default behaviour - do nothing here
-end;
-
-
-procedure TKMHouseTownHall.SetGoldMaxCnt(aValue: Word; aFromScript: Boolean);
-var
-  OldGoldMax: Word;
-begin
-  OldGoldMax := fGoldMaxCnt;
-  fGoldMaxCnt := EnsureRange(aValue, 0, TH_MAX_GOLDMAX_VALUE);
-  if not aFromScript then
-  begin
-    if OldGoldMax > fGoldMaxCnt then
-      gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, wtGold, OldGoldMax - fGoldMaxCnt)
-    else if OldGoldMax < fGoldMaxCnt then
-    begin
-      //if fGoldCnt < fGoldMaxCnt then
-      gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wtGold, fGoldMaxCnt - Max(OldGoldMax, fGoldCnt), dtOnce, diNorm);
-    end;
-  end;
+  GoldDeliveryCnt := GoldDeliveryCnt - 1;
 end;
 
 
 procedure TKMHouseTownHall.SetGoldMaxCnt(aValue: Word);
 begin
-  SetGoldMaxCnt(aValue, False);
+  fGoldMaxCnt := EnsureRange(aValue, 0, TH_MAX_GOLDMAX_VALUE);
+  UpdateDemands;
 end;
 
 
@@ -189,7 +177,9 @@ begin
     if not CanEquip(aUnitType) then Exit;
 
     //Take resources
+    GoldDeliveryCnt := GoldDeliveryCnt - TH_TROOP_COST[THUnitIndex]; //Compensation for GoldDeliveryCnt
     ResTakeFromIn(wtGold, TH_TROOP_COST[THUnitIndex]); //Do the goldtaking
+
     gHands[fOwner].Stats.WareConsumed(wtGold, TH_TROOP_COST[THUnitIndex]);
       
     //Make new unit
@@ -221,22 +211,16 @@ begin
 end;
 
 
-procedure TKMHouseTownHall.AddInitialDemands;
-begin
-  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wtGold, fGoldMaxCnt - fGoldCnt, dtOnce, diNorm);
-end;
-
-
 procedure TKMHouseTownHall.PostLoadMission;
 begin
-  AddInitialDemands;
+  UpdateDemands;
 end;
 
 
 procedure TKMHouseTownHall.AddDemandsOnActivate(aWasBuilt: Boolean);
 begin
   if aWasBuilt then
-    AddInitialDemands;
+    UpdateDemands;
 end;
 
 
@@ -264,38 +248,79 @@ end;
 
 
 procedure TKMHouseTownHall.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+var
+  OrdersRemoved : Integer;
 begin
   Assert(aWare = wtGold, 'Invalid resource added to TownHall');
 
   // Allow to enlarge GoldMaxCnt from script (either from .dat or from .script)
   if aFromScript and (fGoldMaxCnt < fGoldCnt + aCount) then
-    SetGoldMaxCnt(fGoldCnt + aCount, True);
+    SetGoldMaxCnt(fGoldCnt + aCount);
 
   SetGoldCnt(fGoldCnt + aCount, False);
 
   if aFromScript then
-    gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, aWare, aCount);
+  begin
+    GoldDeliveryCnt := GoldDeliveryCnt + aCount;
+    OrdersRemoved := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, aWare, aCount);
+    GoldDeliveryCnt := GoldDeliveryCnt - OrdersRemoved;
+  end;
+
+  UpdateDemands;
+end;
+
+
+function TKMHouseTownHall.GetGoldDeliveryCnt: Word;
+begin
+  Result := ResDeliveryCnt[1];
+end;
+
+
+procedure TKMHouseTownHall.SetGoldDeliveryCnt(aCount: Word);
+begin
+  ResDeliveryCnt[1] := aCount;
+end;
+
+
+procedure TKMHouseTownHall.UpdateDemands;
+const
+  MAX_GOLD_DEMANDS = 20; //Limit max number of demands by townhall to not to overfill demands list
+var
+  GoldToOrder, OrdersRemoved: Integer;
+begin
+  GoldToOrder := Min(MAX_GOLD_DEMANDS - (GoldDeliveryCnt - fGoldCnt), fGoldMaxCnt - GoldDeliveryCnt);
+  if GoldToOrder > 0 then
+  begin
+    gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wtGold, GoldToOrder, dtOnce, diNorm);
+    GoldDeliveryCnt := GoldDeliveryCnt + GoldToOrder;
+  end
+  else
+  if GoldToOrder < 0 then
+  begin
+    OrdersRemoved := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, wtGold, -GoldToOrder);
+    GoldDeliveryCnt := GoldDeliveryCnt - OrdersRemoved;
+  end;
 end;
 
 
 procedure TKMHouseTownHall.ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 begin
-  aCount := Min(aCount, fGoldCnt);
+  Assert(aWare = wtGold, 'Invalid resource taken from TownHall');
+  aCount := EnsureRange(aCount, 0, fGoldCnt);
   if aFromScript then
     gHands[Owner].Stats.WareConsumed(aWare, aCount);
 
   SetGoldCnt(fGoldCnt - aCount, False);
-  //Only request a new resource if it is allowed by the distribution of wares for our parent player
-  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
+  UpdateDemands;
 end;
 
 
 procedure TKMHouseTownHall.ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 begin
-  Assert(aWare = wtGold, 'Invalid resource added to TownHall');
+  Assert(aWare = wtGold, 'Invalid resource taken from TownHall');
   if aFromScript then
   begin
-    aCount := Min(aCount, fGoldCnt);
+    aCount := EnsureRange(aCount, 0, fGoldCnt);
     if aCount > 0 then
     begin
       gHands[fOwner].Stats.WareConsumed(aWare, aCount);
@@ -304,8 +329,11 @@ begin
   end;
   Assert(aCount <= fGoldCnt);
   SetGoldCnt(fGoldCnt - aCount, False);
-  if gHands[fOwner].Deliveries.Queue.GetDemandsCnt(Self, aWare, dtOnce, diNorm) < fGoldMaxCnt then
-    gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
+
+  //Keep track of how many are ordered
+  GoldDeliveryCnt := GoldDeliveryCnt - aCount;
+
+  UpdateDemands;
 end;
 
 
