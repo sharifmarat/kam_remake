@@ -1317,11 +1317,11 @@ begin
   if (fDemand[iD].Loc_House <> nil)
     and (fDemand[iD].Loc_House.HouseType = htTownHall) then
   begin
-    //Delivering gold to TH - if there are already more then 300 gold, then make this delivery very low priority
-    if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 300) then
-      aBidValue := aBidValue + 9000
+    //Delivering gold to TH - if there are already more then 500 gold, then make this delivery very low priority
+    if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 500) then
+      aBidValue := aBidValue + 5000
     else
-      aBidValue := aBidValue + 5; //Add small value, so it will not have so big advantage above other houses
+      aBidValue := aBidValue + 2; //Add small value, so it will not have so big advantage above other houses
   end;
 
   //Delivering weapons from store to barracks, make it lowest priority when there are >50 of that weapon in the barracks.
