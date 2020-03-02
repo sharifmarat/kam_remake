@@ -93,6 +93,7 @@ type
     fDefLinesRequired: Boolean;
     fOwner: TKMHandID;
     fBestEvaluation: Single;
+    fStartPolygons: TKMWordArray;
     fDefInfo: TDefInfoArray;
     fBestDefLines: TKMDefenceLines;
     fDefPosArr: TKMDefencePosArr;
@@ -102,7 +103,7 @@ type
     {$ENDIF}
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
-    procedure BackwardFlood();
+    procedure BackwardFlood(aOwners: TKMHandIDArray);
     procedure EvaluateDefence(const aIdx: Word);
     function FindDefencePos(aBaseCnt: Word): Boolean;
   public
@@ -469,7 +470,7 @@ begin
   // Calculate evaluation of actual defensive position
   Evaluation := fQueueCnt * POLYGON_CNT_PENALIZATION;
   QueueIdx := aIdx;
-  for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
+  for I := 0 to fQueueCnt do // aIdx is already taken from Queue so it must be from 0 to fQueueCnt!
   begin
     Evaluation := + Evaluation
                   //+ fDefInfo[QueueIdx].Distance // Consideration of distance does more damage than benefit
@@ -483,13 +484,16 @@ begin
   // If is evaluation better save polygons
   if (Evaluation < fBestEvaluation) then
   begin
+    for I := Low(fStartPolygons) to High(fStartPolygons) do
+      if IsVisited(fStartPolygons[I]) then
+        Exit;
     fBestEvaluation := Evaluation;
     fBestDefLines.Count := 0; // Set defences count to 0 (it will be incremented later)
     if (fQueueCnt >= Length(fBestDefLines.Lines)) then
       SetLength(fBestDefLines.Lines, fQueueCnt + 32);
     // Copy defensive polygons
     QueueIdx := aIdx;
-    for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
+    for I := 0 to fQueueCnt do // aIdx is already taken from Queue so it must be from 0 to fQueueCnt!
     begin
       AddDefence(QueueIdx);
       QueueIdx := fQueueArray[QueueIdx].Next;
@@ -522,9 +526,27 @@ end;
 
 // Backward flood fill -> flood fill from enemy influence area to owner city
 // BackwardFF will find the best possible defences
-procedure TBackwardFF.BackwardFlood();
+procedure TBackwardFF.BackwardFlood(aOwners: TKMHandIDArray);
 var
   PolyArr: TPolygonArray;
+  // Save init polygons so they are always inside of defence line
+  procedure MarkInitPolygons();
+  var
+    K,L: Integer;
+    SP: TKMWordArray;
+  begin
+    for K := Low(aOwners) to High(aOwners) do
+    begin
+      gAIFields.Eye.OwnerUpdate(aOwners[K]);
+      SP := gAIFields.Eye.GetCityCenterPolygons(True);
+      if (Length(SP) > 0) then
+      begin
+        SetLength(fStartPolygons, Length(fStartPolygons) + Length(SP));
+        Move(SP[0], fStartPolygons[Length(fStartPolygons)-Length(SP)], SizeOf(SP[0])*Length(SP));
+      end;
+    end;
+    gAIFields.Eye.OwnerUpdate(fOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
+  end;
   // Prepare init polygons for backward flood fill (polygons near enemy)
   procedure CreateBorders();
   var
@@ -568,6 +590,7 @@ var
   Idx: Word;
 begin
   PolyArr := gAIFields.NavMesh.Polygons;
+  MarkInitPolygons();
   fBestDefLines.Count := 0;
   CreateBorders();
   while RemoveFromQueue(Idx) do
@@ -685,7 +708,7 @@ function TBackwardFF.FindDefenceLines(aOwner: TKMHandID): TKMDefenceLines;
 begin
   fOwner := aOwner;
   fDefLinesRequired := True;
-  BackwardFlood();
+  BackwardFlood([aOwner]);
   fFilterFF.FilterDefenceLine(fBestDefLines, Result);
 end;
 
@@ -700,7 +723,7 @@ begin
   fOwner := aOwner;
   fDefLinesRequired := aDefLinesRequired;
   // Find best defence line
-  BackwardFlood();
+  BackwardFlood([aOwner]);
   // Filter defence line in walkable area around players city
   fFilterFF.FilterDefenceLine(fBestDefLines, aBestDefLines);
   fBestDefLines := aBestDefLines;
@@ -757,7 +780,7 @@ var
 begin
   fOwner := aOwners[0];
   fDefLinesRequired := aDefLinesRequired;
-  BackwardFlood(); // Find best defence line
+  BackwardFlood(aOwners); // Find best defence line
   if (fBestDefLines.Count = 0) then
     Exit;
   // Find defence positions of each player
@@ -879,7 +902,7 @@ var
   K,L: Integer;
 begin
   for K := Length(aStartPolygons)-1 downto 0 do
-    for L := 0 to fAllDefLines.count-1 do
+    for L := 0 to fAllDefLines.Count-1 do
       if (aStartPolygons[K] = fAllDefLines.Lines[L].Polygon) then
       begin
         aStartPolygons[K] := aStartPolygons[ Length(aStartPolygons)-1 ];
