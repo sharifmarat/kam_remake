@@ -819,7 +819,7 @@ begin
 
   if aCount = 0 then Exit;
   Assert(aHouse <> nil);
-  for I := 1 to fDemandCount do
+  for I := fDemandCount downto 1 do
     if (fDemand[I].Loc_House = aHouse)
       and (fDemand[I].Ware = aResource)
       and not fDemand[I].IsDeleted then
