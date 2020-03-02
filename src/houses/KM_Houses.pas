@@ -1533,7 +1533,7 @@ begin
     begin
       //Don't allow the script to overfill houses
       if aFromScript then
-        aCount := Max(0, Min(aCount, GetMaxInRes - fResourceIn[I]));
+        aCount := EnsureRange(aCount, 0, GetMaxInRes - fResourceIn[I]);
       ResIn[I] := ResIn[I] + aCount;
       if aFromScript then
       begin
@@ -1716,7 +1716,7 @@ begin
     if aFromScript then
     begin
       //Script might try to take too many
-      aCount := Min(aCount, ResIn[I]);
+      aCount := EnsureRange(aCount, 0, ResIn[I]);
       gHands[Owner].Stats.WareConsumed(aWare, aCount);
     end;
 
