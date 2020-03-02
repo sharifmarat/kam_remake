@@ -1980,14 +1980,16 @@ procedure TKMHouse.UpdateResRequest;
 var
   I: Byte;
   Count, Excess: ShortInt;
+  ResDistribution: Byte;
 begin
   for I := 1 to 4 do
     if not (fType = htTownHall) and not (gRes.Houses[fType].ResInput[I] in [wtAll, wtWarfare, wtNone]) then
     begin
+      ResDistribution := GetResDistribution(I);
       //Not enough resources ordered, add new demand
-      if ResDeliveryCnt[I] < GetResDistribution(I) then
+      if ResDeliveryCnt[I] < ResDistribution then
       begin
-        Count := GetResDistribution(I) - ResDeliveryCnt[I];
+        Count := ResDistribution - ResDeliveryCnt[I];
         gHands[fOwner].Deliveries.Queue.AddDemand(
           Self, nil, gRes.Houses[fType].ResInput[I], Count, dtOnce, diNorm);
 
@@ -1995,9 +1997,9 @@ begin
       end;
 
       //Too many resources ordered, attempt to remove demand if nobody has taken it yet
-      if ResDeliveryCnt[I] > GetResDistribution(I) then
+      if ResDeliveryCnt[I] > ResDistribution then
       begin
-        Excess := ResDeliveryCnt[I] - GetResDistribution(I);
+        Excess := ResDeliveryCnt[I] - ResDistribution;
         Count := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, gRes.Houses[fType].ResInput[I], Excess);
 
         ResDeliveryCnt[I] := ResDeliveryCnt[I] - Count; //Only reduce it by the number that were actually removed
