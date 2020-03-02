@@ -87,8 +87,8 @@ begin
   ImageStack_Army     := TKMImageStack.Create(Panel_Army,  62, 46, 56, 40, 43, 50);
   Label_ArmyCount     := TKMLabel.Create(Panel_Army,       62, 60, 56, 20, '-', fntOutline, taCenter);
   Button_Army_ForDown := TKMButton.Create(Panel_Army,     124, 46, 56, 40, 32, rxGui, bsGame);
-  Button_Army_RotCW.OnClick   := Unit_ArmyChange1;
-  Button_Army_RotCCW.OnClick  := Unit_ArmyChange1;
+  Button_Army_RotCW.OnClickShift   := Unit_ArmyChangeShift;
+  Button_Army_RotCCW.OnClickShift  := Unit_ArmyChangeShift;
   Button_Army_ForUp.OnClickShift   := Unit_ArmyChangeShift;
   Button_Army_ForDown.OnClickShift := Unit_ArmyChangeShift;
 
@@ -267,6 +267,8 @@ end;
 
 
 procedure TKMMapEdUnit.Unit_ArmyChangeShift(Sender: TObject; Shift: TShiftState);
+var
+  RotCnt: Integer;
 begin
   if Sender = Button_Army_ForUp then
     SetUnitsPerRaw(fGroup.UnitsPerRow - GetMultiplicator(Shift));
@@ -276,10 +278,21 @@ begin
   ImageStack_Army.SetCount(fGroup.MapEdCount, fGroup.UnitsPerRow, fGroup.UnitsPerRow div 2);
   Label_ArmyCount.Caption := IntToStr(fGroup.MapEdCount);
 
-  if Sender = Button_Army_RotCW  then
-    fGroup.Direction := KMNextDirection(fGroup.Direction);
-  if Sender = Button_Army_RotCCW then
-    fGroup.Direction := KMPrevDirection(fGroup.Direction);
+  if (Sender = Button_Army_RotCW) or (Sender = Button_Army_RotCCW) then
+  begin
+    if ssShift in Shift then
+      RotCnt := 4
+    else
+    if ssRight in Shift then
+      RotCnt := 2
+    else
+      RotCnt := 1;
+
+    RotCnt := RotCnt * (2 * Byte(Sender = Button_Army_RotCW) - 1);
+
+    fGroup.Direction := KMAddDirection(fGroup.Direction, RotCnt);
+  end;
+
   fGroup.ResetAnimStep;
 
   //Toggle between full and half condition

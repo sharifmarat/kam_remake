@@ -134,7 +134,7 @@ type
   function KMGetVertex(const Dir: TKMDirection): TKMPointF;
   function KMGetPointInDir(const aPoint: TKMPoint; const aDir: TKMDirection; aDist: Byte = 1): TKMPoint;
 
-  function KMAddDirection(const aDir: TKMDirection; aAdd: Byte): TKMDirection;
+  function KMAddDirection(const aDir: TKMDirection; aAdd: Integer): TKMDirection;
   function KMNextDirection(const aDir: TKMDirection): TKMDirection;
   function KMPrevDirection(const aDir: TKMDirection): TKMDirection;
 
@@ -776,10 +776,10 @@ begin
 end;
 
 
-function KMAddDirection(const aDir: TKMDirection; aAdd: Byte): TKMDirection;
+function KMAddDirection(const aDir: TKMDirection; aAdd: Integer): TKMDirection;
 begin
   Assert(aDir <> dirNA);
-  Result := TKMDirection((Byte(aDir) + aAdd - 1) mod 8 + 1);
+  Result := TKMDirection((Byte(aDir) + aAdd - 1 + 8) mod 8 + 1);
 end;
 
 
