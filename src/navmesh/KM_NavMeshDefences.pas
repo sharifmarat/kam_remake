@@ -532,7 +532,7 @@ var
   // Save init polygons so they are always inside of defence line
   procedure MarkInitPolygons();
   var
-    K,L: Integer;
+    K: Integer;
     SP: TKMWordArray;
   begin
     for K := Low(aOwners) to High(aOwners) do
