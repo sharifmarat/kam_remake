@@ -155,6 +155,11 @@ type
     procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
     procedure CheckTakeOutDeliveryMode; virtual;
     function GetDeliveryModeForCheck(aImmidiate: Boolean): TKMDeliveryMode;
+
+    procedure SetResourceDeliveryCount(aIndex: Integer; aCount: Word);
+    function GetResourceDeliveryCount(aIndex: Integer): Word;
+
+    property ResDeliveryCnt[aIndex: Integer]: Word read GetResourceDeliveryCount write SetResourceDeliveryCount;
   public
     CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
@@ -646,7 +651,7 @@ begin
       else        begin
                     DemandsCnt := GetResDistribution(I);
                     AddDemand(Self, nil, Res, DemandsCnt, dtOnce, diNorm); //Every new house needs 5 resource units
-                    Inc(fResourceDeliveryCount[I], DemandsCnt); //Keep track of how many resources we have on order (for distribution of wares)
+                    ResDeliveryCnt[I] := ResDeliveryCnt[I] + DemandsCnt; //Keep track of how many resources we have on order (for distribution of wares)
                   end;
     end;
   end;
@@ -832,6 +837,18 @@ begin
         gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
     end;
   end;
+end;
+
+
+procedure TKMHouse.SetResourceDeliveryCount(aIndex: Integer; aCount: Word);
+begin
+  fResourceDeliveryCount[aIndex] := EnsureRange(aCount, 0, High(Word));
+end;
+
+
+function TKMHouse.GetResourceDeliveryCount(aIndex: Integer): Word;
+begin
+  Result := fResourceDeliveryCount[aIndex];
 end;
 
 
@@ -1497,7 +1514,7 @@ begin
   for I := 1 to 4 do
     if aWare = gRes.Houses[fType].ResInput[I] then
     begin
-      fResourceDeliveryCount[I] := Max(0, fResourceDeliveryCount[I] - 1);
+      ResDeliveryCnt[I] := ResDeliveryCnt[I] - 1;
       Exit;
     end;
 end;
@@ -1520,9 +1537,9 @@ begin
       ResIn[I] := ResIn[I] + aCount;
       if aFromScript then
       begin
-        Inc(fResourceDeliveryCount[I], aCount);
+        ResDeliveryCnt[I] := ResDeliveryCnt[I] + aCount;
         OrdersRemoved := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, aWare, aCount);
-        Dec(fResourceDeliveryCount[I], OrdersRemoved);
+        ResDeliveryCnt[I] := ResDeliveryCnt[I] - OrdersRemoved;
       end;
     end;
 end;
@@ -1704,16 +1721,16 @@ begin
     end;
 
     //Keep track of how many are ordered
-    fResourceDeliveryCount[I] := Max(fResourceDeliveryCount[I] - aCount, 0);
+    ResDeliveryCnt[I] := ResDeliveryCnt[I] - aCount;
 
     Assert(ResIn[I] >= aCount, 'fResourceIn[i] < 0');
     ResIn[I] := ResIn[I] - aCount;
     //Only request a new resource if it is allowed by the distribution of wares for our parent player
     for K := 1 to aCount do
-      if fResourceDeliveryCount[I] < GetResDistribution(I) then
+      if ResDeliveryCnt[I] < GetResDistribution(I) then
       begin
         gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, 1, dtOnce, diNorm);
-        Inc(fResourceDeliveryCount[I]);
+        ResDeliveryCnt[I] := ResDeliveryCnt[I] + 1;
       end;
     Exit;
   end;
@@ -1768,16 +1785,16 @@ begin
     end;
 
     //Keep track of how many are ordered
-    fResourceDeliveryCount[I] := Max(fResourceDeliveryCount[I] - aCount, 0);
+    ResDeliveryCnt[I] := ResDeliveryCnt[I] - aCount;
 
     Assert(ResIn[I] >= aCount, 'fResourceIn[i] < 0');
     ResIn[I] := ResIn[I] - aCount;
     //Only request a new resource if it is allowed by the distribution of wares for our parent player
     for K := 1 to aCount do
-      if fResourceDeliveryCount[I] < GetResDistribution(I) then
+      if ResDeliveryCnt[I] < GetResDistribution(I) then
       begin
         gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, 1, dtOnce, diNorm);
-        Inc(fResourceDeliveryCount[I]);
+        ResDeliveryCnt[I] := ResDeliveryCnt[I] + 1;
       end;
     Exit;
   end;
@@ -1968,22 +1985,22 @@ begin
     if not (fType = htTownHall) and not (gRes.Houses[fType].ResInput[I] in [wtAll, wtWarfare, wtNone]) then
     begin
       //Not enough resources ordered, add new demand
-      if fResourceDeliveryCount[I] < GetResDistribution(I) then
+      if ResDeliveryCnt[I] < GetResDistribution(I) then
       begin
-        Count := GetResDistribution(I)-fResourceDeliveryCount[I];
+        Count := GetResDistribution(I) - ResDeliveryCnt[I];
         gHands[fOwner].Deliveries.Queue.AddDemand(
           Self, nil, gRes.Houses[fType].ResInput[I], Count, dtOnce, diNorm);
 
-        Inc(fResourceDeliveryCount[I], Count);
+        ResDeliveryCnt[I] := ResDeliveryCnt[I] + Count;
       end;
 
       //Too many resources ordered, attempt to remove demand if nobody has taken it yet
-      if fResourceDeliveryCount[I] > GetResDistribution(I) then
+      if ResDeliveryCnt[I] > GetResDistribution(I) then
       begin
-        Excess := fResourceDeliveryCount[I] - GetResDistribution(I);
+        Excess := ResDeliveryCnt[I] - GetResDistribution(I);
         Count := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, gRes.Houses[fType].ResInput[I], Excess);
 
-        Dec(fResourceDeliveryCount[I], Count); //Only reduce it by the number that were actually removed
+        ResDeliveryCnt[I] := ResDeliveryCnt[I] - Count; //Only reduce it by the number that were actually removed
       end;
 
     end;
