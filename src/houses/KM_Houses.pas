@@ -1992,15 +1992,28 @@ end;
 
 function TKMHouse.ObjToString: String;
 var
-  ActStr: String;
+  I: Integer;
+  ActStr,ResOutPoolStr: String;
 begin
   ActStr := 'nil';
   if CurrentAction <> nil then
     ActStr := CurrentAction.ClassName;
 
+  ResOutPoolStr := '';
+  for I := Low(fResourceOutPool) to High(fResourceOutPool) do
+  begin
+    if ResOutPoolStr <> '' then
+      ResOutPoolStr := ResOutPoolStr + ',';
+    if I = 10 then
+      ResOutPoolStr := ResOutPoolStr + '|';
+    ResOutPoolStr := ResOutPoolStr + IntToStr(fResourceOutPool[I]);
+  end;
+
+
   Result := ObjToStringShort +
             Format('|HasOwner = %s|Owner = %d|Action = %s|Repair = %s|IsClosedForWorker = %s|DeliveryMode = %s|NewDeliveryMode = %s|Damage = %d|' +
-                   'BuildState = %s|BuildSupplyWood = %d|BuildSupplyStone = %d|BuildingProgress = %d|DoorwayUse = %d',
+                   'BuildState = %s|BuildSupplyWood = %d|BuildSupplyStone = %d|BuildingProgress = %d|DoorwayUse = %d|' +
+                   'ResIn = %d,%d,%d,%d|ResDeliveryCnt = %d,%d,%d,%d|ResOut = %d,%d,%d,%d|ResOrder = %d,%d,%d,%d|ResOutPool = %s',
                    [BoolToStr(fHasOwner, True),
                     fOwner,
                     ActStr,
@@ -2013,7 +2026,12 @@ begin
                     fBuildSupplyWood,
                     fBuildSupplyStone,
                     fBuildingProgress,
-                    DoorwayUse]);
+                    DoorwayUse,
+                    fResourceIn[1],fResourceIn[2],fResourceIn[3],fResourceIn[4],
+                    fResourceDeliveryCount[1],fResourceDeliveryCount[2],fResourceDeliveryCount[3],fResourceDeliveryCount[4],
+                    fResourceOut[1],fResourceOut[2],fResourceOut[3],fResourceOut[4],
+                    fResourceOrder[1],fResourceOrder[2],fResourceOrder[3],fResourceOrder[4],
+                    ResOutPoolStr]);
 end;
 
 
