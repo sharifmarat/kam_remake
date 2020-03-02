@@ -78,7 +78,6 @@ begin
     CheckBox_Settings_ShuffleOn.OnClick := Menu_Settings_Change;
 
     Button_Cancel := TKMButton.Create(Panel_Settings, PAD, 310, WID, 30, gResTexts[TX_MENU_DONT_QUIT_MISSION], bsGame);
-    Button_Cancel.AnchorsStretch;
 
     Button_Cancel.Hint := gResTexts[TX_MENU_DONT_QUIT_MISSION];
     Button_Cancel.OnClick := Back_Click;
