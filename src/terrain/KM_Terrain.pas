@@ -676,6 +676,9 @@ var
   DoRemField: Boolean;
 begin
   Assert((aType <> -1) or (aRot <> -1), 'Either terrain type or rotation should be set');
+
+  if not gRes.Tileset.TileIsAllowedToSet(aType) then
+    Exit(False);
  
   Loc := KMPoint(X, Y);
   LocRect := KMRect(Loc);
