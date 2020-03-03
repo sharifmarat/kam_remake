@@ -176,15 +176,16 @@ end;
 procedure TKMResMapElements.ExportToText(const FileName: string);
 var
   I: Integer; ft: TextFile;
-  Str1, Str2, Str3, Str4, Str5: String;
+  Str1, Str2, Str3, Str4, Str5, Str6: String;
 begin
   AssignFile(ft, ExeDir + 'Trees.txt');
   Rewrite(ft);
-  Str1 := 'not AllBlocked and Can''n be removed: ';
-  Str2 := 'AllBlocked and Can be removed: ';
+  Str1 := 'not AllBlocked and Block Build: ';
+  Str2 := 'AllBlocked and Allow Build: ';
   Str3 := 'DiagonalBlocked and AllBlocked: ';
   Str4 := 'DiagonalBlocked and Can Build: ';
   Str5 := 'DiagonalBlocked and Can not build: ';
+  Str6 := 'AllBlocked and and Block Build: ';
   for I := 1 to fCount do
   begin
     Writeln(ft);
@@ -208,6 +209,9 @@ begin
       if gMapElements[I].AllBlocked and gMapElements[I].CanBeRemoved then
         Str2 := Str2 + IntToStr(I) + ' ';
 
+      if gMapElements[I].AllBlocked and not gMapElements[I].CanBeRemoved then
+        Str6 := Str6 + IntToStr(I) + ' ';
+
       if gMapElements[I].DiagonalBlocked and gMapElements[I].AllBlocked then
         Str3 := Str3 + IntToStr(I) + ' ';
 
@@ -227,6 +231,8 @@ begin
   Writeln(ft, Str1);
   Writeln(ft);
   Writeln(ft, Str2);
+  Writeln(ft);
+  Writeln(ft, Str6);
   Writeln(ft);
   Writeln(ft, Str3);
   Writeln(ft);
