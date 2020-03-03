@@ -17,12 +17,12 @@ type
     Anim: TKMAnimLoop;          //Animation loop info
     CuttableTree: LongBool;     //This tree can be cut by a woodcutter
     DiagonalBlocked: LongBool;  //Can't walk diagonally accross this object (mainly trees)
-    AllBlocked: LongBool;       //All passibility blocked. Can't walk, build, swim, etc.
+    AllBlocked: LongBool;       //All passibility blocked. Can't walk, swim, etc. EXCEPT BUILD
     WineOrCorn: LongBool;       //Draw multiple (4 or 2) sprites per object (corn or grapes)
     CanGrow: LongBool;          //This object can grow (i.e. change to another object)
     DontPlantNear: LongBool;    //This object can't be planted within one tile of
     Stump: ShortInt;            //Tree stump ID
-    CanBeRemoved: LongBool;     //Can be removed in favor of building house
+    CanBeRemoved: LongBool;     //Can be removed in favor of building house (actually means we can build over this object)
     KillByRoad: TKMKillByRoad;  //Object will be removed if these neighboring tiles are roads
   end;
 
@@ -174,27 +174,65 @@ end;
 
 
 procedure TKMResMapElements.ExportToText(const FileName: string);
-var I,K: Integer; ft: TextFile;
+var
+  I,K: Integer; ft: TextFile;
+  Str1, Str2, Str3, Str4, Str5: String;
 begin
   AssignFile(ft, ExeDir + 'Trees.txt');
   Rewrite(ft);
+  Str1 := 'not AllBlocked and Can''n be removed: ';
+  Str2 := 'AllBlocked and Can be removed: ';
+  Str3 := 'DiagonalBlocked and AllBlocked: ';
+  Str4 := 'DiagonalBlocked and Can Build: ';
+  Str5 := 'DiagonalBlocked and Can not build: ';
   for I := 1 to fCount do
   begin
     Writeln(ft);
-    Writeln(ft, inttostr(I) + ' :' + inttostr(gMapElements[I].Anim.Count));
-    for K := 1 to 30 do
-      if gMapElements[I].Anim.Step[K] > 0 then
-        Write(ft, gMapElements[I].Anim.Step[K], '.')
-      else
-        Write(ft, '_.');
-
+    Writeln(ft, inttostr(I) + ' Anim: ' + inttostr(gMapElements[I].Anim.Count));
+//    for K := 1 to 30 do
+//      if gMapElements[I].Anim.Step[K] > 0 then
+//        Write(ft, gMapElements[I].Anim.Step[K], '.')
+//      else
+//        Write(ft, '_.');
+    Write(ft, '; DiagonalBlocked = ', gMapElements[I].DiagonalBlocked);
+    Write(ft, '; AllBlocked = ', gMapElements[I].AllBlocked);
+    Write(ft, ' CanBeRemoved = ', gMapElements[I].CanBeRemoved);
     Writeln(ft);
+
+    if (gMapElements[I].Anim.Count > 0) and (gMapElements[I].Anim.Step[1] > 0)
+      and (gMapElements[I].Stump = -1) then
+    begin
+      if not gMapElements[I].AllBlocked and not gMapElements[I].CanBeRemoved then
+        Str1 := Str1 + IntToStr(I) + ' ';
+
+      if gMapElements[I].AllBlocked and gMapElements[I].CanBeRemoved then
+        Str2 := Str2 + IntToStr(I) + ' ';
+
+      if gMapElements[I].DiagonalBlocked and gMapElements[I].AllBlocked then
+        Str3 := Str3 + IntToStr(I) + ' ';
+
+      if gMapElements[I].DiagonalBlocked and gMapElements[I].CanBeRemoved then
+        Str4 := Str4 + IntToStr(I) + ' ';
+
+      if gMapElements[I].DiagonalBlocked and not gMapElements[I].CanBeRemoved then
+        Str5 := Str5 + IntToStr(I) + ' ';
+    end;
     // for K:=1 to 16 do
     // write(ft,MapElem[I].CuttableTree,''); //Those are 1/0 so we can ommit space between them
 
-    Write(ft, ' =', gMapElements[I].CanBeRemoved);
+
     Writeln(ft);
   end;
+  Writeln(ft);
+  Writeln(ft, Str1);
+  Writeln(ft);
+  Writeln(ft, Str2);
+  Writeln(ft);
+  Writeln(ft, Str3);
+  Writeln(ft);
+  Writeln(ft, Str4);
+  Writeln(ft);
+  Writeln(ft, Str5);
   CloseFile(ft);
 end;
 
