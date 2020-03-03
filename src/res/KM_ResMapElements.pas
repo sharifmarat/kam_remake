@@ -175,7 +175,7 @@ end;
 
 procedure TKMResMapElements.ExportToText(const FileName: string);
 var
-  I,K: Integer; ft: TextFile;
+  I: Integer; ft: TextFile;
   Str1, Str2, Str3, Str4, Str5: String;
 begin
   AssignFile(ft, ExeDir + 'Trees.txt');
