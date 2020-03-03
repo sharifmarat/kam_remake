@@ -10,7 +10,6 @@ const
   TILES_CNT = 349;
   MAX_TILE_TO_SHOW = TILES_CNT;
   MAX_STATIC_TERRAIN_ID = 9997;
-//  WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
 
 type
   //TKMTileProperty = set of (tpWalkable, tpRoadable);
@@ -461,12 +460,6 @@ type
       u2: Byte; // 0/1 Boolean? seems to have no logical explanation
       u3: Byte; // 1/2/4/8 bitfield, seems to have no logical explanation
     end;
-
-//    TilesInfo: array [1..TILES_CNT] of record
-//      Walkable: Boolean;
-//      Buildable: Boolean;
-//      Mask: Boolean;
-//    end;
 
     TileColor: TRGBArray;
 
