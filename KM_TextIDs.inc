@@ -1176,9 +1176,11 @@ TX_MENU_MAP_TYPE = 1122; //Map type
 TX_MENU_SP_MAP_SCENARIO = 1123; //Scenario map
 TX_MENU_MAP_PLAYABLE_AS_SP = 1124; //Playable as SP
 
-TX_MAPED_OBJ_DESC_CHOPPABLE = 1125; //Choppable tree
-TX_MAPED_OBJ_DESC_BLOCK_DIAG = 1126; //Blocks diagonal walking
-TX_MAPED_OBJ_DESC_BLOCK_ALL = 1127; //Blocks walking and building
+TX_MAPED_OBJ_CHOPPABLE_HINT = 1125; //Choppable tree
+TX_MAPED_OBJ_BLOCK_WALK_DIAG_HINT = 1126; //Blocks diagonal walking
+TX_MAPED_OBJ_BLOCK_ALL_HINT = 1127; //Blocks everything except bulding
+TX_MAPED_OBJ_BLOCK_BUILD_HINT = 1394; //Blocks building
+TX_MAPED_OBJ_BLOCK_WALK_BUILD_HINT = 1395; //Blocks walking and building
 
 TX_MAPED_MISSION_PARAMETERS_BTN = 1145; //Mission|parameters
 TX_MAPED_MISSION_PARAMETERS_BTN_HINT = 1146; //Modify mission parameters
