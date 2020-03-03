@@ -633,8 +633,7 @@ begin
         begin
           //Rollback change
           Land[Y, X].Height := OldHeight;
-          Result := False;
-          Exit;
+          Exit(False);
         end;
 
   //Accept change
@@ -688,10 +687,7 @@ begin
     //Will this change block a construction site?
     or ((Land[Y, X].TileLock in [tlFenced, tlDigged, tlHouse])
       and (not fTileSet.TileIsRoadable(aType) or not fTileset.TileIsWalkable(aType))) then
-  begin
-    Result := False;
-    Exit;
-  end;
+    Exit(False);
 
   aDiagonalChanged := False;
 
@@ -738,10 +734,7 @@ function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Word; out aDiagonal
       if TileInMapCoords(X+K, Y+I) then
         //Can't put objects near houses or house sites
         if (Land[Y+I, X+K].TileLock in [tlFenced, tlDigged, tlHouse]) then
-        begin
-          Result := True;
-          Exit;
-        end;
+          Exit(True);
   end;
 
   // We do not want falling trees
@@ -769,10 +762,7 @@ begin
       or HousesNearObject
       //Is this object allowed to be placed?
       or not AllowableObject then
-    begin
-      Result := False;
-      Exit;
-    end;
+      Exit(False);
   end;
 
   //Did block diagonal property change? (hence xor) UpdateWalkConnect needs to know
