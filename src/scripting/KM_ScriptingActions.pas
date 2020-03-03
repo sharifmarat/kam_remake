@@ -179,7 +179,7 @@ uses
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
-  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor;
+  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor, KM_ResTileset;
 
 const
   MIN_SOUND_AT_LOC_RADIUS = 28;
@@ -2558,7 +2558,7 @@ end;
 function TKMScriptActions.MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
 begin
   try
-    if gTerrain.TileInMapCoords(X, Y) and InRange(aType, 0, 255) and InRange(aRotation, 0, 3) then
+    if gTerrain.TileInMapCoords(X, Y) and InRange(aType, 0, TILES_CNT - 1) and InRange(aRotation, 0, 3) then
       Result := gTerrain.ScriptTrySetTile(X, Y, aType, aRotation)
     else
     begin
