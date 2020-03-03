@@ -2175,7 +2175,7 @@ begin
     Label_Menu_Track.Caption := gGameApp.MusicLib.GetTrackTitle;
 
   Label_Menu_Track.AutoWrap := Length(Label_Menu_Track.Caption) > MAX_TRACKNAME_LENGTH;
-  Label_Menu_Track.Top := IfThen(Label_Menu_Track.AutoWrap, 301, 306);
+  Label_Menu_Track.Top := IfThen(Label_Menu_Track.AutoWrap, 19, 22);
   Button_Menu_TrackUp.Height := IfThen(Label_Menu_Track.AutoWrap, 38, 30);
   Button_Menu_TrackDown.Height := IfThen(Label_Menu_Track.AutoWrap, 38, 30);
 

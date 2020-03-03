@@ -27,6 +27,7 @@ type
   // List of sprites prepared to be rendered
   TRenderList = class
   private
+    fUnitsRXData: TRXData; //shortcut
     fCount: Word;
     RenderOrder: array of Word; // Order in which sprites will be drawn ()
     RenderList: array of TKMRenderSprite;
@@ -1741,6 +1742,8 @@ begin
   inherited;
   fCount := 0;
   SetLength(RenderList, 512); // Allocate some space
+
+  fUnitsRXData := gRes.Sprites[rxUnits].RXData;
 end;
 
 
@@ -1888,6 +1891,10 @@ end;
 
 // New items must provide their ground level
 procedure TRenderList.AddSpriteG(aRX: TRXType; aId: Word; aUID: Integer; pX,pY,gX,gY: Single; aTeam: Cardinal = $0; aAlphaStep: Single = -1);
+const
+  MAX_SEL_RECT_HEIGHT = CELL_SIZE_PX * 1.5; //Restrict too long images selection rect
+var
+  W, H: Integer;
 begin
   if fCount >= Length(RenderList) then
     SetLength(RenderList, fCount + 256); // Book some space
@@ -1901,13 +1908,17 @@ begin
   RenderList[fCount].TeamColor  := aTeam;           // Team Id (determines color)
   RenderList[fCount].AlphaStep  := aAlphaStep;      // Alpha step for wip buildings
 
-  if aUID > 0 then
+    if aUID > 0 then
     with RenderList[fCount].SelectionRect do
     begin
-      Left := RenderList[fCount].Loc.X;
-      Bottom := gY;
-      Right := Left + gGFXData[aRX, aId].PxWidth / CELL_SIZE_PX;
-      Top := Bottom - gGFXData[aRX, aId].PxHeight / CELL_SIZE_PX;
+      //Enlarge rect from image size to the left and right, to be at least CELL_SIZE_PX width and height
+      W := Max(0, CELL_SIZE_PX - (fUnitsRXData.SizeNoShadow[aId].right - fUnitsRXData.SizeNoShadow[aId].left)); //width to add to image pos. half to the left, half to the right
+      H := Max(0, CELL_SIZE_PX - (fUnitsRXData.SizeNoShadow[aId].bottom - fUnitsRXData.SizeNoShadow[aId].top)); //height to add to image pos. half to the top, half to the bottom
+
+      Left := RenderList[fCount].Loc.X + (-(W div 2) - 0.5 + fUnitsRXData.SizeNoShadow[aId].left) / CELL_SIZE_PX; //-0.5 to get some insurance on uneven terrain
+      Bottom := gY - ((H div 2) + fUnitsRXData.Size[aId].Y - 1 - fUnitsRXData.SizeNoShadow[aId].bottom) / CELL_SIZE_PX;
+      Right := Left + (W + 0.5 + gGFXData[aRX, aId].PxWidth - (fUnitsRXData.Size[aId].X - 1 - fUnitsRXData.SizeNoShadow[aId].right)) / CELL_SIZE_PX; //+0.5 to get some insurance on uneven terrain
+      Top := Bottom - Min(MAX_SEL_RECT_HEIGHT, H + gGFXData[aRX, aId].PxHeight - fUnitsRXData.SizeNoShadow[aId].top) / CELL_SIZE_PX;
     end;
 
   Inc(fCount); // New item added

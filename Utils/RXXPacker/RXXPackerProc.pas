@@ -75,6 +75,9 @@ begin
         resHouses.Free;
       end;
 
+      if RT = rxUnits then
+        SpritePack.DetermineImagesObjectSize;
+
       //The idea was to blur the water and make it semitrasparent, but it did not worked out as expected
       //if RT = rxTiles then
       //  SpritePack.SoftWater(nil);

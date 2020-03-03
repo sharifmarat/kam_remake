@@ -2188,7 +2188,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if (H <> nil) and (H is TKMHouseTownHall) and not H.IsDestroyed and H.IsComplete then
-        TKMHouseTownHall(H).SetGoldMaxCnt(aMaxGold, True);
+        TKMHouseTownHall(H).GoldMaxCnt := aMaxGold;
     end
     else
       LogParamWarning('Actions.HouseTownHallMaxGold', [aHouseID, aMaxGold]);

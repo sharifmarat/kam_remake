@@ -47,6 +47,7 @@ type
     Flag: array of Byte; //Sprite is valid
     Size: array of record X,Y: Word; end;
     Pivot: array of record x,y: Integer; end;
+    SizeNoShadow: array of record left,top,right,bottom: Integer; end; //Image object (without shadow) rect in the image sizes
     Data: array of array of Byte;
     RGBA: array of array of Cardinal; //Expanded image
     Mask: array of array of Byte; //Mask for team colors
@@ -85,6 +86,7 @@ type
     procedure SoftenShadows(aIdList: TStringList); overload;
     procedure SoftenShadows(aStart: Integer = 1; aEnd: Integer = -1; aOnlyShadows: Boolean = True); overload;
     procedure SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True); overload;
+    procedure DetermineImagesObjectSize(aStart: Integer = 1; aEnd: Integer = -1);
 
     function GetSpriteColors(aCount: Word): TRGBArray;
 
@@ -333,6 +335,23 @@ begin
 end;
 
 
+procedure TKMSpritePack.DetermineImagesObjectSize(aStart: Integer = 1; aEnd: Integer = -1);
+var
+  I: Integer;
+  ShadowConverter: TKMSoftShadowConverter;
+begin
+  ShadowConverter := TKMSoftShadowConverter.Create(Self);
+  try
+    if aEnd = -1 then aEnd := fRXData.Count;
+    for I := aStart to aEnd do
+      if (fRXData.Flag[I] <> 0) then
+        ShadowConverter.DetermineImageObjectSize(I);
+  finally
+    ShadowConverter.Free;
+  end;
+end;
+
+
 procedure TKMSpritePack.SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True);
 var
   ShadowConverter: TKMSoftShadowConverter;
@@ -352,13 +371,14 @@ begin
   fRXData.Count := aCount;
 
   aCount := fRXData.Count + 1;
-  SetLength(gGFXData[fRT],     aCount);
-  SetLength(fRXData.Flag,     aCount);
-  SetLength(fRXData.Size,     aCount);
-  SetLength(fRXData.Pivot,    aCount);
-  SetLength(fRXData.RGBA,     aCount);
-  SetLength(fRXData.Mask,     aCount);
-  SetLength(fRXData.HasMask,  aCount);
+  SetLength(gGFXData[fRT],        aCount);
+  SetLength(fRXData.Flag,         aCount);
+  SetLength(fRXData.Size,         aCount);
+  SetLength(fRXData.Pivot,        aCount);
+  SetLength(fRXData.SizeNoShadow, aCount);
+  SetLength(fRXData.RGBA,         aCount);
+  SetLength(fRXData.Mask,         aCount);
+  SetLength(fRXData.HasMask,      aCount);
 end;
 
 
@@ -473,6 +493,10 @@ begin
     Reset(ft);
     ReadLn(ft, fRXData.Pivot[aIndex].X);
     ReadLn(ft, fRXData.Pivot[aIndex].Y);
+    ReadLn(ft, fRXData.SizeNoShadow[aIndex].left);
+    ReadLn(ft, fRXData.SizeNoShadow[aIndex].top);
+    ReadLn(ft, fRXData.SizeNoShadow[aIndex].right);
+    ReadLn(ft, fRXData.SizeNoShadow[aIndex].bottom);
     CloseFile(ft);
   end;
 end;
@@ -508,6 +532,7 @@ begin
       begin
         DecompressionStream.Read(fRXData.Size[I].X, 4);
         DecompressionStream.Read(fRXData.Pivot[I].X, 8);
+        DecompressionStream.Read(fRXData.SizeNoShadow[I].left, 16);
         //Data part of each sprite is 32BPP RGBA in Remake RXX files
         SetLength(fRXData.RGBA[I], fRXData.Size[I].X * fRXData.Size[I].Y);
         SetLength(fRXData.Mask[I], fRXData.Size[I].X * fRXData.Size[I].Y);
@@ -623,6 +648,10 @@ begin
     aTempList.Clear;
     aTempList.Append(IntToStr(fRXData.Pivot[aIndex].x));
     aTempList.Append(IntToStr(fRXData.Pivot[aIndex].y));
+    aTempList.Append(IntToStr(fRXData.SizeNoShadow[aIndex].left));
+    aTempList.Append(IntToStr(fRXData.SizeNoShadow[aIndex].top));
+    aTempList.Append(IntToStr(fRXData.SizeNoShadow[aIndex].right));
+    aTempList.Append(IntToStr(fRXData.SizeNoShadow[aIndex].bottom));
     aTempList.SaveToFile(aFolder + Format('%d_%.4d.txt', [Byte(fRT)+1, aIndex]));
   end;
 
@@ -1205,6 +1234,7 @@ begin
                 aSprites.fRXData.Size[TexId].X := aSprites.fRXData.Size[TerrainId].X;
                 aSprites.fRXData.Size[TexId].Y := aSprites.fRXData.Size[TerrainId].Y;
                 aSprites.fRXData.Pivot[TexId] := aSprites.fRXData.Pivot[TerrainId];
+                aSprites.fRXData.SizeNoShadow[TexId] := aSprites.fRXData.SizeNoShadow[TerrainId];
                 aSprites.fRXData.HasMask[TexId] := False;
                 gGenTerrainTransitions[TK, MK, MT, MST] := TexId - 1; //TexId is 1-based, but textures we use - 0 based
                 fGenTerrainToTerKind[TexId - fGenTexIdStartI] := GenTerrainInfo;

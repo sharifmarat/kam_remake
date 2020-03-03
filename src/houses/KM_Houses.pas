@@ -105,7 +105,8 @@ type
     fIsClosedForWorker: Boolean; // house is closed for worker. If worker is already occupied it, then leave house
 
     fResourceIn: array [1..4] of Byte; //Resource count in input
-    fResourceDeliveryCount: array[1..4] of Word; //Count of the resources we have ordered for the input (used for ware distribution)
+    //Count of the resources we have ordered for the input (used for ware distribution)
+    fResourceDeliveryCount: array[1..4] of Word; // = fResourceIn + Demands count
     fResourceOut: array [1..4] of Byte; //Resource count in output
     fResourceOrder: array [1..4] of Word; //If HousePlaceOrders=true then here are production orders
     fResourceOutPool: array[0..19] of Byte;
@@ -1534,6 +1535,7 @@ begin
       //Don't allow the script to overfill houses
       if aFromScript then
         aCount := EnsureRange(aCount, 0, GetMaxInRes - fResourceIn[I]);
+      //ResDeliveryCnt stay same, because corresponding demand will be closed
       ResIn[I] := ResIn[I] + aCount;
       if aFromScript then
       begin

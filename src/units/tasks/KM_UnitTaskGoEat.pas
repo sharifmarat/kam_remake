@@ -9,6 +9,7 @@ type
   //Go to eat
   TKMTaskGoEat = class(TKMUnitTask)
   private
+    fFeedCnt: Byte;
     fInn: TKMHouseInn; //Inn in which we are going to eat
     fPlace: ShortInt; //Units place in Inn
   public
@@ -38,6 +39,7 @@ begin
   fType := uttGoEat;
   fInn      := TKMHouseInn(aInn.GetHousePointer);
   fPlace    := -1;
+  fFeedCnt  := 0;
 end;
 
 
@@ -48,6 +50,7 @@ begin
   LoadStream.CheckMarker('TaskGoEat');
   LoadStream.Read(fInn, 4);
   LoadStream.Read(fPlace);
+  LoadStream.Read(fFeedCnt);
 end;
 
 
@@ -85,6 +88,8 @@ end;
 
 
 function TKMTaskGoEat.Execute: TKMTaskResult;
+const
+  MAX_FEED_CNT = 2; //Max number of times unit can eat different food at Inn during one visit
 begin
   Result := trTaskContinues;
 
@@ -127,6 +132,7 @@ begin
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * BREAD_RESTORE);
         fInn.UpdateEater(fPlace, wtBread);
+        Inc(fFeedCnt);
       end else
         SetActionLockedStay(0, uaWalk);
    5: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
@@ -137,9 +143,11 @@ begin
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * SAUSAGE_RESTORE);
         fInn.UpdateEater(fPlace, wtSausages);
+        Inc(fFeedCnt);
       end else
         SetActionLockedStay(0, uaWalk);
-   6: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
+   6: if (fFeedCnt < MAX_FEED_CNT) //Limit max number of times to eat in the Inn
+        and (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wtWine) > 0) then
       begin
         fInn.ResTakeFromIn(wtWine);
@@ -147,9 +155,11 @@ begin
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * WINE_RESTORE);
         fInn.UpdateEater(fPlace, wtWine);
+        Inc(fFeedCnt);
       end else
         SetActionLockedStay(0, uaWalk);
-   7: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
+   7: if (fFeedCnt < MAX_FEED_CNT) //Limit max number of times to eat in the Inn
+        and (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wtFish) > 0) then
       begin
         fInn.ResTakeFromIn(wtFish);
@@ -188,6 +198,7 @@ begin
   else
     SaveStream.Write(Integer(0));
   SaveStream.Write(fPlace);
+  SaveStream.Write(fFeedCnt);
 end;
 
 

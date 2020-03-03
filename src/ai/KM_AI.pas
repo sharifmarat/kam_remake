@@ -173,10 +173,7 @@ procedure TKMHandAI.CheckGoals;
     Assert((aGoal.GoalCondition = gcTime) or (aGoal.HandIndex <> PLAYER_NONE), 'Only gcTime can have nil Player');
 
     if aGoal.Disabled then
-    begin
-      Result := True;
-      Exit;
-    end;
+      Exit(True);
 
     if aGoal.HandIndex <> PLAYER_NONE then
       Stat := gHands[aGoal.HandIndex].Stats
@@ -223,7 +220,9 @@ begin
                     //In a sandbox or script-ruled mission there may be no victory conditions in Goals
                     //so we make sure player wins by Goals only if he has such goals
                     HasVictoryGoal := True;
-                    VictorySatisfied := VictorySatisfied and GoalConditionSatisfied(Goals[I]);
+                    VictorySatisfied := VictorySatisfied and
+                                       (gHands[Goals[I].HandIndex].AI.HasLost //if player is Lost then no need to check other Goal conditions
+                                        or GoalConditionSatisfied(Goals[I]));
                   end;
     gltSurvive:  SurvivalSatisfied := SurvivalSatisfied and GoalConditionSatisfied(Goals[I]);
   end;

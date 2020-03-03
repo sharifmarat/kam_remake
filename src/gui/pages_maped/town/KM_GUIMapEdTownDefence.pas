@@ -82,7 +82,7 @@ begin
   TrackBar_RecruitDelay.Anchors := [anLeft, anTop, anRight];
   TrackBar_RecruitDelay.Caption := gResTexts[TX_MAPED_AI_RECRUIT_DELAY];
   TrackBar_RecruitDelay.Hint := gResTexts[TX_MAPED_AI_RECRUIT_DELAY_HINT];
-  TrackBar_RecruitDelay.Step := 5;
+  TrackBar_RecruitDelay.MouseWheelStep := 20;
   TrackBar_RecruitDelay.OnChange := Town_DefenceChange;
 
   CheckBox_MaxSoldiers := TKMCheckBox.Create(Panel_Defence, 9, 274, Panel_Defence.Width - 9, 20, gResTexts[TX_MAPED_AI_MAX_SOLDIERS], fntMetal);
@@ -93,7 +93,7 @@ begin
   TrackBar_MaxSoldiers.Anchors := [anLeft, anTop, anRight];
   TrackBar_MaxSoldiers.Caption := '';
   TrackBar_MaxSoldiers.Hint := gResTexts[TX_MAPED_AI_MAX_SOLDIERS_HINT];
-  TrackBar_MaxSoldiers.Step := 5;
+  TrackBar_MaxSoldiers.MouseWheelStep := 20;
   TrackBar_MaxSoldiers.OnChange := Town_DefenceChange;
 
   Button_EditFormations := TKMButton.Create(Panel_Defence, 9, 322, Panel_Defence.Width - 9, 25, gResTexts[TX_MAPED_AI_FORMATIONS], bsGame);

@@ -99,14 +99,14 @@ begin
   TrackBar_EquipRateLeather.Anchors := [anLeft, anTop, anRight];
   TrackBar_EquipRateLeather.Caption := gResTexts[TX_MAPED_AI_DEFENSE_EQUIP_LEATHER];
   TrackBar_EquipRateLeather.Hint := gResTexts[TX_MAPED_AI_DEFENSE_EQUIP_LEATHER_HINT];
-  TrackBar_EquipRateLeather.Step := 5;
+  TrackBar_EquipRateLeather.MouseWheelStep := 10;
   TrackBar_EquipRateLeather.OnChange := Town_ScriptChange;
 
   TrackBar_EquipRateIron := TKMTrackBar.Create(Panel_Script, 9, 200, Panel_Script.Width - 9, 10, 300);
   TrackBar_EquipRateIron.Anchors := [anLeft, anTop, anRight];
   TrackBar_EquipRateIron.Caption := gResTexts[TX_MAPED_AI_DEFENSE_EQUIP_IRON];
   TrackBar_EquipRateIron.Hint := gResTexts[TX_MAPED_AI_DEFENSE_EQUIP_IRON_HINT];
-  TrackBar_EquipRateIron.Step := 5;
+  TrackBar_EquipRateIron.MouseWheelStep := 10;
   TrackBar_EquipRateIron.OnChange := Town_ScriptChange;
 
   TKMLabel.Create(Panel_Script, 9, 255, gResTexts[TX_MAPED_AI_START], fntMetal, taLeft);

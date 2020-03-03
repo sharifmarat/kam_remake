@@ -16,9 +16,11 @@ type
     function IsObject(Color: Cardinal): Boolean;
     function IsTransparentOrObject(Color: Cardinal): Boolean;
     function IsShadow(ID, X, Y: Integer): Boolean;
+    procedure AnalyzeShadows(ID: Word; aOnlyShadows: Boolean; aDoConvert: Boolean; aDoUpdateSizes: Boolean);
   public
     constructor Create(aSpritePack: TKMSpritePack);
-    procedure ConvertShadows(ID: Word; aOnlyShadows:Boolean);
+    procedure ConvertShadows(ID: Word; aOnlyShadows: Boolean);
+    procedure DetermineImageObjectSize(ID: Word);
   end;
 
 
@@ -105,7 +107,17 @@ begin
     end;
 end;
 
+procedure TKMSoftShadowConverter.DetermineImageObjectSize(ID: Word);
+begin
+  AnalyzeShadows(ID, True, False, True); //Only update sizes info
+end;
+
 procedure TKMSoftShadowConverter.ConvertShadows(ID: Word; aOnlyShadows: Boolean);
+begin
+  AnalyzeShadows(ID, aOnlyShadows, True, False); //Only convert shadows
+end;
+
+procedure TKMSoftShadowConverter.AnalyzeShadows(ID: Word; aOnlyShadows: Boolean; aDoConvert: Boolean; aDoUpdateSizes: Boolean);
 var
   TempShadowMap: array of array of Boolean;
   ShadowMap: array of array of Boolean;
@@ -227,12 +239,23 @@ begin
     end;
 
   OriginalColor := 0;
+
+  if aDoUpdateSizes then
+  begin
+    fRXData.SizeNoShadow[ID].left := fRXData.Size[ID].X - 1;
+    fRXData.SizeNoShadow[ID].right := 0;
+    fRXData.SizeNoShadow[ID].top := fRXData.Size[ID].Y - 1;
+    fRXData.SizeNoShadow[ID].bottom := 0;
+  end;
+
   for X := 0 to fRXData.Size[ID].X - 1 do
     for Y := 0 to fRXData.Size[ID].Y - 1 do
     begin
       Color := ReadPixelSafe(ID, X, Y);
       if (TempShadowMap[X, Y] or ShadowMap[X, Y] or IsTransparent(Color)) and not IsObject(Color) then
       begin
+        if not aDoConvert then Continue;
+        
         RealShadow := Min(Round(GetBlurredShadow(X, Y) * SHADING_LEVEL), 255);
         //If we're doing the entire sprite consider the original color, else use black
         if not fOnlyShadows then
@@ -256,6 +279,18 @@ begin
             OriginalColor := OriginalColor and $00FFFFFF;
         end;
         fRXData.RGBA[ID, Y*fRXData.Size[ID].X + X] := (RealShadow shl 24) or OriginalColor;
+      end
+      else
+      if IsObject(Color) 
+        and not TempShadowMap[X, Y]
+        and not ShadowMap[X, Y] then
+      begin
+        if not aDoUpdateSizes then Continue;
+        
+        fRXData.SizeNoShadow[ID].left := Min(fRXData.SizeNoShadow[ID].left, X);
+        fRXData.SizeNoShadow[ID].right := Max(fRXData.SizeNoShadow[ID].right, X);
+        fRXData.SizeNoShadow[ID].top := Min(fRXData.SizeNoShadow[ID].top, Y);
+        fRXData.SizeNoShadow[ID].bottom := Max(fRXData.SizeNoShadow[ID].bottom, Y);
       end;
     end;
 end;

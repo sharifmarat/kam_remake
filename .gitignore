@@ -56,4 +56,8 @@ __recovery
 /Test*/*.res
 /Utils/*/KaM_Remake_Server_Status.*
 
-Logs/PerfLog.txt
+/Logs/PerfLog.txt
+
+/Music/*.mp2
+/Music/23 - Market.mp3
+/Music/24 - Household.mp3
