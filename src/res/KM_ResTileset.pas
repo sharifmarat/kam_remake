@@ -487,12 +487,20 @@ type
 
     function TileIsGoodForIronMine(aTile: Word): Boolean;
     function TileIsGoodForGoldMine(aTile: Word): Boolean;
+
+    class function TileIsAllowedToSet(aTile: Word): Boolean;
   end;
 
 
 implementation
 uses
   KM_CommonUtils;
+
+const
+  TILES_NOT_ALLOWED_TO_SET: array[0..17] of Word = (55,59,60,61,62,63, //wine and corn
+                                                    189,169,185, //duplicates of 108,109,110
+                                                    246, //some strange bridge...
+                                                    248,249,250,251,252,253,254,255); //roads and overlays
 
 
 { TKMResTileset }
@@ -774,6 +782,12 @@ begin
   //List of tiles that cannot be factored (coordinates outside the map return true)
   Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206])
             and (aTile <> 300);
+end;
+
+
+class function TKMResTileset.TileIsAllowedToSet(aTile: Word): Boolean;
+begin
+  Result := not ArrayContains(aTile, TILES_NOT_ALLOWED_TO_SET);
 end;
 
 
