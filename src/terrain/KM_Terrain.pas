@@ -344,7 +344,7 @@ type
 const
   OBJ_BLOCK = 61;
   OBJ_NONE = 255;
-
+  OBJ_INVISIBLE = 254; //Special object without any attributes set
 
 var
   //Terrain is a globally accessible resource by so many objects
@@ -748,8 +748,8 @@ function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Word; out aDiagonal
   function AllowableObject: Boolean;
   begin
     // Hide falling trees
-    // Invisible objects like 255 can be useful to clear specified tile (since delete object = place object 255)
-    Result := (gMapElements[aObject].Stump = -1) or (aObject = OBJ_NONE);
+    // Invisible objects like 254 or 255 can be useful to clear specified tile (since delete object = place object 255)
+    Result := (gMapElements[aObject].Stump = -1) or (aObject in [OBJ_INVISIBLE, OBJ_NONE]);
   end;
 var
   Loc: TKMPoint;
