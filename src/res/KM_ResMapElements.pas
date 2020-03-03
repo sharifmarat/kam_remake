@@ -176,7 +176,7 @@ end;
 procedure TKMResMapElements.ExportToText(const FileName: string);
 var
   I: Integer; ft: TextFile;
-  Str1, Str2, Str3, Str4, Str5, Str6: String;
+  Str1, Str2, Str3, Str4, Str5, Str6, Str7: String;
 begin
   AssignFile(ft, ExeDir + 'Trees.txt');
   Rewrite(ft);
@@ -186,10 +186,11 @@ begin
   Str4 := 'DiagonalBlocked and Can Build: ';
   Str5 := 'DiagonalBlocked and Can not build: ';
   Str6 := 'AllBlocked and and Block Build: ';
+  Str7 := 'Stump <> -1: ';
   for I := 1 to fCount do
   begin
-    Writeln(ft);
-    Writeln(ft, inttostr(I) + ' Anim: ' + inttostr(gMapElements[I].Anim.Count));
+    //Writeln(ft);
+    Write(ft, inttostr(I) + ' Anim: ' + inttostr(gMapElements[I].Anim.Count));
 //    for K := 1 to 30 do
 //      if gMapElements[I].Anim.Step[K] > 0 then
 //        Write(ft, gMapElements[I].Anim.Step[K], '.')
@@ -197,7 +198,8 @@ begin
 //        Write(ft, '_.');
     Write(ft, '; DiagonalBlocked = ', gMapElements[I].DiagonalBlocked);
     Write(ft, '; AllBlocked = ', gMapElements[I].AllBlocked);
-    Write(ft, ' CanBeRemoved = ', gMapElements[I].CanBeRemoved);
+    Write(ft, '; CanBeRemoved = ', gMapElements[I].CanBeRemoved);
+    Write(ft, '; Stump = ', IntToStr(gMapElements[I].Stump));
     Writeln(ft);
 
     if (gMapElements[I].Anim.Count > 0) and (gMapElements[I].Anim.Step[1] > 0)
@@ -221,11 +223,14 @@ begin
       if gMapElements[I].DiagonalBlocked and not gMapElements[I].CanBeRemoved then
         Str5 := Str5 + IntToStr(I) + ' ';
     end;
+
+    if gMapElements[I].Stump <> -1 then
+      Str7 := Str7 + IntToStr(I) + ' ';
     // for K:=1 to 16 do
     // write(ft,MapElem[I].CuttableTree,''); //Those are 1/0 so we can ommit space between them
 
 
-    Writeln(ft);
+    //Writeln(ft);
   end;
   Writeln(ft);
   Writeln(ft, Str1);
@@ -239,6 +244,8 @@ begin
   Writeln(ft, Str4);
   Writeln(ft);
   Writeln(ft, Str5);
+  Writeln(ft);
+  Writeln(ft, Str7);
   CloseFile(ft);
 end;
 
