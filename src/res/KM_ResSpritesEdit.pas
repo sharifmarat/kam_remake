@@ -487,7 +487,9 @@ begin
     begin
       InputStream.Write(fRXData.Size[I].X, 4);
       InputStream.Write(fRXData.Pivot[I].X, 8);
-      InputStream.Write(fRXData.SizeNoShadow[I].left, 16);
+
+      if fRT = rxUnits then
+        InputStream.Write(fRXData.SizeNoShadow[I].left, 16);
       InputStream.Write(fRXData.RGBA[I, 0], 4 * fRXData.Size[I].X * fRXData.Size[I].Y);
       InputStream.Write(fRXData.HasMask[I], 1);
       if fRXData.HasMask[I] then
