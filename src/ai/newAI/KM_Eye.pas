@@ -1309,13 +1309,13 @@ end;
 
 
 
-
 { TKMBuildFF }
 constructor TKMBuildFF.Create();
 begin
   inherited Create();
   fUpdateTick := 0;
   SetLength(fInfoArr,0);
+  FillChar(fHouseReq,SizeOf(fHouseReq),#0);
   fLocs := TKMPointList.Create();
 end;
 
