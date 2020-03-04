@@ -333,7 +333,6 @@ end;
 procedure TKMMapEdTerrainObjects.ObjectsPalette_Refresh(Sender: TObject);
 var
   I, J, K, LeftAdj, TopAdj: Integer;
-  TOA: TKMTerrainObjectAttribute;
 begin
   LeftAdj := (PopUp_ObjectsPalette.Width - fObjPaletteTableSize.X*(OBJ_CELL_W + 1) - 25*Byte(Scroll_ObjectsPalette.Visible)) div 2;
   TopAdj := Image_ObjectsPalette.Top + 25;
