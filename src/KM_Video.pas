@@ -166,7 +166,7 @@ begin
 {$IFDEF VIDEOS}
   FNext := False;
   FVideoList.Free;
-  FCriticalSection.Free;
+
 
   DestroyMediaPlayer;
 
@@ -176,6 +176,8 @@ begin
     FInstance := nil;
   end;
 {$ENDIF}
+
+  FCriticalSection.Free;
 
   inherited;
 end;
