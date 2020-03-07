@@ -344,7 +344,7 @@ type
 const
   OBJ_BLOCK = 61;
   OBJ_NONE = 255;
-
+  OBJ_INVISIBLE = 254; //Special object without any attributes set
 
 var
   //Terrain is a globally accessible resource by so many objects
@@ -633,8 +633,7 @@ begin
         begin
           //Rollback change
           Land[Y, X].Height := OldHeight;
-          Result := False;
-          Exit;
+          Exit(False);
         end;
 
   //Accept change
@@ -677,6 +676,9 @@ var
   DoRemField: Boolean;
 begin
   Assert((aType <> -1) or (aRot <> -1), 'Either terrain type or rotation should be set');
+
+  if not gRes.Tileset.TileIsAllowedToSet(aType) then
+    Exit(False);
  
   Loc := KMPoint(X, Y);
   LocRect := KMRect(Loc);
@@ -688,10 +690,7 @@ begin
     //Will this change block a construction site?
     or ((Land[Y, X].TileLock in [tlFenced, tlDigged, tlHouse])
       and (not fTileSet.TileIsRoadable(aType) or not fTileset.TileIsWalkable(aType))) then
-  begin
-    Result := False;
-    Exit;
-  end;
+    Exit(False);
 
   aDiagonalChanged := False;
 
@@ -738,18 +737,15 @@ function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Word; out aDiagonal
       if TileInMapCoords(X+K, Y+I) then
         //Can't put objects near houses or house sites
         if (Land[Y+I, X+K].TileLock in [tlFenced, tlDigged, tlHouse]) then
-        begin
-          Result := True;
-          Exit;
-        end;
+          Exit(True);
   end;
 
   // We do not want falling trees
   function AllowableObject: Boolean;
   begin
     // Hide falling trees
-    // Invisible objects like 255 can be useful to clear specified tile (since delete object = place object 255)
-    Result := (gMapElements[aObject].Stump = -1) or (aObject = OBJ_NONE);
+    // Invisible objects like 254 or 255 can be useful to clear specified tile (since delete object = place object 255)
+    Result := (gMapElements[aObject].Stump = -1) or (aObject in [OBJ_INVISIBLE, OBJ_NONE]);
   end;
 var
   Loc: TKMPoint;
@@ -769,10 +765,7 @@ begin
       or HousesNearObject
       //Is this object allowed to be placed?
       or not AllowableObject then
-    begin
-      Result := False;
-      Exit;
-    end;
+      Exit(False);
   end;
 
   //Did block diagonal property change? (hence xor) UpdateWalkConnect needs to know

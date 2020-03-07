@@ -10,7 +10,6 @@ const
   TILES_CNT = 349;
   MAX_TILE_TO_SHOW = TILES_CNT;
   MAX_STATIC_TERRAIN_ID = 9997;
-//  WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
 
 type
   //TKMTileProperty = set of (tpWalkable, tpRoadable);
@@ -462,12 +461,6 @@ type
       u3: Byte; // 1/2/4/8 bitfield, seems to have no logical explanation
     end;
 
-//    TilesInfo: array [1..TILES_CNT] of record
-//      Walkable: Boolean;
-//      Buildable: Boolean;
-//      Mask: Boolean;
-//    end;
-
     TileColor: TRGBArray;
 
     constructor Create(const aPatternPath: string);
@@ -494,12 +487,19 @@ type
 
     function TileIsGoodForIronMine(aTile: Word): Boolean;
     function TileIsGoodForGoldMine(aTile: Word): Boolean;
+
+    class function TileIsAllowedToSet(aTile: Word): Boolean;
   end;
 
 
 implementation
 uses
   KM_CommonUtils;
+
+const
+  TILES_NOT_ALLOWED_TO_SET: array[0..16] of Word = (55,59,60,61,62,63, //wine and corn
+                                                    189,169,185, //duplicates of 108,109,110
+                                                    248,249,250,251,252,253,254,255); //roads and overlays
 
 
 { TKMResTileset }
@@ -781,6 +781,12 @@ begin
   //List of tiles that cannot be factored (coordinates outside the map return true)
   Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206])
             and (aTile <> 300);
+end;
+
+
+class function TKMResTileset.TileIsAllowedToSet(aTile: Word): Boolean;
+begin
+  Result := not ArrayContains(aTile, TILES_NOT_ALLOWED_TO_SET);
 end;
 
 

@@ -9,6 +9,10 @@ uses
   KM_Controls, KM_Defaults, KM_Pics, KM_GameCursor, KM_Points, KM_CommonTypes;
 
 type
+  TKMTerrainObjectAttribute = (toaBlockDiagonal, toaBlockAllExceptBuild, toaBlockBuild, toaChoppableTree);
+
+  TKMTerrainObjectAttributeSet = set of TKMTerrainObjectAttribute;
+
   TKMMapEdTerrainObjects = class (TKMMapEdSubMenuPage)
   private
     fHideAllPages: TEvent;
@@ -20,11 +24,13 @@ type
     fMapElemToCompact: array [Byte] of Byte; //Pointers of valid MapElem's back to map objects. (reverse lookup to one above) 256 is no object.
 
     fObjPaletteTableSize: TKMPoint;
+    fObjPaletteAttr: array of TKMTerrainObjectAttributeSet;
 
     function GetObjPaletteTableHeight: Integer;
     function GetObjPaletteTableWidth: Integer;
 
-    procedure UpdateObjButtonDescription(aBtn: TKMButtonFlat; aObjID: Integer);
+    procedure UpdatePaletteButton(aBtnID: Integer);
+    function UpdateObjAttributesAndDesc(aBtn: TKMButtonFlat; aObjID: Integer): TKMTerrainObjectAttributeSet;
     procedure CompactMapElements;
     procedure ObjectsUpdate(aObjIndex: Integer);
     procedure UpdateObjectsScrollPosToIndex(aObjIndex: Integer);
@@ -53,6 +59,8 @@ type
       Button_ObjPaletteErase: TKMButtonFlat;
       Button_ObjPaletteBlock: TKMButtonFlat;
       ObjectsPaletteTable: array of TKMButtonFlat;
+      Image_ObjectAttributes: array[0..2] of array of TKMImage;
+
       Scroll_ObjectsPalette: TKMScrollBar;
   public
     constructor Create(aParent: TKMPanel; aHideAllPages: TEvent);
@@ -79,6 +87,9 @@ const
   OBJ_CELL_W = 68;
   OBJ_CELL_H = 84;
 
+  OBJ_CELL_PALETTE_W = 68;
+  OBJ_CELL_PALETTE_H = 84;
+
   OBJ_NONE_TAG = -100;
   OBJ_BLOCK_TAG = -200;
 
@@ -87,6 +98,7 @@ const
 constructor TKMMapEdTerrainObjects.Create(aParent: TKMPanel; aHideAllPages: TEvent);
 var
   I, J: Integer;
+//  TOA: TKMTerrainObjectAttribute;
 begin
   inherited Create;
 
@@ -160,13 +172,27 @@ begin
     SetLength(ObjectsPaletteTable, fCountCompact);
     for I := 0 to fCountCompact - 1 do
     begin
-      ObjectsPaletteTable[I] := TKMButtonFlat.Create(PopUp_ObjectsPalette, 0, 0, OBJ_CELL_W, OBJ_CELL_H, 1, rxTrees); // Left and Top will update later
+      ObjectsPaletteTable[I] := TKMButtonFlat.Create(PopUp_ObjectsPalette, 0, 0, OBJ_CELL_PALETTE_W, OBJ_CELL_PALETTE_H, 1, rxTrees); // Left and Top will update later
       ObjectsPaletteTable[I].Tag := I; //Store ID
       ObjectsPaletteTable[I].CapOffsetY := 15;
+//      ObjectsPaletteTable[I].TexOffsetY := 0;
       ObjectsPaletteTable[I].Enable;
       ObjectsPaletteTable[I].Hide;
       ObjectsPaletteTable[I].OnMouseWheel := Scroll_ObjectsPalette.MouseWheel;
       ObjectsPaletteTable[I].OnClickShift := ObjPalette_ClickShift;
+
+    end;
+
+    SetLength(fObjPaletteAttr, fCountCompact);
+    for J := Low(Image_ObjectAttributes) to High(Image_ObjectAttributes) do
+    begin
+      SetLength(Image_ObjectAttributes[J], fCountCompact);
+      for I := 0 to fCountCompact - 1 do
+      begin
+        Image_ObjectAttributes[J, I] := TKMImage.Create(PopUp_ObjectsPalette, 0, 0, 0, 0, 0);
+        Image_ObjectAttributes[J, I].Hide;
+        Image_ObjectAttributes[J, I].Hitable := False;
+      end;
     end;
 
     Label_ObjectsPalette := TKMLabel.Create(PopUp_ObjectsPalette, PopUp_ObjectsPalette.Center.X, 0, gResTexts[TX_MAPED_TERRAIN_OBJECTS_PALETTE], fntOutline, taCenter);
@@ -207,43 +233,100 @@ end;
 
 function TKMMapEdTerrainObjects.GetObjPaletteTableHeight: Integer;
 begin
-  Result := (OBJ_CELL_H + 1)*Min(fObjPaletteTableSize.Y, ((fCountCompact - 1) div fObjPaletteTableSize.X) + 1);
+  Result := (OBJ_CELL_PALETTE_H + 1)*Min(fObjPaletteTableSize.Y, ((fCountCompact - 1) div fObjPaletteTableSize.X) + 1);
 end;
 
 
 function TKMMapEdTerrainObjects.GetObjPaletteTableWidth: Integer;
 begin
-  Result := (OBJ_CELL_W + 1)*fObjPaletteTableSize.X;
+  Result := (OBJ_CELL_PALETTE_W + 1)*fObjPaletteTableSize.X;
 end;
 
 
-procedure TKMMapEdTerrainObjects.UpdateObjButtonDescription(aBtn: TKMButtonFlat; aObjID: Integer);
+procedure TKMMapEdTerrainObjects.UpdatePaletteButton(aBtnID: Integer);
+const
+  ATTR_IMG_SIZE = 25;
+  IMG_ATTR_TEXID: array[TKMTerrainObjectAttribute] of Integer = (677, 340, 40, 371 {395});
+  IMG_ATTR_W: array[TKMTerrainObjectAttribute] of Integer = (14, 19, 23, 18);
+  IMG_ATTR_H: array[TKMTerrainObjectAttribute] of Integer = (14, 19, 22, 14);
 var
-  ChoppableTree: Boolean;
+  I, Index: Integer;
+  TOA: TKMTerrainObjectAttribute;
+  attributes: TKMTerrainObjectAttributeSet;
 begin
+  attributes := UpdateObjAttributesAndDesc(ObjectsPaletteTable[aBtnID], fCompactToMapElem[aBtnID]);
+  Index := 0;
+//  for TOA := Low(TKMTerrainObjectAttribute) to High(TKMTerrainObjectAttribute) do
+  for TOA := toaChoppableTree to toaChoppableTree do
+  begin
+    if TOA in attributes then
+    begin
+      Image_ObjectAttributes[Index, aBtnID].Visible := True;
+      Image_ObjectAttributes[Index, aBtnID].Left := ObjectsPaletteTable[aBtnID].Left + 2 + ATTR_IMG_SIZE*Index;
+      Image_ObjectAttributes[Index, aBtnID].Top := ObjectsPaletteTable[aBtnID].Bottom - IMG_ATTR_H[TOA] - 10;
+      Image_ObjectAttributes[Index, aBtnID].Width := IMG_ATTR_W[TOA];
+      Image_ObjectAttributes[Index, aBtnID].Height := IMG_ATTR_H[TOA];
+      Image_ObjectAttributes[Index, aBtnID].TexID := IMG_ATTR_TEXID[TOA];
+      Inc(Index);
+    end;
+  end;
+  for I := Index to High(Image_ObjectAttributes) do
+    Image_ObjectAttributes[Index, aBtnID].Hide;
+end;
+
+
+function TKMMapEdTerrainObjects.UpdateObjAttributesAndDesc(aBtn: TKMButtonFlat; aObjID: Integer): TKMTerrainObjectAttributeSet;
+var
+  HintStr: String;
+begin
+  Result := [];
+  HintStr := '';
+
   aBtn.CapColor := icWhite;
   aBtn.Hint := aBtn.Caption;
 
-  ChoppableTree := False;
   if ObjectIsChoppableTree(aObjID, [caAge1, caAge2, caAge3, caAgeFull]) then
   begin
+    Include(Result, toaChoppableTree);
     aBtn.CapColor := icRoyalYellow;
-    aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_DESC_CHOPPABLE];
-    ChoppableTree := True;
+    aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_CHOPPABLE_HINT];
   end;
 
   if gMapElements[aObjID].DiagonalBlocked then
   begin
-    aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_DESC_BLOCK_DIAG];
-    if not ChoppableTree then
-      aBtn.CapColor := icLightRed;
-  end else
-  if gMapElements[aObjID].AllBlocked then
-  begin
-    aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_DESC_BLOCK_ALL];
-    if not ChoppableTree then
-      aBtn.CapColor := icRed;
+    Include(Result, toaBlockDiagonal);
+    aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_BLOCK_WALK_DIAG_HINT];
+    aBtn.CapColor := icLightRed;
   end;
+
+//This section is not needed, since every AllBlocked object is also blocks building
+//  if gMapElements[aObjID].AllBlocked then
+//  begin
+//    Include(Result, toaBlockAllExceptBuild);
+//    HintStr := ' / ' + gResTexts[TX_MAPED_OBJ_BLOCK_ALL_HINT];
+//    aBtn.CapColor := icOrange;
+//  end;
+
+  if not gMapElements[aObjID].CanBeRemoved then
+  begin
+    Include(Result, toaBlockBuild);
+    if gMapElements[aObjID].AllBlocked then
+    begin
+      Include(Result, toaBlockAllExceptBuild);
+      aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_BLOCK_WALK_BUILD_HINT];
+      aBtn.CapColor := icRed;
+    end
+    else
+    begin
+      aBtn.Hint := aBtn.Hint + ' / ' + gResTexts[TX_MAPED_OBJ_BLOCK_BUILD_HINT];
+      if toaBlockDiagonal in Result then
+        aBtn.CapColor := icOrange
+      else
+        aBtn.CapColor := icRoyalYellow;
+    end;
+  end;
+
+  aBtn.Hint := aBtn.Hint + HintStr;
 end;
 
 
@@ -265,12 +348,12 @@ begin
       K := (I + Scroll_ObjectsPalette.Position)*fObjPaletteTableSize.X + J;
       if K < fCountCompact then
       begin
-        ObjectsPaletteTable[K].Left := J*(OBJ_CELL_W + 1) + LeftAdj;
-        ObjectsPaletteTable[K].Top := 25 + I*(OBJ_CELL_H + 1)  + TopAdj;
+        ObjectsPaletteTable[K].Left := J*(OBJ_CELL_PALETTE_W + 1) + LeftAdj;
+        ObjectsPaletteTable[K].Top := 25 + I*(OBJ_CELL_PALETTE_H + 1)  + TopAdj;
         ObjectsPaletteTable[K].TexID := gMapElements[fCompactToMapElem[K]].Anim.Step[1] + 1;
         ObjectsPaletteTable[K].Caption := IntToStr(fCompactToMapElem[K]);
 
-        UpdateObjButtonDescription(ObjectsPaletteTable[K], fCompactToMapElem[K]);
+        UpdatePaletteButton(K);
 
         ObjectsPaletteTable[K].Visible := True;
       end;
@@ -307,9 +390,9 @@ begin
   PopUp_ObjectsPalette.Width := PopUp_ObjectsPalette.MasterParent.Width - 50;
   PopUp_ObjectsPalette.Height := PopUp_ObjectsPalette.MasterParent.Height - 50;
 
-  RowsCnt := Max(1, (PopUp_ObjectsPalette.Height - 80) div (OBJ_CELL_H + 1));
+  RowsCnt := Max(1, (PopUp_ObjectsPalette.Height - 80) div (OBJ_CELL_PALETTE_H + 1));
   //Calc cols count without Scroll first
-  ColsCnt := EnsureRange(PopUp_ObjectsPalette.Width div (OBJ_CELL_W + 1), 1, OBJECTS_PALETTE_MAX_COLS_CNT);
+  ColsCnt := EnsureRange(PopUp_ObjectsPalette.Width div (OBJ_CELL_PALETTE_W + 1), 1, OBJECTS_PALETTE_MAX_COLS_CNT);
   Scroll_ObjectsPalette.Visible := RowsCnt*ColsCnt < fCountCompact;
   //Recalc ColsCount considering possible scroll width
   ColsCnt := EnsureRange((PopUp_ObjectsPalette.Width - 25*Byte(Scroll_ObjectsPalette.Visible)) div (OBJ_CELL_W + 1), 1, OBJECTS_PALETTE_MAX_COLS_CNT);
@@ -454,7 +537,7 @@ begin
       ObjectsTable[I].TexID := gMapElements[fCompactToMapElem[ObjIndex]].Anim.Step[1] + 1;
       ObjectsTable[I].Caption := IntToStr(fCompactToMapElem[ObjIndex]);
 
-      UpdateObjButtonDescription(ObjectsTable[I], fCompactToMapElem[ObjIndex]);
+      UpdateObjAttributesAndDesc(ObjectsTable[I], fCompactToMapElem[ObjIndex]);
 
       ObjectsTable[I].Enable;
     end
