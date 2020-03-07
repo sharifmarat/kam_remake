@@ -6,7 +6,7 @@ uses
   {$IFDEF Unix} LCLType, {$ENDIF}
   Classes,
   Math, SysUtils, KM_Utils,
-  KM_Controls, KM_Defaults, KM_Pics,
+  KM_Controls, KM_Defaults, KM_Pics, KM_Minimap,
   KM_RandomMapGenerator, KM_CommonUtils;
 
 type
@@ -17,6 +17,7 @@ type
   private
     fMPLobby: Boolean;
     fMapSizeIndicator: Boolean;
+    fMinimap: TKMMinimap;
     fRMG: TKMRandomMapGenerator;
     fOnNewMap,fOnCloseGUI: TKMRMGCallback;
 
@@ -29,6 +30,8 @@ type
     Panel_RMG: TKMPanel;
     CheckGroup_Grass: TKMRadioGroup;
     CheckGroup_LocPosition: TKMRadioGroup;
+
+    MinimapView: TKMMinimapView;
 
     Check_Biomes, Check_Ground,Check_Snow,Check_Sand,
     Check_Obstacles,
@@ -56,7 +59,7 @@ type
     Button_RMG_Generate: TKMButton;
     Button_RMG_Cancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aMP: Boolean = False);
+    constructor Create(aParent: TKMPanel; aMinimap: TKMMinimap = nil; aMP: Boolean = False);
     destructor Destroy; override;
 
     property Visible: Boolean read GetVisible;
@@ -64,6 +67,7 @@ type
     property OnCloseGUI: TKMRMGCallback write fOnCloseGUI;
     procedure Show();
     procedure Hide();
+    procedure RefreshMinimap();
   end;
 
 
@@ -75,7 +79,7 @@ uses
 
 
 { TKMGUIMapEdGoal }
-constructor TKMMapEdRMG.Create(aParent: TKMPanel; aMP: Boolean = False);
+constructor TKMMapEdRMG.Create(aParent: TKMPanel; aMinimap: TKMMinimap = nil; aMP: Boolean = False);
   procedure SetDebugSettings();
   begin
     // COLUMN 1: Locs + Resources
@@ -177,6 +181,7 @@ begin
 
   fMPLobby := aMP;
   fMapSizeIndicator := False;
+  fMinimap := aMinimap;
   fRMG := TKMRandomMapGenerator.Create;
   fOnNewMap := nil;
 
@@ -185,9 +190,14 @@ begin
   Panel_RMG.Hide;
   Panel_RMG.PanelHandleMouseWheelByDefault := False; //Allow to zoom in/out while RMG settings window is open
 
-  TKMBevel.Create(Panel_RMG, -1000,  -1000, 4000, 4000);
-  Img := TKMImage.Create(Panel_RMG, -20, -50, SIZE_X+40, SIZE_Y+60, 15, rxGuiMain);
-  Img.ImageStretch;
+  if aMP then
+  begin
+    TKMBevel.Create(Panel_RMG, -1000,  -1000, 4000, 4000);
+    Img := TKMImage.Create(Panel_RMG, -20, -50, SIZE_X+40, SIZE_Y+60, 15, rxGuiMain);
+    Img.ImageStretch;
+  end
+  else
+    TKMBevel.Create(Panel_RMG, 0, -15, SIZE_X, SIZE_Y);
   // Bevel panels
   TKMBevel.Create(Panel_RMG, Column_1_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
   TKMBevel.Create(Panel_RMG, Column_2_X-INDENTATION_Bevel, 60, SIZE_Bevel_X, SIZE_Bevel_Y);
@@ -196,7 +206,7 @@ begin
   TKMBevel.Create(Panel_RMG, Column_4_X-INDENTATION_Bevel, 60+220+30 - 80*Byte(aMP), SIZE_Bevel_X, 170 - 30*Byte(aMP));
 
 // Title
-  TKMLabel.Create(Panel_RMG, SIZE_X div 2, -20, gResTexts[TX_MAPED_RMG_SETTINGS_TITLE], fntOutline, taCenter);
+  TKMLabel.Create(Panel_RMG, SIZE_X div 2, -10, gResTexts[TX_MAPED_RMG_SETTINGS_TITLE], fntOutline, taCenter);
 
 
 // RMG panel
@@ -475,6 +485,12 @@ begin
     TBar_Trees.Position := 17;
     TBar_Trees.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_TREES_HINT];
 
+  if aMP then
+  begin
+    MinimapView := TKMMinimapView.Create(Panel_Settings, Column_X, NextLine(Column_Y,30), 192, 192, True);
+      MinimapView.ShowLocs := True; //In the minimap we want player locations to be shown
+      MinimapView.Show;
+  end;
 
 // Map size
   Column_X := Column_1_X;
@@ -527,14 +543,16 @@ begin
 
 
 // Buttons
-  Button_RMG_Generate_New_Seed := TKMButton.Create(Panel_RMG, SIZE_X-480-60, SIZE_Y - 50, 200, 30, gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED], bsMenu);
+  Column_X := SIZE_X - 160 - 215 * Byte(aMP);
+  Column_Y := SIZE_Y - 50;
+  Button_RMG_Generate_New_Seed := TKMButton.Create(Panel_RMG, Column_X-320-60, Column_Y, 200, 30, gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED], bsMenu);
   Button_RMG_Generate_New_Seed.OnClick := RMG_Generate_New_Seed;
   Button_RMG_Generate_New_Seed.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED_HINT];
   if aMP then Button_RMG_Generate_New_Seed.Hide;
-  Button_RMG_Generate := TKMButton.Create(Panel_RMG, SIZE_X-320-10, SIZE_Y - 50, 160, 30, gResTexts[TX_MAPED_RMG_SETTINGS_GENERATE_MAP], bsMenu);
+  Button_RMG_Generate := TKMButton.Create(Panel_RMG, Column_X-160-10, Column_Y, 160, 30, gResTexts[TX_MAPED_RMG_SETTINGS_GENERATE_MAP], bsMenu);
   Button_RMG_Generate.OnClick := RMG_Generate_Map;
   Button_RMG_Generate.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_GENERATE_MAP_HINT];
-  Button_RMG_Cancel := TKMButton.Create(Panel_RMG, SIZE_X-160, SIZE_Y - 50, 160, 30, gResTexts[TX_MAPED_CANCEL], bsMenu);
+  Button_RMG_Cancel := TKMButton.Create(Panel_RMG, Column_X, Column_Y, 150, 30, gResTexts[TX_MAPED_CANCEL], bsMenu);
   Button_RMG_Cancel.OnClick := RMG_Close;
   Button_RMG_Cancel.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_CLOSE_RMG_HINT];
 
@@ -689,6 +707,7 @@ begin
   end;
   if Assigned(fOnNewMap) then
     fOnNewMap();
+  RefreshMinimap();
 end;
 
 
@@ -715,11 +734,19 @@ end;
 procedure TKMMapEdRMG.Show();
 begin
   Panel_RMG.Show;
+  RefreshMinimap();
   if not fMapSizeIndicator AND not fMPLobby AND (Label_MapSize <> nil) then
   begin
     fMapSizeIndicator := True;
     Label_MapSize.Caption := Format('%dx%d',[gTerrain.MapX,gTerrain.MapY]);
   end;
+end;
+
+
+procedure TKMMapEdRMG.RefreshMinimap();
+begin
+  if Assigned(fMinimap) then
+    MinimapView.SetMinimap(fMinimap);
 end;
 
 
