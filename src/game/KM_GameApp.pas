@@ -311,7 +311,7 @@ begin
   if gGame <> nil then gGame.ActiveInterface.Resize(X, Y);
 
   if gVideoPlayer.IsActive then
-    gVideoPlayer.Resize;
+    gVideoPlayer.Resize(X, Y);
 end;
 
 
@@ -1060,17 +1060,15 @@ begin
 
   fRender.BeginFrame;
 
-  if not gVideoPlayer.IsActive then
-  begin
+  if gVideoPlayer.IsActive then
+    gVideoPlayer.Paint
+  else
     if gGame <> nil then
       gGame.Render(fRender)
     else
       fMainMenuInterface.Paint;
 
-    fRender.RenderBrightness(GameSettings.Brightness);
-  end
-  else
-    gVideoPlayer.Paint;
+  fRender.RenderBrightness(GameSettings.Brightness);
 
   fRender.EndFrame;
 

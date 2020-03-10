@@ -74,7 +74,7 @@ implementation
 uses
   KM_ResTexts, KM_Game, KM_GameApp, KM_HandsCollection,
   KM_CommonUtils, KM_Resource, KM_Hand, KM_RenderUI, KM_ResFonts,
-  KM_ResWares, KM_HandStats;
+  KM_ResWares, KM_HandStats, KM_Video;
 
 
 { TKMGUIMenuResultsSP }
@@ -167,6 +167,11 @@ begin
     Button_Back.Caption := gResTexts[TX_RESULTS_BACK_TO_GAME]
   else
     Button_Back.Caption := gResTexts[TX_MENU_BACK];  
+
+  case fGameResultMsg of
+    grWin: gVideoPlayer.Play('Victory.avi');
+    grDefeat, grCancel: gVideoPlayer.Play('LOST.AVI');
+  end;
 
   //Header
   case fGameResultMsg of

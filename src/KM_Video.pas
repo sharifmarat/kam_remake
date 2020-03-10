@@ -51,7 +51,11 @@ type
     FWidth: LongWord;
     FHeight: LongWord;
 
+    FScreenWidth: Integer;
+    FScreenHeight: Integer;
+
     FNext: Boolean;
+    FTexture: TTexture;
 
     FIndex: Integer;
     FLenght: Int64;
@@ -85,7 +89,7 @@ type
     procedure Pause;
     procedure Resume;
 
-    procedure Resize;
+    procedure Resize(aWidth, aHeight: Integer);
     procedure Paint;
 
     procedure KeyDown(Key: Word; Shift: TShiftState);
@@ -227,6 +231,8 @@ begin
     end;
   end;
   FCriticalSection.Enter;
+  TRender.DeleteTexture(FTexture.Tex);
+  FTexture.Tex := 0;
   SetLength(FBuffer, 0);
   FCriticalSection.Leave;
 {$ENDIF}
@@ -248,38 +254,19 @@ begin
 {$ENDIF}
 end;
 
-procedure TKMVideoPlayer.Resize;
-var
-  Width, Height: Integer;
-  AspectRatio: Single;
+procedure TKMVideoPlayer.Resize(aWidth, aHeight: Integer);
 begin
 {$IFDEF VIDEOS}
-  if not Assigned(FMediaPlayer) then
-    Exit;
-
-  AspectRatio := Width / Height;
-  {
-  if AspectRatio > FParentForm.ClientWidth / FParentForm.ClientHeight then
-  begin
-    FPanel.Width := FParentForm.ClientWidth;
-    FPanel.Height := Round(FParentForm.ClientWidth / AspectRatio);
-  end
-  else
-  begin
-    FPanel.Width := Round(FParentForm.ClientHeight * AspectRatio);
-    FPanel.Height := FParentForm.ClientHeight;
-  end;
-
-  FPanel.Left := FParentForm.ClientWidth div 2 - FPanel.Width div 2;
-  FPanel.Top := FParentForm.ClientHeight div 2 - FPanel.Height div 2;
-  }
-  //FMediaPlayer.DisplayRect := Rect(0, 0, FPanel.Width, FPanel.Height);
+  FScreenWidth := aWidth;
+  FScreenHeight := aHeight;
 {$ENDIF}
 end;
 
 procedure TKMVideoPlayer.Paint;
 var
   i: Integer;
+  AspectRatio: Single;
+  Width, Height: Integer;
 begin
 {$IFDEF VIDEOS}
   if FNext then
@@ -289,9 +276,29 @@ begin
     Exit;
   end;
 
-  if Length(FBuffer) > 0 then
-    glDrawPixels(FWidth, FHeight, GL_RGB, GL_UNSIGNED_BYTE, FBuffer);
+  if IsPlay and (Length(FBuffer) > 0) and (FTexture.Tex > 0)  then
+  begin
+    FCriticalSection.Enter;
+    glBindTexture(GL_TEXTURE_2D, FTexture.Tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FWidth, FHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, FBuffer);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
+    AspectRatio := FWidth / FHeight;
+    if AspectRatio > FScreenWidth / FScreenHeight then
+    begin
+      Width := FScreenWidth;
+      Height := Round(FScreenWidth / AspectRatio);
+    end
+    else
+    begin
+      Width := Round(FScreenHeight * AspectRatio);
+      Height := FScreenHeight;
+    end;
+
+    TKMRenderUI.WriteTexture((FScreenWidth - Width) div 2, (FScreenHeight - Height) div 2, Width, Height, FTexture, $FFFFFFFF);
+    FCriticalSection.Leave;
+  end;
+  {
   if IsPlay then
     TKMRenderUI.WriteText(100, 50, 1000, 'Play', fntArial, taLeft)
   else
@@ -309,6 +316,7 @@ begin
     else
       TKMRenderUI.WriteText(100, 100 + i * 20 + 20, 1000, FVideoList[i], fntArial, taLeft)
   end;
+  }
 {$ENDIF}
 end;
 
@@ -441,7 +449,12 @@ begin
     FHeight := info.video.i_height;
     FCriticalSection.Enter;
     SetLength(FBuffer, FWidth * FHeight * 3);
+
+    FTexture.Tex := TRender.GenerateTextureCommon;
+    FTexture.U := 1;
+    FTexture.V := 1;
     FCriticalSection.Leave;
+
     libvlc_video_set_format(FMediaPlayer, 'RV24', FWidth, FHeight, FWidth * 3);
     libvlc_media_player_set_media(FMediaPlayer, media);
     libvlc_media_player_play(FMediaPlayer);
