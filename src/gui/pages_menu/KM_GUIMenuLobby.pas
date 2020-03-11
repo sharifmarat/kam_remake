@@ -654,7 +654,7 @@ begin
     Button_Start.OnClick := StartClick;
     Button_Start.OnChangeEnableStatus := StartBtnChangeEnabled;
 
-  fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby, True); //RMG
+  fGuiRMG := TKMMapEdRMG.Create(Panel_Lobby, fMinimap, True); //RMG
   fGuiRMG.OnNewMap := SelectRMGMap;
 
   UpdateSpectatorDivide;
