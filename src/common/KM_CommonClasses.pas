@@ -400,6 +400,7 @@ begin
   Result := CompareValue(i1, i2);
 end;
 
+
 { ELocError }
 constructor ELocError.Create(const aMsg: UnicodeString; const aLoc: TKMPoint);
 begin
@@ -409,14 +410,13 @@ end;
 
 
 { TKMList }
-//We were notified that the item is deleted from the list
+// We were notified that the item is deleted from the list
 procedure TKMList.Notify(Ptr: Pointer; Action: TListNotification);
 begin
   inherited;
   if (Action = lnDeleted) then
     TObject(Ptr).Free;
 end;
-
 
 
 procedure TKMemoryStream.ReadBytes(out Value: TBytes);
@@ -429,6 +429,7 @@ begin
     Read(Pointer(Value)^, I);
 end;
 
+
 procedure TKMemoryStream.WriteBytes(const Value: TBytes);
 var
   I: Word;
@@ -438,7 +439,6 @@ begin
   if I = 0 then Exit;
   inherited Write(Pointer(Value)^, I);
 end;
-
 
 
 procedure TKMemoryStream.CopyFromDecompression(Source: TStream);
@@ -1246,7 +1246,6 @@ begin
     Add(aNewCRC);
   end;
 end;
-
 
 
 { TKMemoryStream }
