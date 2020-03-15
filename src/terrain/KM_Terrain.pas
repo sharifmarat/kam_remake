@@ -4708,9 +4708,9 @@ begin
   S.Write(aTileBasic.Height);             //4
   S.Write(aTileBasic.Obj);                //5
   S.Write(aTileBasic.IsCustom);           //7
-  S.Write(aTileBasic.LayersCnt);          //8
-  S.Write(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)); //9 ?
-  Inc(aMapDataSize, 9); // obligatory 8 bytes per tile
+  S.Write(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)); //8
+  S.Write(aTileBasic.LayersCnt);          //9
+  Inc(aMapDataSize, 9); // obligatory 9 bytes per tile
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
@@ -4778,11 +4778,15 @@ begin
     aStream.Read(aTileBasic.Obj);               //5
     aStream.Read(aTileBasic.IsCustom);          //7
     aTileBasic.BlendingLvl := 0; //Default value;
-    aTileBasic.TileOverlay := toNone;
+
+    if aGameRev > 10968 then
+      aStream.Read(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)) //8
+    else
+      aTileBasic.TileOverlay := toNone;
 
     // Load all layers info
     // First get layers count
-    aStream.Read(aTileBasic.LayersCnt);         //8
+    aStream.Read(aTileBasic.LayersCnt);         //9
     if aTileBasic.LayersCnt = 0 then            // No need to save corners, if we have no layers on that tile
       aTileBasic.BaseLayer.Corners := [0,1,2,3] // Set all corners then
     else begin
@@ -4802,11 +4806,6 @@ begin
         aStream.Read(aTileBasic.BlendingLvl)
       else
         aTileBasic.BlendingLvl := 0;
-
-      if aGameRev > 10968 then
-        aStream.Read(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay))
-      else
-        aTileBasic.TileOverlay := toNone;
 
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do
