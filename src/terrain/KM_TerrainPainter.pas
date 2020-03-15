@@ -22,6 +22,7 @@ type
     TerKind: TKMTerrainKind;
     Tiles: SmallInt;
     HeightAdd: Byte;
+    TileOverlay: TKMTileOverlay;
   end;
 
   TKMPainterTile = packed record
@@ -1787,6 +1788,7 @@ begin
         Data[I,J].TerKind     := LandTerKind[I,J].TerKind;
         Data[I,J].Tiles       := LandTerKind[I,J].Tiles;
         Data[I,J].HeightAdd   := LandTerKind[I,J].HeightAdd;
+        Data[I,J].TileOverlay := gTerrain.Land[I,J].TileOverlay;
         for L := 0 to 2 do
           Data[I,J].Layer[L] := gTerrain.Land[I,J].Layer[L];
       end;
@@ -1845,22 +1847,23 @@ begin
     for J := 1 to gTerrain.MapX do
       with fUndos[fUndoPos] do
       begin
-        gTerrain.Land[I,J].BaseLayer.Terrain  := Data[I,J].BaseLayer.Terrain;
-        gTerrain.Land[I,J].BaseLayer.Rotation := Data[I,J].BaseLayer.Rotation;
-        gTerrain.Land[I,J].BaseLayer.Corners  := Data[I,J].BaseLayer.Corners;
-        gTerrain.Land[I,J].LayersCnt          := Data[I,J].LayersCnt;
-        gTerrain.Land[I,J].Height             := Data[I,J].Height;
-        gTerrain.Land[I,J].Obj                := Data[I,J].Obj;
-        gTerrain.Land[I,J].IsCustom           := Data[I,J].IsCustom;
-        gTerrain.Land[I,J].BlendingLvl        := Data[I,J].BlendingLvl;
-        LandTerKind[I,J].TerKind   := Data[I,J].TerKind;
-        LandTerKind[I,J].Tiles     := Data[I,J].Tiles;
-        LandTerKind[I,J].HeightAdd := Data[I,J].HeightAdd;
+        gTerrain.Land[I,J].BaseLayer.Terrain   := Data[I,J].BaseLayer.Terrain;
+        gTerrain.Land[I,J].BaseLayer.Rotation  := Data[I,J].BaseLayer.Rotation;
+        gTerrain.Land[I,J].BaseLayer.Corners   := Data[I,J].BaseLayer.Corners;
+        gTerrain.Land[I,J].LayersCnt           := Data[I,J].LayersCnt;
+        gTerrain.Land[I,J].Height              := Data[I,J].Height;
+        gTerrain.Land[I,J].Obj                 := Data[I,J].Obj;
+        gTerrain.Land[I,J].IsCustom            := Data[I,J].IsCustom;
+        gTerrain.Land[I,J].BlendingLvl         := Data[I,J].BlendingLvl;
+        LandTerKind[I,J].TerKind               := Data[I,J].TerKind;
+        LandTerKind[I,J].Tiles                 := Data[I,J].Tiles;
+        LandTerKind[I,J].HeightAdd             := Data[I,J].HeightAdd;
+        gTerrain.Land[I,J].TileOverlay         := Data[I,J].TileOverlay;
         for L := 0 to 2 do
         begin
-          gTerrain.Land[I,J].Layer[L].Terrain := Data[I,J].Layer[L].Terrain;
+          gTerrain.Land[I,J].Layer[L].Terrain  := Data[I,J].Layer[L].Terrain;
           gTerrain.Land[I,J].Layer[L].Rotation := Data[I,J].Layer[L].Rotation;
-          gTerrain.Land[I,J].Layer[L].Corners := Data[I,J].Layer[L].Corners;
+          gTerrain.Land[I,J].Layer[L].Corners  := Data[I,J].Layer[L].Corners;
         end;
       end;
 
@@ -1935,7 +1938,7 @@ begin
     cmObjects:    if (ssLeft in gGameCursor.SState) then
                     gTerrain.SetObject(gGameCursor.Cell, gGameCursor.Tag1);
     cmOverlays:   if (ssLeft in gGameCursor.SState) then
-                    gTerrain.SetOverlay(gGameCursor.Cell, gGameCursor.Tag1, ssShift in gGameCursor.SState);
+                    gTerrain.SetOverlay(gGameCursor.Cell, gGameCursor.Tag1, ssShift in gGameCursor.SState); //Holding shift allows overwrite roads
   end;
 end;
 

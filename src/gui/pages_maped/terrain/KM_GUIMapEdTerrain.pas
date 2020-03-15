@@ -14,7 +14,7 @@ uses
 
 
 type
-  TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttObject, ttSelection, ttOverlays);
+  TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttOverlays, ttObject, ttSelection);
 
   //Collection of terrain editing controls
   TKMMapEdTerrain = class (TKMMapEdMenuPage)
@@ -65,13 +65,14 @@ uses
 { TKMMapEdTerrain }
 constructor TKMMapEdTerrain.Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aHideAllPages: TEvent);
 const
-  BtnGlyph: array [TKMTerrainTab] of Word = (383, 388, 382, 385, 384, 382);
+  BtnGlyph: array [TKMTerrainTab] of Word = (383, 388, 382, 400, 385, 384);
   BtnHint: array [TKMTerrainTab] of Word = (
     TX_MAPED_TERRAIN_HINTS_BRUSHES,
     TX_MAPED_TERRAIN_HINTS_HEIGHTS,
     TX_MAPED_TERRAIN_HINTS_TILES,
+    TX_MAPED_TERRAIN_HINTS_OVERLAYS,
     TX_MAPED_TERRAIN_HINTS_OBJECTS,
-    TX_MAPED_COPY_TITLE, TX_MAPED_TERRAIN_HINTS_TILES);
+    TX_MAPED_COPY_TITLE);
 
   TB_PAD_TERRAIN_BTN_L = 9;
 
@@ -91,10 +92,10 @@ begin
       Button_Terrain[I].OnClick := PageChange;
     end;
 
-    Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 36, 0, 18, SMALL_TAB_H, '<', bsGame);
+    Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 24, 0, 12, SMALL_TAB_H, '<', bsGame);
     Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl+Z'')';
     Button_TerrainUndo.OnClick := UnRedoClick;
-    Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 18, 0, 18, SMALL_TAB_H, '>', bsGame);
+    Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 12, 0, 12, SMALL_TAB_H, '>', bsGame);
     Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl+Y'' or ''Ctrl+Shift+Z'')';
     Button_TerrainRedo.OnClick := UnRedoClick;
 

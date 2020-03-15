@@ -539,7 +539,7 @@ begin
   if not aOverMap then
   begin
     //Still need to make a checkpoint since painting has now stopped
-    if gGameCursor.Mode in [cmElevate, cmEqualize, cmBrush, cmObjects, cmTiles] then
+    if gGameCursor.Mode in [cmElevate, cmEqualize, cmBrush, cmObjects, cmTiles, cmOverlays] then
       fTerrainPainter.MakeCheckpoint;
     Exit;
   end;
@@ -566,7 +566,8 @@ begin
                               end;
                 cmElevate, cmEqualize,
                 cmBrush, cmObjects,
-                cmTiles:      fTerrainPainter.MakeCheckpoint;
+                cmTiles,
+                cmOverlays:   fTerrainPainter.MakeCheckpoint;
                 cmMagicWater: fTerrainPainter.MagicWater(P);
                 cmEyedropper: begin
                                 fTerrainPainter.Eyedropper(P);

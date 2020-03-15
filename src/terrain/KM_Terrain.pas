@@ -2707,8 +2707,9 @@ procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; Overlay: TKMTileOverlay; aO
 var
   CanDestroyRoad: Boolean;
 begin
-  if (TileInMapCoords(Loc.X, Loc.Y))
-  and (Overlay in [Low(TKMTileOverlay)..High(TKMTileOverlay)]) then
+  if not TileInMapCoords(Loc.X, Loc.Y) then
+    Exit;
+  if Overlay in [Low(TKMTileOverlay)..High(TKMTileOverlay)] then
   begin
     CanDestroyRoad := (Land[Loc.Y, Loc.X].TileOverlay = toRoad) and (gHands.HousesHitTest(Loc.X, Loc.Y) = nil);
     if (CanAddField(Loc.X, Loc.Y, ftRoad))
@@ -2736,19 +2737,18 @@ procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; ID: Integer; aOverwrite: Bo
 var
   Overlay: TKMTileOverlay;
 begin
-  if TileInMapCoords(Loc.X, Loc.Y) then
-  begin
-    case ID of
-      0:               Overlay := toNone;
-      249:             Overlay := toDig1;
-      251:             Overlay := toDig2;
-      253:             Overlay := toDig3;
-      255:             Overlay := toDig4;
-      248,250,252,254: Overlay := toRoad;
-      else             Overlay := toNone;
-    end;
-    SetOverlay(Loc, Overlay, aOverwrite);
+  if not TileInMapCoords(Loc.X, Loc.Y) then
+    Exit;
+  case ID of
+    0:               Overlay := toNone;
+    249:             Overlay := toDig1;
+    251:             Overlay := toDig2;
+    253:             Overlay := toDig3;
+    255:             Overlay := toDig4;
+    248,250,252,254: Overlay := toRoad;
+    else             Overlay := toNone;
   end;
+  SetOverlay(Loc, Overlay, aOverwrite);
 end;
 
 

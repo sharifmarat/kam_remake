@@ -49,7 +49,7 @@ begin
   inherited Create;
 
   Panel_Overlays := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
-  with TKMLabel.Create(Panel_Overlays, 0, PAGE_TITLE_Y, Panel_Overlays.Width, 0, 'Set tile overlay', fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Overlays, 0, PAGE_TITLE_Y, Panel_Overlays.Width, 0, gResTexts[TX_MAPED_TERRAIN_OVERLAYS], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
   for J := 0 to ALLOWED_OVERLAYS - 1 do
   begin
