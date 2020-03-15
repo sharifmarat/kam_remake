@@ -119,6 +119,7 @@ uses
   KM_GUIMapEdTerrainHeights in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainHeights.pas',
   KM_GUIMapEdTerrainTiles in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainTiles.pas',
   KM_GUIMapEdTerrainObjects in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainObjects.pas',
+  KM_GUIMapEdTerrainOverlays in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainOverlays.pas',
   KM_GUIMapEdTerrainSelection in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainSelection.pas',
 	
   KM_GUIMapEdTown in 'src\gui\pages_maped\town\KM_GUIMapEdTown.pas',

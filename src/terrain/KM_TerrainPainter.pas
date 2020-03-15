@@ -1934,6 +1934,8 @@ begin
                       EditTile(gGameCursor.Cell, gGameCursor.Tag1, KaMRandom(4, 'TKMTerrainPainter.UpdateStateIdle'));
     cmObjects:    if (ssLeft in gGameCursor.SState) then
                     gTerrain.SetObject(gGameCursor.Cell, gGameCursor.Tag1);
+    cmOverlays:   if (ssLeft in gGameCursor.SState) then
+                    gTerrain.SetOverlay(gGameCursor.Cell, gGameCursor.Tag1, ssShift in gGameCursor.SState);
   end;
 end;
 

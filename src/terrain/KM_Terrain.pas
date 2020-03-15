@@ -53,6 +53,7 @@ type
     Obj: Word;
     IsCustom: Boolean;
     BlendingLvl: Byte;
+    TileOverlay: TKMTileOverlay;
   end;
 
   TKMTerrainTile = record
@@ -207,6 +208,8 @@ type
     function CatchFish(aLoc: TKMPointDir; TestOnly: Boolean = False): Boolean;
 
     procedure SetObject(const Loc: TKMPoint; ID:integer);
+    procedure SetOverlay(const Loc: TKMPoint; ID: Integer; aOverwrite: Boolean); overload;
+    procedure SetOverlay(const Loc: TKMPoint; Overlay: TKMTileOverlay; aOverwrite: Boolean); overload;
     procedure FallTree(const Loc: TKMPoint);
     procedure ChopTree(const Loc: TKMPoint);
     procedure RemoveObject(const Loc: TKMPoint);
@@ -457,7 +460,7 @@ begin
     for I := 1 to fMapY do
       for J := 1 to fMapX do
       begin
-        Land[I,J].TileOverlay  := toNone;
+        //Land[I,J].TileOverlay  := toNone;
         Land[I,J].TileLock     := tlNone;
         Land[I,J].JamMeter     := 0;
         Land[I,J].CornOrWine   := 0;
@@ -478,6 +481,7 @@ begin
         Land[I,J].LayersCnt   := TileBasic.LayersCnt;
         Land[I,J].IsCustom    := TileBasic.IsCustom;
         Land[I,J].BlendingLvl := TileBasic.BlendingLvl;
+        Land[I,J].TileOverlay := TileBasic.TileOverlay;
 
         for L := 0 to TileBasic.LayersCnt - 1 do
           Land[I,J].Layer[L] := TileBasic.Layer[L];
@@ -529,6 +533,7 @@ var
       TileBasic.IsCustom  := False;
       TileBasic.BlendingLvl := 0;
       TileBasic.LayersCnt := 0;
+      TileBasic.TileOverlay := toNone;
     end
     else
     begin
@@ -538,6 +543,7 @@ var
       TileBasic.LayersCnt   := Land[aFromY,aFromX].LayersCnt;
       TileBasic.IsCustom    := Land[aFromY,aFromX].IsCustom;
       TileBasic.BlendingLvl := Land[aFromY,aFromX].BlendingLvl;
+      TileBasic.TileOverlay := Land[aFromY,aFromX].TileOverlay;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
@@ -2697,6 +2703,55 @@ begin
 end;
 
 
+procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; Overlay: TKMTileOverlay; aOverwrite: Boolean);
+var
+  CanDestroyRoad: Boolean;
+begin
+  if (TileInMapCoords(Loc.X, Loc.Y))
+  and (Overlay in [Low(TKMTileOverlay)..High(TKMTileOverlay)]) then
+  begin
+    CanDestroyRoad := (Land[Loc.Y, Loc.X].TileOverlay = toRoad) and (gHands.HousesHitTest(Loc.X, Loc.Y) = nil);
+    if (CanAddField(Loc.X, Loc.Y, ftRoad))
+    and not (TileIsWineField(KMPoint(Loc.X, Loc.Y)))
+    and not (TileIsCornField(KMPoint(Loc.X, Loc.Y)))
+    and not (aOverwrite) then
+      gTerrain.Land[Loc.Y, Loc.X].TileOverlay := Overlay;
+    if (aOverwrite)
+    and ((CanAddField(Loc.X, Loc.Y, ftRoad)) or (CanDestroyRoad)) then
+    begin
+      if Land[Loc.Y, Loc.X].TileOverlay = toRoad then
+        RemRoad(Loc);
+      Land[Loc.Y, Loc.X].TileOverlay := Overlay;
+      if Overlay = toRoad then
+        if gMapElements[Land[Loc.Y, Loc.X].Obj].WineOrCorn then
+          RemoveObject(Loc);
+    end;
+    UpdatePassability(KMRect(Loc));
+    UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrowTopLeft(KMRect(Loc)), False);
+  end;
+end;
+
+
+procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; ID: Integer; aOverwrite: Boolean);
+var
+  Overlay: TKMTileOverlay;
+begin
+  if TileInMapCoords(Loc.X, Loc.Y) then
+  begin
+    case ID of
+      0:               Overlay := toNone;
+      249:             Overlay := toDig1;
+      251:             Overlay := toDig2;
+      253:             Overlay := toDig3;
+      255:             Overlay := toDig4;
+      248,250,252,254: Overlay := toRoad;
+      else             Overlay := toNone;
+    end;
+    SetOverlay(Loc, Overlay, aOverwrite);
+  end;
+end;
+
+
 {Remove the tree and place a falling tree instead}
 procedure TKMTerrain.FallTree(const Loc: TKMPoint);
 var I: Integer;
@@ -4386,6 +4441,10 @@ begin
       TileBasic.IsCustom    := Land[I,K].IsCustom;
       TileBasic.BlendingLvl := Land[I,K].BlendingLvl;
       TileBasic.LayersCnt   := Land[I,K].LayersCnt;
+      if Land[I,K].TileOverlay <> toRoad then
+        TileBasic.TileOverlay := Land[I,K].TileOverlay
+      else
+        TileBasic.TileOverlay := toNone;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
 
@@ -4395,7 +4454,7 @@ begin
       SaveStream.Write(Land[I,K].FieldAge);
       SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
       SaveStream.Write(Land[I,K].JamMeter);
-      SaveStream.Write(Land[I,K].TileOverlay, SizeOf(Land[I,K].TileOverlay));
+      //SaveStream.Write(Land[I,K].TileOverlay, SizeOf(Land[I,K].TileOverlay));
       SaveStream.Write(Land[I,K].TileOwner, SizeOf(Land[I,K].TileOwner));
       if Land[I,K].IsUnit <> nil then
         SaveStream.Write(TKMUnit(Land[I,K].IsUnit).UID) //Store ID, then substitute it with reference on SyncLoad
@@ -4650,7 +4709,8 @@ begin
   S.Write(aTileBasic.Obj);                //5
   S.Write(aTileBasic.IsCustom);           //7
   S.Write(aTileBasic.LayersCnt);          //8
-  Inc(aMapDataSize, 8); // obligatory 8 bytes per tile
+  S.Write(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)); //9 ?
+  Inc(aMapDataSize, 9); // obligatory 8 bytes per tile
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
@@ -4709,6 +4769,7 @@ begin
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
     aTileBasic.BlendingLvl := 0;
+    aTileBasic.TileOverlay := toNone;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
@@ -4717,6 +4778,7 @@ begin
     aStream.Read(aTileBasic.Obj);               //5
     aStream.Read(aTileBasic.IsCustom);          //7
     aTileBasic.BlendingLvl := 0; //Default value;
+    aTileBasic.TileOverlay := toNone;
 
     // Load all layers info
     // First get layers count
@@ -4740,6 +4802,11 @@ begin
         aStream.Read(aTileBasic.BlendingLvl)
       else
         aTileBasic.BlendingLvl := 0;
+
+      if aGameRev > 10968 then
+        aStream.Read(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay))
+      else
+        aTileBasic.TileOverlay := toNone;
 
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do

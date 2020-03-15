@@ -369,8 +369,8 @@ type
     cmEyedropper, //Terrain eyedropper
     cmPaintBucket, //PaintBucket - change color(team) for map objects
     cmUniversalEraser, //Universal eraser for units/groups/houses/terrain objects/roads and fields (corn/wine)
-    cmRotateTile  //Rotate terrain tile
-    );
+    cmRotateTile,  //Rotate terrain tile
+    cmOverlays);  //Tile overlays
 
 type
   // How cursor field placing will act (depends on which tile LMB was pressed)

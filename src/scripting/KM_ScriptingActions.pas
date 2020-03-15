@@ -107,6 +107,7 @@ type
     function MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTileHeightSet(X, Y, Height: Integer): Boolean;
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
+    procedure MapTileOverlaySet(X, Y: Integer; Overlay: TKMTileOverlay; aOverwrite: Boolean);
 
     procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
@@ -2161,8 +2162,7 @@ begin
   try
     Result := 0;
     if (aHouseID > 0)
-      and ((aUnitType = UnitTypeToIndex[utMilitia])
-        or (aUnitType in [UnitTypeToIndex[WARRIOR_EQUIPABLE_TH_MIN]..UnitTypeToIndex[WARRIOR_EQUIPABLE_TH_MAX]])) then
+    and (aUnitType in [UnitTypeToIndex[WARRIOR_EQUIPABLE_TH_MIN]..UnitTypeToIndex[WARRIOR_EQUIPABLE_TH_MAX]]) then
     begin
       H := fIDCache.GetHouse(aHouseID);
       if (H <> nil) and (H is TKMHouseTownHall) and not H.IsDestroyed and H.IsComplete then
@@ -2831,6 +2831,25 @@ begin
       LogParamWarning('Actions.MapTileObjectSet', [X, Y, Obj]);
       Result := False;
     end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000+
+//* Sets the terrain overlay on the tile at the specified XY coordinates.
+//* aOverwrite = False means safe way to change tile overlay, disallowing to set it on top of old fields/roads
+//* aOverwrite = True allows to destroy roads and re-dig fields (like in game we can build road on top of field and when laborer dies there is a digged overlay left)
+procedure TKMScriptActions.MapTileOverlaySet(X, Y: Integer; Overlay: TKMTileOverlay; aOverwrite: Boolean);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y)
+    and (Overlay in [Low(TKMTileOverlay)..High(TKMTileOverlay)]) then
+      gTerrain.SetOverlay(KMPoint(X, Y), Overlay, aOverwrite)
+    else
+      LogParamWarning('Actions.MapTileOverlaySet', [X, Y, Byte(aOverwrite)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

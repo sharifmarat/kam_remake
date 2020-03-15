@@ -9,11 +9,12 @@ uses
    KM_GUIMapEdTerrainHeights,
    KM_GUIMapEdTerrainTiles,
    KM_GUIMapEdTerrainObjects,
-   KM_GUIMapEdTerrainSelection;
+   KM_GUIMapEdTerrainSelection,
+   KM_GUIMapEdTerrainOverlays;
 
 
 type
-  TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttObject, ttSelection);
+  TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttObject, ttSelection, ttOverlays);
 
   //Collection of terrain editing controls
   TKMMapEdTerrain = class (TKMMapEdMenuPage)
@@ -25,6 +26,7 @@ type
     fGuiTiles: TKMMapEdTerrainTiles;
     fGuiObjects: TKMMapEdTerrainObjects;
     fGuiSelection: TKMMapEdTerrainSelection;
+    fGuiOverlays: TKMMapEdTerrainOverlays;
 
     procedure PageChange(Sender: TObject);
     procedure UnRedoClick(Sender: TObject);
@@ -63,13 +65,13 @@ uses
 { TKMMapEdTerrain }
 constructor TKMMapEdTerrain.Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aHideAllPages: TEvent);
 const
-  BtnGlyph: array [TKMTerrainTab] of Word = (383, 388, 382, 385, 384);
+  BtnGlyph: array [TKMTerrainTab] of Word = (383, 388, 382, 385, 384, 382);
   BtnHint: array [TKMTerrainTab] of Word = (
     TX_MAPED_TERRAIN_HINTS_BRUSHES,
     TX_MAPED_TERRAIN_HINTS_HEIGHTS,
     TX_MAPED_TERRAIN_HINTS_TILES,
     TX_MAPED_TERRAIN_HINTS_OBJECTS,
-    TX_MAPED_COPY_TITLE);
+    TX_MAPED_COPY_TITLE, TX_MAPED_TERRAIN_HINTS_TILES);
 
   TB_PAD_TERRAIN_BTN_L = 9;
 
@@ -101,6 +103,7 @@ begin
     fGuiTiles := TKMMapEdTerrainTiles.Create(Panel_Terrain);
     fGuiObjects := TKMMapEdTerrainObjects.Create(Panel_Terrain, aHideAllPages);
     fGuiSelection := TKMMapEdTerrainSelection.Create(Panel_Terrain);
+    fGuiOverlays := TKMMapEdTerrainOverlays.Create(Panel_Terrain);
 end;
 
 
@@ -111,6 +114,7 @@ begin
   fGuiTiles.Free;
   fGuiObjects.Free;
   fGuiSelection.Free;
+  fGuiOverlays.Free;
 
   inherited;
 end;
@@ -166,6 +170,7 @@ begin
   fGuiTiles.Hide;
   fGuiObjects.Hide;
   fGuiSelection.Hide;
+  fGuiOverlays.Hide;
 
   if (Sender = Button_Terrain[ttBrush]) then
     fGuiBrushes.Show
@@ -180,7 +185,10 @@ begin
     fGuiObjects.Show
   else
   if (Sender = Button_Terrain[ttSelection]) then
-    fGuiSelection.Show;
+    fGuiSelection.Show
+  else
+  if (Sender = Button_Terrain[ttOverlays]) then
+    fGuiOverlays.Show;
 
   //Signal that active page has changed, that may affect layers visibility
   fOnPageChange(Self);
@@ -226,6 +234,7 @@ begin
   fGuiTiles.ExecuteSubMenuAction(aIndex);
   fGuiObjects.ExecuteSubMenuAction(aIndex);
   fGuiSelection.ExecuteSubMenuAction(aIndex);
+  fGuiOverlays.ExecuteSubMenuAction(aIndex);
 end;
 
 
@@ -245,6 +254,7 @@ begin
     ttTile:       Result := fGuiTiles.Visible;
     ttObject:     Result := fGuiObjects.Visible;
     ttSelection:  Result := fGuiSelection.Visible;
+    ttOverlays:   Result := fGuiOverlays.Visible;
   end;
 end;
 
@@ -268,6 +278,7 @@ begin
   fGuiTiles.UpdateState;
   fGuiObjects.UpdateState;
   fGuiSelection.UpdateState;
+  fGuiOverlays.UpdateState;
 
   Button_TerrainUndo.Enabled := gGame.MapEditor.TerrainPainter.CanUndo;
   Button_TerrainRedo.Enabled := gGame.MapEditor.TerrainPainter.CanRedo;
