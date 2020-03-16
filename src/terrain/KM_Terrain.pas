@@ -348,6 +348,7 @@ const
   OBJ_BLOCK = 61;
   OBJ_NONE = 255;
   OBJ_INVISIBLE = 254; //Special object without any attributes set
+  HEIGHT_RAND_VALUE = 8;
   DEFAULT_BLENDING_LVL = 50;
 
 var
@@ -401,7 +402,7 @@ begin
           BaseLayer.Terrain := 0;
         LayersCnt    := 0;
         BaseLayer.Corners := [0,1,2,3];
-        Height       := 30 + KaMRandom(7, 'TKMTerrain.MakeNewMap 3');  //variation in Height
+        Height       := 30 + KaMRandom(HEIGHT_RAND_VALUE, 'TKMTerrain.MakeNewMap 3');  //variation in Height
         BaseLayer.Rotation     := KaMRandom(4, 'TKMTerrain.MakeNewMap 4');  //Make it random
         Obj          := OBJ_NONE;             //none
         IsCustom     := False;
@@ -516,24 +517,27 @@ end;
 procedure TKMTerrain.SaveToFile(const aFile: UnicodeString; const aInsetRect: TKMRect);
 var
   MapDataSize: Cardinal;
+const
+  H_RND_HALF = HEIGHT_RAND_VALUE div 2;
 
   //aDir - direction of enlarge for new generated tile
   procedure SetNewLand(var S: TKMemoryStreamBinary; aToX, aToY, aFromX, aFromY: Word;
-                       aNewGenTileX, aNewGenTileY: Boolean; aDir: TKMDirection = dirNA);
+                       aNewGenTile: Boolean; aDir: TKMDirection = dirNA);
   var
-    L, D, adj: Integer;
+    L, D, adj, hMid: Integer;
     TileBasic: TKMTerrainTileBasic;
     terKind: TKMTerrainKind;
     CornersTerKinds: TKMTerrainKindsArray;
   begin
     // new appended terrain
-    if aNewGenTileX or aNewGenTileY then
+    if aNewGenTile then
     begin
+      //Check if terrainKind is same for all 4 corners
       if not TileTryGetTerKind(aFromX, aFromY, terKind) then
       begin
         CornersTerKinds := TileCornersTerKinds(aFromX, aFromY);
 
-        if aDir = dirNA then
+        if aDir = dirNA then // that should never happen usually
           terKind := tkGrass
         else
         begin
@@ -548,15 +552,17 @@ var
         end;
       end;
 
+      //Apply some random tiles for artisticity
       TileBasic.BaseLayer.Terrain  := gGame.MapEditor.TerrainPainter.PickRandomTile(terKind, True);
       TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand 2');
       TileBasic.BaseLayer.Corners := [0,1,2,3];
-      //Apply some random tiles for artisticity
-      TileBasic.Height    := EnsureRange(Land[aFromY,aFromX].Height - 5 + KaMRandom(10, 'TKMTerrain.SaveToFile.SetNewLand 3'), 0, 100);
-
+      //find height mid point to make random elevation even for close to 0 or 100 height
+      hMid := Max(0, Land[aFromY,aFromX].Height - H_RND_HALF) + H_RND_HALF;
+      hMid := Min(100, hMid + H_RND_HALF) - H_RND_HALF;
+      TileBasic.Height    := EnsureRange(hMid - H_RND_HALF + KaMRandom(HEIGHT_RAND_VALUE, 'TKMTerrain.SaveToFile.SetNewLand 3'), 0, 100);
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
-      TileBasic.BlendingLvl := 50;
+      TileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
       TileBasic.LayersCnt := 0;
     end
     else
@@ -622,11 +628,11 @@ begin
           D := Ord(dirW)*Byte(extLeft) + Ord(dirE)*Byte(extRight) //Only 1 could happen
         else
         begin
-          D := D + (Byte(extBot)*2 - 1)*Byte(extLeft) + (Byte(extTop)*2 - 1)*Byte(extRight);
+          D := D + (Byte(extBot)*2 - 1)*Byte(extLeft) + (Byte(extTop)*2 - 1)*Byte(extRight); //step left or right
           D := ((D - 1 + 8) mod 8) + 1; //circle around for 0-value as dirNE
         end;
 
-        SetNewLand(S, K, I, KFrom, IFrom, NewGenTileK, NewGenTileI, TKMDirection(D));
+        SetNewLand(S, K, I, KFrom, IFrom, NewGenTileK or NewGenTileI, TKMDirection(D));
       end;
     end;
 
