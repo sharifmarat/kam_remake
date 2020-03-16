@@ -408,11 +408,11 @@ function TKMTerrainPainter.TryGetVertexEffectiveTerKind(X, Y: Word; var aEffecti
   end;
 
 var
-  K,M: Integer;
+  I,K,M: Integer;
   VertexTKinds: TKMTerrainKindsArray;
   SameTKind, NoCustomTK: Boolean;
-  TKCounts: array[0..3] of Integer;
-  MostTKI, vrxCnt: Integer;
+  TKCounts, MostTKIs: array[0..3] of Integer;
+  MostTKCnt, MostTKI, vrxCnt: Integer;
 begin
   Result := False;
   aEffectiveTKind := tkCustom;
@@ -424,7 +424,10 @@ begin
   Assert(vrxCnt > 0, 'Can''t find vertex corners');
 
   for K := 0 to vrxCnt - 1 do
+  begin
     TKCounts[K] := 0;
+    MostTKIs[K] := 0;
+  end;
 
   //Find most popular TerKind
   //Count all TerKinds occurrences first
@@ -434,10 +437,24 @@ begin
         Inc(TKCounts[K]);
 
   //Get Most popular one index
-  MostTKI := 0;
-  for K := 1 to vrxCnt - 1 do
-    if TKCounts[K] > TKCounts[MostTKI] then
-      MostTKI := K;
+  MostTKCnt := -1;
+  I := 0;
+  for K := 0 to vrxCnt - 1 do
+    if TKCounts[K] > MostTKCnt then
+    begin
+      I := 0;
+      MostTKIs[I] := K;
+      MostTKCnt := TKCounts[K];
+      Inc(I);
+    end
+    else
+    if TKCounts[K] = MostTKCnt then
+    begin
+      MostTKIs[I] := K;
+      Inc(I);
+    end;
+
+  MostTKI := MostTKIs[KaMRandom(I, 'TKMTerrainPainter.TryGetVertexEffectiveTerKind')];
 
   NoCustomTK := VertexTKinds[0] <> tkCustom;
   for K := 1 to vrxCnt - 1 do
