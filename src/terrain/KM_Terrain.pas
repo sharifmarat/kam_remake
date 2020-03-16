@@ -345,6 +345,7 @@ const
   OBJ_BLOCK = 61;
   OBJ_NONE = 255;
   OBJ_INVISIBLE = 254; //Special object without any attributes set
+  DEFAULT_BLENDING_LVL = 50;
 
 var
   //Terrain is a globally accessible resource by so many objects
@@ -401,6 +402,7 @@ begin
         BaseLayer.Rotation     := KaMRandom(4, 'TKMTerrain.MakeNewMap 4');  //Make it random
         Obj          := OBJ_NONE;             //none
         IsCustom     := False;
+        BlendingLvl  := DEFAULT_BLENDING_LVL;
         //Uncomment to enable random trees, but we don't want that for the map editor by default
         //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
         TileOverlay  := toNone;
@@ -527,7 +529,7 @@ var
       TileBasic.Height    := EnsureRange(30 + KaMRandom(7, 'TKMTerrain.SaveToFile.SetNewLand 2'), 0, 100);  //variation in Height
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
-      TileBasic.BlendingLvl := 0;
+      TileBasic.BlendingLvl := 50;
       TileBasic.LayersCnt := 0;
     end
     else
@@ -4708,7 +4710,7 @@ begin
     aTileBasic.BaseLayer.Corners := [0,1,2,3];
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
-    aTileBasic.BlendingLvl := 0;
+    aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
@@ -4716,7 +4718,7 @@ begin
     aStream.Read(aTileBasic.Height);            //4
     aStream.Read(aTileBasic.Obj);               //5
     aStream.Read(aTileBasic.IsCustom);          //7
-    aTileBasic.BlendingLvl := 0; //Default value;
+    aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL; //Default value;
 
     // Load all layers info
     // First get layers count
@@ -4739,7 +4741,7 @@ begin
       if aGameRev > 10745 then //Blending option appeared only after r10745
         aStream.Read(aTileBasic.BlendingLvl)
       else
-        aTileBasic.BlendingLvl := 0;
+        aTileBasic.BlendingLvl := 50;
 
       aTileBasic.BaseLayer.Corners := [];
       for I := 0 to aTileBasic.LayersCnt - 1 do
