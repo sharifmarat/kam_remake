@@ -33,8 +33,8 @@ type
   protected
     Panel_Terrain: TKMPanel;
     Button_Terrain: array [TKMTerrainTab] of TKMButton;
-    Button_TerrainUndo: TKMButton;
-    Button_TerrainRedo: TKMButton;
+    Button_TerrainUndo: TKMButtonFlat;
+    Button_TerrainRedo: TKMButtonFlat;
     procedure DoShowSubMenu(aIndex: Byte); override;
     procedure DoExecuteSubMenuAction(aIndex: Byte); override;
   public
@@ -87,15 +87,23 @@ begin
   Panel_Terrain.AnchorsStretch;
     for I := Low(TKMTerrainTab) to High(TKMTerrainTab) do
     begin
-      Button_Terrain[I] := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + SMALL_PAD_W * Byte(I), 0, SMALL_TAB_W, SMALL_TAB_H, BtnGlyph[I], rxGui, bsGame);
+      Button_Terrain[I] := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + (SMALL_PAD_W + 4) * Byte(I), 0, SMALL_TAB_W + 4, SMALL_TAB_H + 6, BtnGlyph[I], rxGui, bsGame);
       Button_Terrain[I].Hint := GetHintWHotKey(BtnHint[I], MAPED_SUBMENU_HOTKEYS[Ord(I)]);
       Button_Terrain[I].OnClick := PageChange;
     end;
 
-    Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 24, 0, 12, SMALL_TAB_H, '<', bsGame);
+    //Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 20, 0, 10, SMALL_TAB_H + 4, '<', bsGame);
+    Button_TerrainUndo := TKMButtonFlat.Create(Panel_Terrain, Panel_Terrain.Width - 62, -79, 15, SMALL_TAB_H + 4, 0);
+    Button_TerrainUndo.Caption := '<';
+    Button_TerrainUndo.CapOffsetY := -10;
+    Button_TerrainUndo.CapColor := icGreen;
     Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl+Z'')';
     Button_TerrainUndo.OnClick := UnRedoClick;
-    Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 12, 0, 12, SMALL_TAB_H, '>', bsGame);
+    //Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 10, 0, 10, SMALL_TAB_H + 4, '>', bsGame);
+    Button_TerrainRedo := TKMButtonFlat.Create(Panel_Terrain, Panel_Terrain.Width - 47, -79, 15, SMALL_TAB_H + 4, 0);
+    Button_TerrainRedo.Caption := '>';
+    Button_TerrainRedo.CapOffsetY := -10;
+    Button_TerrainRedo.CapColor := icGreen;
     Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl+Y'' or ''Ctrl+Shift+Z'')';
     Button_TerrainRedo.OnClick := UnRedoClick;
 
@@ -137,15 +145,15 @@ begin
   begin
     if (ssCtrl in Shift) and (Key = Ord('Y')) then
     begin
-      Button_TerrainRedo.Click; //Ctrl+Y = Redo
+      UnRedoClick(Button_TerrainRedo); //Ctrl+Y = Redo
       aHandled := True;
     end;
     if (ssCtrl in Shift) and (Key = Ord('Z')) then
     begin
       if ssShift in Shift then
-        Button_TerrainRedo.Click //Ctrl+Shift+Z = Redo
+        UnRedoClick(Button_TerrainRedo) //Ctrl+Shift+Z = Redo
       else
-        Button_TerrainUndo.Click; //Ctrl+Z = Undo
+        UnRedoClick(Button_TerrainUndo); //Ctrl+Z = Undo
       aHandled := True;
     end;
   end;
