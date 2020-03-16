@@ -612,15 +612,24 @@ begin
 
     for I := 1 to SizeY do
     begin
-      IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY - 1); //-1 because last col is not part of the map
-      NewGenTileI := IFrom <> I - aInsetRect.Top; //not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
+      IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY - 1); //-1 because last row is not part of the map
+
+      // Last col/row is saved into the .map file, but its actually not used!
+      // So in case we resize map we do not need to use the exact last row/col, but previous one
+      // So we will do that means when aInsetRect.Bottom > 0 or aInsetRect.Right > 0
+      // And for simple map save (or when we do not enlarge to the right / bottom)
+      // there is no need to generate new tile, just save those 'fake/bot used' tiles
+      // Prolly we would need to get rid of that last tiles in the future
+      NewGenTileI := (IFrom <> I - aInsetRect.Top)
+                      and ((I - aInsetRect.Top <> fMapY) or (aInsetRect.Bottom > 0)); //
       extTop := I <= aInsetRect.Top;
       extBot := I - aInsetRect.Top >= fMapY;
       D :=  Ord(dirN)*Byte(extTop) + Ord(dirS)*Byte(extBot); //Only 1 could happen
       for K := 1 to SizeX do
       begin
-        KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX - 1); //-1 because last row is not part of the map
-        NewGenTileK := KFrom <> K - aInsetRect.Left;
+        KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX - 1); //-1 because last col is not part of the map
+        NewGenTileK := (KFrom <> K - aInsetRect.Left)
+                        and ((K - aInsetRect.Left <> fMapX) or (aInsetRect.Right > 0)); //
         extLeft := K <= aInsetRect.Left;
         extRight := K - aInsetRect.Left >= fMapX;
 
