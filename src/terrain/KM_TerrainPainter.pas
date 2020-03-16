@@ -61,7 +61,8 @@ type
     procedure CheckpointToTerrain;
     procedure BrushTile(const X, Y: Integer);
     procedure BrushTerrainTile(const X, Y: Integer; aTerKind: TKMTerrainKind);
-    procedure MagicBrush(const X,Y: Integer);
+    procedure MagicBrush(const X,Y: Integer); overload;
+    procedure MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMaskKind); overload;
     procedure UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
     procedure UpdateTempLand;
     procedure EditBrush;
@@ -73,7 +74,10 @@ type
 
     function IsTerrainRepresentTerKind(aTerId: Word; aTerKind: TKMTerrainKind): Boolean;
 
-    procedure RebuildTile(const X,Y: Integer);
+    procedure RebuildTile(const X,Y: Integer); overload;
+    procedure RebuildTile(const X,Y: Integer; aRandomTiles: Boolean); overload;
+
+    function TryGetVertexEffectiveTerKind(X, Y: Word; var aEffectiveTKind: TKMTerrainKind): Boolean;
   public
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
@@ -90,11 +94,20 @@ type
     procedure MagicWater(const aLoc: TKMPoint);
 
     procedure RMG2MapEditor(X,Y: Integer; aTile: Word);
-    procedure RebuildMap(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False); overload;
-    procedure RebuildMap(const aRect: TKMRect); overload;
-    function PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 
-    procedure FixTerrainKindInfo;
+    procedure RebuildMap; overload;
+    procedure RebuildMap(const aRect: TKMRect; aRandomTiles: Boolean = False); overload;
+    procedure RebuildMap(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False); overload;
+
+    procedure MagicBrush(const aRect: TKMRect; aMaskKind: TKMTileMaskKind); overload;
+
+    function PickRandomTile(aTerrainKind: TKMTerrainKind): Word; overload;
+    function PickRandomTile(aTerrainKind: TKMTerrainKind; aRandom: Boolean): Word; overload;
+
+
+    procedure FixTerrainKindInfoAtBorders(aMakeCheckpoint: Boolean = True);
+    procedure FixTerrainKindInfo(aMakeCheckpoint: Boolean = True); overload;
+    procedure FixTerrainKindInfo(aRect: TKMRect; aMakeCheckpoint: Boolean = True); overload;
 
     class function GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
 
@@ -370,11 +383,17 @@ end;
 
 function TKMTerrainPainter.PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 begin
-  Result := GetRandomTile(aTerrainKind, not RandomizeTiling);
+  Result := PickRandomTile(aTerrainKind, RandomizeTiling);
 end;
 
 
-procedure TKMTerrainPainter.FixTerrainKindInfo;
+function TKMTerrainPainter.PickRandomTile(aTerrainKind: TKMTerrainKind; aRandom: Boolean): Word;
+begin
+  Result := GetRandomTile(aTerrainKind, not aRandom);
+end;
+
+
+function TKMTerrainPainter.TryGetVertexEffectiveTerKind(X, Y: Word; var aEffectiveTKind: TKMTerrainKind): Boolean;
 
   function EqualTKinds(aTK1, aTK2: TKMTerrainKind): Boolean;
   var
@@ -389,51 +408,85 @@ procedure TKMTerrainPainter.FixTerrainKindInfo;
   end;
 
 var
-  I,J,K,M: Integer;
+  K,M: Integer;
   VertexTKinds: TKMTerrainKindsArray;
   SameTKind, NoCustomTK: Boolean;
   TKCounts: array[0..3] of Integer;
-  MostTKI: Integer;
+  MostTKI, vrxCnt: Integer;
 begin
-  for I := 1 to gTerrain.MapY do
-    for J := 1 to gTerrain.MapX do
+  Result := False;
+  aEffectiveTKind := tkCustom;
+
+  VertexTKinds := GetVertexCornerTerKinds(X,Y);
+  vrxCnt := Length(VertexTKinds);
+  SameTKind := True;
+
+  Assert(vrxCnt > 0, 'Can''t find vertex corners');
+
+  for K := 0 to vrxCnt - 1 do
+    TKCounts[K] := 0;
+
+  //Find most popular TerKind
+  //Count all TerKinds occurrences first
+  for K := 0 to vrxCnt - 1 do
+    for M := K + 1 to vrxCnt - 1 do
+      if VertexTKinds[K] = VertexTKinds[M] then
+        Inc(TKCounts[K]);
+
+  //Get Most popular one index
+  MostTKI := 0;
+  for K := 1 to vrxCnt - 1 do
+    if TKCounts[K] > TKCounts[MostTKI] then
+      MostTKI := K;
+
+  NoCustomTK := VertexTKinds[0] <> tkCustom;
+  for K := 1 to vrxCnt - 1 do
+  begin
+    SameTKind := SameTKind and EqualTKinds(VertexTKinds[K], VertexTKinds[K-1]);
+    NoCustomTK := NoCustomTK and (VertexTKinds[K] <> tkCustom);
+  end;
+
+  //Replace TerKind with most popular one if there all TerKinds are equal or if there is no custom TerKinds
+  if SameTKind or NoCustomTK then
+  begin
+    aEffectiveTKind := VertexTKinds[MostTKI];
+    Result := True;
+  end;
+end;
+
+
+procedure TKMTerrainPainter.FixTerrainKindInfoAtBorders(aMakeCheckpoint: Boolean = True);
+begin
+  FixTerrainKindInfo(KMRect(1,            2,            1,            gTerrain.MapY - 1), aMakeCheckpoint); // Left
+  FixTerrainKindInfo(KMRect(1,            1,            gTerrain.MapX,1),                 aMakeCheckpoint); // Top
+  FixTerrainKindInfo(KMRect(gTerrain.MapX,2,            gTerrain.MapX,gTerrain.MapY - 1), aMakeCheckpoint); //Right
+  FixTerrainKindInfo(KMRect(1,            gTerrain.MapY,gTerrain.MapX,gTerrain.MapY),     aMakeCheckpoint); //Bottom
+end;
+
+
+procedure TKMTerrainPainter.FixTerrainKindInfo(aMakeCheckpoint: Boolean = True);
+begin
+  FixTerrainKindInfo(KMRect(1, 1, gTerrain.MapX, gTerrain.MapY), aMakeCheckpoint);
+end;
+
+
+procedure TKMTerrainPainter.FixTerrainKindInfo(aRect: TKMRect; aMakeCheckpoint: Boolean = True);
+var
+  I,J: Integer;
+  TerKind: TKMTerrainKind;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
     begin
-      VertexTKinds := GetVertexCornerTerKinds(J,I);
-      SameTKind := True;
-
-      for K := 0 to 3 do
-        TKCounts[K] := 0;
-
-      //Find most popular TerKind
-      //Count all TerKinds occurrences first
-      for K := 0 to 3 do
-        for M := K + 1 to 3 do
-          if VertexTKinds[K] = VertexTKinds[M] then
-            Inc(TKCounts[K]);
-
-      //Get Most popular one index
-      MostTKI := 0;
-      for K := 1 to 3 do
-        if TKCounts[K] > TKCounts[MostTKI] then
-          MostTKI := K;
-
-
-      NoCustomTK := VertexTKinds[0] <> tkCustom;
-      for K := 1 to 3 do
+      if TryGetVertexEffectiveTerKind(J, I, TerKind) then
       begin
-        SameTKind := SameTKind and EqualTKinds(VertexTKinds[K], VertexTKinds[K-1]);
-        NoCustomTK := NoCustomTK and (VertexTKinds[K] <> tkCustom);
-      end;
-
-      //Replace TerKind with most popular one if there all TerKinds are equal or if there is no custom TerKinds
-      if SameTKind or NoCustomTK then
-      begin
-        LandTerKind[I,J].TerKind := VertexTKinds[MostTKI];
+        LandTerKind[I,J].TerKind := TerKind;
         LandTerKind[I,J].Tiles := High(SmallInt);
       end;
     end;
 
-  MakeCheckpoint;
+  if aMakeCheckpoint then
+    MakeCheckpoint;
 end;
 
 
@@ -455,6 +508,12 @@ end;
 
 
 procedure TKMTerrainPainter.RebuildTile(const X,Y: Integer);
+begin
+  RebuildTile(X, Y, RandomizeTiling);
+end;
+
+
+procedure TKMTerrainPainter.RebuildTile(const X,Y: Integer; aRandomTiles: Boolean);
 var
   pY, pX, Nodes, Rot, T: Integer;
   Tmp, Ter1, Ter2, A, B, C, D: TKMTerrainKind;
@@ -532,7 +591,7 @@ begin
   //for plain tiles only
   if Ter1 = Ter2 then
   begin
-    T := PickRandomTile(Ter1);
+    T := PickRandomTile(Ter1, aRandomTiles);
 
     Rot := Random(4); //random direction for all plain tiles
   end;
@@ -554,13 +613,19 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.RebuildMap(const aRect: TKMRect);
+procedure TKMTerrainPainter.RebuildMap;
+begin
+  RebuildMap(KMRect(1, 1, gTerrain.MapX, gTerrain.MapY));
+end;
+
+
+procedure TKMTerrainPainter.RebuildMap(const aRect: TKMRect; aRandomTiles: Boolean = False);
 var
   I, K: Integer;
 begin
   for I := aRect.Top to aRect.Bottom do
     for K := aRect.Left to aRect.Right do
-      RebuildTile(K,I);
+      RebuildTile(K, I, aRandomTiles);
 end;
 
 
@@ -584,13 +649,29 @@ end;
 
 
 function TKMTerrainPainter.GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
+var
+  I: Integer;
+
+  procedure CheckTile(aX, aY: Word; aCorner: Byte);
+  begin
+    if gTerrain.TileInMapCoords(aX, aY) then
+    begin
+      Result[I] := GetTileOwnCornersTKinds(KMPoint(aX, aY))[aCorner];
+      Inc(I);
+    end;
+  end;
+
 begin
   SetLength(Result, 4);
-  Result[0] := GetTileOwnCornersTKinds(KMPoint(X-1, Y-1))[2];
-  Result[1] := GetTileOwnCornersTKinds(KMPoint(X,   Y-1))[3];
-  Result[2] := GetTileOwnCornersTKinds(KMPoint(X,   Y))[0];
-  Result[3] := GetTileOwnCornersTKinds(KMPoint(X-1, Y))[1];
 
+  I := 0;
+
+  CheckTile(X-1, Y-1, 2);
+  CheckTile(X  , Y-1, 3);
+  CheckTile(X  , Y  , 0);
+  CheckTile(X-1, Y  , 1);
+
+  SetLength(Result, I);
 end;
 
 
@@ -914,7 +995,23 @@ begin
 end;
 
 
+procedure TKMTerrainPainter.MagicBrush(const aRect: TKMRect; aMaskKind: TKMTileMaskKind);
+var
+  I, K: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for K := aRect.Left to aRect.Right do
+      MagicBrush(K, I, aMaskKind);
+end;
+
+
 procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
+begin
+  MagicBrush(X, Y, TKMTileMaskKind(gGameCursor.MapEdBrushMask));
+end;
+
+
+procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMaskKind);
 
   //This method tries to find the best appropriate TerKind for target cell (aCell) and for specified corner (aCorner)
   //1. We get cells next to aCell aCorner, and within map sizes
@@ -1099,16 +1196,14 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
 
 var
   L: Integer;
-  MaskKind: TKMTileMaskKind;
   GenInfo: TKMGenTerrainInfo;
 begin
   if not gTerrain.TileInMapCoords(X, Y) or (not OverrideCustomTiles and gTerrain.Land[Y,X].IsCustom) then Exit;
 
-  MaskKind := TKMTileMaskKind(gGameCursor.MapEdBrushMask);
-  if (MaskKind = mkNone) and not fReplaceLayers then Exit;
+  if (aMaskKind = mkNone) and not fReplaceLayers then Exit;
 
-  if MaskKind <> mkNone then
-    ApplyMagicBrush(MaskKind);
+  if aMaskKind <> mkNone then
+    ApplyMagicBrush(aMaskKind);
 
   //No need to update BlendingLvl for basic tiles (without auto transitions)
   if gTerrain.Land[Y,X].LayersCnt > 0 then
@@ -1116,7 +1211,7 @@ begin
 
   if fReplaceLayers then
   begin
-    case MaskKind of
+    case aMaskKind of
       mkNone:  begin
                   gTerrain.Land[Y,X].LayersCnt := 0; // Simple way to clear all layers
                   gTerrain.Land[Y,X].BaseLayer.Corners := [0,1,2,3];
@@ -1124,9 +1219,9 @@ begin
       else      for L := 0 to gTerrain.Land[Y,X].LayersCnt - 1 do
                 begin
                   GenInfo := gRes.Sprites.GetGenTerrainInfo(gTerrain.Land[Y,X].Layer[L].Terrain);
-                  if GenInfo.Mask.Kind <> MaskKind then
+                  if GenInfo.Mask.Kind <> aMaskKind then
                     gTerrain.Land[Y,X].Layer[L].Terrain :=
-                      gGenTerrainTransitions[GenInfo.TerKind, MaskKind, GenInfo.Mask.MType, GenInfo.Mask.SubType];
+                      gGenTerrainTransitions[GenInfo.TerKind, aMaskKind, GenInfo.Mask.MType, GenInfo.Mask.SubType];
                 end;
     end;
   end;
@@ -1336,27 +1431,27 @@ var
     begin
       FilledTiles[y,x] := mtWater;
 
-      if x-1>=1 then
+      if x - 1 >= 1 then
       begin
-        if y-1>=1 then             MagicFillArea(x-1,y-1);
-                                   MagicFillArea(x-1,y  );
-        if y+1<=gTerrain.MapY then MagicFillArea(x-1,y+1);
+        if y - 1 >= 1 then              MagicFillArea(x - 1, y - 1);
+                                        MagicFillArea(x - 1, y  );
+        if y + 1 <= gTerrain.MapY then  MagicFillArea(x - 1, y + 1);
       end;
 
-      if y-1>=1 then               MagicFillArea(x,y-1);
-      if y+1<=gTerrain.MapY then   MagicFillArea(x,y+1);
+      if y - 1 >= 1 then                MagicFillArea(x, y - 1);
+      if y + 1 <= gTerrain.MapY then    MagicFillArea(x, y + 1);
 
-      if x+1<=gTerrain.MapX then
+      if x + 1 <= gTerrain.MapX then
       begin
-        if y-1>=1 then             MagicFillArea(x+1,y-1);
-                                   MagicFillArea(x+1,y  );
-        if y+1<=gTerrain.MapY then MagicFillArea(x+1,y+1);
+        if y - 1 >= 1 then              MagicFillArea(x + 1, y - 1);
+                                        MagicFillArea(x + 1, y  );
+        if y + 1 <= gTerrain.MapY then  MagicFillArea(x + 1, y + 1);
       end;
     end;
   end;
 
 var
-  I,K:Integer;
+  I,K: Integer;
   NewRot: Byte;
 begin
   if not CanRotate(gTerrain.Land[aLoc.Y, aLoc.X].BaseLayer.Terrain) then
@@ -1747,13 +1842,19 @@ begin
     S.Write(Integer(0)); //Cypher - ommited
     for I := 1 to NewY do
     begin
-      IFrom := EnsureRange(I - aInsetRect.Top, 1, aInsetRect.Top + gTerrain.MapY);
+      IFrom := EnsureRange(I - aInsetRect.Top, 1, gTerrain.MapY - 1);
+//      IFrom := EnsureRange(I - aInsetRect.Top, 1, aInsetRect.Top + gTerrain.MapY - 1);
       for K := 1 to NewX do
       begin
-        KFrom := EnsureRange(K - aInsetRect.Left, 1, aInsetRect.Left + gTerrain.MapX);
+        KFrom := EnsureRange(K - aInsetRect.Left, 1, gTerrain.MapX - 1);
+//        KFrom := EnsureRange(K - aInsetRect.Left, 1, aInsetRect.Left + gTerrain.MapX - 1);
         if (IFrom <> I - aInsetRect.Top)
           or (KFrom <> K - aInsetRect.Left) then
-          S.Write(Byte(tkGrass))             // Its ok if we fill all with grass
+        begin
+//          if TryGetVertexEffectiveTerKind(
+
+            S.Write(Byte(tkGrass));             // Its ok if we fill all with grass
+        end
         else
           S.Write(LandTerKind[IFrom,KFrom].TerKind, 1);
       end;

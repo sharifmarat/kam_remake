@@ -275,6 +275,9 @@ type
     function TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind): Boolean; overload;
     function TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind; aDir: TKMDirection): Boolean; overload;
     function TileHasOnlyTerrainKinds(X, Y: Word; const aTerKinds: array of TKMTerrainKind): Boolean;
+    function TileHasOnlyTerrainKind(X, Y: Word; const aTerKind: TKMTerrainKind): Boolean;
+
+    function TileTryGetTerKind(X, Y: Word; var aTerKind: TKMTerrainKind): Boolean;
 
     function TileIsSand(const Loc: TKMPoint): Boolean;
     function TileIsSoil(X,Y: Word): Boolean; overload;
@@ -514,19 +517,43 @@ procedure TKMTerrain.SaveToFile(const aFile: UnicodeString; const aInsetRect: TK
 var
   MapDataSize: Cardinal;
 
-  procedure SetNewLand(var S: TKMemoryStreamBinary; aFromX, aFromY: Word; aNewGeneratedTile: Boolean);
+  //aDir - direction of enlarge for new generated tile
+  procedure SetNewLand(var S: TKMemoryStreamBinary; aToX, aToY, aFromX, aFromY: Word;
+                       aNewGenTileX, aNewGenTileY: Boolean; aDir: TKMDirection = dirNA);
   var
-    L: Integer;
+    L, D, adj: Integer;
     TileBasic: TKMTerrainTileBasic;
+    terKind: TKMTerrainKind;
+    CornersTerKinds: TKMTerrainKindsArray;
   begin
     // new appended terrain
-    if aNewGeneratedTile then
+    if aNewGenTileX or aNewGenTileY then
     begin
-      TileBasic.BaseLayer.Terrain  := gGame.MapEditor.TerrainPainter.PickRandomTile(tkGrass);
-      TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand');
+      if not TileTryGetTerKind(aFromX, aFromY, terKind) then
+      begin
+        CornersTerKinds := TileCornersTerKinds(aFromX, aFromY);
+
+        if aDir = dirNA then
+          terKind := tkGrass
+        else
+        begin
+          D := Ord(aDir);
+          if (D mod 2) = 0 then // corner direction
+            terKind := CornersTerKinds[(D div 2) mod 4]
+          else
+          begin
+            adj := KaMRandom(2, 'TKMTerrain.SaveToFile.SetNewLand'); //Choose randomly between 2 corners terkinds
+            terKind  := CornersTerKinds[((D div 2) + adj) mod 4];
+          end;
+        end;
+      end;
+
+      TileBasic.BaseLayer.Terrain  := gGame.MapEditor.TerrainPainter.PickRandomTile(terKind, True);
+      TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand 2');
       TileBasic.BaseLayer.Corners := [0,1,2,3];
       //Apply some random tiles for artisticity
-      TileBasic.Height    := EnsureRange(30 + KaMRandom(7, 'TKMTerrain.SaveToFile.SetNewLand 2'), 0, 100);  //variation in Height
+      TileBasic.Height    := EnsureRange(Land[aFromY,aFromX].Height - 5 + KaMRandom(10, 'TKMTerrain.SaveToFile.SetNewLand 3'), 0, 100);
+
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
       TileBasic.BlendingLvl := 50;
@@ -556,8 +583,8 @@ var
 var
   S: TKMemoryStreamBinary;
   //MapInnerRect: TKMRect;
-  NewGeneratedTileI, NewGeneratedTileK: Boolean;
-  I, K, IFrom, KFrom: Integer;
+  NewGenTileI, NewGenTileK, extLeft, extRight, extTop, extBot: Boolean;
+  I, K, IFrom, KFrom, D: Integer;
   SizeX, SizeY: Integer;
 begin
   Assert(fMapEditor, 'Can save terrain to file only in MapEd');
@@ -579,13 +606,27 @@ begin
 
     for I := 1 to SizeY do
     begin
-      IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY);
-      NewGeneratedTileI := IFrom <> I - aInsetRect.Top; //not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
+      IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY - 1); //-1 because last col is not part of the map
+      NewGenTileI := IFrom <> I - aInsetRect.Top; //not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
+      extTop := I <= aInsetRect.Top;
+      extBot := I - aInsetRect.Top >= fMapY;
+      D :=  Ord(dirN)*Byte(extTop) + Ord(dirS)*Byte(extBot); //Only 1 could happen
       for K := 1 to SizeX do
       begin
-        KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX);
-        NewGeneratedTileK := KFrom <> K - aInsetRect.Left;
-        SetNewLand(S, KFrom, IFrom, NewGeneratedTileI or NewGeneratedTileK);
+        KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX - 1); //-1 because last row is not part of the map
+        NewGenTileK := KFrom <> K - aInsetRect.Left;
+        extLeft := K <= aInsetRect.Left;
+        extRight := K - aInsetRect.Left >= fMapX;
+
+        if D = 0 then
+          D := Ord(dirW)*Byte(extLeft) + Ord(dirE)*Byte(extRight) //Only 1 could happen
+        else
+        begin
+          D := D + (Byte(extBot)*2 - 1)*Byte(extLeft) + (Byte(extTop)*2 - 1)*Byte(extRight);
+          D := ((D - 1 + 8) mod 8) + 1; //circle around for 0-value as dirNE
+        end;
+
+        SetNewLand(S, K, I, KFrom, IFrom, NewGenTileK, NewGenTileI, TKMDirection(D));
       end;
     end;
 
@@ -1279,6 +1320,37 @@ begin
   for I := 0 to 3 do
     if not TerKindArrayContains(CornersTerKinds[I], aTerKinds) then
       Exit(False);
+end;
+
+
+function TKMTerrain.TileHasOnlyTerrainKind(X, Y: Word; const aTerKind: TKMTerrainKind): Boolean;
+var
+  I: Integer;
+  CornersTerKinds: TKMTerrainKindsArray;
+begin
+  Result := True;
+  CornersTerKinds := TileCornersTerKinds(X,Y);
+  for I := 0 to 3 do
+    if CornersTerKinds[I] <> aTerKind then
+      Exit(False);
+end;
+
+
+//Try get the only terkind that this tile represents
+function TKMTerrain.TileTryGetTerKind(X, Y: Word; var aTerKind: TKMTerrainKind): Boolean;
+var
+  I: Integer;
+  CornersTerKinds: TKMTerrainKindsArray;
+begin
+  Result := True;
+  CornersTerKinds := TileCornersTerKinds(X,Y);
+  aTerKind := CornersTerKinds[0];
+  for I := 1 to 3 do
+    if CornersTerKinds[I] <> aTerKind then
+    begin
+      aTerKind := tkCustom;
+      Exit(False); // Corners has different terKinds, return tkCustom then
+    end;
 end;
 
 
