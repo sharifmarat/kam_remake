@@ -1312,6 +1312,8 @@ end;
 //Does the player has any assets (without assets player is harmless)
 function TKMHand.HasAssets: Boolean;
 begin
+  if Self = nil then Exit(False);
+  
   Result := (Houses.Count > 0) or (Units.Count > 0) or (GetFieldsCount > 0)
             or NeedToChooseFirstStorehouse; //RMG - added ChooseLocation.Allowed option as a valid player
 end;
