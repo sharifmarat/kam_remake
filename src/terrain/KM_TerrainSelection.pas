@@ -560,7 +560,7 @@ begin
     case fSelectionMode of
       smSelecting:  begin
                       //fRenderAux.SquareOnTerrain(RawRect.Left, RawRect.Top, RawRect.Right, RawRect.Bottom, $40FFFF00);
-                      gRenderAux.SquareOnTerrain(fSelectionRect.Left, fSelectionRect.Top, fSelectionRect.Right, fSelectionRect.Bottom, $FFFFFF00);
+                      gRenderAux.SquareOnTerrain(fSelectionRect.Left, fSelectionRect.Top, fSelectionRect.Right, fSelectionRect.Bottom, icCyan);
                     end;
       smPasting:    begin
                       for I := 0 to Sy - 1 do

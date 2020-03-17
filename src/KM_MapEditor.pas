@@ -958,7 +958,7 @@ begin
         or gTerrain.TileIsWineField(P)
         or (gTerrain.Land[P.Y,P.X].TileOverlay = toRoad)
         or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
-        gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
+        gRenderPool.RenderWireTile(P, icCyan) //Cyan quad
       else
         gRenderPool.RenderSpriteOnTile(P, TC_BLOCK); //Red X
 
