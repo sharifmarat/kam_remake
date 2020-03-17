@@ -2056,7 +2056,7 @@ begin
     cmObjects:    if (ssLeft in gGameCursor.SState) then
                     gTerrain.SetObject(gGameCursor.Cell, gGameCursor.Tag1);
     cmOverlays:   if (ssLeft in gGameCursor.SState) then
-                    gTerrain.SetOverlay(gGameCursor.Cell, gGameCursor.Tag1, ssShift in gGameCursor.SState); //Holding shift allows overwrite roads
+                    gTerrain.SetOverlay(gGameCursor.Cell, TKMTileOverlay(gGameCursor.Tag1), ssShift in gGameCursor.SState); //Holding shift allows overwrite roads
   end;
 end;
 

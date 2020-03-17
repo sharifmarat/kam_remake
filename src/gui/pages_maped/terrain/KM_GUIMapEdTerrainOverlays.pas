@@ -4,12 +4,8 @@ interface
 uses
    Math, SysUtils,
    KM_InterfaceDefaults,
-   KM_Controls, KM_Defaults, KM_Pics;
+   KM_Controls, KM_Defaults, KM_Pics, KM_Terrain;
 
-
-const
-  ALLOWED_OVERLAYS = 5;
-  MAPED_OVERLAYS_ID: array[0..ALLOWED_OVERLAYS - 1] of Integer = (0, 249, 251, 253, 255);   //toNone, toDig1, toDig2, toDig3, toDig4
 
 type
   TKMMapEdTerrainOverlays = class (TKMMapEdSubMenuPage)
@@ -21,7 +17,7 @@ type
     procedure OverlayRefresh(Sender: TObject);
   protected
     Panel_Overlays: TKMPanel;
-    OverlaysTable: array [0..ALLOWED_OVERLAYS - 1] of TKMButtonFlat;
+    OverlaysTable: array [toNone..toDig4] of TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -43,41 +39,41 @@ const
   BTN_SIZE = 36;
   BTNS_PER_ROW = 5;
 var
-  J: Integer;
+  TTO: TKMTileOverlay;
 begin
   inherited Create;
 
   Panel_Overlays := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
   with TKMLabel.Create(Panel_Overlays, 0, PAGE_TITLE_Y, Panel_Overlays.Width, 0, gResTexts[TX_MAPED_TERRAIN_OVERLAYS], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
-  for J := 0 to ALLOWED_OVERLAYS - 1 do
+  for TTO := Low(OverlaysTable) to High(OverlaysTable) do
   begin
-    OverlaysTable[J] := TKMButtonFlat.Create(Panel_Overlays, 9 + (J mod BTNS_PER_ROW) * BTN_SIZE,
-                                                             BTN_SIZE + (J div BTNS_PER_ROW) * BTN_SIZE,
+    OverlaysTable[TTO] := TKMButtonFlat.Create(Panel_Overlays, 9 + (Byte(TTO) mod BTNS_PER_ROW) * BTN_SIZE,
+                                                             BTN_SIZE + (Byte(TTO) div BTNS_PER_ROW) * BTN_SIZE,
                                                              BTN_SIZE,
                                                              BTN_SIZE,
-                                                             IfThen(MAPED_OVERLAYS_ID[J] > 0, MAPED_OVERLAYS_ID[J] + 1, 0),
+                                                             IfThen(TILE_OVERLAY_IDS[TTO] > 0, TILE_OVERLAY_IDS[TTO] + 1, 0),
                                                              rxTiles);
-    OverlaysTable[J].Tag := MAPED_OVERLAYS_ID[J];
+    OverlaysTable[TTO].Tag := TILE_OVERLAY_IDS[TTO];
 //    OverlaysTable[J].Caption := IntToStr(OverlaysTable[J].Tag);
 //    OverlaysTable[J].CapOffsetY := -8;
 //    OverlaysTable[J].TexOffsetY := 6;
 //    OverlaysTable[J].CapColor := icYellow;
-    OverlaysTable[J].Hint := IntToStr(OverlaysTable[J].Tag);
-    OverlaysTable[J].OnClick := OverlayChange;
+    OverlaysTable[TTO].Hint := IntToStr(OverlaysTable[TTO].Tag);
+    OverlaysTable[TTO].OnClick := OverlayChange;
   end;
 end;
 
 
 procedure TKMMapEdTerrainOverlays.OverlayChange(Sender: TObject);
 var
-  I: Integer;
+  TTO: TKMTileOverlay;
 begin
-  for I := 0 to ALLOWED_OVERLAYS - 1 do
-    if Sender = OverlaysTable[I] then
+  for TTO := Low(OverlaysTable) to High(OverlaysTable) do
+    if Sender = OverlaysTable[TTO] then
     begin
       gGameCursor.Mode := cmOverlays;
-      gGameCursor.Tag1 := MAPED_OVERLAYS_ID[I];
+      gGameCursor.Tag1 := Byte(TTO);
     end;
 end;
 
@@ -97,13 +93,10 @@ end;
 
 procedure TKMMapEdTerrainOverlays.OverlayRefresh(Sender: TObject);
 var
-  I, OverlayTexID: Integer;
+  TTO: TKMTileOverlay;
 begin
-  for I := 0 to ALLOWED_OVERLAYS - 1 do
-  begin
-    OverlayTexID := MAPED_OVERLAYS_ID[I];
-    OverlaysTable[I].Down := (gGameCursor.Mode = cmOverlays) and (gGameCursor.Tag1 = OverlayTexID);
-  end;
+  for TTO := Low(OverlaysTable) to High(OverlaysTable) do
+    OverlaysTable[TTO].Down := (gGameCursor.Mode = cmOverlays) and (gGameCursor.Tag1 = Byte(TTO));
 end;
 
 

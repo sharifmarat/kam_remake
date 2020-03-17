@@ -209,8 +209,7 @@ type
     function CatchFish(aLoc: TKMPointDir; TestOnly: Boolean = False): Boolean;
 
     procedure SetObject(const Loc: TKMPoint; ID: Integer);
-    procedure SetOverlay(const Loc: TKMPoint; aOverlayTileID: Integer; aOverwrite: Boolean); overload;
-    procedure SetOverlay(const Loc: TKMPoint; aOverlay: TKMTileOverlay; aOverwrite: Boolean); overload;
+    procedure SetOverlay(const Loc: TKMPoint; aOverlay: TKMTileOverlay; aOverwrite: Boolean);
     procedure FallTree(const Loc: TKMPoint);
     procedure ChopTree(const Loc: TKMPoint);
     procedure RemoveObject(const Loc: TKMPoint);
@@ -356,6 +355,7 @@ const
   DEFAULT_BLENDING_LVL = 50;
   //overlays, that considered as road: basically road and dig4, which looks almost like a finished road
   ROAD_LIKE_OVERLAYS: set of TKMTileOverlay = [toDig4, toRoad];
+  TILE_OVERLAY_IDS: array[toNone..toDig4] of Integer = (0, 249, 251, 253, 255);   //toNone, toDig1, toDig2, toDig3, toDig4
 
 var
   //Terrain is a globally accessible resource by so many objects
@@ -2844,24 +2844,6 @@ begin
     UpdatePassability(Loc);
     UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrowTopLeft(KMRect(Loc)), False);
   end;
-end;
-
-
-procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; aOverlayTileID: Integer; aOverwrite: Boolean);
-var
-  Overlay: TKMTileOverlay;
-begin
-  if not TileInMapCoords(Loc.X, Loc.Y) then Exit;
-
-  case aOverlayTileID of
-    249:             Overlay := toDig1;
-    251:             Overlay := toDig2;
-    253:             Overlay := toDig3;
-    255:             Overlay := toDig4;
-    248,250,252,254: Overlay := toRoad;
-    else             Overlay := toNone;
-  end;
-  SetOverlay(Loc, Overlay, aOverwrite);
 end;
 
 

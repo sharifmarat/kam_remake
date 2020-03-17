@@ -1579,7 +1579,7 @@ begin
     cmOverlays:   begin
                     RenderWireTile(P, icCyan);
                     if gGameCursor.Tag1 > 0 then
-                      RenderTile(gGameCursor.Tag1, P.X, P.Y, 0);
+                      RenderTile(TILE_OVERLAY_IDS[TKMTileOverlay(gGameCursor.Tag1)], P.X, P.Y, 0);
                     end;
     cmObjects:    begin
                     // If there's object below - paint it in Red
