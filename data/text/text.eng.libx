@@ -1,4 +1,4 @@
-0:Sawmill
+﻿0:Sawmill
 1:Iron smithy
 2:Weapon smithy
 3:Coal mine
@@ -1345,3 +1345,5 @@
 1393:Blending level of terrain transitions via masks
 1394:Blocks building
 1395:Blocks walking and building
+1396:Tile overlays
+1397:Set tile overlays.|Use LMB for safe mode and LMB+Shift to overwrite roads

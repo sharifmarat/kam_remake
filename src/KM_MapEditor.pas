@@ -374,7 +374,11 @@ begin
 
   //Delete tile overlay (road/corn/wine)
   if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
-    gTerrain.RemRoad(P);
+    gTerrain.RemRoad(P)
+  else
+  if gTerrain.Land[P.Y,P.X].TileOverlay <> toNone then
+    gTerrain.SetOverlay(P, toNone, True);
+
   if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
     gTerrain.RemField(P);
 end;
@@ -493,7 +497,11 @@ begin
     cmErase:      begin
                     gHands.RemAnyHouse(P);
                     if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
-                      gTerrain.RemRoad(P);
+                      gTerrain.RemRoad(P)
+                    else
+                    if gTerrain.Land[P.Y,P.X].TileOverlay <> toNone then
+                      gTerrain.SetOverlay(P, toNone, True);
+
                     if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                       gTerrain.RemField(P);
                   end;
@@ -539,7 +547,7 @@ begin
   if not aOverMap then
   begin
     //Still need to make a checkpoint since painting has now stopped
-    if gGameCursor.Mode in [cmElevate, cmEqualize, cmBrush, cmObjects, cmTiles] then
+    if gGameCursor.Mode in [cmElevate, cmEqualize, cmBrush, cmObjects, cmTiles, cmOverlays] then
       fTerrainPainter.MakeCheckpoint;
     Exit;
   end;
@@ -566,7 +574,8 @@ begin
                               end;
                 cmElevate, cmEqualize,
                 cmBrush, cmObjects,
-                cmTiles:      fTerrainPainter.MakeCheckpoint;
+                cmTiles,
+                cmOverlays:   fTerrainPainter.MakeCheckpoint;
                 cmMagicWater: fTerrainPainter.MagicWater(P);
                 cmEyedropper: begin
                                 fTerrainPainter.Eyedropper(P);
@@ -591,7 +600,11 @@ begin
                 cmErase:      begin
                                 gHands.RemAnyHouse(P);
                                 if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
-                                  gTerrain.RemRoad(P);
+                                  gTerrain.RemRoad(P)
+                                else
+                                if gTerrain.Land[P.Y,P.X].TileOverlay <> toNone then
+                                  gTerrain.SetOverlay(P, toNone, True);
+
                                 if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                                   gTerrain.RemField(P);
                               end;
@@ -943,7 +956,7 @@ begin
     if gGameCursor.Mode = cmErase then
       if gTerrain.TileIsCornField(P)
         or gTerrain.TileIsWineField(P)
-        or (gTerrain.Land[P.Y,P.X].TileOverlay=toRoad)
+        or (gTerrain.Land[P.Y,P.X].TileOverlay = toRoad)
         or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
         gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
       else

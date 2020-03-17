@@ -502,7 +502,7 @@ object FormMain: TFormMain
         Top = 56
         Width = 97
         Height = 17
-        Caption = 'Select. buffer'
+        Caption = 'Unit hitbox'
         TabOrder = 3
         OnClick = ControlsUpdate
       end
@@ -580,7 +580,7 @@ object FormMain: TFormMain
       end
       object chkTilesGrid: TCheckBox
         Left = 90
-        Top = 56
+        Top = 72
         Width = 79
         Height = 17
         Caption = 'Tiles grid'
@@ -611,11 +611,20 @@ object FormMain: TFormMain
       end
       object chkJamMeter: TCheckBox
         Left = 90
-        Top = 72
+        Top = 88
         Width = 79
         Height = 17
         Caption = 'Jam meter'
         TabOrder = 15
+        OnClick = ControlsUpdate
+      end
+      object chkShowTerrainOverlays: TCheckBox
+        Left = 90
+        Top = 56
+        Width = 95
+        Height = 17
+        Caption = 'Terrain overlays'
+        TabOrder = 16
         OnClick = ControlsUpdate
       end
     end

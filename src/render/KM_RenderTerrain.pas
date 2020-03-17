@@ -743,6 +743,12 @@ var Road, ID, Rot: Byte;
 begin
   if TileHasToBeRendered(False,pX,pY,aFow) then
   begin
+    //Fake tiles for MapEd fields
+    case gTerrain.Land[pY, pX].CornOrWine of
+      1:  RenderTile(gTerrain.Land[pY, pX].CornOrWineTerrain, pX, pY, 0, DoHighlight, HighlightColor);
+      2:  RenderTile(55, pX, pY, 0, DoHighlight, HighlightColor);
+    end;
+
     case gTerrain.Land[pY, pX].TileOverlay of
       toDig1:  RenderTile(249, pX, pY, 0, DoHighlight, HighlightColor);
       toDig2:  RenderTile(251, pX, pY, 0, DoHighlight, HighlightColor);
@@ -762,12 +768,6 @@ begin
                   Rot := RoadsConnectivity[Road, 2];
                   RenderTile(ID, pX, pY, Rot, DoHighlight, HighlightColor);
                 end;
-     end;
-
-     //Fake tiles for MapEd fields
-     case gTerrain.Land[pY, pX].CornOrWine of
-       1: RenderTile(gTerrain.Land[pY, pX].CornOrWineTerrain, pX, pY, 0, DoHighlight, HighlightColor);
-       2: RenderTile(55, pX, pY, 0, DoHighlight, HighlightColor);
      end;
   end;
 end;

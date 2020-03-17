@@ -21,6 +21,7 @@ type
                     IsCustom: Boolean;
                     BlendingLvl: Byte;
                     TerKind: TKMTerrainKind; //Used for brushes
+                    TileOverlay: TKMTileOverlay;
                   end;
 
   TKMSelection = class
@@ -228,6 +229,7 @@ begin
         fSelectionBuffer[By,Bx].IsCustom    := gTerrain.Land[I+1, K+1].IsCustom;
         fSelectionBuffer[By,Bx].BlendingLvl := gTerrain.Land[I+1, K+1].BlendingLvl;
         fSelectionBuffer[By,Bx].TerKind     := fTerrainPainter.LandTerKind[I+1, K+1].TerKind;
+        fSelectionBuffer[By,Bx].TileOverlay := gTerrain.Land[I+1, K+1].TileOverlay;
         for L := 0 to 2 do
         begin
           fSelectionBuffer[By,Bx].Layer[L].Terrain  := gTerrain.Land[I+1, K+1].Layer[L].Terrain;
@@ -314,6 +316,7 @@ begin
         gTerrain.Land[I+1, K+1].IsCustom    := fSelectionBuffer[By,Bx].IsCustom;
         gTerrain.Land[I+1, K+1].BlendingLvl := fSelectionBuffer[By,Bx].BlendingLvl;
         fTerrainPainter.LandTerKind[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
+        gterrain.Land[I+1, K+1].TileOverlay := fSelectionBuffer[By,Bx].TileOverlay;
         for L := 0 to 2 do
         begin
           gTerrain.Land[I+1, K+1].Layer[L].Terrain  := fSelectionBuffer[By,Bx].Layer[L].Terrain;
@@ -541,6 +544,7 @@ procedure TKMSelection.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
     Result.Obj          := aBufferData.Obj;
     Result.IsCustom     := aBufferData.IsCustom;
     Result.BlendingLvl  := aBufferData.BlendingLvl;
+    Result.TileOverlay  := aBufferData.TileOverlay;
     for L := 0 to 2 do
       Result.Layer[L] := aBufferData.Layer[L];
   end;

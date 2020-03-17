@@ -9,11 +9,12 @@ uses
    KM_GUIMapEdTerrainHeights,
    KM_GUIMapEdTerrainTiles,
    KM_GUIMapEdTerrainObjects,
-   KM_GUIMapEdTerrainSelection;
+   KM_GUIMapEdTerrainSelection,
+   KM_GUIMapEdTerrainOverlays;
 
 
 type
-  TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttObject, ttSelection);
+  TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttOverlays, ttObject, ttSelection);
 
   //Collection of terrain editing controls
   TKMMapEdTerrain = class (TKMMapEdMenuPage)
@@ -25,14 +26,15 @@ type
     fGuiTiles: TKMMapEdTerrainTiles;
     fGuiObjects: TKMMapEdTerrainObjects;
     fGuiSelection: TKMMapEdTerrainSelection;
+    fGuiOverlays: TKMMapEdTerrainOverlays;
 
     procedure PageChange(Sender: TObject);
     procedure UnRedoClick(Sender: TObject);
   protected
     Panel_Terrain: TKMPanel;
     Button_Terrain: array [TKMTerrainTab] of TKMButton;
-    Button_TerrainUndo: TKMButton;
-    Button_TerrainRedo: TKMButton;
+    Button_TerrainUndo: TKMButtonFlat;
+    Button_TerrainRedo: TKMButtonFlat;
     procedure DoShowSubMenu(aIndex: Byte); override;
     procedure DoExecuteSubMenuAction(aIndex: Byte); override;
   public
@@ -63,11 +65,12 @@ uses
 { TKMMapEdTerrain }
 constructor TKMMapEdTerrain.Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aHideAllPages: TEvent);
 const
-  BtnGlyph: array [TKMTerrainTab] of Word = (383, 388, 382, 385, 384);
+  BtnGlyph: array [TKMTerrainTab] of Word = (383, 388, 382, 400, 385, 384);
   BtnHint: array [TKMTerrainTab] of Word = (
     TX_MAPED_TERRAIN_HINTS_BRUSHES,
     TX_MAPED_TERRAIN_HINTS_HEIGHTS,
     TX_MAPED_TERRAIN_HINTS_TILES,
+    TX_MAPED_TERRAIN_HINTS_OVERLAYS,
     TX_MAPED_TERRAIN_HINTS_OBJECTS,
     TX_MAPED_COPY_TITLE);
 
@@ -84,15 +87,23 @@ begin
   Panel_Terrain.AnchorsStretch;
     for I := Low(TKMTerrainTab) to High(TKMTerrainTab) do
     begin
-      Button_Terrain[I] := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + SMALL_PAD_W * Byte(I), 0, SMALL_TAB_W, SMALL_TAB_H, BtnGlyph[I], rxGui, bsGame);
+      Button_Terrain[I] := TKMButton.Create(Panel_Terrain, TB_PAD_TERRAIN_BTN_L + (SMALL_PAD_W + 4) * Byte(I), 0, SMALL_TAB_W + 4, SMALL_TAB_H + 6, BtnGlyph[I], rxGui, bsGame);
       Button_Terrain[I].Hint := GetHintWHotKey(BtnHint[I], MAPED_SUBMENU_HOTKEYS[Ord(I)]);
       Button_Terrain[I].OnClick := PageChange;
     end;
 
-    Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 36, 0, 18, SMALL_TAB_H, '<', bsGame);
+    //Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 20, 0, 10, SMALL_TAB_H + 4, '<', bsGame);
+    Button_TerrainUndo := TKMButtonFlat.Create(Panel_Terrain, Panel_Terrain.Width - 62, -79, 15, SMALL_TAB_H + 4, 0);
+    Button_TerrainUndo.Caption := '<';
+    Button_TerrainUndo.CapOffsetY := -10;
+    Button_TerrainUndo.CapColor := icGreen;
     Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl+Z'')';
     Button_TerrainUndo.OnClick := UnRedoClick;
-    Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 18, 0, 18, SMALL_TAB_H, '>', bsGame);
+    //Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 10, 0, 10, SMALL_TAB_H + 4, '>', bsGame);
+    Button_TerrainRedo := TKMButtonFlat.Create(Panel_Terrain, Panel_Terrain.Width - 47, -79, 15, SMALL_TAB_H + 4, 0);
+    Button_TerrainRedo.Caption := '>';
+    Button_TerrainRedo.CapOffsetY := -10;
+    Button_TerrainRedo.CapColor := icGreen;
     Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl+Y'' or ''Ctrl+Shift+Z'')';
     Button_TerrainRedo.OnClick := UnRedoClick;
 
@@ -101,6 +112,7 @@ begin
     fGuiTiles := TKMMapEdTerrainTiles.Create(Panel_Terrain);
     fGuiObjects := TKMMapEdTerrainObjects.Create(Panel_Terrain, aHideAllPages);
     fGuiSelection := TKMMapEdTerrainSelection.Create(Panel_Terrain);
+    fGuiOverlays := TKMMapEdTerrainOverlays.Create(Panel_Terrain);
 end;
 
 
@@ -111,6 +123,7 @@ begin
   fGuiTiles.Free;
   fGuiObjects.Free;
   fGuiSelection.Free;
+  fGuiOverlays.Free;
 
   inherited;
 end;
@@ -132,15 +145,15 @@ begin
   begin
     if (ssCtrl in Shift) and (Key = Ord('Y')) then
     begin
-      Button_TerrainRedo.Click; //Ctrl+Y = Redo
+      UnRedoClick(Button_TerrainRedo); //Ctrl+Y = Redo
       aHandled := True;
     end;
     if (ssCtrl in Shift) and (Key = Ord('Z')) then
     begin
       if ssShift in Shift then
-        Button_TerrainRedo.Click //Ctrl+Shift+Z = Redo
+        UnRedoClick(Button_TerrainRedo) //Ctrl+Shift+Z = Redo
       else
-        Button_TerrainUndo.Click; //Ctrl+Z = Undo
+        UnRedoClick(Button_TerrainUndo); //Ctrl+Z = Undo
       aHandled := True;
     end;
   end;
@@ -166,6 +179,7 @@ begin
   fGuiTiles.Hide;
   fGuiObjects.Hide;
   fGuiSelection.Hide;
+  fGuiOverlays.Hide;
 
   if (Sender = Button_Terrain[ttBrush]) then
     fGuiBrushes.Show
@@ -180,7 +194,10 @@ begin
     fGuiObjects.Show
   else
   if (Sender = Button_Terrain[ttSelection]) then
-    fGuiSelection.Show;
+    fGuiSelection.Show
+  else
+  if (Sender = Button_Terrain[ttOverlays]) then
+    fGuiOverlays.Show;
 
   //Signal that active page has changed, that may affect layers visibility
   fOnPageChange(Self);
@@ -226,6 +243,7 @@ begin
   fGuiTiles.ExecuteSubMenuAction(aIndex);
   fGuiObjects.ExecuteSubMenuAction(aIndex);
   fGuiSelection.ExecuteSubMenuAction(aIndex);
+  fGuiOverlays.ExecuteSubMenuAction(aIndex);
 end;
 
 
@@ -245,6 +263,7 @@ begin
     ttTile:       Result := fGuiTiles.Visible;
     ttObject:     Result := fGuiObjects.Visible;
     ttSelection:  Result := fGuiSelection.Visible;
+    ttOverlays:   Result := fGuiOverlays.Visible;
   end;
 end;
 
@@ -268,6 +287,7 @@ begin
   fGuiTiles.UpdateState;
   fGuiObjects.UpdateState;
   fGuiSelection.UpdateState;
+  fGuiOverlays.UpdateState;
 
   Button_TerrainUndo.Enabled := gGame.MapEditor.TerrainPainter.CanUndo;
   Button_TerrainRedo.Enabled := gGame.MapEditor.TerrainPainter.CanRedo;

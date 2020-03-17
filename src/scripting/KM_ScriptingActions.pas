@@ -107,6 +107,7 @@ type
     function MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTileHeightSet(X, Y, Height: Integer): Boolean;
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
+    function MapTileOverlaySet(X, Y: Integer; aOverlay: TKMTileOverlay; aOverwrite: Boolean): Boolean;
 
     procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
@@ -2829,6 +2830,29 @@ begin
     else
     begin
       LogParamWarning('Actions.MapTileObjectSet', [X, Y, Obj]);
+      Result := False;
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000+
+//* Sets the terrain overlay on the tile at the specified XY coordinates.
+//* aOverwrite = False means safe way to change tile overlay, disallowing to set it on top of old fields/roads
+//* aOverwrite = True allows to destroy roads and re-dig fields (like in game we can build road on top of field and when laborer dies there is a digged overlay left)
+function TKMScriptActions.MapTileOverlaySet(X, Y: Integer; aOverlay: TKMTileOverlay; aOverwrite: Boolean): Boolean;
+begin
+  try
+    Result := True;
+    if gTerrain.TileInMapCoords(X, Y)
+      and (aOverlay in [Low(TKMTileOverlay)..High(TKMTileOverlay)]) then
+      gTerrain.SetOverlay(KMPoint(X, Y), aOverlay, aOverwrite)
+    else
+    begin
+      LogParamWarning('Actions.MapTileOverlaySet', [X, Y, Byte(aOverlay), Byte(aOverwrite)]);
       Result := False;
     end;
   except

@@ -53,6 +53,7 @@ type
     Obj: Word;
     IsCustom: Boolean;
     BlendingLvl: Byte;
+    TileOverlay: TKMTileOverlay;
   end;
 
   TKMTerrainTile = record
@@ -121,9 +122,9 @@ type
     function ChooseCuttingDirection(const aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
 
     procedure UpdateFences(const Loc: TKMPoint; CheckSurrounding: Boolean = True);
-    procedure UpdateWalkConnect(const aSet: array of TKMWalkConnect; aRect: TKMRect; aDiagObjectsEffected: Boolean);
+    procedure UpdateWalkConnect(const aSet: TKMWalkConnectSet; aRect: TKMRect; aDiagObjectsEffected: Boolean);
 
-    procedure SetField_Init(const Loc: TKMPoint; aOwner: TKMHandID);
+    procedure SetField_Init(const Loc: TKMPoint; aOwner: TKMHandID; aRemoveOverlay: Boolean = True);
     procedure SetField_Complete(const Loc: TKMPoint; aFieldType: TKMFieldType);
 
     function TrySetTile(X, Y: Integer; aType, aRot: Integer; aUpdatePassability: Boolean = True): Boolean; overload;
@@ -156,7 +157,8 @@ type
     procedure SetRoads(aList: TKMPointList; aOwner: TKMHandID; aUpdateWalkConnects: Boolean = True);
     procedure SetRoad(const Loc: TKMPoint; aOwner: TKMHandID);
     procedure SetInitWine(const Loc: TKMPoint; aOwner: TKMHandID);
-    procedure SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType: TKMFieldType; aStage: Byte = 0; aRandomAge: Boolean = False; aKeepOldObject: Boolean = False);
+    procedure SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType: TKMFieldType; aStage: Byte = 0;
+                       aRandomAge: Boolean = False; aKeepOldObject: Boolean = False; aRemoveOverlay: Boolean = True);
     procedure SetHouse(const Loc: TKMPoint; aHouseType: TKMHouseType; aHouseStage: TKMHouseStage; aOwner: TKMHandID; const aFlattenTerrain: Boolean = False);
     procedure SetHouseAreaOwner(const Loc: TKMPoint; aHouseType: TKMHouseType; aOwner: TKMHandID);
 
@@ -206,7 +208,9 @@ type
     function WaterHasFish(const aLoc: TKMPoint): Boolean;
     function CatchFish(aLoc: TKMPointDir; TestOnly: Boolean = False): Boolean;
 
-    procedure SetObject(const Loc: TKMPoint; ID:integer);
+    procedure SetObject(const Loc: TKMPoint; ID: Integer);
+    procedure SetOverlay(const Loc: TKMPoint; aOverlayTileID: Integer; aOverwrite: Boolean); overload;
+    procedure SetOverlay(const Loc: TKMPoint; aOverlay: TKMTileOverlay; aOverwrite: Boolean); overload;
     procedure FallTree(const Loc: TKMPoint);
     procedure ChopTree(const Loc: TKMPoint);
     procedure RemoveObject(const Loc: TKMPoint);
@@ -350,6 +354,8 @@ const
   OBJ_INVISIBLE = 254; //Special object without any attributes set
   HEIGHT_RAND_VALUE = 8;
   DEFAULT_BLENDING_LVL = 50;
+  //overlays, that considered as road: basically road and dig4, which looks almost like a finished road
+  ROAD_LIKE_OVERLAYS: set of TKMTileOverlay = [toDig4, toRoad];
 
 var
   //Terrain is a globally accessible resource by so many objects
@@ -463,7 +469,6 @@ begin
     for I := 1 to fMapY do
       for J := 1 to fMapX do
       begin
-        Land[I,J].TileOverlay  := toNone;
         Land[I,J].TileLock     := tlNone;
         Land[I,J].JamMeter     := 0;
         Land[I,J].CornOrWine   := 0;
@@ -484,6 +489,7 @@ begin
         Land[I,J].LayersCnt   := TileBasic.LayersCnt;
         Land[I,J].IsCustom    := TileBasic.IsCustom;
         Land[I,J].BlendingLvl := TileBasic.BlendingLvl;
+        Land[I,J].TileOverlay := TileBasic.TileOverlay;
 
         for L := 0 to TileBasic.LayersCnt - 1 do
           Land[I,J].Layer[L] := TileBasic.Layer[L];
@@ -564,6 +570,7 @@ const
       TileBasic.IsCustom  := False;
       TileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
       TileBasic.LayersCnt := 0;
+      TileBasic.TileOverlay := toNone;
     end
     else
     begin
@@ -573,6 +580,7 @@ const
       TileBasic.LayersCnt   := Land[aFromY,aFromX].LayersCnt;
       TileBasic.IsCustom    := Land[aFromY,aFromX].IsCustom;
       TileBasic.BlendingLvl := Land[aFromY,aFromX].BlendingLvl;
+      TileBasic.TileOverlay := Land[aFromY,aFromX].TileOverlay;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
@@ -1139,7 +1147,7 @@ begin
   Result := TileIsSoil(X,Y)
     and not gMapElements[Land[Y,X].Obj].AllBlocked
     and (Land[Y,X].TileLock = tlNone)
-    and (Land[Y,X].TileOverlay <> toRoad)
+    and not (Land[Y,X].TileOverlay in ROAD_LIKE_OVERLAYS)
     and not TileIsWineField(KMPoint(X,Y))
     and not TileIsCornField(KMPoint(X,Y))
     and CheckHeightPass(KMPoint(X,Y), hpWalking);
@@ -1164,7 +1172,7 @@ function TKMTerrain.TileGoodForTree(X,Y: Word): Boolean;
           //Tiles above or to the left can't be road/field/locked
           if (I <= 0) and (K <= 0) then
             if (Land[P.Y,P.X].TileLock <> tlNone)
-            or (Land[P.Y,P.X].TileOverlay = toRoad)
+            or (Land[P.Y,P.X].TileOverlay in ROAD_LIKE_OVERLAYS)
             or TileIsCornField(P)
             or TileIsWineField(P) then
               Result := True;
@@ -1194,7 +1202,7 @@ begin
     and not IsObjectsNearby //This function checks surrounding tiles
     and (Land[Y,X].TileLock = tlNone)
     and (X > 1) and (Y > 1) //Not top/left of map, but bottom/right is ok
-    and (Land[Y,X].TileOverlay <> toRoad)
+    and not (Land[Y,X].TileOverlay in ROAD_LIKE_OVERLAYS)
     and not HousesNearVertex
     //Woodcutter will dig out other object in favour of his tree
     and ((Land[Y,X].Obj = OBJ_NONE) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
@@ -1497,7 +1505,7 @@ begin
     Result := fTileset.TileIsCornField(Land[Loc.Y, Loc.X].BaseLayer.Terrain)
               and (Land[Loc.Y,Loc.X].TileOverlay = toNone)
   else
-    Result := (Land[Loc.Y,Loc.X].CornOrWine = 1);
+    Result := (Land[Loc.Y,Loc.X].CornOrWine = 1) and (Land[Loc.Y,Loc.X].TileOverlay = toNone);
 end;
 
 
@@ -1507,14 +1515,14 @@ begin
   Result := False;
   if not TileInMapCoords(Loc.X,Loc.Y) then 
     Exit;
- //Tile can't be used as a winefield if there is road or any other overlay
- //It also must have right object on it
+  //Tile can't be used as a winefield if there is road or any other overlay
+  //It also must have right object on it
   if not fMapEditor then
     Result := fTileset.TileIsWineField(Land[Loc.Y, Loc.X].BaseLayer.Terrain)
               and (Land[Loc.Y,Loc.X].TileOverlay = toNone)
               and ObjectIsWine(Loc)
   else
-    Result := (Land[Loc.Y,Loc.X].CornOrWine = 2);
+    Result := (Land[Loc.Y,Loc.X].CornOrWine = 2) and (Land[Loc.Y,Loc.X].TileOverlay = toNone);
 end;
 
 
@@ -2011,7 +2019,9 @@ end;
 
 
 procedure TKMTerrain.RemField(const Loc: TKMPoint);
-var DiagObjectChanged: Boolean;
+var
+  DiagObjectChanged: Boolean;
+  R: TKMRect;
 begin
   Land[Loc.Y,Loc.X].TileOwner := -1;
   Land[Loc.Y,Loc.X].TileOverlay := toNone;
@@ -2031,10 +2041,12 @@ begin
     DiagObjectChanged := False;
   Land[Loc.Y,Loc.X].FieldAge := 0;
   UpdateFences(Loc);
-  UpdatePassability(KMRectGrow(KMRect(Loc), 1));
+
+  R := KMRectGrow(KMRect(Loc), 1);
+  UpdatePassability(R);
 
   //Update affected WalkConnect's
-  UpdateWalkConnect([wcWalk,wcRoad,wcWork], KMRectGrow(KMRect(Loc),1), DiagObjectChanged); //Winefields object block diagonals
+  UpdateWalkConnect([wcWalk,wcRoad,wcWork], R, DiagObjectChanged); //Winefields object block diagonals
 end;
 
 
@@ -2082,10 +2094,11 @@ begin
 end;
 
 
-procedure TKMTerrain.SetField_Init(const Loc: TKMPoint; aOwner: TKMHandID);
+procedure TKMTerrain.SetField_Init(const Loc: TKMPoint; aOwner: TKMHandID; aRemoveOverlay: Boolean = True);
 begin
   Land[Loc.Y,Loc.X].TileOwner   := aOwner;
-  Land[Loc.Y,Loc.X].TileOverlay := toNone;
+  if aRemoveOverlay then
+    Land[Loc.Y,Loc.X].TileOverlay := toNone;
   Land[Loc.Y,Loc.X].FieldAge    := 0;
 end;
 
@@ -2786,9 +2799,76 @@ begin
 end;
 
 
+// Set Tile Overlay
+// TODO: Do not update walkConnect and passability multiple times here
+procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; aOverlay: TKMTileOverlay; aOverwrite: Boolean);
+var
+  changed: Boolean;
+begin
+  if not TileInMapCoords(Loc.X, Loc.Y) then Exit;
+
+  changed := False;
+
+  if aOverwrite then
+  begin
+    if CanAddField(Loc.X, Loc.Y, ftRoad)                       //Can we add road
+      or ((Land[Loc.Y, Loc.X].TileOverlay = toRoad)
+          and (gHands.HousesHitTest(Loc.X, Loc.Y) = nil)) then //or Can we destroy road
+    begin
+      if Land[Loc.Y, Loc.X].TileOverlay = toRoad then
+        RemRoad(Loc);
+
+      Land[Loc.Y, Loc.X].TileOverlay := aOverlay;
+      Land[Loc.Y, Loc.X].CornOrWine := 0;
+      UpdateFences(Loc);
+
+      if (aOverlay in ROAD_LIKE_OVERLAYS) and gMapElements[Land[Loc.Y, Loc.X].Obj].WineOrCorn then
+        RemoveObject(Loc);
+
+      changed := True;
+    end;
+  end
+  else
+  begin
+    if CanAddField(Loc.X, Loc.Y, ftRoad)
+      and not TileIsWineField(KMPoint(Loc.X, Loc.Y))
+      and not TileIsCornField(KMPoint(Loc.X, Loc.Y)) then
+    begin
+      gTerrain.Land[Loc.Y, Loc.X].TileOverlay := aOverlay;
+      changed := True;
+    end;
+  end;
+
+  if changed then
+  begin
+    UpdatePassability(Loc);
+    UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrowTopLeft(KMRect(Loc)), False);
+  end;
+end;
+
+
+procedure TKMTerrain.SetOverlay(const Loc: TKMPoint; aOverlayTileID: Integer; aOverwrite: Boolean);
+var
+  Overlay: TKMTileOverlay;
+begin
+  if not TileInMapCoords(Loc.X, Loc.Y) then Exit;
+
+  case aOverlayTileID of
+    249:             Overlay := toDig1;
+    251:             Overlay := toDig2;
+    253:             Overlay := toDig3;
+    255:             Overlay := toDig4;
+    248,250,252,254: Overlay := toRoad;
+    else             Overlay := toNone;
+  end;
+  SetOverlay(Loc, Overlay, aOverwrite);
+end;
+
+
 {Remove the tree and place a falling tree instead}
 procedure TKMTerrain.FallTree(const Loc: TKMPoint);
-var I: Integer;
+var
+  I: Integer;
 begin
   for I := 1 to Length(ChopableTrees) do
     if ChopableTrees[I, caAgeFull] = Land[Loc.Y,Loc.X].Obj then
@@ -2845,7 +2925,8 @@ end;
 
 
 procedure TKMTerrain.RemoveObject(const Loc: TKMPoint);
-var BlockedDiagonal: Boolean;
+var
+  BlockedDiagonal: Boolean;
 begin
   if Land[Loc.Y,Loc.X].Obj <> OBJ_NONE then
   begin
@@ -2912,7 +2993,8 @@ begin
 end;
 
 
-procedure TKMTerrain.SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType: TKMFieldType; aStage: Byte = 0; aRandomAge: Boolean = False; aKeepOldObject: Boolean = False);
+procedure TKMTerrain.SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType: TKMFieldType; aStage: Byte = 0;
+                              aRandomAge: Boolean = False; aKeepOldObject: Boolean = False; aRemoveOverlay: Boolean = True);
   procedure SetLand(aFieldAge: Byte; aTerrain: Byte; aObj: Integer = -1);
   begin
     Land[Loc.Y, Loc.X].FieldAge := aFieldAge;
@@ -2944,7 +3026,7 @@ var FieldAge: Byte;
 begin
   Assert(aFieldType in [ftCorn, ftWine], 'SetField is allowed to use only for corn or wine.');
 
-  SetField_Init(Loc, aOwner);
+  SetField_Init(Loc, aOwner, aRemoveOverlay);
 
   if (aFieldType = ftCorn)
     and (InRange(aStage, 0, CORN_STAGES_COUNT - 1)) then
@@ -3344,7 +3426,7 @@ begin
     if TileIsSand(Loc)
       and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
       //TileLock checked in outer begin/end
-      and (Land[Loc.Y,Loc.X].TileOverlay <> toRoad)
+      and not (Land[Loc.Y,Loc.X].TileOverlay in ROAD_LIKE_OVERLAYS)
       and not TileIsCornField(Loc)
       and not TileIsWineField(Loc)
       and CheckHeightPass(Loc, hpWalking) then //Can't crab on houses, fields and roads (can walk on fenced house so you can't kill them by placing a house on top of them)
@@ -3983,7 +4065,8 @@ end;
 
 //Rebuilds passability for given bounds
 procedure TKMTerrain.UpdatePassability(const aRect: TKMRect);
-var I, K: Integer;
+var
+  I, K: Integer;
 begin
   for I := Max(aRect.Top, 1) to Min(aRect.Bottom, fMapY - 1) do
     for K := Max(aRect.Left, 1) to Min(aRect.Right, fMapX - 1) do
@@ -3992,15 +4075,15 @@ end;
 
 
 //Rebuilds connected areas using flood fill algorithm
-procedure TKMTerrain.UpdateWalkConnect(const aSet: array of TKMWalkConnect; aRect: TKMRect; aDiagObjectsEffected:Boolean);
+procedure TKMTerrain.UpdateWalkConnect(const aSet: TKMWalkConnectSet; aRect: TKMRect; aDiagObjectsEffected: Boolean);
 var
-  J: Integer;
+  WC: TKMWalkConnect;
 begin
   aRect := KMClipRect(aRect, 1, 1, fMapX - 1, fMapY - 1);
 
   //Process all items from set
-  for J := Low(aSet) to High(aSet) do
-    TKMTerrainWalkConnect.DoUpdate(aRect, aSet[J], aDiagObjectsEffected);
+  for WC in aSet do
+    TKMTerrainWalkConnect.DoUpdate(aRect, WC, aDiagObjectsEffected);
 end;
 
 
@@ -4475,6 +4558,8 @@ begin
       TileBasic.IsCustom    := Land[I,K].IsCustom;
       TileBasic.BlendingLvl := Land[I,K].BlendingLvl;
       TileBasic.LayersCnt   := Land[I,K].LayersCnt;
+      TileBasic.TileOverlay := Land[I,K].TileOverlay;
+
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
 
@@ -4484,7 +4569,6 @@ begin
       SaveStream.Write(Land[I,K].FieldAge);
       SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
       SaveStream.Write(Land[I,K].JamMeter);
-      SaveStream.Write(Land[I,K].TileOverlay, SizeOf(Land[I,K].TileOverlay));
       SaveStream.Write(Land[I,K].TileOwner, SizeOf(Land[I,K].TileOwner));
       if Land[I,K].IsUnit <> nil then
         SaveStream.Write(TKMUnit(Land[I,K].IsUnit).UID) //Store ID, then substitute it with reference on SyncLoad
@@ -4738,8 +4822,9 @@ begin
   S.Write(aTileBasic.Height);             //4
   S.Write(aTileBasic.Obj);                //5
   S.Write(aTileBasic.IsCustom);           //7
-  S.Write(aTileBasic.LayersCnt);          //8
-  Inc(aMapDataSize, 8); // obligatory 8 bytes per tile
+  S.Write(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)); //8
+  S.Write(aTileBasic.LayersCnt);          //9
+  Inc(aMapDataSize, 9); // obligatory 9 bytes per tile
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
@@ -4798,6 +4883,7 @@ begin
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
     aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
+    aTileBasic.TileOverlay := toNone;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
@@ -4807,9 +4893,14 @@ begin
     aStream.Read(aTileBasic.IsCustom);          //7
     aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL; //Default value;
 
+    if aGameRev > 10968 then
+      aStream.Read(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)) //8
+    else
+      aTileBasic.TileOverlay := toNone;
+
     // Load all layers info
     // First get layers count
-    aStream.Read(aTileBasic.LayersCnt);         //8
+    aStream.Read(aTileBasic.LayersCnt);         //9
     if aTileBasic.LayersCnt = 0 then            // No need to save corners, if we have no layers on that tile
       aTileBasic.BaseLayer.Corners := [0,1,2,3] // Set all corners then
     else begin

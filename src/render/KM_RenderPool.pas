@@ -355,6 +355,9 @@ begin
   if SHOW_TERRAIN_KINDS then
     gRenderAux.TileTerrainKinds(aRect);
 
+  if SHOW_TERRAIN_OVERLAYS then
+    gRenderAux.TileTerrainOverlays(aRect);
+
   if SHOW_JAM_METER then
     gRenderAux.TileTerrainJamMeter(aRect);
 
@@ -1573,6 +1576,11 @@ begin
                     RenderTile(gGameCursor.Tag1, P.X, P.Y, gGameCursor.MapEdDir)
                   else
                     RenderTile(gGameCursor.Tag1, P.X, P.Y, (gTerrain.AnimStep div 5) mod 4); // Spin it slowly so player remembers it is on randomized
+    cmOverlays:   begin
+                    RenderWireTile(P, $FFFFFF00);
+                    if gGameCursor.Tag1 > 0 then
+                      RenderTile(gGameCursor.Tag1, P.X, P.Y, 0);
+                    end;
     cmObjects:    begin
                     // If there's object below - paint it in Red
                     RenderMapElement(gTerrain.Land[P.Y,P.X].Obj, gTerrain.AnimStep, P.X, P.Y, True, True);
@@ -1687,7 +1695,7 @@ begin
   end;
 
   if (aHighlightAll or not IsRendered) and
-    (((gTerrain.Land[P.Y, P.X].TileOverlay = toRoad)
+    (((gTerrain.Land[P.Y, P.X].TileOverlay <> toNone)
         and (gTerrain.Land[P.Y, P.X].TileLock = tlNone)) //Sometimes we can point road tile under the house, do not show Cyan quad then
       or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0)) then
     RenderWireTile(P, $FFFFFF00); // Cyan quad

@@ -430,16 +430,16 @@ begin
                           gHands[fLastHand].AddRoadToList(KMPoint(P[0]+1,P[1]+1));
 
     ctSetField:         if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftCorn,0,True);
+                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftCorn,0,True,False);
 
     ctSetFieldStaged:   if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftCorn,P[2]);
+                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftCorn,P[2],False,False);
 
     ctSetWinefield:     if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftWine,0,True);
+                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftWine,0,True,False);
 
     ctSetWinefieldStaged:  if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                              gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftWine,P[2]);
+                              gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftWine,P[2],False,False);
 
     ctSetStock:         if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
                         begin //This command basically means: Put a SH here with road bellow it

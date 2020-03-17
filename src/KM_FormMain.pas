@@ -130,6 +130,7 @@ type
     chkSnowHouses: TCheckBox;
     chkLoadUnsupSaves: TCheckBox;
     chkJamMeter: TCheckBox;
+    chkShowTerrainOverlays: TCheckBox;
     {$ENDIF}
     {$IFDEF FPC}
     mainGroup: TGroupBox;
@@ -899,6 +900,7 @@ begin
 
     {$IFDEF WDC} //one day update .lfm for lazarus...
     SHOW_JAM_METER := chkJamMeter.Checked;
+    SHOW_TERRAIN_OVERLAYS := chkShowTerrainOverlays.Checked;
     {$ENDIF}
 
     SKIP_RENDER := chkSkipRender.Checked;
