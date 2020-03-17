@@ -65,6 +65,7 @@ type
     FMediaPlayer: libvlc_media_player_t_ptr;
     FEvents: libvlc_event_manager_t_ptr;
 
+    FTrackList: TStringList;
     FVideoList: TStringList;
     FEndVideo: TKMVideoPlayerEvent;
 
@@ -75,6 +76,7 @@ type
     procedure EventsDisable();
     procedure PlayNext;
 
+    procedure SetTrackByLocale;
     function GetState: TVlcPlayerState;
     procedure MediaPlayerEvents(var Msg: TVlcMessage); message WM_MEDIA_PLAYER_EVENTS;
 
@@ -107,7 +109,7 @@ implementation
 {$IFDEF VIDEOS}
 
 uses
-  KM_Render, KM_RenderUI, dglOpenGL, KM_Controls, KM_ResFonts;
+  KM_Render, KM_RenderUI, dglOpenGL, KM_Controls, KM_ResFonts, KM_GameApp;
 
 procedure lib_vlc_player_event_hdlr(p_event: libvlc_event_t_ptr; data: Pointer); cdecl; forward;
 
@@ -162,6 +164,7 @@ begin
 {$IFDEF VIDEOS}
   FCriticalSection := TCriticalSection.Create;
   FVideoList := TStringList.Create;
+  FTrackList :=  TStringList.Create;
 {$ENDIF}
 end;
 
@@ -170,7 +173,7 @@ begin
 {$IFDEF VIDEOS}
   FNext := False;
   FVideoList.Free;
-
+  FTrackList.Free;
 
   DestroyMediaPlayer;
 
@@ -422,9 +425,13 @@ end;
 
 procedure TKMVideoPlayer.PlayNext;
 var
+  i: Integer;
   path: string;
   media: libvlc_media_t_ptr;
-  info: libvlc_media_track_info_t_ptr;
+
+  trackCount: Cardinal;
+  tracks: libvlc_media_track_list_t;
+  track: libvlc_media_track_t_ptr;
 begin
   InitMediaPlayer;
   if (FInstance = nil) or (FMediaPlayer = nil) then
@@ -443,10 +450,26 @@ begin
   media := libvlc_media_new_path(FInstance, PAnsiChar(UTF8Encode(path)));
   libvlc_media_parse(media);
 
-  if libvlc_media_get_tracks_info(media, info) > 0 then
+  FTrackList.Clear;
+  trackCount := libvlc_media_tracks_get(media, Pointer(tracks));
+
+  if trackCount > 0 then
   begin
-    FWidth := info.video.i_width;
-    FHeight := info.video.i_height;
+    for i := 0 to trackCount - 1 do
+    begin
+      track := tracks[i];
+      case track.i_type of
+        libvlc_track_video:
+          begin
+            FWidth := track.u.video.i_width;
+            FHeight := track.u.video.i_height;
+          end;
+        libvlc_track_audio:
+          if track.psz_language <> nil then
+            FTrackList.AddObject(track.psz_language, TObject(track.i_id));
+      end;
+    end;
+
     FCriticalSection.Enter;
     SetLength(FBuffer, FWidth * FHeight * 3);
 
@@ -455,12 +478,36 @@ begin
     FTexture.V := 1;
     FCriticalSection.Leave;
 
+    libvlc_media_tracks_release(tracks, trackCount);
+
     libvlc_video_set_format(FMediaPlayer, 'RV24', FWidth, FHeight, FWidth * 3);
     libvlc_media_player_set_media(FMediaPlayer, media);
     libvlc_media_player_play(FMediaPlayer);
+    SetTrackByLocale;
   end;
 
   libvlc_media_release(media);
+end;
+
+procedure TKMVideoPlayer.SetTrackByLocale;
+const
+  TIME_STEP = 50;
+var
+  id, index: Integer;
+  timeElapsed : Cardinal;
+begin
+  if (FTrackList.Count = 0) or not FTrackList.Find(gGameApp.GameSettings.Locale, index) then
+    Exit;
+
+  id := Integer(FTrackList.Objects[index]);
+
+  Sleep(TIME_STEP);
+  timeElapsed := TIME_STEP;
+  while (FMediaPlayer <> nil) and (timeElapsed < 1000) and (libvlc_audio_set_track(FMediaPlayer, id) < 0) do
+  begin
+    Sleep(TIME_STEP);
+    Inc(timeElapsed, TIME_STEP);
+  end;
 end;
 
 function TKMVideoPlayer.GetState: TVlcPlayerState;
