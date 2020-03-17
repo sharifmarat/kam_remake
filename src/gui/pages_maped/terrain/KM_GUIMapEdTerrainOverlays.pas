@@ -30,6 +30,7 @@ type
 
 implementation
 uses
+  TypInfo,
   KM_ResFonts, KM_ResTexts,
   KM_GameCursor, KM_RenderUI, KM_InterfaceGame;
 
@@ -44,7 +45,7 @@ begin
   inherited Create;
 
   Panel_Overlays := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
-  with TKMLabel.Create(Panel_Overlays, 0, PAGE_TITLE_Y, Panel_Overlays.Width, 0, gResTexts[TX_MAPED_TERRAIN_OVERLAYS], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Overlays, 0, TERRAIN_PAGE_TITLE_Y, Panel_Overlays.Width, 0, gResTexts[TX_MAPED_TERRAIN_OVERLAYS], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
   for TTO := Low(OverlaysTable) to High(OverlaysTable) do
   begin
@@ -59,7 +60,7 @@ begin
 //    OverlaysTable[J].CapOffsetY := -8;
 //    OverlaysTable[J].TexOffsetY := 6;
 //    OverlaysTable[J].CapColor := icYellow;
-    OverlaysTable[TTO].Hint := IntToStr(OverlaysTable[TTO].Tag);
+    OverlaysTable[TTO].Hint := GetEnumName(TypeInfo(TKMTileOverlay), Byte(TTO));
     OverlaysTable[TTO].OnClick := OverlayChange;
   end;
 end;

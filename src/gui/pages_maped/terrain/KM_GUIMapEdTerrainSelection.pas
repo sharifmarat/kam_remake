@@ -51,7 +51,7 @@ begin
 
   Panel_Selection := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
 
-  with TKMLabel.Create(Panel_Selection, 0, PAGE_TITLE_Y, Panel_Selection.Width, 0, gResTexts[TX_MAPED_COPY_TITLE], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Selection, 0, TERRAIN_PAGE_TITLE_Y, Panel_Selection.Width, 0, gResTexts[TX_MAPED_COPY_TITLE], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
   Button_SelectCopy := TKMButton.Create(Panel_Selection, 9, 30, Panel_Selection.Width - 9, 20, gResTexts[TX_MAPED_COPY], bsGame);
   Button_SelectCopy.Anchors := [anLeft, anTop, anRight];

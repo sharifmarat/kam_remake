@@ -84,7 +84,7 @@ begin
   TABLE_ELEMS_CNT := TABLE_ELEMS;
 
   Panel_Tiles := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
-  with TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, Panel_Tiles.Width, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Tiles, 0, TERRAIN_PAGE_TITLE_Y, Panel_Tiles.Width, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
 
   TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, TB_TLS_M, 25, BTN_SIZE_S, BTN_SIZE_S, 670);

@@ -107,7 +107,7 @@ begin
   Panel_Brushes.AnchorsStretch;
 //  TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
 
-  with TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, Panel_Brushes.Width, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Brushes, 0, TERRAIN_PAGE_TITLE_Y, Panel_Brushes.Width, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
   BrushSize   := TKMTrackBar.Create(Panel_Brushes, 9, 27, (Panel_Brushes.Width - (BTN_BRUSH_SIZE * 2) - 18) - 18, 0, BRUSH_MAX_SIZE);
   BrushSize.Anchors := [anLeft, anTop, anRight];
