@@ -1463,7 +1463,7 @@ begin
   P := gGameCursor.Cell;
   Size := gGameCursor.MapEdSize;
   IsSquare := gGameCursor.MapEdShape = hsSquare;
-  if gGameCursor.MapEdMagicBrush then
+  if gGameCursor.MapEdUseMagicBrush then
     IterateOverArea(P, Size, IsSquare, RenderWireTileInt)
   else
   if gGameCursor.Tag1 <> 0 then

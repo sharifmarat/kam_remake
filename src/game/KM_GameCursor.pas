@@ -1,7 +1,7 @@
 unit KM_GameCursor;
 interface
 uses
-  Classes, KM_Defaults, KM_Points;
+  Classes, KM_Defaults, KM_Points, KM_ResTileset;
 
 
 type
@@ -27,8 +27,8 @@ type
     MapEdSlope: Byte;
     MapEdSize: Byte;
     MapEdSpeed: Byte;
-    MapEdBrushMask: Integer;
-    MapEdMagicBrush: Boolean;
+    MapEdBrushMask: TKMTileMaskKind;
+    MapEdUseMagicBrush: Boolean;
 
     constructor Create;
     property Mode: TKMCursorMode read fMode write SetMode;
@@ -52,7 +52,7 @@ end;
 procedure TKMGameCursor.Reset;
 begin
   DragOffset := KMPOINT_ZERO;
-  MapEdMagicBrush := False;
+  MapEdUseMagicBrush := False;
   SState := [];
   if fMode = cmNone then  //Reset Tag1 also, when reset mode
   begin

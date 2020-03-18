@@ -205,7 +205,7 @@ begin
 
   if Sender = MagicBrush then
   begin
-    gGameCursor.MapEdMagicBrush := True;
+    gGameCursor.MapEdUseMagicBrush := True;
     fLastMagicBrush := True;
   end
   else
@@ -229,9 +229,9 @@ begin
         gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
         fLastBrush := TKMButtonFlat(Sender).Tag;
         fLastMagicBrush := False;
-        gGameCursor.MapEdMagicBrush := False;
+        gGameCursor.MapEdUseMagicBrush := False;
       end else
-        gGameCursor.MapEdBrushMask := TKMButtonFlat(Sender).Tag;
+        gGameCursor.MapEdBrushMask := TKMTileMaskKind(TKMButtonFlat(Sender).Tag);
     end;
   end;
 
@@ -246,11 +246,11 @@ var
 begin
   BrushCircle.Down := (gGameCursor.MapEdShape = hsCircle);
   BrushSquare.Down := (gGameCursor.MapEdShape = hsSquare);
-  MagicBrush.Down  := gGameCursor.MapEdMagicBrush;
+  MagicBrush.Down  := gGameCursor.MapEdUseMagicBrush;
 
   for I := Low(BrushTable) to High(BrushTable) do
     for K := Low(BrushTable[I]) to High(BrushTable[I]) do
-      if gGameCursor.MapEdMagicBrush then
+      if gGameCursor.MapEdUseMagicBrush then
       begin
         if BrushTable[I,K] <> nil then
           BrushTable[I,K].Down := False;
@@ -259,7 +259,7 @@ begin
           BrushTable[I,K].Down := (BrushTable[I,K].Tag = gGameCursor.Tag1);
 
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
-    BrushMasks[MK].Down := (BrushMasks[MK].Tag = gGameCursor.MapEdBrushMask);
+    BrushMasks[MK].Down := (BrushMasks[MK].Tag = Byte(gGameCursor.MapEdBrushMask));
 end;
 
 
@@ -288,7 +288,7 @@ begin
     gGameCursor.Mode := cmBrush;    // This will reset Tag
 
   gGameCursor.MapEdShape := fLastShape;
-  gGameCursor.MapEdMagicBrush := fLastMagicBrush;
+  gGameCursor.MapEdUseMagicBrush := fLastMagicBrush;
   if fLastBrush >= 0 then
     gGameCursor.Tag1 := fLastBrush;
 

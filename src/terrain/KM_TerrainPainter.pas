@@ -47,6 +47,13 @@ type
     fBrushAreaTerKind: array of TKMPoint;
     fTempLand: array of array of TKMTerrainTileBasic;
 
+    // parameters to be used while applying brushes
+    fSize: Integer;
+    fTerKind: TKMTerrainKind;
+    fShape: TKMMapEdShape;
+    fBrushMask: TKMTileMaskKind;
+    fUseMagicBrush: Boolean;
+
     fMapXn, fMapYn: Integer; //Cursor position node
     fMapXc, fMapYc: Integer; //Cursor position cell
 
@@ -62,7 +69,8 @@ type
     procedure MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMaskKind); overload;
     procedure UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
     procedure UpdateTempLand;
-    procedure EditBrush;
+    procedure SetBrushMapEdParams;
+    procedure DoApplyBrush;
     procedure EditHeight;
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte; aIsCustom: Boolean = True);
     procedure GenerateAddnData;
@@ -91,6 +99,11 @@ type
     procedure MagicWater(const aLoc: TKMPoint);
 
     procedure RMG2MapEditor(X,Y: Integer; aTile: Word);
+
+    procedure SetBrushParams(X, Y: Single; aSize: Integer; aTerKind: TKMTerrainKind; aShape: TKMMapEdShape;
+                             aBrushMask: TKMTileMaskKind = mkNone; aUseMagicBrush: Boolean = False);
+
+    procedure ApplyBrush;
 
     procedure RebuildMap; overload;
     procedure RebuildMap(const aRect: TKMRect; aRandomTiles: Boolean = False); overload;
@@ -313,11 +326,8 @@ end;
 
 
 procedure TKMTerrainPainter.BrushTile(const X, Y: Integer);
-var
-  TerKind: TKMTerrainKind;
 begin
-  TerKind := TKMTerrainKind(gGameCursor.Tag1);
-  BrushTerrainTile(X,Y, TerKind);
+  BrushTerrainTile(X,Y, fTerKind);
 end;
 
 
@@ -336,7 +346,7 @@ procedure TKMTerrainPainter.BrushTerrainTile(const X, Y: Integer; aTerKind: TKMT
   end;
 
 begin
-  if gGameCursor.MapEdSize = 0 then
+  if fSize = 0 then
   begin
     if not gTerrain.VerticeInMapCoords(X, Y) then
       Exit;
@@ -616,7 +626,7 @@ begin
     or (gTerrain.Land[pY,pX].LayersCnt > 0) then
   begin
     LandTerKind[pY,pX].Tiles := Byte(Ter1)*Byte(Ter2)*(4-Nodes);//store not only nodes info, but also terrain type used
-    if Found and ((Nodes = 4) or (TKMTileMaskKind(gGameCursor.MapEdBrushMask) = mkNone)) then
+    if Found and ((Nodes = 4) or (fBrushMask = mkNone)) then
     begin
       gTerrain.Land[pY,pX].BaseLayer.Terrain := T;
       gTerrain.Land[pY,pX].BaseLayer.Corners := [0,1,2,3];
@@ -1021,7 +1031,7 @@ end;
 
 procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
 begin
-  MagicBrush(X, Y, TKMTileMaskKind(gGameCursor.MapEdBrushMask));
+  MagicBrush(X, Y, fBrushMask);
 end;
 
 
@@ -1328,12 +1338,12 @@ begin
     X := fMapXc;
     Y := fMapYc;
   end;
-  RebuildMap(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
+  RebuildMap(X, Y, fSize, fShape = hsSquare, True);
 
-  if TKMTileMaskKind(gGameCursor.MapEdBrushMask) <> mkNone then
-    UseMagicBrush(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
+  if fBrushMask <> mkNone then
+    UseMagicBrush(X, Y, fSize, (fShape = hsSquare), True);
 
-  gTerrain.UpdatePassability(KMRectGrow(KMRect(gGameCursor.Cell), (Size div 2) + 1));
+  gTerrain.UpdatePassability(KMRectGrow(KMRect(KMPoint(fMapXc, fMapXc)), (fSize div 2) + 1));
 end;
 
 
@@ -2057,13 +2067,8 @@ begin
                     EditHeight;
     cmBrush:      if (ssLeft in gGameCursor.SState) then
                   begin
-                    if gGameCursor.MapEdMagicBrush then
-                    begin
-                      fUseTempLand := False;
-                      fReplaceLayers := True;
-                      IterateOverArea(gGameCursor.Cell, gGameCursor.MapEdSize, gGameCursor.MapEdShape = hsSquare, MagicBrush);
-                    end else
-                      EditBrush;
+                    SetBrushMapEdParams;
+                    ApplyBrush;
                   end;
     cmTiles:      if (ssLeft in gGameCursor.SState) then
                     if gGameCursor.MapEdDir in [0..3] then //Defined direction
