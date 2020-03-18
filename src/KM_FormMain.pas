@@ -318,7 +318,8 @@ begin
   fMissionDefOpenPath := ExeDir;
 
   Application.ProcessMessages;
-  gVideoPlayer.Play(['KAMLOGO.avi', 'km.avi']);
+  gVideoPlayer.AddVideo('KaM');
+  gVideoPlayer.Play;
 end;
 
 
@@ -359,18 +360,27 @@ begin
   if gGameApp <> nil then gGameApp.KeyUp(aKey, aShift);
 end;
 
-
 procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   Assert(KeyPreview, 'MainForm should recieve all keys to pass them to fGame');
   FormKeyDownProc(Key, Shift);
 
   if Key = 65 then
-    gVideoPlayer.Play(['Victory.avi', 'KAMLOGO.mp4', 'M6.mp4']);
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.AddVideo('KaM');
+    gVideoPlayer.Play;
+  end;
   if Key = 83 then
-    gVideoPlayer.Play(['Victory.avi']);
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.Play;
+  end;
   if Key = 68 then
-    gVideoPlayer.Play(['OldVictory.avi']);
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.Play;
+  end;
 end;
 
 

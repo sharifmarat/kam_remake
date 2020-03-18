@@ -168,10 +168,21 @@ begin
   else
     Button_Back.Caption := gResTexts[TX_MENU_BACK];  
 
-  case fGameResultMsg of
-    grWin: gVideoPlayer.Play('Victory.avi');
-    grDefeat, grCancel: gVideoPlayer.Play('LOST.AVI');
+  if fGameMode = gmCampaign then
+  begin
+    case fGameResultMsg of
+      grWin: gVideoPlayer.AddMissionVideo(fRepeatMission, 'Victory');
+      grDefeat, grCancel: gVideoPlayer.AddMissionVideo(fRepeatMission, 'Defeat');
+    end;
+  end
+  else
+  begin
+    case fGameResultMsg of
+      grWin: gVideoPlayer.AddVideo('Victory');
+      grDefeat, grCancel: gVideoPlayer.AddVideo('Defeat');
+    end;
   end;
+  gVideoPlayer.Play;
 
   //Header
   case fGameResultMsg of

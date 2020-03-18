@@ -74,8 +74,12 @@ type
     procedure DestroyMediaPlayer;
     procedure EventsEnable();
     procedure EventsDisable();
+    procedure DoPlay(aVideoName: array of string; aEndVideo: TKMVideoPlayerEvent = nil);
+    procedure DoStop;
     procedure PlayNext;
+    procedure Finish;
 
+    function TryGetPathFile(aPath: string; var aFileName: string): Boolean;
     procedure SetTrackByLocale;
     function GetState: TVlcPlayerState;
     procedure MediaPlayerEvents(var Msg: TVlcMessage); message WM_MEDIA_PLAYER_EVENTS;
@@ -85,8 +89,9 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Play(AVideoName: array of String; AEndVideo: TKMVideoPlayerEvent = nil); overload;
-    procedure Play(AVideoName: String; AEndVideo: TKMVideoPlayerEvent = nil); overload;
+    procedure AddMissionVideo(aMissionFile: string; aVideoName: String);
+    procedure AddVideo(AVideoName: String);
+    procedure Play;
     procedure Stop;
     procedure Pause;
     procedure Resume;
@@ -109,7 +114,7 @@ implementation
 {$IFDEF VIDEOS}
 
 uses
-  KM_Render, KM_RenderUI, dglOpenGL, KM_Controls, KM_ResFonts, KM_GameApp;
+  KM_Render, KM_RenderUI, dglOpenGL, KM_Controls, KM_ResFonts, KM_ResLocales;
 
 procedure lib_vlc_player_event_hdlr(p_event: libvlc_event_t_ptr; data: Pointer); cdecl; forward;
 
@@ -189,55 +194,50 @@ begin
   inherited;
 end;
 
-procedure TKMVideoPlayer.Play(AVideoName: String; AEndVideo: TKMVideoPlayerEvent = nil);
-begin
-  Play([AVideoName], AEndVideo);
-end;
-
-procedure TKMVideoPlayer.Play(AVideoName: array of string; AEndVideo: TKMVideoPlayerEvent = nil);
+procedure TKMVideoPlayer.AddMissionVideo(aMissionFile: string; aVideoName: String);
 var
-  fileName: string;
+  MissionPath, FileName: string;
+  Path: string;
 begin
 {$IFDEF VIDEOS}
-  FIndex := -1;
-  Stop;
-  FVideoList.Clear;
-  if Length(AVideoName) = 0 then
-    Exit;
+  MissionPath := ExtractFilePath(aMissionFile);
+  FileName := ExtractFileName(ChangeFileExt(aMissionFile, '')) + '.' + aVideoName;
 
-  for fileName in AVideoName do
-    FVideoList.Add(ExtractFilePath(ParamStr(0)) + VIDEOFILE_PATH + fileName);
+  if TryGetPathFile(MissionPath + FileName, Path) or
+    TryGetPathFile(MissionPath + aVideoName, Path)or
+    TryGetPathFile(VIDEOFILE_PATH + aVideoName, Path) then
+    FVideoList.Add(Path);
+{$ENDIF}
+end;
 
-  PlayNext;
+procedure TKMVideoPlayer.AddVideo(aVideoName: String);
+var
+  Path: string;
+begin
+{$IFDEF VIDEOS}
+  if TryGetPathFile(aVideoName, Path) or
+    TryGetPathFile(VIDEOFILE_PATH + aVideoName, Path) then
+    FVideoList.Add(Path);
+{$ENDIF}
+end;
+
+procedure TKMVideoPlayer.Play;
+begin
+{$IFDEF VIDEOS}
+  FIndex := 0;
+  DoStop;
+
+  if FVideoList.Count > 0 then
+    PlayNext;
 {$ENDIF}
 end;
 
 procedure TKMVideoPlayer.Stop;
-const
-  TIME_STEP = 50;
-var
-  timeElapsed : Cardinal;
 begin
 {$IFDEF VIDEOS}
-  Pause;
-  if IsPlay then
-  begin
-    libvlc_media_player_stop(FMediaPlayer);
-    Sleep(TIME_STEP);
-    timeElapsed := TIME_STEP;
-    while IsPlay do
-    begin
-      if (timeElapsed > 1000) then
-        Break;
-      Sleep(TIME_STEP);
-      Inc(timeElapsed, TIME_STEP);
-    end;
-  end;
-  FCriticalSection.Enter;
-  TRender.DeleteTexture(FTexture.Tex);
-  FTexture.Tex := 0;
-  SetLength(FBuffer, 0);
-  FCriticalSection.Leave;
+  DoStop;
+  FVideoList.Clear;
+  FTrackList.Clear;
 {$ENDIF}
 end;
 
@@ -342,7 +342,7 @@ end;
 function TKMVideoPlayer.IsActive: Boolean;
 begin
 {$IFDEF VIDEOS}
-  Result := IsPlay or (FIndex < FVideoList.Count);
+  Result := IsPlay or (FVideoList.Count > 0);
 {$else}
   Result := False;
 {$ENDIF}
@@ -404,7 +404,6 @@ begin
   if (libvlc_dynamic_dll_error <> '') then
     Exit;
 
-  //with TArgcArgs.Create([libvlc_dynamic_dll_path, '--ignore-config', '--intf=dummy', '--quiet']) do
   with TArgcArgs.Create([libvlc_dynamic_dll_path, '--no-xlib', '-q', '--no-video-title-show', '--quiet', '--ignore-config', '--vout', 'vmem', '-I', 'dumy']) do
   begin
     FInstance := libvlc_new(ARGC, ARGS);
@@ -423,6 +422,61 @@ begin
   end;
 end;
 
+procedure TKMVideoPlayer.DoPlay(AVideoName: array of string; AEndVideo: TKMVideoPlayerEvent = nil);
+var
+  fileName: string;
+begin
+  FIndex := 0;
+  DoStop;
+  FVideoList.Clear;
+  if Length(AVideoName) = 0 then
+    Exit;
+
+  for fileName in AVideoName do
+    if FileExists(fileName) then
+      FVideoList.Add(fileName);
+
+  if FVideoList.Count > 0 then
+    PlayNext;
+end;
+
+procedure TKMVideoPlayer.DoStop;
+const
+  TIME_STEP = 50;
+var
+  timeElapsed : Cardinal;
+begin
+{$IFDEF VIDEOS}
+  Pause;
+  if IsPlay then
+  begin
+    libvlc_media_player_stop(FMediaPlayer);
+    Sleep(TIME_STEP);
+    timeElapsed := TIME_STEP;
+    while IsPlay do
+    begin
+      if (timeElapsed > 1000) then
+        Break;
+      Sleep(TIME_STEP);
+      Inc(timeElapsed, TIME_STEP);
+    end;
+  end;
+  FCriticalSection.Enter;
+  if FTexture.Tex > 0 then
+  begin
+    TRender.DeleteTexture(FTexture.Tex);
+    FTexture.Tex := 0;
+  end;
+  SetLength(FBuffer, 0);
+  FCriticalSection.Leave;
+{$ENDIF}
+end;
+
+procedure TKMVideoPlayer.Finish;
+begin
+  FVideoList.Clear;
+end;
+
 procedure TKMVideoPlayer.PlayNext;
 var
   i: Integer;
@@ -437,17 +491,16 @@ begin
   if (FInstance = nil) or (FMediaPlayer = nil) then
     Exit;
 
-  Stop;
+  if FIndex >= FVideoList.Count then
+  begin
+    Stop;
+    Exit;
+  end;
 
-  repeat
-    Inc(FIndex);
-    if (FVideoList.Count = 0) or (FIndex >= FVideoList.Count) then
-      Exit;
+  DoStop;
 
-    path := FVideoList[FIndex];
-  until FileExists(path);
-
-  media := libvlc_media_new_path(FInstance, PAnsiChar(UTF8Encode(path)));
+  media := libvlc_media_new_path(FInstance, PAnsiChar(UTF8Encode(FVideoList[FIndex])));
+  Inc(FIndex);
   libvlc_media_parse(media);
 
   FTrackList.Clear;
@@ -466,7 +519,7 @@ begin
           end;
         libvlc_track_audio:
           if track.psz_language <> nil then
-            FTrackList.AddObject(track.psz_language, TObject(track.i_id));
+            FTrackList.AddObject(UpperCase(track.psz_language), TObject(track.i_id));
       end;
     end;
 
@@ -489,6 +542,41 @@ begin
   libvlc_media_release(media);
 end;
 
+function TKMVideoPlayer.TryGetPathFile(aPath: string; var aFileName: string): Boolean;
+  var
+    SearchRec: TSearchRec;
+    Ext, FileName, Path: string;
+  begin
+    Result := False;
+    aFileName := '';
+
+    Path := ExtractFilePath(aPath);
+    if not DirectoryExists(ExtractFilePath(ParamStr(0)) + Path) or (FindFirst(Path + '*', faAnyFile, SearchRec) <> 0) then
+      Exit;
+
+    try
+      repeat
+        if (SearchRec.Name = '.') or (SearchRec.Name = '..') then
+          Continue;
+
+        FileName := ExtractFileName(aPath);
+        Ext := ExtractFileExt(SearchRec.Name);
+
+        if (CompareStr(SearchRec.Name, FileName + '.' + UnicodeString(gResLocales.UserLocale) + Ext) = 0) or
+          (CompareStr(SearchRec.Name, FileName + '.' + UnicodeString(gResLocales.FallbackLocale) + Ext) = 0) or
+          (CompareStr(SearchRec.Name, FileName + '.' + UnicodeString(gResLocales.DefaultLocale) + Ext) = 0) or
+          (CompareStr(SearchRec.Name, FileName + Ext) = 0) then
+        begin
+          aFileName := ExtractFilePath(ParamStr(0)) + Path + SearchRec.Name;
+          Exit(True);
+        end;
+
+      until FindNext(SearchRec) <> 0;
+    finally
+      FindClose(SearchRec);
+    end;
+  end;
+
 procedure TKMVideoPlayer.SetTrackByLocale;
 const
   TIME_STEP = 50;
@@ -496,7 +584,12 @@ var
   id, index: Integer;
   timeElapsed : Cardinal;
 begin
-  if (FTrackList.Count = 0) or not FTrackList.Find(gGameApp.GameSettings.Locale, index) then
+  if FTrackList.Count = 0 then
+    Exit;
+
+  if not FTrackList.Find(UpperCase(gResLocales.UserLocale), index) and
+    not FTrackList.Find(UpperCase(gResLocales.FallbackLocale), index) and
+    not FTrackList.Find(UpperCase(gResLocales.DefaultLocale), index) then
     Exit;
 
   id := Integer(FTrackList.Objects[index]);
