@@ -210,16 +210,16 @@ type
 
     procedure SetObject(const Loc: TKMPoint; ID: Integer);
     procedure SetOverlay(const Loc: TKMPoint; aOverlay: TKMTileOverlay; aOverwrite: Boolean);
-    procedure FallTree(const Loc: TKMPoint);
+    function FallTree(const Loc: TKMPoint): Boolean;
     procedure ChopTree(const Loc: TKMPoint);
     procedure RemoveObject(const Loc: TKMPoint);
     procedure RemoveObjectsKilledByRoad(const Loc: TKMPoint);
 
     procedure SowCorn(const Loc: TKMPoint);
-    procedure CutCorn(const Loc: TKMPoint);
-    procedure CutGrapes(const Loc: TKMPoint);
+    function CutCorn(const Loc: TKMPoint): Boolean;
+    function CutGrapes(const Loc: TKMPoint): Boolean;
 
-    procedure DecStoneDeposit(const Loc: TKMPoint);
+    function DecStoneDeposit(const Loc: TKMPoint): Boolean;
     function DecOreDeposit(const Loc: TKMPoint; rt: TKMWareType): Boolean;
 
     function GetPassablePointWithinSegment(OriginPoint, TargetPoint: TKMPoint; aPass: TKMTerrainPassability; MaxDistance: Integer = -1): TKMPoint;
@@ -760,7 +760,10 @@ begin
 
   aDiagonalChanged := False;
 
-  DoRemField := TileIsCornField(Loc) or TileIsWineField(Loc);
+  // Remove field only if we will change tile type
+  // and aType is a new one
+  DoRemField := (aType <> -1)
+    and (TileIsCornField(Loc) or TileIsWineField(Loc));
   if DoRemField then
     RemField(Loc, False, aPassRect, aDiagonalChanged, False);
 
@@ -2848,19 +2851,20 @@ end;
 
 
 {Remove the tree and place a falling tree instead}
-procedure TKMTerrain.FallTree(const Loc: TKMPoint);
+function TKMTerrain.FallTree(const Loc: TKMPoint): Boolean;
 var
   I: Integer;
 begin
+  Result := False;
   for I := 1 to Length(ChopableTrees) do
     if ChopableTrees[I, caAgeFull] = Land[Loc.Y,Loc.X].Obj then
     begin
       Land[Loc.Y,Loc.X].Obj := ChopableTrees[I, caAgeStump];
-      //Remember tick when tree was chopped to calc the snim length
+      //Remember tick when tree was chopped to calc the anim length
       FallingTrees.Add(Loc, ChopableTrees[I, caAgeFall], fAnimStep);
       if gMySpectator.FogOfWar.CheckTileRevelation(Loc.X, Loc.Y) >= 255 then
         gSoundPlayer.Play(sfxTreeDown, Loc, True);
-      Exit;
+      Exit(True);
     end;
 end;
 
@@ -2960,16 +2964,22 @@ begin
 end;
 
 
-procedure TKMTerrain.CutCorn(const Loc: TKMPoint);
+function TKMTerrain.CutCorn(const Loc: TKMPoint): Boolean;
 begin
+  Result := TileIsCornField(Loc) and (GetCornStage(Loc) = 5); //TODO refactor: use enum instead of magic numbers !
+  if not Result then Exit; //We have no corn here actually, nothing to cut
+  
   Land[Loc.Y,Loc.X].FieldAge := 0;
   Land[Loc.Y,Loc.X].BaseLayer.Terrain  := 63;
   Land[Loc.Y,Loc.X].Obj := OBJ_NONE;
 end;
 
 
-procedure TKMTerrain.CutGrapes(const Loc: TKMPoint);
+function TKMTerrain.CutGrapes(const Loc: TKMPoint): Boolean;
 begin
+  Result := TileIsWineField(Loc) and (GetWineStage(Loc) = 3);
+  if not Result then Exit; //We have no wine here actually, nothing to cut
+  
   Land[Loc.Y,Loc.X].FieldAge := 1;
   Land[Loc.Y,Loc.X].Obj := 54; //Reset the grapes
 end;
@@ -3087,7 +3097,7 @@ end;
 
 
 {Extract one unit of stone}
-procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
+function TKMTerrain.DecStoneDeposit(const Loc: TKMPoint): Boolean;
 type
   TStoneTransitionType = (sttNone, sttGrass, sttCoastSand, sttDirt, sttSnow, sttSnowOnDirt);
 
@@ -3274,6 +3284,7 @@ var
 begin
   Transition := GetStoneTransitionType(Loc.X,Loc.Y + 1); //Check transition type by lower point (Y + 1)
 
+  Result := True;
   //Replace with smaller ore deposit tile (there are 2 sets of tiles, we can choose random)
    case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
     132, 137: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 131 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit')*5;
@@ -3299,7 +3310,7 @@ begin
                 //Tile type has changed and we need to update these 5 tiles transitions:
                 UpdateTransition(Loc.X,  Loc.Y, 0);
               end;
-    else      Exit;
+    else      Exit(False);
   end;
 
   FlattenTerrain(Loc, True, True); //Ignore canElevate since it can prevent stonehill from being still walkable and cause a crash
