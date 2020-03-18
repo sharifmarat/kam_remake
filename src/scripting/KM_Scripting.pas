@@ -396,6 +396,16 @@ begin
 
     Sender.AddTypeS('TKMTileOverlay', '(toNone, toDig1, toDig2, toDig3, toDig4, toRoad)');
 
+    Sender.AddTypeS('TKMTerrainKind', '('
+      + 'tkCustom,       tkGrass,        tkMoss,         tkPaleGrass, tkCoastSand,'
+      + 'tkGrassSand1,   tkGrassSand2,   tkGrassSand3,   tkSand,      tkGrassDirt,'
+      + 'tkDirt,         tkCobbleStone,  tkGrassyWater,  tkSwamp,     tkIce,'
+      + 'tkSnowOnGrass,  tkSnowOnDirt,   tkSnow,         tkDeepSnow,  tkStone,'
+      + 'tkGoldMount,    tkIronMount,    tkAbyss,        tkGravel,    tkCoal,'
+      + 'tkGold,         tkIron,         tkWater,        tkFastWater, tkLava)');
+
+    Sender.AddTypeS('TKMTileMaskKind', '(mkNone, mkSoft1, mkSoft2, mkSoft3, mkStraight)');
+
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));
@@ -676,6 +686,8 @@ begin
     RegisterMethodCheck(c, 'function MapTileSet(X, Y, aType, aRotation: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
+
+    RegisterMethodCheck(c, 'procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aBrushMask: TKMTileMaskKind; aUseMagicBrush: Boolean)');
 
     RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString)');
     RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
@@ -1278,6 +1290,8 @@ begin
       RegisterMethod(@TKMScriptActions.MapTileHeightSet,                        'MapTileHeightSet');
       RegisterMethod(@TKMScriptActions.MapTileObjectSet,                        'MapTileObjectSet');
       RegisterMethod(@TKMScriptActions.MapTileOverlaySet,                       'MapTileOverlaySet');
+
+      RegisterMethod(@TKMScriptActions.MapBrushApply,                           'MapBrushApply');
 
       RegisterMethod(@TKMScriptActions.OverlayTextAppend,                       'OverlayTextAppend');
       RegisterMethod(@TKMScriptActions.OverlayTextAppendFormatted,              'OverlayTextAppendFormatted');

@@ -2,7 +2,7 @@ unit KM_ScriptingActions;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
+  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks, KM_ResTileset,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
   KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
@@ -102,6 +102,9 @@ type
 
     procedure Log(const aText: AnsiString);
 
+    procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;
+                            aBrushMask: TKMTileMaskKind; aUseMagicBrush: Boolean);
+
     function MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
     function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
@@ -180,7 +183,7 @@ uses
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
-  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor, KM_ResTileset;
+  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor;
 
 const
   MIN_SOUND_AT_LOC_RADIUS = 28;
@@ -2549,6 +2552,34 @@ begin
 end;
 
 
+//* Version: 11000
+//* Apply brush from MapEd to the map
+//* X,Y: coodinates
+//* aSize: brush size
+//* aSquare: is brush square or circle
+//* aTerKind: terrain kind
+//* aBrushMask: brush mask type
+//* aUseMagicBrush: enable/disable magic brush to change/remove brush mask from the area
+procedure TKMScriptActions.MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;
+                                         aBrushMask: TKMTileMaskKind; aUseMagicBrush: Boolean);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetBrushParams(X, Y, aSize, aTerKind, TKMMapEdShape(Byte(aSquare)), aBrushMask, aUseMagicBrush);
+      gGame.TerrainPainter.ApplyBrush;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapBrushApply', [X, Y, aSize, Byte(aTerKind), Byte(aSquare), Byte(aBrushMask), Byte(aUseMagicBrush)]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6587
 //* Sets the tile type and rotation at the specified XY coordinates.
 //* Tile IDs can be seen by hovering over the tiles on the terrain tiles tab in the map editor.
@@ -2839,7 +2870,7 @@ begin
 end;
 
 
-//* Version: 11000+
+//* Version: 11000
 //* Sets the terrain overlay on the tile at the specified XY coordinates.
 //* aOverwrite = False means safe way to change tile overlay, disallowing to set it on top of old fields/roads
 //* aOverwrite = True allows to destroy roads and re-dig fields (like in game we can build road on top of field and when laborer dies there is a digged overlay left)
