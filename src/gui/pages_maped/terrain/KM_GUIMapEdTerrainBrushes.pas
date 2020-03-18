@@ -8,9 +8,6 @@ uses
    KM_Defaults, KM_Pics, KM_ResTileset;
 
 
-const
-  BRUSH_MAX_SIZE = 32;
-
 type
   //Painting on terrain with terrain brushes
   TKMMapEdTerrainBrushes = class (TKMMapEdSubMenuPage)
@@ -196,9 +193,9 @@ end;
 procedure TKMMapEdTerrainBrushes.BrushChange(Sender: TObject);
 begin
   gGameCursor.MapEdSize := BrushSize.Position;
-  gGame.TerrainPainter.RandomizeTiling := RandomElements.Checked;
-  gGame.TerrainPainter.OverrideCustomTiles := OverrideCustomTiles.Checked;
-  gGame.TerrainPainter.BlendingLevel := BrushBlending.Position;
+  gGameCursor.MapEdRandomizeTiling := RandomElements.Checked;
+  gGameCursor.MapEdOverrideCustomTiles := OverrideCustomTiles.Checked;
+  gGameCursor.MapEdBlendingLvl := BrushBlending.Position;
 
   if gGameCursor.Mode <> cmBrush then
     gGameCursor.Mode := cmBrush;    // This will reset Tag

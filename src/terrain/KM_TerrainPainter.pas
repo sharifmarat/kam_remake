@@ -53,6 +53,9 @@ type
     fShape: TKMMapEdShape;
     fBrushMask: TKMTileMaskKind;
     fUseMagicBrush: Boolean;
+    fRandomizeTiling: Boolean;
+    fOverrideCustomTiles: Boolean;
+    fBlendingLvl: Byte;
 
     fMapXn, fMapYn: Integer; //Cursor position node
     fMapXc, fMapYc: Integer; //Cursor position cell
@@ -85,9 +88,6 @@ type
     function TryGetVertexEffectiveTerKind(X, Y: Word; var aEffectiveTKind: TKMTerrainKind): Boolean;
   public
     LandTerKind: array of array of TKMPainterTile;
-    RandomizeTiling: Boolean;
-    OverrideCustomTiles: Boolean;
-    BlendingLevel: Byte;
     procedure InitEmpty;
 
     procedure LoadFromFile(const aFileName: UnicodeString);
@@ -390,7 +390,7 @@ end;
 
 function TKMTerrainPainter.PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 begin
-  Result := PickRandomTile(aTerrainKind, RandomizeTiling);
+  Result := PickRandomTile(aTerrainKind, fRandomizeTiling);
 end;
 
 
@@ -533,7 +533,7 @@ end;
 
 procedure TKMTerrainPainter.RebuildTile(const X,Y: Integer);
 begin
-  RebuildTile(X, Y, RandomizeTiling);
+  RebuildTile(X, Y, fRandomizeTiling);
 end;
 
 
@@ -553,7 +553,7 @@ begin
 //    or (LandTerKind[pY  ,pX+1].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX+1].TerKind <> tkCustom) then
-  if not OverrideCustomTiles and gTerrain.Land[pY,pX].IsCustom then Exit;
+  if not fOverrideCustomTiles and gTerrain.Land[pY,pX].IsCustom then Exit;
 
   A := (LandTerKind[pY    , pX    ].TerKind);
   B := (LandTerKind[pY    , pX + 1].TerKind);
@@ -1169,7 +1169,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
     MaskType: TKMTileMaskType;
   begin
     //Do not check tile node corners when using 'force paint' mode
-    if not OverrideCustomTiles then
+    if not fOverrideCustomTiles then
     begin
       TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
 
@@ -1222,7 +1222,7 @@ var
   L: Integer;
   GenInfo: TKMGenTerrainInfo;
 begin
-  if not gTerrain.TileInMapCoords(X, Y) or (not OverrideCustomTiles and gTerrain.Land[Y,X].IsCustom) then Exit;
+  if not gTerrain.TileInMapCoords(X, Y) or (not fOverrideCustomTiles and gTerrain.Land[Y,X].IsCustom) then Exit;
 
   if (aMaskKind = mkNone) and not fReplaceLayers then Exit;
 
@@ -1231,7 +1231,7 @@ begin
 
   //No need to update BlendingLvl for basic tiles (without auto transitions)
   if gTerrain.Land[Y,X].LayersCnt > 0 then
-    gTerrain.Land[Y,X].BlendingLvl := BlendingLevel;
+    gTerrain.Land[Y,X].BlendingLvl := fBlendingLvl;
 
   if fReplaceLayers then
   begin
@@ -1301,7 +1301,7 @@ begin
   fMapXn := EnsureRange(Round(X + 1), 1, gTerrain.MapX);
   fMapYn := EnsureRange(Round(Y + 1), 1, gTerrain.MapY);
 
-  fSize := aSize;
+  fSize := EnsureRange(aSize, 0, BRUSH_MAX_SIZE);
   fTerKind := aTerKind;
   fShape := aShape;
   fBrushMask := aBrushMask;

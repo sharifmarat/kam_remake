@@ -22,13 +22,19 @@ type
     DragOffset: TKMPoint; //used to adjust actual Cursor Cell
     ObjectUID: Integer;   //Object found below cursor
 
-    MapEdDir: Byte;
+    // MapEd brushes page
     MapEdShape: TKMMapEdShape;
-    MapEdSlope: Byte;
     MapEdSize: Byte;
-    MapEdSpeed: Byte;
     MapEdBrushMask: TKMTileMaskKind;
     MapEdUseMagicBrush: Boolean;
+    MapEdRandomizeTiling: Boolean;
+    MapEdOverrideCustomTiles: Boolean;
+    MapEdBlendingLvl: Byte;
+    // MapEd elevations page
+    MapEdSlope: Byte;
+    MapEdSpeed: Byte;
+    // MapEd other pages
+    MapEdDir: Byte;
 
     constructor Create;
     property Mode: TKMCursorMode read fMode write SetMode;
