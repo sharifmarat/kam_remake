@@ -687,7 +687,10 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aBrushMask: TKMTileMaskKind; aUseMagicBrush: Boolean)');
+    RegisterMethodCheck(c, 'procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
+    RegisterMethodCheck(c, 'procedure MapBrushWithMaskApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;'
+                                      + 'aRandomTiles, aOverrideCustomTiles: Boolean;'
+                                      + 'aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean)');
 
     RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString)');
     RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
@@ -1292,6 +1295,7 @@ begin
       RegisterMethod(@TKMScriptActions.MapTileOverlaySet,                       'MapTileOverlaySet');
 
       RegisterMethod(@TKMScriptActions.MapBrushApply,                           'MapBrushApply');
+      RegisterMethod(@TKMScriptActions.MapBrushWithMaskApply,                   'MapBrushWithMaskApply');
 
       RegisterMethod(@TKMScriptActions.OverlayTextAppend,                       'OverlayTextAppend');
       RegisterMethod(@TKMScriptActions.OverlayTextAppendFormatted,              'OverlayTextAppendFormatted');

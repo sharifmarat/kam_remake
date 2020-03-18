@@ -101,7 +101,9 @@ type
     procedure RMG2MapEditor(X,Y: Integer; aTile: Word);
 
     procedure SetBrushParams(X, Y: Single; aSize: Integer; aTerKind: TKMTerrainKind; aShape: TKMMapEdShape;
-                             aBrushMask: TKMTileMaskKind = mkNone; aUseMagicBrush: Boolean = False);
+                             aRandomTiles, aOverrideCustomTiles: Boolean;
+                             aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                             aUseMagicBrush: Boolean = False);
 
     procedure ApplyBrush;
 
@@ -1285,13 +1287,16 @@ end;
 // Set brush map ed params based on cursor (basically parames were set in mapEd GUI)
 procedure TKMTerrainPainter.SetBrushMapEdParams;
 begin
-  SetBrushParams(gGameCursor.Float.X, gGameCursor.Float.Y, gGameCursor.MapEdSize, TKMTerrainKind(gGameCursor.Tag1),
-                 gGameCursor.MapEdShape, gGameCursor.MapEdBrushMask, gGameCursor.MapEdUseMagicBrush);
+  SetBrushParams(gGameCursor.Float.X, gGameCursor.Float.Y, gGameCursor.MapEdSize, TKMTerrainKind(gGameCursor.Tag1), gGameCursor.MapEdShape,
+                 gGameCursor.MapEdRandomizeTiling, gGameCursor.MapEdOverrideCustomTiles,
+                 gGameCursor.MapEdBrushMask, gGameCursor.MapEdBlendingLvl, gGameCursor.MapEdUseMagicBrush);
 end;
 
 
 procedure TKMTerrainPainter.SetBrushParams(X, Y: Single; aSize: Integer; aTerKind: TKMTerrainKind; aShape: TKMMapEdShape;
-                                           aBrushMask: TKMTileMaskKind = mkNone; aUseMagicBrush: Boolean = False);
+                                           aRandomTiles, aOverrideCustomTiles: Boolean;
+                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                                           aUseMagicBrush: Boolean = False);
 begin
   //Cell below cursor
   fMapXc := EnsureRange(Round(X + 0.5), 1, gTerrain.MapX);
@@ -1304,7 +1309,10 @@ begin
   fSize := EnsureRange(aSize, 0, BRUSH_MAX_SIZE);
   fTerKind := aTerKind;
   fShape := aShape;
+  fRandomizeTiling := aRandomTiles;
+  fOverrideCustomTiles := aOverrideCustomTiles;
   fBrushMask := aBrushMask;
+  fBlendingLvl := EnsureRange(aBlendingLvl, 0, TERRAIN_MAX_BLENDING_LEVEL);
   fUseMagicBrush := aUseMagicBrush;
 end;
 
