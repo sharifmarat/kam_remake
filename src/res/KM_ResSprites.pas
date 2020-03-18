@@ -1187,7 +1187,7 @@ begin
       begin
         if MK = mkNone then Continue;
 
-        if aLegacyGeneration and (MK = mkSoft) then Continue;
+        if aLegacyGeneration and (MK = mkSoft2) then Continue;
 
         //for all Mask Types
         for MT := Low(TKMTileMaskType) to High(TKMTileMaskType) do

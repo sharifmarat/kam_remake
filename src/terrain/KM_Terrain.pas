@@ -3222,7 +3222,7 @@ var
                             Land[Y,X].BaseLayer.Corners := [1];
                             Land[Y,X].LayersCnt := 1;
                             Land[Y,X].Layer[0].Terrain := gGenTerrainTransitions[TransitionsTerKinds[Transition],
-                                                                                 mkSoft, mt_2Diagonal, mstMain];
+                                                                                 mkSoft2, mt_2Diagonal, mstMain];
                             Land[Y,X].Layer[0].Rotation := TerRot;
                             Land[Y,X].Layer[0].Corners := [0,2,3];
                           end;
