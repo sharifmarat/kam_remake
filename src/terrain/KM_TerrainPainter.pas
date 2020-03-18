@@ -39,10 +39,6 @@ type
       HasData: Boolean;
       Data: array of array of TKMUndoTile;
     end;
-    fTime: array[0..12] of record
-      Desc: String;
-      Data: Cardinal;
-    end;
 
     // Temp data, do not saved
     fUseTempLand: Boolean;
@@ -1266,44 +1262,65 @@ end;
 
 
 procedure TKMTerrainPainter.UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
-var
-  I: Integer;
 begin
-  for I := Low(fTime) to High(fTime) do
-    fTime[I].Data := 0;
-
-//  gLog.AddTime('Prepare Temp UseMagicBrush');
+  // update TempLand with data from actual Land array
   UpdateTempLand;
 
   fUseTempLand := aSize > 0; //Do not use temp land when size = 0
   fReplaceLayers := False;
   IterateOverArea(KMPoint(X,Y), aSize, aSquare, MagicBrush, aAroundTiles);
-
-//  for I := Low(fTime) to High(fTime) do
-//    gLog.AddTime(Format('%s: %d ms', [fTime[I].Desc, fTime[I].Data]));
 end;
 
 
-procedure TKMTerrainPainter.EditBrush;
-var
-  Size, X, Y: Integer;
+// Set brush map ed params based on cursor (basically parames were set in mapEd GUI)
+procedure TKMTerrainPainter.SetBrushMapEdParams;
+begin
+  SetBrushParams(gGameCursor.Float.X, gGameCursor.Float.Y, gGameCursor.MapEdSize, TKMTerrainKind(gGameCursor.Tag1),
+                 gGameCursor.MapEdShape, gGameCursor.MapEdBrushMask, gGameCursor.MapEdUseMagicBrush);
+end;
+
+
+procedure TKMTerrainPainter.SetBrushParams(X, Y: Single; aSize: Integer; aTerKind: TKMTerrainKind; aShape: TKMMapEdShape;
+                                           aBrushMask: TKMTileMaskKind = mkNone; aUseMagicBrush: Boolean = False);
 begin
   //Cell below cursor
-  fMapXc := EnsureRange(round(gGameCursor.Float.X+0.5),1,gTerrain.MapX);
-  fMapYc := EnsureRange(round(gGameCursor.Float.Y+0.5),1,gTerrain.MapY);
+  fMapXc := EnsureRange(Round(X + 0.5), 1, gTerrain.MapX);
+  fMapYc := EnsureRange(Round(Y + 0.5), 1, gTerrain.MapY);
 
   //Node below cursor
-  fMapXn := EnsureRange(round(gGameCursor.Float.X+1),1,gTerrain.MapX);
-  fMapYn := EnsureRange(round(gGameCursor.Float.Y+1),1,gTerrain.MapY);
+  fMapXn := EnsureRange(Round(X + 1), 1, gTerrain.MapX);
+  fMapYn := EnsureRange(Round(Y + 1), 1, gTerrain.MapY);
 
-  Size := gGameCursor.MapEdSize;
+  fSize := aSize;
+  fTerKind := aTerKind;
+  fShape := aShape;
+  fBrushMask := aBrushMask;
+  fUseMagicBrush := aUseMagicBrush;
+end;
 
+
+procedure TKMTerrainPainter.ApplyBrush;
+begin
+  if fUseMagicBrush then
+  begin
+    fUseTempLand := False;
+    fReplaceLayers := True;
+    IterateOverArea(KMPoint(fMapXc, fMapYc), fSize, fShape = hsSquare, MagicBrush);
+  end else
+    DoApplyBrush;
+end;
+
+
+procedure TKMTerrainPainter.DoApplyBrush;
+var
+  X, Y: Integer;
+begin
   // Clear fBrushAreaTerKind array. It will be refilled in BrushTerrainTile
   fBrushAreaTerKindCnt := 0;
 
-  IterateOverArea(KMPoint(fMapXc,fMapYc), Size, gGameCursor.MapEdShape = hsSquare, BrushTile);
+  IterateOverArea(KMPoint(fMapXc,fMapYc), fSize, fShape = hsSquare, BrushTile);
 
-  if Size = 0 then
+  if fSize = 0 then
   begin
     X := fMapXn;
     Y := fMapYn;
