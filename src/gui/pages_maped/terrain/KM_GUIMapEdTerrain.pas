@@ -208,13 +208,13 @@ end;
 procedure TKMMapEdTerrain.UnRedoClick(Sender: TObject);
 begin
   if Sender = Button_TerrainUndo then
-    gGame.MapEditor.TerrainPainter.Undo;
+    gGame.TerrainPainter.Undo;
 
   if Sender = Button_TerrainRedo then
-    gGame.MapEditor.TerrainPainter.Redo;
+    gGame.TerrainPainter.Redo;
 
-  Button_TerrainUndo.Enabled := gGame.MapEditor.TerrainPainter.CanUndo;
-  Button_TerrainRedo.Enabled := gGame.MapEditor.TerrainPainter.CanRedo;
+  Button_TerrainUndo.Enabled := gGame.TerrainPainter.CanUndo;
+  Button_TerrainRedo.Enabled := gGame.TerrainPainter.CanRedo;
 end;
 
 
@@ -290,8 +290,8 @@ begin
   fGuiSelection.UpdateState;
   fGuiOverlays.UpdateState;
 
-  Button_TerrainUndo.Enabled := gGame.MapEditor.TerrainPainter.CanUndo;
-  Button_TerrainRedo.Enabled := gGame.MapEditor.TerrainPainter.CanRedo;
+  Button_TerrainUndo.Enabled := gGame.TerrainPainter.CanUndo;
+  Button_TerrainRedo.Enabled := gGame.TerrainPainter.CanRedo;
 end;
 
 

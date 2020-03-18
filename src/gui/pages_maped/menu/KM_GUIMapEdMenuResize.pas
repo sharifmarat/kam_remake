@@ -175,7 +175,7 @@ begin
   right := Max(0, NumEdit_Resize_Right.Value);
   bot   := Max(0, NumEdit_Resize_Bottom.Value);
 
-  gGame.MapEditor.TerrainPainter.FixTerrainKindInfoAtBorders(False);
+  gGame.TerrainPainter.FixTerrainKindInfoAtBorders(False);
 
   SaveName := TKMapsCollection.FullPath(gGame.GameName, '.dat', fIsMultiplayer);
   gGame.SaveMapEditor(SaveName, KMRect(NumEdit_Resize_Left.Value,  NumEdit_Resize_Top.Value,
@@ -192,11 +192,11 @@ begin
   for DIR4 := Low(TDir4) to High(TDir4) do
   begin
     // Has to fix terrain info, since we have tkGrass on new tiles there
-    gGame.MapEditor.TerrainPainter.FixTerrainKindInfo(rRect[DIR4], False);
+    gGame.TerrainPainter.FixTerrainKindInfo(rRect[DIR4], False);
     // Rebuild generated map areas with normal tiles
-    gGame.MapEditor.TerrainPainter.RebuildMap(rRect[DIR4], True);
+    gGame.TerrainPainter.RebuildMap(rRect[DIR4], True);
     // Apply magic brush at the end to fix rest of the transtions
-    gGame.MapEditor.TerrainPainter.MagicBrush(rRect[DIR4], mkSoftest);
+    gGame.TerrainPainter.MagicBrush(rRect[DIR4], mkSoft1);
   end;
 
   // Save changes

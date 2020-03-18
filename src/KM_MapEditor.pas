@@ -54,9 +54,8 @@ type
     IsNewMap: Boolean;  // set True for new empty map
     WasSaved: Boolean; // set True when at least 1 map save has been done
 
-    constructor Create;
+    constructor Create(aTerrainPainter: TKMTerrainPainter);
     destructor Destroy; override;
-    property TerrainPainter: TKMTerrainPainter read fTerrainPainter;
     property Deposits: TKMDeposits read fDeposits;
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
@@ -95,7 +94,7 @@ const
 
 
 { TKMMapEditor }
-constructor TKMMapEditor.Create;
+constructor TKMMapEditor.Create(aTerrainPainter: TKMTerrainPainter);
 var
   I: Integer;
 begin
@@ -112,7 +111,7 @@ begin
 
   fDeposits := TKMDeposits.Create;
 
-  fTerrainPainter := TKMTerrainPainter.Create;
+  fTerrainPainter := aTerrainPainter;
   fSelection := TKMSelection.Create(fTerrainPainter);
 
   fVisibleLayers := [mlObjects, mlHouses, mlUnits, mlOverlays, mlDeposits];
@@ -128,7 +127,6 @@ destructor TKMMapEditor.Destroy;
 var
   I: Integer;
 begin
-  FreeAndNil(fTerrainPainter);
   FreeAndNil(fDeposits);
   FreeAndNil(fSelection);
 

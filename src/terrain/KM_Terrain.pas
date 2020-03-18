@@ -559,7 +559,7 @@ const
       end;
 
       //Apply some random tiles for artisticity
-      TileBasic.BaseLayer.Terrain  := gGame.MapEditor.TerrainPainter.PickRandomTile(terKind, True);
+      TileBasic.BaseLayer.Terrain  := gGame.TerrainPainter.PickRandomTile(terKind, True);
       TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand 2');
       TileBasic.BaseLayer.Corners := [0,1,2,3];
       //find height mid point to make random elevation even for close to 0 or 100 height
@@ -1020,7 +1020,7 @@ begin
     if (gGame.GameMode = gmMapEd) then
       for I := 1 to fMapY do
         for J := 1 to fMapX do
-          gGame.MapEditor.TerrainPainter.RMG2MapEditor(J,I, Land[I, J].BaseLayer.Terrain);
+          gGame.TerrainPainter.RMG2MapEditor(J,I, Land[I, J].BaseLayer.Terrain);
 
     if not KMSameRect(HeightRect, KMRECT_INVALID_TILES) then
       gTerrain.UpdateLighting(KMRectGrow(HeightRect, 2)); // Update Light only when height was changed

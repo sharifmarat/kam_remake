@@ -196,9 +196,9 @@ end;
 procedure TKMMapEdTerrainBrushes.BrushChange(Sender: TObject);
 begin
   gGameCursor.MapEdSize := BrushSize.Position;
-  gGame.MapEditor.TerrainPainter.RandomizeTiling := RandomElements.Checked;
-  gGame.MapEditor.TerrainPainter.OverrideCustomTiles := OverrideCustomTiles.Checked;
-  gGame.MapEditor.TerrainPainter.BlendingLevel := BrushBlending.Position;
+  gGame.TerrainPainter.RandomizeTiling := RandomElements.Checked;
+  gGame.TerrainPainter.OverrideCustomTiles := OverrideCustomTiles.Checked;
+  gGame.TerrainPainter.BlendingLevel := BrushBlending.Position;
 
   if gGameCursor.Mode <> cmBrush then
     gGameCursor.Mode := cmBrush;    // This will reset Tag
@@ -271,7 +271,7 @@ end;
 
 procedure TKMMapEdTerrainBrushes.FixTerrainBrushes(Sender: TObject);
 begin
-  gGame.MapEditor.TerrainPainter.FixTerrainKindInfo;
+  gGame.TerrainPainter.FixTerrainKindInfo;
   PopUp_FixTerrainConfirm.Hide;
 end;
 

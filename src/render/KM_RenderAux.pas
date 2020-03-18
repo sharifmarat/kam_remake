@@ -320,7 +320,7 @@ procedure TRenderAux.TileTerrainKinds(const aRect: TKMRect);
   begin
     if gGame.IsMapEditor then
     begin
-      TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[Y,X].TerKind;
+      TerKind := gGame.TerrainPainter.LandTerKind[Y,X].TerKind;
       case TerKind of
         tkCustom: TerKindStr := 'C';
         else      TerKindStr := IntToStr(BASE_TERRAIN[TerKind]);
