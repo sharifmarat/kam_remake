@@ -1288,8 +1288,6 @@ begin
 
       RegisterMethod(@TKMScriptActions.Log,                                     'Log');
 
-      RegisterMethod(@TKMScriptActions.MarketSetTrade,                          'MarketSetTrade');
-
       RegisterMethod(@TKMScriptActions.MapBrushApply,                           'MapBrushApply');
       RegisterMethod(@TKMScriptActions.MapBrushElevationApply,                  'MapBrushElevationApply');
       RegisterMethod(@TKMScriptActions.MapBrushEqualizeApply,                   'MapBrushEqualizeApply');
@@ -1302,6 +1300,8 @@ begin
       RegisterMethod(@TKMScriptActions.MapTileHeightSet,                        'MapTileHeightSet');
       RegisterMethod(@TKMScriptActions.MapTileObjectSet,                        'MapTileObjectSet');
       RegisterMethod(@TKMScriptActions.MapTileOverlaySet,                       'MapTileOverlaySet');
+
+      RegisterMethod(@TKMScriptActions.MarketSetTrade,                          'MarketSetTrade');
 
       RegisterMethod(@TKMScriptActions.OverlayTextAppend,                       'OverlayTextAppend');
       RegisterMethod(@TKMScriptActions.OverlayTextAppendFormatted,              'OverlayTextAppendFormatted');

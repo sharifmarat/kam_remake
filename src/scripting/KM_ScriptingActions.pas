@@ -117,12 +117,12 @@ type
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
     function MapTileOverlaySet(X, Y: Integer; aOverlay: TKMTileOverlay; aOverwrite: Boolean): Boolean;
 
+    procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
+
     procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
     procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
-
-    procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
 
     function PlanAddField(aPlayer, X, Y: Word): Boolean;
     function PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean;
@@ -3012,6 +3012,45 @@ begin
 end;
 
 
+//* Version: 6216
+//* Sets the trade in the specified market
+procedure TKMScriptActions.MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
+var
+  H: TKMHouse;
+  ResFrom, ResTo: TKMWareType;
+begin
+  try
+    if (aMarketID > 0)
+    and (aFrom in [Low(WareIndexToType)..High(WareIndexToType)])
+    and (aTo in [Low(WareIndexToType)..High(WareIndexToType)]) then
+    begin
+      H := fIDCache.GetHouse(aMarketID);
+      ResFrom := WareIndexToType[aFrom];
+      ResTo := WareIndexToType[aTo];
+      if (H is TKMHouseMarket)
+        and not H.IsDestroyed
+        and H.IsComplete
+        and TKMHouseMarket(H).AllowedToTrade(ResFrom)
+        and TKMHouseMarket(H).AllowedToTrade(ResTo) then
+      begin
+        if (TKMHouseMarket(H).ResFrom <> ResFrom) or (TKMHouseMarket(H).ResTo <> ResTo) then
+        begin
+          TKMHouseMarket(H).ResOrder[0] := 0; //First we must cancel the current trade
+          TKMHouseMarket(H).ResFrom := ResFrom;
+          TKMHouseMarket(H).ResTo := ResTo;
+        end;
+        TKMHouseMarket(H).ResOrder[0] := aAmount; //Set the new trade
+      end;
+    end
+    else
+      LogParamWarning('Actions.MarketSetTrade', [aMarketID, aFrom, aTo, aAmount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5333
 //* Sets text overlaid on top left of screen.
 //* If the player index is -1 it will be set for all players.
@@ -3093,45 +3132,6 @@ begin
     end
     else
       LogParamWarning('Actions.OverlayTextAppendFormatted: '+UnicodeString(aText), [aPlayer]);
-  except
-    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
-    raise;
-  end;
-end;
-
-
-//* Version: 6216
-//* Sets the trade in the specified market
-procedure TKMScriptActions.MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
-var
-  H: TKMHouse;
-  ResFrom, ResTo: TKMWareType;
-begin
-  try
-    if (aMarketID > 0)
-    and (aFrom in [Low(WareIndexToType)..High(WareIndexToType)])
-    and (aTo in [Low(WareIndexToType)..High(WareIndexToType)]) then
-    begin
-      H := fIDCache.GetHouse(aMarketID);
-      ResFrom := WareIndexToType[aFrom];
-      ResTo := WareIndexToType[aTo];
-      if (H is TKMHouseMarket)
-        and not H.IsDestroyed
-        and H.IsComplete
-        and TKMHouseMarket(H).AllowedToTrade(ResFrom)
-        and TKMHouseMarket(H).AllowedToTrade(ResTo) then
-      begin
-        if (TKMHouseMarket(H).ResFrom <> ResFrom) or (TKMHouseMarket(H).ResTo <> ResTo) then
-        begin
-          TKMHouseMarket(H).ResOrder[0] := 0; //First we must cancel the current trade
-          TKMHouseMarket(H).ResFrom := ResFrom;
-          TKMHouseMarket(H).ResTo := ResTo;
-        end;
-        TKMHouseMarket(H).ResOrder[0] := aAmount; //Set the new trade
-      end;
-    end
-    else
-      LogParamWarning('Actions.MarketSetTrade', [aMarketID, aFrom, aTo, aAmount]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
