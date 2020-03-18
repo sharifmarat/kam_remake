@@ -102,8 +102,11 @@ type
 
     procedure Log(const aText: AnsiString);
 
-    procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean);
-    procedure MapBrushWithMaskApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;
+    procedure MapBrushApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean);
+    procedure MapBrushElevationApply(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushEqualizeApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushFlattenApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushWithMaskApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
                                     aRandomTiles, aOverrideCustomTiles: Boolean;
                                     aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
 
@@ -2557,24 +2560,103 @@ end;
 //* Version: 11000
 //* Apply brush from MapEd to the map
 //* X,Y: coodinates
-//* aSize: brush size
 //* aSquare: is brush square or circle
+//* aSize: brush size
 //* aTerKind: terrain kind
 //* aRandomTiles: use random tiles
 //* aOverrideCustomTiles: override tiles, that were manually set from tiles table
-procedure TKMScriptActions.MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;
+procedure TKMScriptActions.MapBrushApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
                                          aRandomTiles, aOverrideCustomTiles: Boolean);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
     begin
-      gGame.TerrainPainter.SetBrushParams(X, Y, aSize, aTerKind, TKMMapEdShape(Byte(aSquare)), aRandomTiles, aOverrideCustomTiles);
+      gGame.TerrainPainter.SetBrushParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, aTerKind, aRandomTiles, aOverrideCustomTiles);
       gGame.TerrainPainter.ApplyBrush;
     end
     else
     begin
-      LogParamWarning('Actions.MapBrushApply', [X, Y, aSize, Byte(aSquare), Byte(aTerKind),
+      LogParamWarning('Actions.MapBrushApply', [X, Y, Byte(aSquare), aSize, Byte(aTerKind),
                                                 Byte(aRandomTiles), Byte(aOverrideCustomTiles)]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply Elevation change brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aRaise: raise elevation or lower it
+//* aSize: brush size
+//* aSlope: elevation slope
+//* aSpeed: elevation change speed
+procedure TKMScriptActions.MapBrushElevationApply(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetHeightParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, False, aRaise, aSlope, aSpeed);
+      gGame.TerrainPainter.ApplyHeight;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapElevationApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply Equalize brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aSize: brush size
+//* aSlope: elevation slope
+//* aSpeed: elevation change speed
+procedure TKMScriptActions.MapBrushEqualizeApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetHeightParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, True, True, aSlope, aSpeed);
+      gGame.TerrainPainter.ApplyHeight;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapEqualizeApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply Flatten brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aSize: brush size
+//* aSlope: elevation slope
+//* aSpeed: elevation change speed
+procedure TKMScriptActions.MapBrushFlattenApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetHeightParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, True, False, aSlope, aSpeed);
+      gGame.TerrainPainter.ApplyHeight;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapFlattenApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
     end;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -2586,28 +2668,28 @@ end;
 //* Version: 11000
 //* Apply brush from MapEd to the map
 //* X,Y: coodinates
-//* aSize: brush size
 //* aSquare: is brush square or circle
+//* aSize: brush size
 //* aTerKind: terrain kind
 //* aRandomTiles: use random tiles
 //* aOverrideCustomTiles: override tiles, that were manually set from tiles table
 //* aBrushMask: brush mask type
 //* aBlendingLvl: blending level for masks. Allowed values are from 0 to 100
 //* aUseMagicBrush: enable/disable magic brush to change/remove brush mask from the area
-procedure TKMScriptActions.MapBrushWithMaskApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;
+procedure TKMScriptActions.MapBrushWithMaskApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
                                                  aRandomTiles, aOverrideCustomTiles: Boolean;
                                                  aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
     begin
-      gGame.TerrainPainter.SetBrushParams(X, Y, aSize, aTerKind, TKMMapEdShape(Byte(aSquare)), aRandomTiles, aOverrideCustomTiles,
+      gGame.TerrainPainter.SetBrushParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, aTerKind, aRandomTiles, aOverrideCustomTiles,
                                           aBrushMask, aBlendingLvl, aUseMagicBrush);
       gGame.TerrainPainter.ApplyBrush;
     end
     else
     begin
-      LogParamWarning('Actions.MapBrushMaskApply', [X, Y, aSize, Byte(aSquare), Byte(aTerKind), Byte(aRandomTiles),
+      LogParamWarning('Actions.MapBrushMaskApply', [X, Y, Byte(aSquare), aSize, Byte(aTerKind), Byte(aRandomTiles),
                                                     Byte(aOverrideCustomTiles), Byte(aBrushMask), aBlendingLvl, Byte(aUseMagicBrush)]);
     end;
   except

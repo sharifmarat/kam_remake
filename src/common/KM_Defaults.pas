@@ -252,7 +252,7 @@ var
 
 const
   TERRAIN_MAX_BLENDING_LEVEL = 100;
-  BRUSH_MAX_SIZE = 32;
+  MAPED_BRUSH_MAX_SIZE = 32;
 
   //Here we store options that are hidden somewhere in code
   //Unit condition

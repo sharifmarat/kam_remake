@@ -47,18 +47,26 @@ type
     fBrushAreaTerKind: array of TKMPoint;
     fTempLand: array of array of TKMTerrainTileBasic;
 
-    // parameters to be used while applying brushes
+    // parameters to be used by painter
+    // common
     fSize: Integer;
-    fTerKind: TKMTerrainKind;
+    fMapXn, fMapYn: Integer; //Cursor position node
+    fMapXc, fMapYc: Integer; //Cursor position cell
     fShape: TKMMapEdShape;
+
+    // while applying brushes
+    fTerKind: TKMTerrainKind;
     fBrushMask: TKMTileMaskKind;
     fUseMagicBrush: Boolean;
     fRandomizeTiling: Boolean;
     fOverrideCustomTiles: Boolean;
     fBlendingLvl: Byte;
 
-    fMapXn, fMapYn: Integer; //Cursor position node
-    fMapXc, fMapYc: Integer; //Cursor position cell
+    // while applying elevation
+    fIsEqualize: Boolean;
+    fRaise: Boolean;
+    fSlope: Byte;
+    fSpeed: Byte;
 
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
     function GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
@@ -72,9 +80,14 @@ type
     procedure MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMaskKind); overload;
     procedure UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
     procedure UpdateTempLand;
-    procedure SetBrushMapEdParams;
+
+    procedure SetMapEdParams;
+    procedure SetCommonParams(X, Y: Single; aShape: TKMMapEdShape);
+    procedure SetHeightSpecialParams(aIsEqualize, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure SetBrushSpecialParams(aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
+                                    aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+
     procedure DoApplyBrush;
-    procedure EditHeight;
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte; aIsCustom: Boolean = True);
     procedure GenerateAddnData;
     procedure InitSize(X,Y: Word);
@@ -100,12 +113,15 @@ type
 
     procedure RMG2MapEditor(X,Y: Integer; aTile: Word);
 
-    procedure SetBrushParams(X, Y: Single; aSize: Integer; aTerKind: TKMTerrainKind; aShape: TKMMapEdShape;
-                             aRandomTiles, aOverrideCustomTiles: Boolean;
+    procedure SetBrushParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
+                             aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
                              aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
                              aUseMagicBrush: Boolean = False);
+    procedure SetHeightParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
+                              aIsEqualize, aRaise: Boolean; aSlope, aSpeed: Byte);
 
     procedure ApplyBrush;
+    procedure ApplyHeight;
 
     procedure RebuildMap; overload;
     procedure RebuildMap(const aRect: TKMRect; aRandomTiles: Boolean = False); overload;
@@ -115,7 +131,6 @@ type
 
     function PickRandomTile(aTerrainKind: TKMTerrainKind): Word; overload;
     function PickRandomTile(aTerrainKind: TKMTerrainKind; aRandom: Boolean): Word; overload;
-
 
     procedure FixTerrainKindInfoAtBorders(aMakeCheckpoint: Boolean = True);
     procedure FixTerrainKindInfo(aMakeCheckpoint: Boolean = True); overload;
@@ -1285,18 +1300,19 @@ end;
 
 
 // Set brush map ed params based on cursor (basically parames were set in mapEd GUI)
-procedure TKMTerrainPainter.SetBrushMapEdParams;
+procedure TKMTerrainPainter.SetMapEdParams;
 begin
-  SetBrushParams(gGameCursor.Float.X, gGameCursor.Float.Y, gGameCursor.MapEdSize, TKMTerrainKind(gGameCursor.Tag1), gGameCursor.MapEdShape,
-                 gGameCursor.MapEdRandomizeTiling, gGameCursor.MapEdOverrideCustomTiles,
-                 gGameCursor.MapEdBrushMask, gGameCursor.MapEdBlendingLvl, gGameCursor.MapEdUseMagicBrush);
+  SetCommonParams(gGameCursor.Float.X, gGameCursor.Float.Y, gGameCursor.MapEdShape);
+  SetBrushSpecialParams(gGameCursor.MapEdSize, TKMTerrainKind(gGameCursor.Tag1),
+                        gGameCursor.MapEdRandomizeTiling, gGameCursor.MapEdOverrideCustomTiles,
+                        gGameCursor.MapEdBrushMask, gGameCursor.MapEdBlendingLvl, gGameCursor.MapEdUseMagicBrush);
+
+  SetHeightSpecialParams(gGameCursor.Mode = cmEqualize, ssLeft in gGameCursor.SState,
+                            gGameCursor.MapEdSize, gGameCursor.MapEdSlope, gGameCursor.MapEdSpeed);
 end;
 
 
-procedure TKMTerrainPainter.SetBrushParams(X, Y: Single; aSize: Integer; aTerKind: TKMTerrainKind; aShape: TKMMapEdShape;
-                                           aRandomTiles, aOverrideCustomTiles: Boolean;
-                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
-                                           aUseMagicBrush: Boolean = False);
+procedure TKMTerrainPainter.SetCommonParams(X, Y: Single; aShape: TKMMapEdShape);
 begin
   //Cell below cursor
   fMapXc := EnsureRange(Round(X + 0.5), 1, gTerrain.MapX);
@@ -1306,14 +1322,48 @@ begin
   fMapXn := EnsureRange(Round(X + 1), 1, gTerrain.MapX);
   fMapYn := EnsureRange(Round(Y + 1), 1, gTerrain.MapY);
 
-  fSize := EnsureRange(aSize, 0, BRUSH_MAX_SIZE);
-  fTerKind := aTerKind;
   fShape := aShape;
+end;
+
+
+procedure TKMTerrainPainter.SetHeightSpecialParams(aIsEqualize, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  fIsEqualize := aIsEqualize;
+  fRaise := aRaise;
+  fSize := EnsureRange(aSize, 0, 100);
+  fSlope := EnsureRange(aSlope, 0, 255);
+  fSpeed := EnsureRange(aSpeed, 0, 255);
+end;
+
+
+procedure TKMTerrainPainter.SetBrushSpecialParams(aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
+                                                  aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+begin
+  fSize := EnsureRange(aSize, 0, MAPED_BRUSH_MAX_SIZE);
+  fTerKind := aTerKind;
   fRandomizeTiling := aRandomTiles;
   fOverrideCustomTiles := aOverrideCustomTiles;
   fBrushMask := aBrushMask;
   fBlendingLvl := EnsureRange(aBlendingLvl, 0, TERRAIN_MAX_BLENDING_LEVEL);
   fUseMagicBrush := aUseMagicBrush;
+end;
+
+
+procedure TKMTerrainPainter.SetBrushParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
+                                           aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
+                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                                           aUseMagicBrush: Boolean = False);
+begin
+  SetCommonParams(X, Y, aShape);
+  SetBrushSpecialParams(aSize, aTerKind, aRandomTiles, aOverrideCustomTiles, aBrushMask, aBlendingLvl, aUseMagicBrush);
+end;
+
+
+procedure TKMTerrainPainter.SetHeightParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
+                                            aIsEqualize, aRaise: Boolean; aSlope, aSpeed: Byte);
+begin
+  SetCommonParams(X, Y, aShape);
+  SetHeightSpecialParams(aIsEqualize, aRaise, aSize, aSlope, aSpeed);
 end;
 
 
@@ -1355,38 +1405,31 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.EditHeight;
+procedure TKMTerrainPainter.ApplyHeight;
 var
   I, K: Integer;
-  Rad, Slope, Speed: Byte;
   Tmp: Single;
   R: TKMRect;
-  aLoc : TKMPointF;
-  aRaise, aLower: Boolean;
+  Loc : TKMPointF;
 begin
-  aLoc    := KMPointF(gGameCursor.Float.X+1, gGameCursor.Float.Y+1); // Mouse point
-  aRaise  := ssLeft in gGameCursor.SState;         // Raise or Lowered (Left or Right mousebtn)
-  aLower  := ssRight in gGameCursor.SState;        // Raise or Lowered (Left or Right mousebtn)
-  Rad     := gGameCursor.MapEdSize;                // Radius basing on brush size
-  Slope   := gGameCursor.MapEdSlope;               // Elevation slope
-  Speed   := gGameCursor.MapEdSpeed;               // Elvation speed
-  for I := Max((round(aLoc.Y) - Rad), 1) to Min((round(aLoc.Y) + Rad), gTerrain.MapY) do
-  for K := Max((round(aLoc.X) - Rad), 1) to Min((round(aLoc.X) + Rad), gTerrain.MapX) do
+  Loc := KMPointF(fMapXn, fMapYn); // Mouse point
+  for I := Max((round(Loc.Y) - fSize), 1) to Min((round(Loc.Y) + fSize), gTerrain.MapY) do
+  for K := Max((round(Loc.X) - fSize), 1) to Min((round(Loc.X) + fSize), gTerrain.MapX) do
   begin
 
     // We have square area basing on mouse point +/- radius
     // Now we need to check whether point is inside brush type area(circle etc.)
     // Every MapEdShape case has it's own check routine
-    case gGameCursor.MapEdShape of
-      hsCircle: Tmp := Max((1 - GetLength(I - round(aLoc.Y), round(K - aLoc.X)) / Rad), 0);   // Negative number means that point is outside circle
-      hsSquare: Tmp := 1 - Max(Abs(I - round(aLoc.Y)), Abs(K - round(aLoc.X))) / Rad;
+    case fShape of
+      hsCircle: Tmp := Max((1 - GetLength(I - round(Loc.Y), round(K - Loc.X)) / fSize), 0);   // Negative number means that point is outside circle
+      hsSquare: Tmp := 1 - Max(Abs(I - round(Loc.Y)), Abs(K - round(Loc.X))) / fSize;
       else      Tmp := 0;
     end;
 
     // Default cursor mode is elevate/decrease
-    if gGameCursor.Mode = cmEqualize then
+    if fIsEqualize then
     begin // START Unequalize
-      if aRaise then
+      if fRaise then
       begin
         if (i > 1) and (k >1) and (i < gTerrain.MapY - 1) and (k < gTerrain.MapX - 1) then
         begin
@@ -1403,15 +1446,14 @@ begin
           Tmp := 0;
        //END Unequalize
       end else
-      if aLower then
       // START Flatten
       begin
       //Flatten compares heights of mouse click and active tile then it increases/decreases height of active tile
-        if (gTerrain.Land[I,K].Height < gTerrain.Land[Max(trunc(aLoc.Y), 1), Max(trunc(aLoc.X), 1)].Height) then
-          Tmp := - Min(gTerrain.Land[Max(trunc(aLoc.Y), 1), Max(trunc(aLoc.X), 1)].Height - gTerrain.Land[I,K].Height, Tmp)
+        if (gTerrain.Land[I,K].Height < gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height) then
+          Tmp := - Min(gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height - gTerrain.Land[I,K].Height, Tmp)
         else
-          if (gTerrain.Land[I,K].Height > gTerrain.Land[Max(trunc(aLoc.Y), 1), Max(trunc(aLoc.X), 1)].Height) then
-            Tmp := Min(gTerrain.Land[I,K].Height - gTerrain.Land[Max(trunc(aLoc.Y), 1), Max(trunc(aLoc.X), 1)].Height, Tmp)
+          if (gTerrain.Land[I,K].Height > gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height) then
+            Tmp := Min(gTerrain.Land[I,K].Height - gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height, Tmp)
           else
             Tmp := 0;
       end;
@@ -1419,14 +1461,14 @@ begin
     end;
     //COMMON PART FOR Elevate/Lower and Unequalize/Flatten
     //Compute resulting floating-point height
-    Tmp := power(abs(Tmp),(Slope+1)/6)*sign(Tmp); //Modify slopes curve
-    Tmp := Tmp * (4.75/14*(Speed - 1) + 0.25);
-    Tmp := EnsureRange(gTerrain.Land[I,K].Height + LandTerKind[I,K].HeightAdd/255 + Tmp * (Byte(aRaise)*2 - 1), 0, 100); // (Byte(aRaise)*2 - 1) - LeftButton pressed it equals 1, otherwise equals -1
+    Tmp := power(abs(Tmp),(fSlope+1)/6)*sign(Tmp); //Modify slopes curve
+    Tmp := Tmp * (4.75/14*(fSpeed - 1) + 0.25);
+    Tmp := EnsureRange(gTerrain.Land[I,K].Height + LandTerKind[I,K].HeightAdd/255 + Tmp * (Byte(fRaise)*2 - 1), 0, 100); // (Byte(aRaise)*2 - 1) - LeftButton pressed it equals 1, otherwise equals -1
     gTerrain.Land[I,K].Height := trunc(Tmp);
     LandTerKind[I,K].HeightAdd := round(frac(Tmp)*255); //write fractional part in 0..255 range (1Byte) to save us mem
   end;
 
-  R := KMRectGrow(KMRect(aLoc), Rad);
+  R := KMRectGrow(KMRect(Loc), fSize);
   gTerrain.UpdateLighting(R);
   gTerrain.UpdatePassability(R);
 end;
@@ -1743,7 +1785,7 @@ begin
 
   SetLength(LandTerKind, Y+1, X+1);
   SetLength(fTempLand, Y+1, X+1);
-  SetLength(fBrushAreaTerKind, Sqr(BRUSH_MAX_SIZE+1));
+  SetLength(fBrushAreaTerKind, Sqr(MAPED_BRUSH_MAX_SIZE+1));
 end;
 
 
@@ -2072,10 +2114,13 @@ begin
   case gGameCursor.Mode of
     cmElevate,
     cmEqualize:   if (ssLeft in gGameCursor.SState) or (ssRight in gGameCursor.SState) then
-                    EditHeight;
+                  begin
+                    SetMapEdParams; //Set mapEd params from gGameCursor
+                    ApplyHeight;
+                  end;
     cmBrush:      if (ssLeft in gGameCursor.SState) then
                   begin
-                    SetBrushMapEdParams;
+                    SetMapEdParams; //Set mapEd params from gGameCursor
                     ApplyBrush;
                   end;
     cmTiles:      if (ssLeft in gGameCursor.SState) then

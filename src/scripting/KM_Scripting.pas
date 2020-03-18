@@ -688,6 +688,9 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
     RegisterMethodCheck(c, 'procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
+    RegisterMethodCheck(c, 'procedure MapBrushElevationApply(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer)');
+    RegisterMethodCheck(c, 'procedure MapBrushEqualizeApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
+    RegisterMethodCheck(c, 'procedure MapBrushFlattenApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushWithMaskApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;'
                                       + 'aRandomTiles, aOverrideCustomTiles: Boolean;'
                                       + 'aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean)');
@@ -1287,15 +1290,18 @@ begin
 
       RegisterMethod(@TKMScriptActions.MarketSetTrade,                          'MarketSetTrade');
 
+      RegisterMethod(@TKMScriptActions.MapBrushApply,                           'MapBrushApply');
+      RegisterMethod(@TKMScriptActions.MapBrushElevationApply,                  'MapBrushElevationApply');
+      RegisterMethod(@TKMScriptActions.MapBrushEqualizeApply,                   'MapBrushEqualizeApply');
+      RegisterMethod(@TKMScriptActions.MapBrushFlattenApply,                    'MapBrushFlattenApply');
+      RegisterMethod(@TKMScriptActions.MapBrushWithMaskApply,                   'MapBrushWithMaskApply');
+
       RegisterMethod(@TKMScriptActions.MapTileSet,                              'MapTileSet');
       RegisterMethod(@TKMScriptActions.MapTilesArraySet,                        'MapTilesArraySet');
       RegisterMethod(@TKMScriptActions.MapTilesArraySetS,                       'MapTilesArraySetS');
       RegisterMethod(@TKMScriptActions.MapTileHeightSet,                        'MapTileHeightSet');
       RegisterMethod(@TKMScriptActions.MapTileObjectSet,                        'MapTileObjectSet');
       RegisterMethod(@TKMScriptActions.MapTileOverlaySet,                       'MapTileOverlaySet');
-
-      RegisterMethod(@TKMScriptActions.MapBrushApply,                           'MapBrushApply');
-      RegisterMethod(@TKMScriptActions.MapBrushWithMaskApply,                   'MapBrushWithMaskApply');
 
       RegisterMethod(@TKMScriptActions.OverlayTextAppend,                       'OverlayTextAppend');
       RegisterMethod(@TKMScriptActions.OverlayTextAppendFormatted,              'OverlayTextAppendFormatted');
