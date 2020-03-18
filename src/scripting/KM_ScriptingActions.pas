@@ -102,13 +102,14 @@ type
 
     procedure Log(const aText: AnsiString);
 
-    procedure MapBrushApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean);
-    procedure MapBrushElevationApply(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
-    procedure MapBrushEqualizeApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
-    procedure MapBrushFlattenApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
-    procedure MapBrushWithMaskApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
-                                    aRandomTiles, aOverrideCustomTiles: Boolean;
-                                    aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+    procedure MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean);
+    procedure MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushMagicWater(X, Y: Integer);
+    procedure MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
+                               aRandomTiles, aOverrideCustomTiles: Boolean;
+                               aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
 
     function MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
     function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
@@ -2565,8 +2566,8 @@ end;
 //* aTerKind: terrain kind
 //* aRandomTiles: use random tiles
 //* aOverrideCustomTiles: override tiles, that were manually set from tiles table
-procedure TKMScriptActions.MapBrushApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
-                                         aRandomTiles, aOverrideCustomTiles: Boolean);
+procedure TKMScriptActions.MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
+                                    aRandomTiles, aOverrideCustomTiles: Boolean);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
@@ -2594,7 +2595,7 @@ end;
 //* aSize: brush size
 //* aSlope: elevation slope
 //* aSpeed: elevation change speed
-procedure TKMScriptActions.MapBrushElevationApply(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+procedure TKMScriptActions.MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
@@ -2620,7 +2621,7 @@ end;
 //* aSize: brush size
 //* aSlope: elevation slope
 //* aSpeed: elevation change speed
-procedure TKMScriptActions.MapBrushEqualizeApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+procedure TKMScriptActions.MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
@@ -2646,7 +2647,7 @@ end;
 //* aSize: brush size
 //* aSlope: elevation slope
 //* aSpeed: elevation change speed
-procedure TKMScriptActions.MapBrushFlattenApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+procedure TKMScriptActions.MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
@@ -2666,7 +2667,28 @@ end;
 
 
 //* Version: 11000
-//* Apply brush from MapEd to the map
+//* Apply magic water brush from MapEd to the map
+//* X,Y: coodinates
+procedure TKMScriptActions.MapBrushMagicWater(X, Y: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.MagicWater(KMPoint(X, Y));
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapBrushMagicWater', [X, Y]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply brush with mask specified from MapEd to the map
 //* X,Y: coodinates
 //* aSquare: is brush square or circle
 //* aSize: brush size
@@ -2676,9 +2698,9 @@ end;
 //* aBrushMask: brush mask type
 //* aBlendingLvl: blending level for masks. Allowed values are from 0 to 100
 //* aUseMagicBrush: enable/disable magic brush to change/remove brush mask from the area
-procedure TKMScriptActions.MapBrushWithMaskApply(X,Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
-                                                 aRandomTiles, aOverrideCustomTiles: Boolean;
-                                                 aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+procedure TKMScriptActions.MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
+                                            aRandomTiles, aOverrideCustomTiles: Boolean;
+                                            aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then

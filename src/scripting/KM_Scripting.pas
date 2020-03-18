@@ -687,11 +687,12 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure MapBrushApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
-    RegisterMethodCheck(c, 'procedure MapBrushElevationApply(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer)');
-    RegisterMethodCheck(c, 'procedure MapBrushEqualizeApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
-    RegisterMethodCheck(c, 'procedure MapBrushFlattenApply(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
-    RegisterMethodCheck(c, 'procedure MapBrushWithMaskApply(X,Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;'
+    RegisterMethodCheck(c, 'procedure MapBrush(X, Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
+    RegisterMethodCheck(c, 'procedure MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer)');
+    RegisterMethodCheck(c, 'procedure MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
+    RegisterMethodCheck(c, 'procedure MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
+    RegisterMethodCheck(c, 'procedure MapBrushMagicWater(X, Y: Integer)');
+    RegisterMethodCheck(c, 'procedure MapBrushWithMask(X, Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;'
                                       + 'aRandomTiles, aOverrideCustomTiles: Boolean;'
                                       + 'aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean)');
 
@@ -1288,11 +1289,12 @@ begin
 
       RegisterMethod(@TKMScriptActions.Log,                                     'Log');
 
-      RegisterMethod(@TKMScriptActions.MapBrushApply,                           'MapBrushApply');
-      RegisterMethod(@TKMScriptActions.MapBrushElevationApply,                  'MapBrushElevationApply');
-      RegisterMethod(@TKMScriptActions.MapBrushEqualizeApply,                   'MapBrushEqualizeApply');
-      RegisterMethod(@TKMScriptActions.MapBrushFlattenApply,                    'MapBrushFlattenApply');
-      RegisterMethod(@TKMScriptActions.MapBrushWithMaskApply,                   'MapBrushWithMaskApply');
+      RegisterMethod(@TKMScriptActions.MapBrush,                                'MapBrush');
+      RegisterMethod(@TKMScriptActions.MapBrushElevation,                       'MapBrushElevation');
+      RegisterMethod(@TKMScriptActions.MapBrushEqualize,                        'MapBrushEqualize');
+      RegisterMethod(@TKMScriptActions.MapBrushFlatten,                         'MapBrushFlatten');
+      RegisterMethod(@TKMScriptActions.MapBrushMagicWater,                      'MapBrushMagicWater');
+      RegisterMethod(@TKMScriptActions.MapBrushWithMask,                        'MapBrushWithMask');
 
       RegisterMethod(@TKMScriptActions.MapTileSet,                              'MapTileSet');
       RegisterMethod(@TKMScriptActions.MapTilesArraySet,                        'MapTilesArraySet');
