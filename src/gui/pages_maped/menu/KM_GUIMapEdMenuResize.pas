@@ -40,7 +40,7 @@ type
 implementation
 uses
   KromUtils, Math, KM_Defaults, KM_GameApp, KM_Game, KM_Terrain, KM_InterfaceDefaults, KM_RenderAux,
-  KM_InterfaceGame, KM_ResFonts, KM_RenderUI, KM_Points, KM_Maps, KM_ResTexts, KM_Resource;
+  KM_InterfaceGame, KM_ResFonts, KM_RenderUI, KM_Points, KM_Maps, KM_ResTexts, KM_Resource, KM_ResTileset;
 
 
 { TKMMapEdMenuSave }
@@ -162,14 +162,45 @@ end;
 
 
 procedure TKMMapEdMenuResize.Resize_Click(Sender: TObject);
+type
+  TDir4 = (dLeft, dTop, dRight, dBottom);
 var
   SaveName: string;
+  left, top, right, bot: Integer;
+  DIR4: TDir4;
+  rRect: array[TDir4] of TKMRect;
 begin
+  left  := Max(0, NumEdit_Resize_Left.Value);
+  top   := Max(0, NumEdit_Resize_Top.Value);
+  right := Max(0, NumEdit_Resize_Right.Value);
+  bot   := Max(0, NumEdit_Resize_Bottom.Value);
+
+  gGame.TerrainPainter.FixTerrainKindInfoAtBorders(False);
+
   SaveName := TKMapsCollection.FullPath(gGame.GameName, '.dat', fIsMultiplayer);
   gGame.SaveMapEditor(SaveName, KMRect(NumEdit_Resize_Left.Value,  NumEdit_Resize_Top.Value,
                                        NumEdit_Resize_Right.Value, NumEdit_Resize_Bottom.Value));
   FreeThenNil(gGame);
   gGameApp.NewMapEditor(SaveName);
+
+  // Collect generated map areas
+  rRect[dLeft]   := KMRect(1, top + 1, left, gTerrain.MapY - bot);
+  rRect[dTop]    := KMRect(1, 1, gTerrain.MapX, top);
+  rRect[dRight]  := KMRect(gTerrain.MapX - right, top + 1, gTerrain.MapX, gTerrain.MapY - bot);
+  rRect[dBottom] := KMRect(1, gTerrain.MapY - bot, gTerrain.MapX, gTerrain.MapY);
+
+  for DIR4 := Low(TDir4) to High(TDir4) do
+  begin
+    // Has to fix terrain info, since we have tkGrass on new tiles there
+    gGame.TerrainPainter.FixTerrainKindInfo(rRect[DIR4], False);
+    // Rebuild generated map areas with normal tiles
+    gGame.TerrainPainter.RebuildMap(rRect[DIR4], True);
+    // Apply magic brush at the end to fix rest of the transtions
+    gGame.TerrainPainter.MagicBrush(rRect[DIR4], mkSoft1);
+  end;
+
+  // Save changes
+  gGame.SaveMapEditor(SaveName);
 end;
 
 

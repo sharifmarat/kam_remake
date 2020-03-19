@@ -10,7 +10,7 @@ uses
   KM_InterfaceGame, KM_InterfaceGamePlay, KM_InterfaceMapEditor,
   KM_ResTexts, KM_Maps, KM_MapTypes,
   KM_PerfLog, KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
-  KM_GameTypes;
+  KM_GameTypes, KM_TerrainPainter;
 
 type
 
@@ -28,6 +28,7 @@ type
     fGamePlayInterface: TKMGamePlayInterface;
     fMapEditorInterface: TKMapEdInterface;
     fMapEditor: TKMMapEditor;
+    fTerrainPainter: TKMTerrainPainter;
     fSavedReplays: TKMSavedReplays;
     fScripting: TKMScripting;
     fOnDestroy: TEvent;
@@ -234,6 +235,7 @@ type
     property ActiveInterface: TKMUserInterfaceGame read fActiveInterface;
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
     property MapEditor: TKMMapEditor read fMapEditor;
+    property TerrainPainter: TKMTerrainPainter read fTerrainPainter;
     property TextMission: TKMTextLibraryMulti read fTextMission;
 
     procedure SetSeed(aSeed: Integer);
@@ -299,6 +301,8 @@ begin
   fLastTimeUserAction := TimeGet;
   fLastAfkMessageSent := 0;
   fLoadFromFile := '';
+
+  fTerrainPainter := TKMTerrainPainter.Create;
 
   if fGameMode in [gmReplaySingle, gmReplayMulti] then
     fSavedReplays := TKMSavedReplays.Create();
@@ -384,6 +388,8 @@ begin
     fPerfLog.SaveToFile(ExeDir + 'Logs' + PathDelim + 'PerfLog.txt');
 
   FreeAndNil(fTimerGame);
+
+  FreeThenNil(fTerrainPainter);
 
   FreeThenNil(fMapEditor);
   FreeThenNil(gHands);
@@ -501,7 +507,7 @@ begin
   if fGameMode = gmMapEd then
   begin
     //Mission loader needs to read the data into MapEd (e.g. FOW revealers)
-    fMapEditor := TKMMapEditor.Create;
+    fMapEditor := TKMMapEditor.Create(fTerrainPainter);
     fMapEditor.DetectAttachedFiles(aMissionFile);
   end;
 
@@ -619,6 +625,9 @@ end;
 
 
 procedure TKMGame.AfterStart;
+var
+  I: Integer;
+  ViewPos: TKMPointF;
 begin
   gLog.AddTime('After game start');
   gHands.AfterMissionInit(fGameMode <> gmMapEd); //Don't flatten roads in MapEd
@@ -641,7 +650,19 @@ begin
   //When everything is ready we can update UI
   fActiveInterface.SyncUI;
   if IsMapEditor then
-    fActiveInterface.SyncUIView(KMPointF(gTerrain.MapX / 2, gTerrain.MapY / 2))
+  begin
+    ViewPos := KMPointF(gTerrain.MapX / 2, gTerrain.MapY / 2);
+    //Find first hand with assets and set viewport to its center screen
+    for I := 0 to gHands.Count - 1 do
+      if gHands[I].HasAssets then
+      begin
+        gMySpectator.HandID := I;
+        ViewPos := KMPointF(gMySpectator.Hand.CenterScreen);
+        Break;
+      end;
+
+    fActiveInterface.SyncUIView(ViewPos);
+  end
   else
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
@@ -1140,11 +1161,11 @@ begin
   fMissionFileSP := '';
   fSaveFile := '';
 
-  fMapEditor := TKMMapEditor.Create;
+  fMapEditor := TKMMapEditor.Create(fTerrainPainter);
   fMapEditor.MissionDefSavePath := fGameName + '.dat';
   gTerrain.MakeNewMap(aSizeX, aSizeY, True);
-  fMapEditor.TerrainPainter.InitEmpty;
-  fMapEditor.TerrainPainter.MakeCheckpoint;
+  fTerrainPainter.InitEmpty;
+  fTerrainPainter.MakeCheckpoint;
   fMapEditor.IsNewMap := True;
 
   gHands.AddPlayers(MAX_HANDS); //Create MAX players
@@ -1224,7 +1245,7 @@ begin
   fMapEditor.SaveAttachements(aPathName);
   fMapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
   gTerrain.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
-  fMapEditor.TerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
+  fTerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMissionParser := TKMMissionParserStandard.Create(mpmEditor);
   fMissionParser.SaveDATFile(ChangeFileExt(aPathName, '.dat'), aInsetRect.Left, aInsetRect.Top);
   FreeAndNil(fMissionParser);

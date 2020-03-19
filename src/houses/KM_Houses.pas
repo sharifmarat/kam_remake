@@ -119,7 +119,6 @@ type
     fIsDestroyed: Boolean;
     fIsBeingDemolished: Boolean; //To prevent script calling HouseDestroy on same house within OnHouseDestroyed action.
                                  //Not saved because it is set and used within the same tick only.
-    RemoveRoadWhenDemolish: Boolean;
     fPointerCount: Cardinal;
     fTimeSinceUnoccupiedReminder: Integer;
     fDisableUnoccupiedMessage: Boolean;
@@ -501,14 +500,13 @@ begin
     fResourceIn[I] := 0;
     fResourceDeliveryCount[I] := 0;
     fResourceOut[I] := 0;
-    fResourceOrder[I] :=0;
+    fResourceOrder[I] := 0;
   end;
 
   for I := 0 to 19 do
     fResourceOutPool[I] := 0;
 
   fIsDestroyed := False;
-  RemoveRoadWhenDemolish := gTerrain.Land[Entrance.Y, Entrance.X].TileOverlay <> toRoad;
   fPointerCount := 0;
   fTimeSinceUnoccupiedReminder := TIME_BETWEEN_MESSAGES;
 
@@ -571,7 +569,6 @@ begin
   LoadStream.Read(fIsOnSnow);
   LoadStream.Read(fSnowStep);
   LoadStream.Read(fIsDestroyed);
-  LoadStream.Read(RemoveRoadWhenDemolish);
   LoadStream.Read(fPointerCount);
   LoadStream.Read(fTimeSinceUnoccupiedReminder);
   LoadStream.Read(fDisableUnoccupiedMessage);
@@ -751,7 +748,7 @@ begin
     gTerrain.AddHouseRemainder(fPosition, fType, fBuildState);
 
   BuildingRepair := False; //Otherwise labourers will take task to repair when the house is destroyed
-  if RemoveRoadWhenDemolish and ((BuildingState in [hbsNoGlyph, hbsWood]) or IsSilent) then
+  if (BuildingState in [hbsNoGlyph, hbsWood]) or IsSilent then
   begin
     if gTerrain.Land[Entrance.Y, Entrance.X].TileOverlay = toRoad then
     begin
@@ -1915,7 +1912,6 @@ begin
   SaveStream.Write(fIsOnSnow);
   SaveStream.Write(fSnowStep);
   SaveStream.Write(fIsDestroyed);
-  SaveStream.Write(RemoveRoadWhenDemolish);
   SaveStream.Write(fPointerCount);
   SaveStream.Write(fTimeSinceUnoccupiedReminder);
   SaveStream.Write(fDisableUnoccupiedMessage);

@@ -51,7 +51,7 @@ begin
 
   Panel_Selection := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
 
-  with TKMLabel.Create(Panel_Selection, 0, PAGE_TITLE_Y, Panel_Selection.Width, 0, gResTexts[TX_MAPED_COPY_TITLE], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Selection, 0, TERRAIN_PAGE_TITLE_Y, Panel_Selection.Width, 0, gResTexts[TX_MAPED_COPY_TITLE], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
   Button_SelectCopy := TKMButton.Create(Panel_Selection, 9, 30, Panel_Selection.Width - 9, 20, gResTexts[TX_MAPED_COPY], bsGame);
   Button_SelectCopy.Anchors := [anLeft, anTop, anRight];
@@ -150,7 +150,7 @@ begin
   begin
     //Apply paste
     gGame.MapEditor.Selection.Selection_PasteApply;
-    gGame.MapEditor.TerrainPainter.MakeCheckpoint;
+    gGame.TerrainPainter.MakeCheckpoint;
 
     Button_SelectPasteApply.Disable;
     Button_SelectPasteCancel.Disable;
@@ -176,14 +176,14 @@ begin
   begin
     //Flip selected
     gGame.MapEditor.Selection.Selection_Flip(faHorizontal);
-    gGame.MapEditor.TerrainPainter.MakeCheckpoint;
+    gGame.TerrainPainter.MakeCheckpoint;
   end
   else
   if Sender = Button_SelectFlipV then
   begin
     //Flip selected
     gGame.MapEditor.Selection.Selection_Flip(faVertical);
-    gGame.MapEditor.TerrainPainter.MakeCheckpoint;
+    gGame.TerrainPainter.MakeCheckpoint;
   end;
 end;
 

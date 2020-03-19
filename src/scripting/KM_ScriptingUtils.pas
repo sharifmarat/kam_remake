@@ -681,7 +681,7 @@ end;
 function TKMScriptUtils.RGBDecToBGRHex(aR, aG, aB: Byte): AnsiString;
 begin
   try
-    Result := AnsiString(Format('%.6x', [RGB2BGR(StrToInt('$' + IntToHex(aR) + IntToHex(aG) + IntToHex(aB)))]));
+    Result := AnsiString(Format('%.6x', [RGB2BGR(StrToInt('$' + IntToHex(aR, 2) + IntToHex(aG, 2) + IntToHex(aB, 2)))]));
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;

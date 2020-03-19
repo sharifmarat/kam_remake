@@ -8,9 +8,6 @@ uses
    KM_Defaults, KM_Pics, KM_ResTileset;
 
 
-const
-  BRUSH_MAX_SIZE = 32;
-
 type
   //Painting on terrain with terrain brushes
   TKMMapEdTerrainBrushes = class (TKMMapEdSubMenuPage)
@@ -107,9 +104,9 @@ begin
   Panel_Brushes.AnchorsStretch;
 //  TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
 
-  with TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, Panel_Brushes.Width, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Brushes, 0, TERRAIN_PAGE_TITLE_Y, Panel_Brushes.Width, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
-  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 9, 27, (Panel_Brushes.Width - (BTN_BRUSH_SIZE * 2) - 18) - 18, 0, BRUSH_MAX_SIZE);
+  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 9, 27, (Panel_Brushes.Width - (BTN_BRUSH_SIZE * 2) - 18) - 18, 0, MAPED_BRUSH_MAX_SIZE);
   BrushSize.Anchors := [anLeft, anTop, anRight];
   BrushSize.Position := 4;
   BrushSize.OnChange := BrushChange;
@@ -151,7 +148,7 @@ begin
 
   BrushBlending := TKMTrackBar.Create(Panel_Brushes, 9, 305 + 60, (BTN_TKIND_S_SP*4) - 9, 0, TERRAIN_MAX_BLENDING_LEVEL);
   BrushBlending.Anchors := [anLeft, anTop, anRight];
-  BrushBlending.Position := 0;
+  BrushBlending.Position := 50; //Default value
   BrushBlending.MouseWheelStep := 5;
   BrushBlending.OnChange := BrushChange;
   BrushBlending.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT];
@@ -196,16 +193,16 @@ end;
 procedure TKMMapEdTerrainBrushes.BrushChange(Sender: TObject);
 begin
   gGameCursor.MapEdSize := BrushSize.Position;
-  gGame.MapEditor.TerrainPainter.RandomizeTiling := RandomElements.Checked;
-  gGame.MapEditor.TerrainPainter.OverrideCustomTiles := OverrideCustomTiles.Checked;
-  gGame.MapEditor.TerrainPainter.BlendingLevel := BrushBlending.Position;
+  gGameCursor.MapEdRandomizeTiling := RandomElements.Checked;
+  gGameCursor.MapEdOverrideCustomTiles := OverrideCustomTiles.Checked;
+  gGameCursor.MapEdBlendingLvl := BrushBlending.Position;
 
   if gGameCursor.Mode <> cmBrush then
     gGameCursor.Mode := cmBrush;    // This will reset Tag
 
   if Sender = MagicBrush then
   begin
-    gGameCursor.MapEdMagicBrush := True;
+    gGameCursor.MapEdUseMagicBrush := True;
     fLastMagicBrush := True;
   end
   else
@@ -229,9 +226,9 @@ begin
         gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
         fLastBrush := TKMButtonFlat(Sender).Tag;
         fLastMagicBrush := False;
-        gGameCursor.MapEdMagicBrush := False;
+        gGameCursor.MapEdUseMagicBrush := False;
       end else
-        gGameCursor.MapEdBrushMask := TKMButtonFlat(Sender).Tag;
+        gGameCursor.MapEdBrushMask := TKMTileMaskKind(TKMButtonFlat(Sender).Tag);
     end;
   end;
 
@@ -246,11 +243,11 @@ var
 begin
   BrushCircle.Down := (gGameCursor.MapEdShape = hsCircle);
   BrushSquare.Down := (gGameCursor.MapEdShape = hsSquare);
-  MagicBrush.Down  := gGameCursor.MapEdMagicBrush;
+  MagicBrush.Down  := gGameCursor.MapEdUseMagicBrush;
 
   for I := Low(BrushTable) to High(BrushTable) do
     for K := Low(BrushTable[I]) to High(BrushTable[I]) do
-      if gGameCursor.MapEdMagicBrush then
+      if gGameCursor.MapEdUseMagicBrush then
       begin
         if BrushTable[I,K] <> nil then
           BrushTable[I,K].Down := False;
@@ -259,7 +256,7 @@ begin
           BrushTable[I,K].Down := (BrushTable[I,K].Tag = gGameCursor.Tag1);
 
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
-    BrushMasks[MK].Down := (BrushMasks[MK].Tag = gGameCursor.MapEdBrushMask);
+    BrushMasks[MK].Down := (BrushMasks[MK].Tag = Byte(gGameCursor.MapEdBrushMask));
 end;
 
 
@@ -271,7 +268,7 @@ end;
 
 procedure TKMMapEdTerrainBrushes.FixTerrainBrushes(Sender: TObject);
 begin
-  gGame.MapEditor.TerrainPainter.FixTerrainKindInfo;
+  gGame.TerrainPainter.FixTerrainKindInfo;
   PopUp_FixTerrainConfirm.Hide;
 end;
 
@@ -288,7 +285,7 @@ begin
     gGameCursor.Mode := cmBrush;    // This will reset Tag
 
   gGameCursor.MapEdShape := fLastShape;
-  gGameCursor.MapEdMagicBrush := fLastMagicBrush;
+  gGameCursor.MapEdUseMagicBrush := fLastMagicBrush;
   if fLastBrush >= 0 then
     gGameCursor.Tag1 := fLastBrush;
 

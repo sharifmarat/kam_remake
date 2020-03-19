@@ -1,7 +1,7 @@
 unit KM_GameCursor;
 interface
 uses
-  Classes, KM_Defaults, KM_Points;
+  Classes, KM_Defaults, KM_Points, KM_ResTileset;
 
 
 type
@@ -22,13 +22,19 @@ type
     DragOffset: TKMPoint; //used to adjust actual Cursor Cell
     ObjectUID: Integer;   //Object found below cursor
 
-    MapEdDir: Byte;
+    // MapEd brushes page
     MapEdShape: TKMMapEdShape;
-    MapEdSlope: Byte;
     MapEdSize: Byte;
+    MapEdBrushMask: TKMTileMaskKind;
+    MapEdUseMagicBrush: Boolean;
+    MapEdRandomizeTiling: Boolean;
+    MapEdOverrideCustomTiles: Boolean;
+    MapEdBlendingLvl: Byte;
+    // MapEd elevations page
+    MapEdSlope: Byte;
     MapEdSpeed: Byte;
-    MapEdBrushMask: Integer;
-    MapEdMagicBrush: Boolean;
+    // MapEd other pages
+    MapEdDir: Byte;
 
     constructor Create;
     property Mode: TKMCursorMode read fMode write SetMode;
@@ -52,7 +58,7 @@ end;
 procedure TKMGameCursor.Reset;
 begin
   DragOffset := KMPOINT_ZERO;
-  MapEdMagicBrush := False;
+  MapEdUseMagicBrush := False;
   SState := [];
   if fMode = cmNone then  //Reset Tag1 also, when reset mode
   begin

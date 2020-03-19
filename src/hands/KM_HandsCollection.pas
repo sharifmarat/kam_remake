@@ -135,6 +135,8 @@ end;
 
 function TKMHandsCollection.GetHand(aIndex: Integer): TKMHand;
 begin
+  if (Self = nil) or (aIndex >= Length(fHandsList)) then Exit(nil);
+
   //We have Range Checks enabled so such an error will be caught and reported already
   //Assert(InRange(aIndex, 0, fCount-1));
   Result := fHandsList[aIndex];
@@ -845,6 +847,8 @@ procedure TKMHandsCollection.RemAnyHouse(const Position: TKMPoint);
 var
   H: TKMHouse;
 begin
+  Assert(gGame.IsMapEditor, 'RemAnyHouse is not allowed outside of MapEditor');
+
   H := HousesHitTest(Position.X, Position.Y);
   if H <> nil then
   begin
@@ -859,6 +863,8 @@ procedure TKMHandsCollection.RemAnyUnit(const Position: TKMPoint);
 var
   I: Integer;
 begin
+  Assert(gGame.IsMapEditor, 'RemAnyUnit is not allowed outside of MapEditor');
+
   for I := 0 to fCount - 1 do
     fHandsList[I].RemGroup(Position);
   for I := 0 to fCount - 1 do

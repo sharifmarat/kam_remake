@@ -743,32 +743,29 @@ var Road, ID, Rot: Byte;
 begin
   if TileHasToBeRendered(False,pX,pY,aFow) then
   begin
-    case gTerrain.Land[pY, pX].TileOverlay of
-      toDig1:  RenderTile(249, pX, pY, 0, DoHighlight, HighlightColor);
-      toDig2:  RenderTile(251, pX, pY, 0, DoHighlight, HighlightColor);
-      toDig3:  RenderTile(253, pX, pY, 0, DoHighlight, HighlightColor);
-      toDig4:  RenderTile(255, pX, pY, 0, DoHighlight, HighlightColor);
-      toRoad:  begin
-                  Road := 0;
-                  if (pY - 1 >= 1) then
-                    Road := Road + byte(gTerrain.Land[pY - 1, pX].TileOverlay = toRoad) shl 0;
-                  if (pX + 1 <= gTerrain.MapX - 1) then
-                    Road := Road + byte(gTerrain.Land[pY, pX + 1].TileOverlay = toRoad) shl 1;
-                  if (pY + 1 <= gTerrain.MapY - 1) then
-                    Road := Road + byte(gTerrain.Land[pY + 1, pX].TileOverlay = toRoad) shl 2;
-                  if (pX - 1 >= 1) then
-                    Road := Road + byte(gTerrain.Land[pY, pX - 1].TileOverlay = toRoad) shl 3;
-                  ID := RoadsConnectivity[Road, 1];
-                  Rot := RoadsConnectivity[Road, 2];
-                  RenderTile(ID, pX, pY, Rot, DoHighlight, HighlightColor);
-                end;
-     end;
+    //Fake tiles for MapEd fields
+    case gTerrain.Land[pY, pX].CornOrWine of
+      1:  RenderTile(gTerrain.Land[pY, pX].CornOrWineTerrain, pX, pY, 0, DoHighlight, HighlightColor);
+      2:  RenderTile(55, pX, pY, 0, DoHighlight, HighlightColor);
+    end;
 
-     //Fake tiles for MapEd fields
-     case gTerrain.Land[pY, pX].CornOrWine of
-       1: RenderTile(gTerrain.Land[pY, pX].CornOrWineTerrain, pX, pY, 0, DoHighlight, HighlightColor);
-       2: RenderTile(55, pX, pY, 0, DoHighlight, HighlightColor);
-     end;
+    if gTerrain.Land[pY, pX].TileOverlay = toRoad then
+    begin
+      Road := 0;
+      if (pY - 1 >= 1) then
+        Road := Road + byte(gTerrain.Land[pY - 1, pX].TileOverlay = toRoad) shl 0;
+      if (pX + 1 <= gTerrain.MapX - 1) then
+        Road := Road + byte(gTerrain.Land[pY, pX + 1].TileOverlay = toRoad) shl 1;
+      if (pY + 1 <= gTerrain.MapY - 1) then
+        Road := Road + byte(gTerrain.Land[pY + 1, pX].TileOverlay = toRoad) shl 2;
+      if (pX - 1 >= 1) then
+        Road := Road + byte(gTerrain.Land[pY, pX - 1].TileOverlay = toRoad) shl 3;
+      ID := RoadsConnectivity[Road, 1];
+      Rot := RoadsConnectivity[Road, 2];
+      RenderTile(ID, pX, pY, Rot, DoHighlight, HighlightColor);
+    end
+    else if gTerrain.Land[pY, pX].TileOverlay <> toNone then
+      RenderTile(TILE_OVERLAY_IDS[gTerrain.Land[pY, pX].TileOverlay], pX, pY, 0, DoHighlight, HighlightColor);
   end;
 end;
 

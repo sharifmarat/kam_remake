@@ -355,6 +355,9 @@ begin
   if SHOW_TERRAIN_KINDS then
     gRenderAux.TileTerrainKinds(aRect);
 
+  if SHOW_TERRAIN_OVERLAYS then
+    gRenderAux.TileTerrainOverlays(aRect);
+
   if SHOW_JAM_METER then
     gRenderAux.TileTerrainJamMeter(aRect);
 
@@ -1374,7 +1377,7 @@ begin
 
   for I := 0 to fMarksList.Count - 1 do
   if fMarksList.Tag[I] = TC_OUTLINE then
-    RenderWireTile(fMarksList[I], $FFFFFF00) // Cyan rect
+    RenderWireTile(fMarksList[I], icCyan) // Cyan rect
   else
     RenderSpriteOnTile(fMarksList[I], fMarksList.Tag[I]); // Icon
 end;
@@ -1460,7 +1463,7 @@ begin
   P := gGameCursor.Cell;
   Size := gGameCursor.MapEdSize;
   IsSquare := gGameCursor.MapEdShape = hsSquare;
-  if gGameCursor.MapEdMagicBrush then
+  if gGameCursor.MapEdUseMagicBrush then
     IterateOverArea(P, Size, IsSquare, RenderWireTileInt)
   else
   if gGameCursor.Tag1 <> 0 then
@@ -1549,22 +1552,22 @@ begin
                         or gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P)
                         or (gMySpectator.Hand.HousesHitTest(P.X, P.Y) <> nil))
                     then
-                      RenderWireTile(P, $FFFFFF00) // Cyan quad
+                      RenderWireTile(P, icCyan) // Cyan quad
                     else
                       RenderSpriteOnTile(P, TC_BLOCK); // Red X
                   end;
     cmRoad:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftRoad)) and (gGameCursor.Tag1 <> Ord(cfmErase)) then
-                    RenderWireTile(P, $FFFFFF00) // Cyan quad
+                    RenderWireTile(P, icCyan) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
     cmField:      if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftCorn) or (gGame.IsMapEditor and gTerrain.TileIsCornField(P)))
                     and (gGameCursor.Tag1 <> Ord(cfmErase)) then
-                    RenderWireTile(P, $FFFFFF00) // Cyan quad
+                    RenderWireTile(P, icCyan) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
     cmWine:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftWine) or (gGame.IsMapEditor and gTerrain.TileIsWineField(P)))
                     and (gGameCursor.Tag1 <> Ord(cfmErase)) then
-                    RenderWireTile(P, $FFFFFF00) // Cyan quad
+                    RenderWireTile(P, icCyan) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
     cmHouses:     RenderWireHousePlan(KMPointAdd(P, gGameCursor.DragOffset), TKMHouseType(gGameCursor.Tag1)); // Cyan quads and red Xs
@@ -1573,14 +1576,19 @@ begin
                     RenderTile(gGameCursor.Tag1, P.X, P.Y, gGameCursor.MapEdDir)
                   else
                     RenderTile(gGameCursor.Tag1, P.X, P.Y, (gTerrain.AnimStep div 5) mod 4); // Spin it slowly so player remembers it is on randomized
+    cmOverlays:   begin
+                    RenderWireTile(P, icCyan);
+                    if gGameCursor.Tag1 > 0 then
+                      RenderTile(TILE_OVERLAY_IDS[TKMTileOverlay(gGameCursor.Tag1)], P.X, P.Y, 0);
+                    end;
     cmObjects:    begin
                     // If there's object below - paint it in Red
                     RenderMapElement(gTerrain.Land[P.Y,P.X].Obj, gTerrain.AnimStep, P.X, P.Y, True, True);
                     RenderMapElement(gGameCursor.Tag1, gTerrain.AnimStep, P.X, P.Y, True);
                   end;
     cmMagicWater: ; //TODO: Render some effect to show magic water is selected
-    cmEyeDropper: RenderWireTile(P, $FFFFFF00); // Cyan quad
-    cmRotateTile: RenderWireTile(P, $FFFFFF00); // Cyan quad
+    cmEyeDropper: RenderWireTile(P, icCyan); // Cyan quad
+    cmRotateTile: RenderWireTile(P, icCyan); // Cyan quad
     cmElevate,
     cmEqualize:   RenderForegroundUI_ElevateEqualize;
     cmUnits:      RenderForegroundUI_Units;
@@ -1687,10 +1695,10 @@ begin
   end;
 
   if (aHighlightAll or not IsRendered) and
-    (((gTerrain.Land[P.Y, P.X].TileOverlay = toRoad)
+    (((gTerrain.Land[P.Y, P.X].TileOverlay <> toNone)
         and (gTerrain.Land[P.Y, P.X].TileLock = tlNone)) //Sometimes we can point road tile under the house, do not show Cyan quad then
       or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0)) then
-    RenderWireTile(P, $FFFFFF00); // Cyan quad
+    RenderWireTile(P, icCyan); // Cyan quad
 end;
 
 
@@ -1732,7 +1740,7 @@ begin
         and (gTerrain.Land[P.Y, P.X].TileLock = tlNone)) //Sometimes we can point road tile under the house, do not show Cyan quad then
       or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
     and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandID) then //Only if tile has other owner
-    RenderWireTile(P, $FFFFFF00); // Cyan quad
+    RenderWireTile(P, icCyan); // Cyan quad
 end;
 
 

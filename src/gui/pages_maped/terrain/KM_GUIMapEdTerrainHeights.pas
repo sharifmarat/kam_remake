@@ -53,13 +53,15 @@ begin
   fLastShape := hsCircle;
 
   Panel_Heights := TKMPanel.Create(aParent, 0, 28, aParent.Width, 400);
-  with TKMLabel.Create(Panel_Heights, 0, PAGE_TITLE_Y, Panel_Heights.Width, 0, gResTexts[TX_MAPED_TERRAIN_HEIGHTS], fntOutline, taCenter) do
+  with TKMLabel.Create(Panel_Heights, 0, TERRAIN_PAGE_TITLE_Y, Panel_Heights.Width, 0, gResTexts[TX_MAPED_TERRAIN_HEIGHTS], fntOutline, taCenter) do
     Anchors := [anLeft, anTop, anRight];
   HeightShapeLabel := TKMLabel.Create(Panel_Heights, 9, 34, Panel_Heights.Width - 18, 0, gResTexts[TX_MAPED_TERRAIN_HEIGHTS_SHAPE], fntMetal, taLeft);
+
   HeightCircle := TKMButtonFlat.Create(Panel_Heights, Panel_Heights.Width - 48 - 9, 30, 24, 24, 592);
   HeightCircle.Anchors := [anTop, anRight];
   HeightCircle.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_CIRCLE, SC_MAPEDIT_SUB_MENU_ACTION_1);
   HeightCircle.OnClick  := HeightChange;
+
   HeightSquare := TKMButtonFlat.Create(Panel_Heights, Panel_Heights.Width - 24, 30, 24, 24, 593);
   HeightSquare.Anchors := [anTop, anRight];
   HeightSquare.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_SQUARE, SC_MAPEDIT_SUB_MENU_ACTION_2);
@@ -70,11 +72,13 @@ begin
   HeightSize.Caption  := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_SIZE];
   HeightSize.Hint     := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SIZE_HINT, gResTexts[TX_KEY_CTRL_MOUSEWHEEL]);
   HeightSize.OnChange := HeightChange;
+
   HeightSlope           := TKMTrackBar.Create(Panel_Heights, 9, 115, Panel_Heights.Width - 9, 1, 15); //1..15(4bit) for slope shape
   HeightSlope.Anchors := [anLeft, anTop, anRight];
   HeightSlope.Caption   := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_SLOPE];
   HeightSlope.Hint      := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SLOPE_HINT, gResTexts[TX_KEY_ALT_MOUSEWHEEL]);
   HeightSlope.OnChange  := HeightChange;
+
   HeightSpeed           := TKMTrackBar.Create(Panel_Heights, 9, 170, Panel_Heights.Width - 9, 1, 15); //1..15(4bit) for speed
   HeightSpeed.Anchors := [anLeft, anTop, anRight];
   HeightSpeed.Caption   := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_SPEED];
@@ -88,6 +92,7 @@ begin
   HeightElevate.Caption       := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_ELEVATE];
   HeightElevate.CapOffsetY    := -12;
   HeightElevate.Hint          := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_ELEVATE_HINT, SC_MAPEDIT_SUB_MENU_ACTION_3);
+
   HeightUnequalize            := TKMButtonFlat.Create(Panel_Heights, 9, 255, Panel_Heights.Width - 9, 20, 0);
   HeightUnequalize.Anchors := [anLeft, anTop, anRight];
   HeightUnequalize.OnClick    := HeightChange;

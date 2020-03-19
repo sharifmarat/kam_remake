@@ -178,7 +178,8 @@ type
     function NeedToChooseFirstStorehouseInGame: Boolean;
     procedure AddRoadToList(const aLoc: TKMPoint);
     procedure AddRoad(const aLoc: TKMPoint);
-    procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
+    procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False;
+                       aRemoveOverlay: Boolean = True);
     procedure ToggleFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
     procedure ToggleFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType);
     function AddHouse(aHouseType: TKMHouseType; PosX, PosY: Word; RelativeEntrace: Boolean): TKMHouse;
@@ -843,7 +844,8 @@ begin
 end;
 
 
-procedure TKMHand.AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
+procedure TKMHand.AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0;
+                           aKeepOldObject: Boolean = False; aRemoveOverlay: Boolean = True);
 var
   IsFieldSet: Boolean;
   Obj: Word;
@@ -855,20 +857,20 @@ begin
   begin
     if ObjectIsCorn(Obj) then
     begin
-      gTerrain.SetField(aLoc, fID, aFieldType, Obj - 54, True, aKeepOldObject);
+      gTerrain.SetField(aLoc, fID, aFieldType, Obj - 54, True, aKeepOldObject, aRemoveOverlay);
       IsFieldSet := True;
     end;
   end else if (aFieldType = ftWine) and not gTerrain.TileIsWineField(aLoc) then
   begin
     if ObjectIsWine(Obj) then
     begin
-      gTerrain.SetField(aLoc, fID, aFieldType, Obj - 54, True, aKeepOldObject);
+      gTerrain.SetField(aLoc, fID, aFieldType, Obj - 54, True, aKeepOldObject, aRemoveOverlay);
       IsFieldSet := True;
     end;
   end;
 
   if not IsFieldSet then
-    gTerrain.SetField(aLoc, fID, aFieldType, aStage, True, aKeepOldObject);
+    gTerrain.SetField(aLoc, fID, aFieldType, aStage, True, aKeepOldObject, aRemoveOverlay);
 end;
 
 
@@ -1312,6 +1314,8 @@ end;
 //Does the player has any assets (without assets player is harmless)
 function TKMHand.HasAssets: Boolean;
 begin
+  if Self = nil then Exit(False);
+  
   Result := (Houses.Count > 0) or (Units.Count > 0) or (GetFieldsCount > 0)
             or NeedToChooseFirstStorehouse; //RMG - added ChooseLocation.Allowed option as a valid player
 end;

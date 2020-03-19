@@ -54,9 +54,8 @@ type
     IsNewMap: Boolean;  // set True for new empty map
     WasSaved: Boolean; // set True when at least 1 map save has been done
 
-    constructor Create;
+    constructor Create(aTerrainPainter: TKMTerrainPainter);
     destructor Destroy; override;
-    property TerrainPainter: TKMTerrainPainter read fTerrainPainter;
     property Deposits: TKMDeposits read fDeposits;
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
@@ -95,7 +94,7 @@ const
 
 
 { TKMMapEditor }
-constructor TKMMapEditor.Create;
+constructor TKMMapEditor.Create(aTerrainPainter: TKMTerrainPainter);
 var
   I: Integer;
 begin
@@ -112,7 +111,7 @@ begin
 
   fDeposits := TKMDeposits.Create;
 
-  fTerrainPainter := TKMTerrainPainter.Create;
+  fTerrainPainter := aTerrainPainter;
   fSelection := TKMSelection.Create(fTerrainPainter);
 
   fVisibleLayers := [mlObjects, mlHouses, mlUnits, mlOverlays, mlDeposits];
@@ -128,7 +127,6 @@ destructor TKMMapEditor.Destroy;
 var
   I: Integer;
 begin
-  FreeAndNil(fTerrainPainter);
   FreeAndNil(fDeposits);
   FreeAndNil(fSelection);
 
@@ -374,7 +372,11 @@ begin
 
   //Delete tile overlay (road/corn/wine)
   if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
-    gTerrain.RemRoad(P);
+    gTerrain.RemRoad(P)
+  else
+  if gTerrain.Land[P.Y,P.X].TileOverlay <> toNone then
+    gTerrain.SetOverlay(P, toNone, True);
+
   if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
     gTerrain.RemField(P);
 end;
@@ -493,7 +495,11 @@ begin
     cmErase:      begin
                     gHands.RemAnyHouse(P);
                     if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
-                      gTerrain.RemRoad(P);
+                      gTerrain.RemRoad(P)
+                    else
+                    if gTerrain.Land[P.Y,P.X].TileOverlay <> toNone then
+                      gTerrain.SetOverlay(P, toNone, True);
+
                     if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                       gTerrain.RemField(P);
                   end;
@@ -539,7 +545,7 @@ begin
   if not aOverMap then
   begin
     //Still need to make a checkpoint since painting has now stopped
-    if gGameCursor.Mode in [cmElevate, cmEqualize, cmBrush, cmObjects, cmTiles] then
+    if gGameCursor.Mode in [cmElevate, cmEqualize, cmBrush, cmObjects, cmTiles, cmOverlays] then
       fTerrainPainter.MakeCheckpoint;
     Exit;
   end;
@@ -566,7 +572,8 @@ begin
                               end;
                 cmElevate, cmEqualize,
                 cmBrush, cmObjects,
-                cmTiles:      fTerrainPainter.MakeCheckpoint;
+                cmTiles,
+                cmOverlays:   fTerrainPainter.MakeCheckpoint;
                 cmMagicWater: fTerrainPainter.MagicWater(P);
                 cmEyedropper: begin
                                 fTerrainPainter.Eyedropper(P);
@@ -591,7 +598,11 @@ begin
                 cmErase:      begin
                                 gHands.RemAnyHouse(P);
                                 if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
-                                  gTerrain.RemRoad(P);
+                                  gTerrain.RemRoad(P)
+                                else
+                                if gTerrain.Land[P.Y,P.X].TileOverlay <> toNone then
+                                  gTerrain.SetOverlay(P, toNone, True);
+
                                 if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                                   gTerrain.RemField(P);
                               end;
@@ -943,9 +954,9 @@ begin
     if gGameCursor.Mode = cmErase then
       if gTerrain.TileIsCornField(P)
         or gTerrain.TileIsWineField(P)
-        or (gTerrain.Land[P.Y,P.X].TileOverlay=toRoad)
+        or (gTerrain.Land[P.Y,P.X].TileOverlay = toRoad)
         or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
-        gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
+        gRenderPool.RenderWireTile(P, icCyan) //Cyan quad
       else
         gRenderPool.RenderSpriteOnTile(P, TC_BLOCK); //Red X
 

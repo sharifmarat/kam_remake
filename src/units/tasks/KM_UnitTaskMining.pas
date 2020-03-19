@@ -14,6 +14,7 @@ type
   private
     fBeastID: Byte;
     fWorkPlan: TKMUnitWorkPlan;
+    fDistantResAcquired: Boolean; //Was distant resorce acquired ? (stone / fish / wood / corn / wine)
     function ResourceExists: Boolean;
     function ResourceTileIsLocked: Boolean;
     function ChooseToCutOrPlant: TKMPlantAct;
@@ -45,6 +46,7 @@ begin
 
   fType := uttMining;
   fWorkPlan := TKMUnitWorkPlan.Create;
+  fDistantResAcquired := False;
   fBeastID  := 0;
 
   fWorkPlan.FindPlan( fUnit,
@@ -112,6 +114,7 @@ begin
   LoadStream.CheckMarker('TaskMining');
   fWorkPlan := TKMUnitWorkPlan.Create;
   fWorkPlan.Load(LoadStream);
+  LoadStream.Read(fDistantResAcquired);
   LoadStream.Read(fBeastID);
 end;
 
@@ -223,6 +226,7 @@ const
 var
   D: TKMDirection;
   TimeToWork, StillFrame: Integer;
+  actWalkFrom: TKMUnitActionType;
   ResAcquired: Boolean;
 begin
   Result := trTaskContinues;
@@ -234,10 +238,16 @@ begin
     Exit;
   end;
 
+  if fDistantResAcquired then
+    actWalkFrom := WorkPlan.ActionWalkFrom
+  else
+    actWalkFrom := WorkPlan.ActionWalkTo;
+
   with fUnit do
   case fPhase of
     0:  if WorkPlan.HasToWalk then
         begin
+          fDistantResAcquired := False; // we will set distant resource as acquired when we gather it
           Home.SetState(hstEmpty);
           SetActionGoIn(WorkPlan.ActionWalkTo, gdGoOutside, Home); //Walk outside the house
 
@@ -247,6 +257,7 @@ begin
         end
         else
         begin
+          fDistantResAcquired := True; // there is no distant resource, so its acquired by default
           fPhase := SkipWalk; //Skip walking part if there's no need in it, e.g. CoalMiner or Baker
           SetActionLockedStay(0, uaWalk);
           Exit;
@@ -290,25 +301,26 @@ begin
        case WorkPlan.GatheringScript of
          gsWoodCutterCut:  SetActionLockedStay(10, WorkPlan.ActionWorkType, true, 5, 5); //Wait for the tree to start falling down
          gsFisherCatch:    SetActionLockedStay(15, uaWork, false); //Pull the line in
-         else               SetActionLockedStay(0, WorkPlan.ActionWorkType);
+         else              SetActionLockedStay(0, WorkPlan.ActionWorkType);
        end;
     6: begin
          StillFrame := 0;
          case WorkPlan.GatheringScript of //Perform special tasks if required
-           gsStoneCutter:      gTerrain.DecStoneDeposit(KMPoint(WorkPlan.Loc.X,WorkPlan.Loc.Y-1));
+           gsStoneCutter:      fDistantResAcquired := gTerrain.DecStoneDeposit(KMPoint(WorkPlan.Loc.X,WorkPlan.Loc.Y-1));
            gsFarmerSow:        gTerrain.SowCorn(WorkPlan.Loc);
-           gsFarmerCorn:       gTerrain.CutCorn(WorkPlan.Loc);
-           gsFarmerWine:       gTerrain.CutGrapes(WorkPlan.Loc);
+           gsFarmerCorn:       fDistantResAcquired := gTerrain.CutCorn(WorkPlan.Loc);
+           gsFarmerWine:       fDistantResAcquired := gTerrain.CutGrapes(WorkPlan.Loc);
            gsFisherCatch:      begin
-                                  gTerrain.CatchFish(KMPointDir(WorkPlan.Loc,WorkPlan.WorkDir));
-                                  WorkPlan.ActionWorkType := uaWalkTool;
+                                  fDistantResAcquired := gTerrain.CatchFish(KMPointDir(WorkPlan.Loc,WorkPlan.WorkDir));
+                                  if fDistantResAcquired then
+                                    WorkPlan.ActionWorkType := uaWalkTool;
                                 end;
            gsWoodCutterPlant:  //If the player placed a house plan here while we were digging don't place the
                                 //tree so the house plan isn't canceled. This is actually the same as TSK/TPR IIRC
                                 if TKMUnitCitizen(fUnit).CanWorkAt(WorkPlan.Loc, gsWoodCutterPlant) then
                                   gTerrain.SetObject(WorkPlan.Loc, gTerrain.ChooseTreeToPlant(WorkPlan.Loc));
            gsWoodCutterCut:    begin
-                                  gTerrain.FallTree(KMGetVertexTile(WorkPlan.Loc, WorkPlan.WorkDir));
+                                  fDistantResAcquired := gTerrain.FallTree(KMGetVertexTile(WorkPlan.Loc, WorkPlan.WorkDir));
                                   StillFrame := 5;
                                 end;
          end;
@@ -316,10 +328,10 @@ begin
        end;
     7: begin
          //Removing the tree and putting a stump is handled in gTerrain.UpdateState from FallingTrees list
-         SetActionWalkToSpot(Home.PointBelowEntrance, WorkPlan.ActionWalkFrom); //Go home
+         SetActionWalkToSpot(Home.PointBelowEntrance, actWalkFrom); //Go home
          Thought := thHome;
        end;
-    8: SetActionGoIn(WorkPlan.ActionWalkFrom, gdGoInside, Home); //Go inside
+    8: SetActionGoIn(actWalkFrom, gdGoInside, Home); //Go inside
 
     {Unit back at home and can process its booty now}
     9:    begin
@@ -328,8 +340,11 @@ begin
             Home.SetState(hstWork);
 
             //Take required resources
-            if WorkPlan.Resource1 <> wtNone then Home.ResTakeFromIn(WorkPlan.Resource1, WorkPlan.Count1);
-            if WorkPlan.Resource2 <> wtNone then Home.ResTakeFromIn(WorkPlan.Resource2, WorkPlan.Count2);
+            if WorkPlan.Resource1 <> wtNone then
+              Home.ResTakeFromIn(WorkPlan.Resource1, WorkPlan.Count1);
+            if WorkPlan.Resource2 <> wtNone then
+              Home.ResTakeFromIn(WorkPlan.Resource2, WorkPlan.Count2);
+
             gHands[fUnit.Owner].Stats.WareConsumed(WorkPlan.Resource1, WorkPlan.Count1);
             gHands[fUnit.Owner].Stats.WareConsumed(WorkPlan.Resource2, WorkPlan.Count2);
 
@@ -340,7 +355,7 @@ begin
               TKMHouseSwineStable(Home).TakeBeast(fBeastID);
             end;
 
-            if WorkPlan.ActCount >= fPhase2 then
+            if fDistantResAcquired and (WorkPlan.ActCount >= fPhase2) then
             begin
               Home.CurrentAction.SubActionWork(WorkPlan.HouseAct[fPhase2].Act);
               //Keep unit idling till next Phase, Idle time is -1 to compensate TaskExecution Phase
@@ -362,7 +377,7 @@ begin
               fBeastID := TKMHouseSwineStable(Home).FeedBeasts;
 
             //Keep on working
-            if fPhase2 <= WorkPlan.ActCount then
+            if fDistantResAcquired and (fPhase2 <= WorkPlan.ActCount) then
             begin
               Home.CurrentAction.SubActionWork(WorkPlan.HouseAct[fPhase2].Act);
               if fPhase < WorkPlan.ActCount then
@@ -383,12 +398,17 @@ begin
               TKMHouseSwineStable(Home).TakeBeast(fBeastID); //Take the horse after feeding
 
             case WorkPlan.GatheringScript of
+              gsWoodCutterCut,
+              gsFarmerCorn,
+              gsFarmerWine,
+              gsStoneCutter,
+              gsFisherCatch:  ResAcquired := fDistantResAcquired; // fResAcquired was set earlier when we tried to get resource
               gsCoalMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wtCoal);
               gsGoldMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wtGoldOre);
               gsIronMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wtIronOre);
               gsSwineBreeder: ResAcquired := fBeastID <> 0;
               gsHorseBreeder: ResAcquired := fBeastID <> 0;
-              else             ResAcquired := true;
+              else            ResAcquired := True;
             end;
 
             if ResAcquired then
@@ -415,6 +435,7 @@ begin
   inherited;
   SaveStream.PlaceMarker('TaskMining');
   fWorkPlan.Save(SaveStream);
+  SaveStream.Write(fDistantResAcquired);
   SaveStream.Write(fBeastID);
 end;
 

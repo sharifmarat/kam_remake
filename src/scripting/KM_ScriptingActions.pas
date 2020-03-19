@@ -2,7 +2,7 @@ unit KM_ScriptingActions;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
+  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks, KM_ResTileset,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
   KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
@@ -102,18 +102,28 @@ type
 
     procedure Log(const aText: AnsiString);
 
+    procedure MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean);
+    procedure MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+    procedure MapBrushMagicWater(X, Y: Integer);
+    procedure MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
+                               aRandomTiles, aOverrideCustomTiles: Boolean;
+                               aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+
     function MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
     function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTileHeightSet(X, Y, Height: Integer): Boolean;
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
+    function MapTileOverlaySet(X, Y: Integer; aOverlay: TKMTileOverlay; aOverwrite: Boolean): Boolean;
+
+    procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
 
     procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
     procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
-
-    procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
 
     function PlanAddField(aPlayer, X, Y: Word): Boolean;
     function PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean;
@@ -179,7 +189,7 @@ uses
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
-  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor, KM_ResTileset;
+  KM_HouseWoodcutters, KM_HouseTownHall, KM_Supervisor;
 
 const
   MIN_SOUND_AT_LOC_RADIUS = 28;
@@ -2548,6 +2558,169 @@ begin
 end;
 
 
+//* Version: 11000
+//* Apply brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aSize: brush size
+//* aTerKind: terrain kind
+//* aRandomTiles: use random tiles
+//* aOverrideCustomTiles: override tiles, that were manually set from tiles table
+procedure TKMScriptActions.MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
+                                    aRandomTiles, aOverrideCustomTiles: Boolean);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetBrushParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, aTerKind, aRandomTiles, aOverrideCustomTiles);
+      gGame.TerrainPainter.ApplyBrush;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapBrushApply', [X, Y, Byte(aSquare), aSize, Byte(aTerKind),
+                                                Byte(aRandomTiles), Byte(aOverrideCustomTiles)]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply Elevation change brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aRaise: raise elevation or lower it
+//* aSize: brush size
+//* aSlope: elevation slope
+//* aSpeed: elevation change speed
+procedure TKMScriptActions.MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetHeightParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, False, aRaise, aSlope, aSpeed);
+      gGame.TerrainPainter.ApplyHeight;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapElevationApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply Equalize brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aSize: brush size
+//* aSlope: elevation slope
+//* aSpeed: elevation change speed
+procedure TKMScriptActions.MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetHeightParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, True, True, aSlope, aSpeed);
+      gGame.TerrainPainter.ApplyHeight;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapEqualizeApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply Flatten brush from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aSize: brush size
+//* aSlope: elevation slope
+//* aSpeed: elevation change speed
+procedure TKMScriptActions.MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetHeightParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, True, False, aSlope, aSpeed);
+      gGame.TerrainPainter.ApplyHeight;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapFlattenApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply magic water brush from MapEd to the map
+//* X,Y: coodinates
+procedure TKMScriptActions.MapBrushMagicWater(X, Y: Integer);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.MagicWater(KMPoint(X, Y));
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapBrushMagicWater', [X, Y]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Apply brush with mask specified from MapEd to the map
+//* X,Y: coodinates
+//* aSquare: is brush square or circle
+//* aSize: brush size
+//* aTerKind: terrain kind
+//* aRandomTiles: use random tiles
+//* aOverrideCustomTiles: override tiles, that were manually set from tiles table
+//* aBrushMask: brush mask type
+//* aBlendingLvl: blending level for masks. Allowed values are from 0 to 100
+//* aUseMagicBrush: enable/disable magic brush to change/remove brush mask from the area
+procedure TKMScriptActions.MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
+                                            aRandomTiles, aOverrideCustomTiles: Boolean;
+                                            aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+    begin
+      gGame.TerrainPainter.SetBrushParams(X, Y, TKMMapEdShape(Byte(aSquare)), aSize, aTerKind, aRandomTiles, aOverrideCustomTiles,
+                                          aBrushMask, aBlendingLvl, aUseMagicBrush);
+      gGame.TerrainPainter.ApplyBrush;
+    end
+    else
+    begin
+      LogParamWarning('Actions.MapBrushMaskApply', [X, Y, Byte(aSquare), aSize, Byte(aTerKind), Byte(aRandomTiles),
+                                                    Byte(aOverrideCustomTiles), Byte(aBrushMask), aBlendingLvl, Byte(aUseMagicBrush)]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6587
 //* Sets the tile type and rotation at the specified XY coordinates.
 //* Tile IDs can be seen by hovering over the tiles on the terrain tiles tab in the map editor.
@@ -2838,6 +3011,68 @@ begin
 end;
 
 
+//* Version: 11000
+//* Sets the terrain overlay on the tile at the specified XY coordinates.
+//* aOverwrite = False means safe way to change tile overlay, disallowing to set it on top of old fields/roads
+//* aOverwrite = True allows to destroy roads and re-dig fields (like in game we can build road on top of field and when laborer dies there is a digged overlay left)
+function TKMScriptActions.MapTileOverlaySet(X, Y: Integer; aOverlay: TKMTileOverlay; aOverwrite: Boolean): Boolean;
+begin
+  try
+    Result := True;
+    if gTerrain.TileInMapCoords(X, Y)
+      and (aOverlay in [Low(TKMTileOverlay)..High(TKMTileOverlay)]) then
+      gTerrain.SetOverlay(KMPoint(X, Y), aOverlay, aOverwrite)
+    else
+    begin
+      LogParamWarning('Actions.MapTileOverlaySet', [X, Y, Byte(aOverlay), Byte(aOverwrite)]);
+      Result := False;
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 6216
+//* Sets the trade in the specified market
+procedure TKMScriptActions.MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
+var
+  H: TKMHouse;
+  ResFrom, ResTo: TKMWareType;
+begin
+  try
+    if (aMarketID > 0)
+    and (aFrom in [Low(WareIndexToType)..High(WareIndexToType)])
+    and (aTo in [Low(WareIndexToType)..High(WareIndexToType)]) then
+    begin
+      H := fIDCache.GetHouse(aMarketID);
+      ResFrom := WareIndexToType[aFrom];
+      ResTo := WareIndexToType[aTo];
+      if (H is TKMHouseMarket)
+        and not H.IsDestroyed
+        and H.IsComplete
+        and TKMHouseMarket(H).AllowedToTrade(ResFrom)
+        and TKMHouseMarket(H).AllowedToTrade(ResTo) then
+      begin
+        if (TKMHouseMarket(H).ResFrom <> ResFrom) or (TKMHouseMarket(H).ResTo <> ResTo) then
+        begin
+          TKMHouseMarket(H).ResOrder[0] := 0; //First we must cancel the current trade
+          TKMHouseMarket(H).ResFrom := ResFrom;
+          TKMHouseMarket(H).ResTo := ResTo;
+        end;
+        TKMHouseMarket(H).ResOrder[0] := aAmount; //Set the new trade
+      end;
+    end
+    else
+      LogParamWarning('Actions.MarketSetTrade', [aMarketID, aFrom, aTo, aAmount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5333
 //* Sets text overlaid on top left of screen.
 //* If the player index is -1 it will be set for all players.
@@ -2919,45 +3154,6 @@ begin
     end
     else
       LogParamWarning('Actions.OverlayTextAppendFormatted: '+UnicodeString(aText), [aPlayer]);
-  except
-    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
-    raise;
-  end;
-end;
-
-
-//* Version: 6216
-//* Sets the trade in the specified market
-procedure TKMScriptActions.MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
-var
-  H: TKMHouse;
-  ResFrom, ResTo: TKMWareType;
-begin
-  try
-    if (aMarketID > 0)
-    and (aFrom in [Low(WareIndexToType)..High(WareIndexToType)])
-    and (aTo in [Low(WareIndexToType)..High(WareIndexToType)]) then
-    begin
-      H := fIDCache.GetHouse(aMarketID);
-      ResFrom := WareIndexToType[aFrom];
-      ResTo := WareIndexToType[aTo];
-      if (H is TKMHouseMarket)
-        and not H.IsDestroyed
-        and H.IsComplete
-        and TKMHouseMarket(H).AllowedToTrade(ResFrom)
-        and TKMHouseMarket(H).AllowedToTrade(ResTo) then
-      begin
-        if (TKMHouseMarket(H).ResFrom <> ResFrom) or (TKMHouseMarket(H).ResTo <> ResTo) then
-        begin
-          TKMHouseMarket(H).ResOrder[0] := 0; //First we must cancel the current trade
-          TKMHouseMarket(H).ResFrom := ResFrom;
-          TKMHouseMarket(H).ResTo := ResTo;
-        end;
-        TKMHouseMarket(H).ResOrder[0] := aAmount; //Set the new trade
-      end;
-    end
-    else
-      LogParamWarning('Actions.MarketSetTrade', [aMarketID, aFrom, aTo, aAmount]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

@@ -28,6 +28,7 @@ type
     procedure TriangleOnTerrain(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
     procedure TileTerrainIDs(const aRect: TKMRect);
     procedure TileTerrainKinds(const aRect: TKMRect);
+    procedure TileTerrainOverlays(const aRect: TKMRect);
     procedure TileTerrainJamMeter(const aRect: TKMRect);
     procedure Passability(const aRect: TKMRect; aPass: Byte);
     procedure RenderResizeMap(const aExceptRect: TKMRect);
@@ -319,7 +320,7 @@ procedure TRenderAux.TileTerrainKinds(const aRect: TKMRect);
   begin
     if gGame.IsMapEditor then
     begin
-      TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[Y,X].TerKind;
+      TerKind := gGame.TerrainPainter.LandTerKind[Y,X].TerKind;
       case TerKind of
         tkCustom: TerKindStr := 'C';
         else      TerKindStr := IntToStr(BASE_TERRAIN[TerKind]);
@@ -353,6 +354,16 @@ begin
     DrawTerKind(aRect.Right + 1,I);
   for J := aRect.Left to aRect.Right do
     DrawTerKind(J,aRect.Bottom + 1 );
+end;
+
+
+procedure TRenderAux.TileTerrainOverlays(const aRect: TKMRect);
+var
+  I, J: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      Text(J, I, IntToStr(Byte(gTerrain.Land[I,J].TileOverlay)), icOrange);
 end;
 
 

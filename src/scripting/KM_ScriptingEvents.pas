@@ -39,8 +39,8 @@ type
     procedure CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer);
     function GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
 
-    procedure HandleScriptProcCallError(aEx: Exception);
-    procedure CallEventProc(const aProc: TMethod; const aIntParams: array of Integer);
+    procedure HandleScriptProcCallError(aMethod: String);
+    procedure CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer);
     function MethodAssigned(aProc: TMethod): Boolean; overload; inline;
     function MethodAssigned(aEventType: TKMScriptEventType): Boolean; overload; inline;
     function MethodAssigned(const aCmdName: AnsiString): Boolean; overload; inline;
@@ -375,7 +375,7 @@ var
   I: Integer;
 begin
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-    CallEventProc(fEventHandlers[aEventType][I].Handler, aParams);
+    CallEventProc(fEventHandlers[aEventType][I], aParams);
 end;
 
 
@@ -458,7 +458,7 @@ end;
 
 
 //This procedure allows us to keep the exception handling code in one place
-procedure TKMScriptEvents.HandleScriptProcCallError(aEx: Exception);
+procedure TKMScriptEvents.HandleScriptProcCallError(aMethod: String);//aEx: Exception);
 var
   ExceptionProc: TPSProcRec;
   InternalProc: TPSInternalProcRec;
@@ -467,16 +467,20 @@ var
   FileName: tbtstring;
   ErrorMessage: TKMScriptErrorMessage;
   Res: TPSLineInfoResults;
+  e: Exception;
 begin
+  e := Exception(AcquireExceptionObject);
+  e.Message := e.Message + ' raised in ' + AMethod;
   if ExceptionOutsideScript then
   begin
     ExceptionOutsideScript := False; //Reset
-    raise aEx; //Exception was in game code not script, so pass up to madExcept
+    raise e at ExceptAddr; //Exception was in game code not script, so pass up to madExcept
   end
   else
   begin
+    ReleaseExceptionObject;
     DetailedErrorStr := '';
-    MainErrorStr := 'Exception in script: ''' + aEx.Message + '''';
+    MainErrorStr := 'Exception in script: ''' + e.Message + '''';
     ExceptionProc := fExec.GetProcNo(fExec.ExceptionProcNo);
     if ExceptionProc is TPSInternalProcRec then
     begin
@@ -503,22 +507,21 @@ begin
 end;
 
 
-procedure TKMScriptEvents.CallEventProc(const aProc: TMethod; const aIntParams: array of Integer);
+procedure TKMScriptEvents.CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer);
 begin
-  if not MethodAssigned(aProc) then Exit;
+  if not MethodAssigned(aProc.Handler) then Exit;
 
   try
     case Length(aIntParams) of
-      0: TKMScriptEvent(aProc);
-      1: TKMScriptEvent1I(aProc)(aIntParams[0]);
-      2: TKMScriptEvent2I(aProc)(aIntParams[0], aIntParams[1]);
-      3: TKMScriptEvent3I(aProc)(aIntParams[0], aIntParams[1], aIntParams[2]);
-      4: TKMScriptEvent4I(aProc)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
+      0: TKMScriptEvent(aProc.Handler);
+      1: TKMScriptEvent1I(aProc.Handler)(aIntParams[0]);
+      2: TKMScriptEvent2I(aProc.Handler)(aIntParams[0], aIntParams[1]);
+      3: TKMScriptEvent3I(aProc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2]);
+      4: TKMScriptEvent4I(aProc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
       else raise Exception.Create('Unexpected Length(aParams)');
     end;
   except
-    on E: Exception do
-      HandleScriptProcCallError(E);
+    HandleScriptProcCallError('game code called by script event handler ''' + aProc.ProcName + '''');
   end;
 end;
 
@@ -531,8 +534,7 @@ begin
       fConsoleCommands[AnsiString(LowerCase(aCmdName))].TryCallProcedure(aHandID, aParams);
       Result := True;
     except
-      on E: Exception do
-        HandleScriptProcCallError(E);
+      HandleScriptProcCallError('game code called by console command handler ''' + aCmdName + '''');
     end;
 end;
 

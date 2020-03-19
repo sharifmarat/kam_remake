@@ -4,7 +4,7 @@ interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_HandsCollection, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_MapTypes,
-  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
+  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_Terrain;
 
 
 type
@@ -110,6 +110,8 @@ type
     function MapTileRotation(X, Y: Integer): Integer;
     function MapTileHeight(X, Y: Integer): Integer;
     function MapTileObject(X, Y: Integer): Integer;
+    function MapTileOverlay(X, Y: Integer): TKMTileOverlay;
+    function MapTileOwner(X, Y: Integer): Integer;
     function MapTilePassability(X, Y: Integer; aPassability: Byte): Boolean;
     function MapWidth: Integer;
     function MapHeight: Integer;
@@ -189,7 +191,7 @@ type
 
 implementation
 uses
-  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_UnitWarrior,
+  KM_AI, KM_Game, KM_FogOfWar, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall,
@@ -2929,6 +2931,46 @@ begin
     begin
       Result := -1;
       LogParamWarning('States.MapTileObject', [X, Y]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000+
+//* Returns the terrain overlay on the tile at the specified XY coordinates.
+//* Result: tile overlay
+function TKMScriptStates.MapTileOverlay(X, Y: Integer): TKMTileOverlay;
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+      Result := gTerrain.Land[Y, X].TileOverlay
+    else
+    begin
+      Result := toNone;
+      LogParamWarning('States.MapTileOverlay', [X, Y]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000+
+//* Returns the tile owner at the specified XY coordinates.
+//* Result: tile owner ID
+function TKMScriptStates.MapTileOwner(X, Y: Integer): Integer;
+begin
+  try
+    if gTerrain.TileInMapCoords(X, Y) then
+      Result := gTerrain.Land[Y, X].TileOwner
+    else
+    begin
+      Result := -1;
+      LogParamWarning('States.MapTileOwner', [X, Y]);
     end;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception

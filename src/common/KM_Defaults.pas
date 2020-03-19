@@ -133,6 +133,7 @@ var
   SHOW_FPS                :Boolean = False; //Show FPS
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
+  SHOW_TERRAIN_OVERLAYS   :Boolean = False; //Show terrain tile overlays
   SHOW_TERRAIN_TILES_GRID :Boolean = False; //Show terrain tiles grid
   SHOW_BRUSH_APPLY_AREA   :Boolean = False; //Show brushes apply area
   SHOW_TERRAIN_WIRES      :Boolean = False; //Makes terrain height visible
@@ -251,6 +252,7 @@ var
 
 const
   TERRAIN_MAX_BLENDING_LEVEL = 100;
+  MAPED_BRUSH_MAX_SIZE = 32;
 
   //Here we store options that are hidden somewhere in code
   //Unit condition
@@ -369,8 +371,8 @@ type
     cmEyedropper, //Terrain eyedropper
     cmPaintBucket, //PaintBucket - change color(team) for map objects
     cmUniversalEraser, //Universal eraser for units/groups/houses/terrain objects/roads and fields (corn/wine)
-    cmRotateTile  //Rotate terrain tile
-    );
+    cmRotateTile,  //Rotate terrain tile
+    cmOverlays);  //Tile overlays
 
 type
   // How cursor field placing will act (depends on which tile LMB was pressed)
@@ -478,6 +480,8 @@ type
     wcFish, //Required for fisherman finding fish in a pond, NOT for fish movement (uses steering). Updated ONLY on load because water doesn't change.
     wcWork  //CanWorker areas
   );
+
+  TKMWalkConnectSet = set of TKMWalkConnect;
 
 
 const
