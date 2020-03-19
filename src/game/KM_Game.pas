@@ -625,6 +625,9 @@ end;
 
 
 procedure TKMGame.AfterStart;
+var
+  I: Integer;
+  ViewPos: TKMPointF;
 begin
   gLog.AddTime('After game start');
   gHands.AfterMissionInit(fGameMode <> gmMapEd); //Don't flatten roads in MapEd
@@ -647,7 +650,19 @@ begin
   //When everything is ready we can update UI
   fActiveInterface.SyncUI;
   if IsMapEditor then
-    fActiveInterface.SyncUIView(KMPointF(gTerrain.MapX / 2, gTerrain.MapY / 2))
+  begin
+    ViewPos := KMPointF(gTerrain.MapX / 2, gTerrain.MapY / 2);
+    //Find first hand with assets and set viewport to its center screen
+    for I := 0 to gHands.Count - 1 do
+      if gHands[I].HasAssets then
+      begin
+        gMySpectator.HandID := I;
+        ViewPos := KMPointF(gMySpectator.Hand.CenterScreen);
+        Break;
+      end;
+
+    fActiveInterface.SyncUIView(ViewPos);
+  end
   else
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
