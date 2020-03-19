@@ -501,7 +501,7 @@ begin
     fResourceIn[I] := 0;
     fResourceDeliveryCount[I] := 0;
     fResourceOut[I] := 0;
-    fResourceOrder[I] :=0;
+    fResourceOrder[I] := 0;
   end;
 
   for I := 0 to 19 do
