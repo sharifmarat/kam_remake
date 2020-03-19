@@ -1408,21 +1408,19 @@ end;
 procedure TKMTerrainPainter.ApplyHeight;
 var
   I, K: Integer;
-  Tmp: Single;
+  Tmp, base: Single;
   R: TKMRect;
-  Loc : TKMPointF;
 begin
-  Loc := KMPointF(fMapXn, fMapYn); // Mouse point
-  for I := Max((Round(Loc.Y) - fSize), 1) to Min((Round(Loc.Y) + fSize), gTerrain.MapY) do
-  for K := Max((Round(Loc.X) - fSize), 1) to Min((Round(Loc.X) + fSize), gTerrain.MapX) do
+  for I := Max(fMapYn - fSize, 1) to Min(fMapYn + fSize, gTerrain.MapY) do
+  for K := Max(fMapXn - fSize, 1) to Min(fMapXn + fSize, gTerrain.MapX) do
   begin
-
+    base := -1;
     // We have square area basing on mouse point +/- radius
     // Now we need to check whether point is inside brush type area(circle etc.)
     // Every MapEdShape case has it's own check routine
     case fShape of
-      hsCircle: Tmp := Max((1 - GetLength(I - Round(Loc.Y), Round(K - Loc.X)) / fSize), 0);   // Negative number means that point is outside circle
-      hsSquare: Tmp := 1 - Max(Abs(I - Round(Loc.Y)), Abs(K - Round(Loc.X))) / fSize;
+      hsCircle: Tmp := Max((1 - GetLength(I - fMapYn, K - fMapXn) / fSize), 0);   // Negative number means that point is outside circle
+      hsSquare: Tmp := 1 - Max(Abs(I - fMapYn), Abs(K - fMapXn)) / fSize;
       else      Tmp := 0;
     end;
 
@@ -1450,27 +1448,32 @@ begin
       end else
       // START Flatten
       begin
-      //Flatten compares heights of mouse click and active tile then it increases/decreases height of active tile
-        if (gTerrain.Land[I,K].Height < gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height) then
-          Tmp := - Min(gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height - gTerrain.Land[I,K].Height, Tmp)
+        //Base value for flatten terrain
+        base := gTerrain.Land[fMapYn, fMapXn].Height;
+
+        //Flatten compares heights of mouse click and active tile then it increases/decreases height of active tile
+        if (gTerrain.Land[I,K].Height < base) then
+          Tmp := - Min(base - gTerrain.Land[I,K].Height, Tmp)
         else
-          if (gTerrain.Land[I,K].Height > gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height) then
-            Tmp := Min(gTerrain.Land[I,K].Height - gTerrain.Land[Max(trunc(Loc.Y), 1), Max(trunc(Loc.X), 1)].Height, Tmp)
-          else
-            Tmp := 0;
+        if (gTerrain.Land[I,K].Height > base) then
+          Tmp := Min(gTerrain.Land[I,K].Height - base, Tmp)
+        else
+          Tmp := 0;
       end;
       //END Flatten
     end;
     //COMMON PART FOR Elevate/Lower and Unequalize/Flatten
     //Compute resulting floating-point height
-    Tmp := power(abs(Tmp),(fSlope+1)/6)*sign(Tmp); //Modify slopes curve
+    Tmp := Power(Abs(Tmp),(fSlope+1)/6)*Sign(Tmp); //Modify slopes curve
     Tmp := Tmp * (4.75/14*(fSpeed - 1) + 0.25);
     Tmp := EnsureRange(gTerrain.Land[I,K].Height + LandTerKind[I,K].HeightAdd/255 + Tmp * (Byte(fRaise)*2 - 1), 0, 100); // (Byte(aRaise)*2 - 1) - LeftButton pressed it equals 1, otherwise equals -1
-    gTerrain.Land[I,K].Height := trunc(Tmp);
-    LandTerKind[I,K].HeightAdd := round(frac(Tmp)*255); //write fractional part in 0..255 range (1Byte) to save us mem
+
+    //For flatten only
+    gTerrain.Land[I,K].Height := Trunc(Tmp);
+    LandTerKind[I,K].HeightAdd := Round(Frac(Tmp)*255); //write Fractional part in 0..255 range (1Byte) to save us mem
   end;
 
-  R := KMRectGrow(KMRect(Loc), fSize);
+  R := KMRectGrow(KMRect(KMPointF(fMapXn, fMapYn)), fSize);
   gTerrain.UpdateLighting(R);
   gTerrain.UpdatePassability(R);
 end;
