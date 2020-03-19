@@ -1440,7 +1440,9 @@ begin
           if (gTerrain.Land[I,K].Height > gTerrain.Land[I-1,K+1].Height) then
             Tmp := Min(gTerrain.Land[I,K].Height - gTerrain.Land[I-1,K+1].Height, Tmp)
           else
-            Tmp := 0;
+          if Tmp <> 0 then // Tmp = 0 outside of hsCircle area
+            //Add random value (-1/0/1) so absolutely flat surface will be unequlized too
+            Tmp := KamRandom(2, 'TKMTerrainPainter.ApplyHeight')*3 - 2;
         end
         else
           Tmp := 0;
