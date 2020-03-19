@@ -89,6 +89,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    procedure AddCampaignVideo(aCampaignPath: string; aVideoName: String);
     procedure AddMissionVideo(aMissionFile: string; aVideoName: String);
     procedure AddVideo(AVideoName: String);
     procedure Play;
@@ -194,6 +195,19 @@ begin
   inherited;
 end;
 
+
+procedure TKMVideoPlayer.AddCampaignVideo(aCampaignPath: string; aVideoName: String);
+var
+  MissionPath, FileName: string;
+  Path: string;
+begin
+{$IFDEF VIDEOS}
+  if TryGetPathFile(aCampaignPath + aVideoName, Path) or
+    TryGetPathFile(VIDEOFILE_PATH + aVideoName, Path) then
+    FVideoList.Add(Path);
+{$ENDIF}
+end;
+
 procedure TKMVideoPlayer.AddMissionVideo(aMissionFile: string; aVideoName: String);
 var
   MissionPath, FileName: string;
@@ -204,7 +218,7 @@ begin
   FileName := ExtractFileName(ChangeFileExt(aMissionFile, '')) + '.' + aVideoName;
 
   if TryGetPathFile(MissionPath + FileName, Path) or
-    TryGetPathFile(MissionPath + aVideoName, Path)or
+    TryGetPathFile(MissionPath + aVideoName, Path) or
     TryGetPathFile(VIDEOFILE_PATH + aVideoName, Path) then
     FVideoList.Add(Path);
 {$ENDIF}
@@ -543,29 +557,38 @@ begin
 end;
 
 function TKMVideoPlayer.TryGetPathFile(aPath: string; var aFileName: string): Boolean;
-  var
-    SearchRec: TSearchRec;
-    Ext, FileName, Path: string;
+var
+  i: Integer;
+  SearchRec: TSearchRec;
+  FileName, Path, f: string;
+  LocalePostfixes: TStringList;
+begin
+  Result := False;
+  aFileName := '';
+
+  Path := ExtractFilePath(aPath);
+  if not DirectoryExists(ExtractFilePath(ParamStr(0)) + Path) then
+    Exit;
+
+  LocalePostfixes := TStringList.Create;
+  LocalePostfixes.Add('.' + UnicodeString(gResLocales.UserLocale));
+  LocalePostfixes.Add('.' + UnicodeString(gResLocales.FallbackLocale));
+  LocalePostfixes.Add('.' + UnicodeString(gResLocales.DefaultLocale));
+  LocalePostfixes.Add('');
+
+  FileName := ExtractFileName(aPath);
+  for i := 0 to LocalePostfixes.Count - 1 do
   begin
-    Result := False;
-    aFileName := '';
-
-    Path := ExtractFilePath(aPath);
-    if not DirectoryExists(ExtractFilePath(ParamStr(0)) + Path) or (FindFirst(Path + '*', faAnyFile, SearchRec) <> 0) then
-      Exit;
-
     try
+      if FindFirst(Path + '*', faAnyFile, SearchRec) <> 0 then
+        Continue;
+
       repeat
         if (SearchRec.Name = '.') or (SearchRec.Name = '..') then
           Continue;
 
-        FileName := ExtractFileName(aPath);
-        Ext := ExtractFileExt(SearchRec.Name);
-
-        if (CompareStr(SearchRec.Name, FileName + '.' + UnicodeString(gResLocales.UserLocale) + Ext) = 0) or
-          (CompareStr(SearchRec.Name, FileName + '.' + UnicodeString(gResLocales.FallbackLocale) + Ext) = 0) or
-          (CompareStr(SearchRec.Name, FileName + '.' + UnicodeString(gResLocales.DefaultLocale) + Ext) = 0) or
-          (CompareStr(SearchRec.Name, FileName + Ext) = 0) then
+        f := FileName + LocalePostfixes[i] + ExtractFileExt(SearchRec.Name);
+        if CompareStr(SearchRec.Name, f) = 0 then
         begin
           aFileName := ExtractFilePath(ParamStr(0)) + Path + SearchRec.Name;
           Exit(True);
@@ -576,6 +599,8 @@ function TKMVideoPlayer.TryGetPathFile(aPath: string; var aFileName: string): Bo
       FindClose(SearchRec);
     end;
   end;
+  LocalePostfixes.Free;
+end;
 
 procedure TKMVideoPlayer.SetTrackByLocale;
 const
