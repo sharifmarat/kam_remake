@@ -1980,10 +1980,15 @@ end;
 //Clear target if it is dead
 procedure TKMUnitGroup.UpdateOrderTargets;
 begin
-  if (fOrderTargetUnit <> nil) and (fOrderTargetUnit.IsDeadOrDying) then
+  // Check target unit and stop attacking him in case
+  // if unit is dead or if he is hidden from us (inside some house)
+  // we do not want soldiers walking around the house where unit hides from them
+  // stop attacking him and find new target
+  // if new target will not be found the ngroup continue its way to unit/house location, but its quite rare situation, an does not matter much
+  if (fOrderTargetUnit <> nil) and (fOrderTargetUnit.IsDeadOrDying or not fOrderTargetUnit.Visible) then
     gHands.CleanUpUnitPointer(fOrderTargetUnit);
 
-  if (fOrderTargetHouse <> nil) and (fOrderTargetHouse.IsDestroyed) then
+  if (fOrderTargetHouse <> nil) and fOrderTargetHouse.IsDestroyed then
     gHands.CleanUpHousePointer(fOrderTargetHouse);
 
   if (fOrderTargetGroup <> nil) and fOrderTargetGroup.IsDead then
