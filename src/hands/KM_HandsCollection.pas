@@ -847,6 +847,8 @@ procedure TKMHandsCollection.RemAnyHouse(const Position: TKMPoint);
 var
   H: TKMHouse;
 begin
+  Assert(gGame.IsMapEditor, 'RemAnyHouse is not allowed outside of MapEditor');
+
   H := HousesHitTest(Position.X, Position.Y);
   if H <> nil then
   begin
@@ -861,6 +863,8 @@ procedure TKMHandsCollection.RemAnyUnit(const Position: TKMPoint);
 var
   I: Integer;
 begin
+  Assert(gGame.IsMapEditor, 'RemAnyUnit is not allowed outside of MapEditor');
+
   for I := 0 to fCount - 1 do
     fHandsList[I].RemGroup(Position);
   for I := 0 to fCount - 1 do
