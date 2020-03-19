@@ -227,15 +227,17 @@ begin
     Group := gHands[fOwner].UnitGroups[I];
 
     if not Group.IsDead
-      and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder]) then
-    begin
+      and not Group.InFight(True)
+      and (Group.Condition < UNIT_MIN_CONDITION) then
       //Check hunger and order food
-      if (Group.Condition < UNIT_MIN_CONDITION) then
-        //Cheat for autobuild AI: Only feed hungry group members (food consumption lower and more predictable)
-        Group.OrderFood(True, fSetup.AutoBuild);
+      //Cheat for autobuild AI: Only feed hungry group members (food consumption lower and more predictable)
+      //Do not clear offenders here, since we could follow attacker
+      Group.OrderFood(False, fSetup.AutoBuild);
 
-      if gGame.IsPeaceTime then Continue; //Do not process attack or defence during peacetime
-
+    if not Group.IsDead
+      and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
+      and not gGame.IsPeaceTime then //Do not process attack or defence during peacetime
+    begin
       //We already have a position, finished with this group
       if fDefencePositions.FindPositionOf(Group) <> nil then Continue;
 
