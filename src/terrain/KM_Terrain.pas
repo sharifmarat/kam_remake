@@ -4601,7 +4601,6 @@ begin
       LoadStream.Read(Land[I,J].FieldAge);
       LoadStream.Read(Land[I,J].TileLock,SizeOf(Land[I,J].TileLock));
       LoadStream.Read(Land[I,J].JamMeter);
-      LoadStream.Read(Land[I,J].TileOverlay,SizeOf(Land[I,J].TileOverlay));
       LoadStream.Read(Land[I,J].TileOwner,SizeOf(Land[I,J].TileOwner));
       LoadStream.Read(Land[I,J].IsUnit, 4);
       LoadStream.Read(Land[I,J].IsVertexUnit,SizeOf(Land[I,J].IsVertexUnit));
