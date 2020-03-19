@@ -1469,6 +1469,17 @@ begin
     Tmp := EnsureRange(gTerrain.Land[I,K].Height + LandTerKind[I,K].HeightAdd/255 + Tmp * (Byte(fRaise)*2 - 1), 0, 100); // (Byte(aRaise)*2 - 1) - LeftButton pressed it equals 1, otherwise equals -1
 
     //For flatten only
+    if (base <> -1) then
+    begin
+      //We do not want to height jump over base value around
+      //Problem is if one time H > base, next time H < base and so on in infinite loop
+      //then those dots will be seen as flickering (shaking / trembling) which is not looking good
+      //So in case we come so close to base value, so we overhead it, then just cut it to base value
+      if ((gTerrain.Land[I,K].Height >= base) and (Tmp < base))
+        or ((gTerrain.Land[I,K].Height <= base) and (Tmp > base)) then
+        Tmp := base;
+    end;
+
     gTerrain.Land[I,K].Height := Trunc(Tmp);
     LandTerKind[I,K].HeightAdd := Round(Frac(Tmp)*255); //write Fractional part in 0..255 range (1Byte) to save us mem
   end;
