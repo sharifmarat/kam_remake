@@ -1413,16 +1413,16 @@ var
   Loc : TKMPointF;
 begin
   Loc := KMPointF(fMapXn, fMapYn); // Mouse point
-  for I := Max((round(Loc.Y) - fSize), 1) to Min((round(Loc.Y) + fSize), gTerrain.MapY) do
-  for K := Max((round(Loc.X) - fSize), 1) to Min((round(Loc.X) + fSize), gTerrain.MapX) do
+  for I := Max((Round(Loc.Y) - fSize), 1) to Min((Round(Loc.Y) + fSize), gTerrain.MapY) do
+  for K := Max((Round(Loc.X) - fSize), 1) to Min((Round(Loc.X) + fSize), gTerrain.MapX) do
   begin
 
     // We have square area basing on mouse point +/- radius
     // Now we need to check whether point is inside brush type area(circle etc.)
     // Every MapEdShape case has it's own check routine
     case fShape of
-      hsCircle: Tmp := Max((1 - GetLength(I - round(Loc.Y), round(K - Loc.X)) / fSize), 0);   // Negative number means that point is outside circle
-      hsSquare: Tmp := 1 - Max(Abs(I - round(Loc.Y)), Abs(K - round(Loc.X))) / fSize;
+      hsCircle: Tmp := Max((1 - GetLength(I - Round(Loc.Y), Round(K - Loc.X)) / fSize), 0);   // Negative number means that point is outside circle
+      hsSquare: Tmp := 1 - Max(Abs(I - Round(Loc.Y)), Abs(K - Round(Loc.X))) / fSize;
       else      Tmp := 0;
     end;
 
@@ -1431,9 +1431,9 @@ begin
     begin // START Unequalize
       if fRaise then
       begin
-        if (i > 1) and (k >1) and (i < gTerrain.MapY - 1) and (k < gTerrain.MapX - 1) then
+        if (I >= 1) and (K >= 1) and (I < gTerrain.MapY) and (K < gTerrain.MapX) then
         begin
-        // Unequalize compares heights of adjacent tiles and increases differences
+          // Unequalize compares heights of adjacent tiles and increases differences
           if (gTerrain.Land[I,K].Height < gTerrain.Land[I-1,K+1].Height) then
             Tmp := -Min(gTerrain.Land[I-1,K+1].Height - gTerrain.Land[I,K].Height, Tmp)
           else
