@@ -82,36 +82,36 @@ type
     procedure LoadFromStream(Stream: TMemoryStream);
     //Property accessors:
     //Derived from KaM
-    property StonePic:smallint read fHouseDat.StonePic;
-    property WoodPic:smallint read fHouseDat.WoodPic;
-    property WoodPal:smallint read fHouseDat.WoodPal;
-    property StonePal:smallint read fHouseDat.StonePal;
+    property StonePic: Smallint read fHouseDat.StonePic;
+    property WoodPic: Smallint read fHouseDat.WoodPic;
+    property WoodPal: Smallint read fHouseDat.WoodPal;
+    property StonePal: Smallint read fHouseDat.StonePal;
     property SupplyIn: THouseSupply read fHouseDat.SupplyIn;
     property SupplyOut: THouseSupply read fHouseDat.SupplyOut;
     property Anim: THouseAnim read fHouseDat.Anim;
-    property WoodPicSteps:word read fHouseDat.WoodPicSteps;
-    property StonePicSteps:word read fHouseDat.StonePicSteps;
-    property EntranceOffsetX:shortint read fHouseDat.EntranceOffsetX;
-    property EntranceOffsetXpx:shortint read fHouseDat.EntranceOffsetXpx;
-    property EntranceOffsetYpx:shortint read fHouseDat.EntranceOffsetYpx;
-    property WoodCost:byte read fHouseDat.WoodCost;
-    property StoneCost:byte read fHouseDat.StoneCost;
+    property WoodPicSteps: Word read fHouseDat.WoodPicSteps;
+    property StonePicSteps: Word read fHouseDat.StonePicSteps;
+    property EntranceOffsetX: Shortint read fHouseDat.EntranceOffsetX;
+    property EntranceOffsetXpx: Shortint read fHouseDat.EntranceOffsetXpx;
+    property EntranceOffsetYpx: Shortint read fHouseDat.EntranceOffsetYpx;
+    property WoodCost: Byte read fHouseDat.WoodCost;
+    property StoneCost: Byte read fHouseDat.StoneCost;
     property BuildSupply: THouseBuildSupply read fHouseDat.BuildSupply;
-    property WorkerRest:smallint read fHouseDat.WorkerRest;
-    property ResProductionX:shortint read fHouseDat.ResProductionX;
-    property Sight:smallint read fHouseDat.Sight;
+    property WorkerRest: Smallint read fHouseDat.WorkerRest;
+    property ResProductionX: Shortint read fHouseDat.ResProductionX;
+    property Sight: Smallint read fHouseDat.Sight;
     property OwnerType: TKMUnitType read GetOwnerType;
     //Additional properties added by Remake
     property BuildArea: THouseArea read GetArea;
-    property DoesOrders:boolean read GetDoesOrders;
-    property GUIIcon:word read GetGUIIcon;
+    property DoesOrders: Boolean read GetDoesOrders;
+    property GUIIcon: Word read GetGUIIcon;
     property HouseName: UnicodeString read GetHouseName;
     property HouseNameTextID: Integer read fNameTextID;
     property ReleasedBy: TKMHouseType read GetReleasedBy;
     property ResInput: THouseRes read GetResInput;
     property ResOutput: THouseRes read GetResOutput;
-    property TabletIcon:word read GetTabletIcon;
-    property UnoccupiedMsgId:SmallInt read GetUnoccupiedMsgId;
+    property TabletIcon: Word read GetTabletIcon;
+    property UnoccupiedMsgId: SmallInt read GetUnoccupiedMsgId;
     property SnowPic: SmallInt read GetSnowPic;
     //Functions
     function AcceptsWares: Boolean;
