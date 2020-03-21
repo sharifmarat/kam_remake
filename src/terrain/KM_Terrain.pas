@@ -4594,6 +4594,7 @@ begin
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
+      Land[I,J].TileOverlay := TileBasic.TileOverlay;
       Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
       for L := 0 to 2 do
