@@ -40,6 +40,10 @@ type
       Panel_Options_GFX: TKMPanel;
         TrackBar_Options_Brightness: TKMTrackBar;
         CheckBox_Options_VSync: TKMCheckBox;
+      Panel_Options_Video: TKMPanel;
+        CheckBox_Options_VideoEnable: TKMCheckBox;
+        TrackBar_Options_VideoVolume: TKMTrackBar;
+
       Panel_Options_Fonts: TKMPanel;
         CheckBox_Options_FullFonts: TKMCheckBox;
         RadioGroup_Options_Shadows: TKMRadioGroup;
@@ -99,7 +103,7 @@ begin
 
   // We cant pass pointers to Settings in here cos on GUI creation fMain/gGameApp are not initialized yet
 
-  Panel_Options := TKMPanel.Create(aParent,0,0,aParent.Width, aParent.Height);
+  Panel_Options := TKMPanel.Create(aParent,(aParent.Width - 880) div 2,(aParent.Height - 550) div 2,880, aParent.Height);
   Panel_Options.AnchorsStretch;
     with TKMImage.Create(Panel_Options,705,220,round(207*1.3),round(295*1.3),6,rxGuiMain) do
     begin
@@ -108,7 +112,7 @@ begin
     end;
     //--- Column 1 --------------------------------------------------------------
     // Controls section
-    Panel_Options_Ctrl:=TKMPanel.Create(Panel_Options,60,120,280,80);
+    Panel_Options_Ctrl:=TKMPanel.Create(Panel_Options,0,0,280,80);
     Panel_Options_Ctrl.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Ctrl,6,0,270,20,gResTexts[TX_MENU_OPTIONS_CONTROLS],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Ctrl,0,20,280,60);
@@ -118,7 +122,7 @@ begin
       TrackBar_Options_ScrollSpeed.OnChange := Change;
 
     // Gameplay section
-    Panel_Options_Game := TKMPanel.Create(Panel_Options,60,210,280,70);
+    Panel_Options_Game := TKMPanel.Create(Panel_Options,0,90,280,70);
     Panel_Options_Game.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Game,6,0,270,20,gResTexts[TX_MENU_OPTIONS_GAMEPLAY],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Game,0,20,280,50);
@@ -130,7 +134,7 @@ begin
       CheckBox_Options_AutosaveAtGameEnd.OnClick := Change;
 
     // SFX section
-    Panel_Options_Sound:=TKMPanel.Create(Panel_Options,60,300,280,180);
+    Panel_Options_Sound:=TKMPanel.Create(Panel_Options,0,180,280,180);
     Panel_Options_Sound.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Sound,6,0,270,20,gResTexts[TX_MENU_OPTIONS_SOUND],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Sound,0,20,280,160);
@@ -147,7 +151,7 @@ begin
       CheckBox_Options_ShuffleOn.OnClick := Change;
 
     //Replays section
-    Panel_Options_Replays := TKMPanel.Create(Panel_Options,60,500,280,50);
+    Panel_Options_Replays := TKMPanel.Create(Panel_Options,0,380,280,50);
     Panel_Options_Replays.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Replays,6,0,270,20,gResTexts[TX_WORD_REPLAY] + ':',fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Replays,0,20,280,30);
@@ -156,19 +160,19 @@ begin
       CheckBox_Options_ReplayAutopause.OnClick := Change;
 
     // Keybindings button
-    Button_OptionsKeys := TKMButton.Create(Panel_Options, 60, 580, 280, 30, gResTexts[TX_MENU_OPTIONS_EDIT_KEYS], bsMenu);
+    Button_OptionsKeys := TKMButton.Create(Panel_Options, 0, 470, 280, 30, gResTexts[TX_MENU_OPTIONS_EDIT_KEYS], bsMenu);
     Button_OptionsKeys.Anchors := [anLeft];
     Button_OptionsKeys.OnClick := KeysClick;
 
     // Back button
-    Button_OptionsBack := TKMButton.Create(Panel_Options,60,630,280,30,gResTexts[TX_MENU_BACK],bsMenu);
+    Button_OptionsBack := TKMButton.Create(Panel_Options,0,520,280,30,gResTexts[TX_MENU_BACK],bsMenu);
     Button_OptionsBack.Anchors := [anLeft];
     Button_OptionsBack.OnClick := BackClick;
 
     //--- Column 2 --------------------------------------------------------------
 
     // Resolutions section
-    Panel_Options_Res := TKMPanel.Create(Panel_Options, 360, 120, 280, 160);
+    Panel_Options_Res := TKMPanel.Create(Panel_Options, 300, 0, 280, 160);
     Panel_Options_Res.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Res, 6, 0, 270, 20, gResTexts[TX_MENU_OPTIONS_RESOLUTION], fntOutline, taLeft);
       TKMBevel.Create(Panel_Options_Res, 0, 20, 280, 140);
@@ -186,7 +190,7 @@ begin
       Button_Options_ResApply.OnClick := ApplyResolution;
 
     // Graphics section
-    Panel_Options_GFX:=TKMPanel.Create(Panel_Options,360,300,280,180);
+    Panel_Options_GFX:=TKMPanel.Create(Panel_Options,300,180,280,180);
     Panel_Options_GFX.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_GFX,6,0,270,20,gResTexts[TX_MENU_OPTIONS_GRAPHICS],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_GFX,0,20,280,160);
@@ -202,20 +206,31 @@ begin
       RadioGroup_Options_Shadows.OnChange := Change;
 
     // Language Fonts section
-    Panel_Options_Fonts := TKMPanel.Create(Panel_Options,360,500,280,50);
+    Panel_Options_Fonts := TKMPanel.Create(Panel_Options,300,380,280,50);
     Panel_Options_Fonts.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Fonts,6,0,270,20,gResTexts[TX_MENU_OPTIONS_LANGUAGE],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Fonts,0,20,280,30);
       CheckBox_Options_FullFonts := TKMCheckBox.Create(Panel_Options_Fonts, 10, 27, 260, 20, gResTexts[TX_MENU_OPTIONS_FONTS], fntMetal);
       CheckBox_Options_FullFonts.OnClick := Change;
 
+    // Videos
+    Panel_Options_Video := TKMPanel.Create(Panel_Options,300,450,280,100);
+    Panel_Options_Video.Anchors := [anLeft];
+      TKMLabel.Create(Panel_Options_Video,6,0,270,20,gResTexts[TX_MENU_OPTIONS_VIDEOS],fntOutline,taLeft);
+      TKMBevel.Create(Panel_Options_Video,0,20,280,80);
+      CheckBox_Options_VideoEnable := TKMCheckBox.Create(Panel_Options_Video, 10, 27, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_ENABLE], fntMetal);
+      CheckBox_Options_VideoEnable.OnClick := Change;
+      TrackBar_Options_VideoVolume := TKMTrackBar.Create(Panel_Options_Video, 10, 47, 256, OPT_SLIDER_MIN, OPT_SLIDER_MAX);
+      TrackBar_Options_VideoVolume.Caption := gResTexts[TX_MENU_OPTIONS_VIDEOS_VOLUME];
+      TrackBar_Options_VideoVolume.OnChange := Change;
+
     //--- Column 3 --------------------------------------------------------------
 
     // Language section
-    Panel_Options_Lang:=TKMPanel.Create(Panel_Options,660,120,240,30+gResLocales.Count*20);
+    Panel_Options_Lang:=TKMPanel.Create(Panel_Options,600,0,240,30+gResLocales.Count*20);
     Panel_Options_Lang.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Lang,6,0,242,20,gResTexts[TX_MENU_OPTIONS_LANGUAGE],fntOutline,taLeft);
-      TKMBevel.Create(Panel_Options_Lang,0,20,260,10+gResLocales.Count*20);
+      TKMBevel.Create(Panel_Options_Lang,0,20,280,10+gResLocales.Count*20);
 
       Radio_Options_Lang := TKMRadioGroup.Create(Panel_Options_Lang, 28, 27, 220, 20*gResLocales.Count, fntMetal);
       SetLength(Image_Options_Lang_Flags,gResLocales.Count);
@@ -229,11 +244,11 @@ begin
       Radio_Options_Lang.OnChange := Change;
 
     // Panel_Options_Keys
-    PopUp_OptionsKeys := TKMPopUpMenu.Create(Panel_Options, 740);
+    PopUp_OptionsKeys := TKMPopUpMenu.Create(aParent, 740);
     PopUp_OptionsKeys.Height := 640;
     PopUp_OptionsKeys.AnchorsCenter; // Keep centered, don't stretch already poor BG image
-    PopUp_OptionsKeys.Left := (Panel_Options.Width - PopUp_OptionsKeys.Width) div 2;
-    PopUp_OptionsKeys.Top := (Panel_Options.Height - PopUp_OptionsKeys.Height) div 2;
+    PopUp_OptionsKeys.Left := (aParent.Width - PopUp_OptionsKeys.Width) div 2;
+    PopUp_OptionsKeys.Top := (aParent.Height - PopUp_OptionsKeys.Height) div 2;
 
       TKMBevel.Create(PopUp_OptionsKeys, -1000, -1000, 4000, 4000);
 
@@ -296,6 +311,8 @@ begin
   TrackBar_Options_Music.Enabled           := not CheckBox_Options_MusicOff.Checked;
   CheckBox_Options_ShuffleOn.Checked       := fGameSettings.ShuffleOn;
   CheckBox_Options_ShuffleOn.Enabled       := not CheckBox_Options_MusicOff.Checked;
+  CheckBox_Options_VideoEnable.Checked     := fGameSettings.VideoOn;
+  TrackBar_Options_VideoVolume.Position    := Round(fGameSettings.VideoVolume * TrackBar_Options_VideoVolume.MaxValue);
 
   Radio_Options_Lang.ItemIndex := gResLocales.IndexByCode(fGameSettings.Locale);
 
@@ -324,6 +341,8 @@ begin
   fGameSettings.MusicVolume     := TrackBar_Options_Music.Position / TrackBar_Options_Music.MaxValue;
   fGameSettings.MusicOff        := CheckBox_Options_MusicOff.Checked;
   fGameSettings.ShuffleOn       := CheckBox_Options_ShuffleOn.Checked;
+  fGameSettings.VideoOn         := CheckBox_Options_VideoEnable.Checked;
+  fGameSettings.VideoVolume     := TrackBar_Options_VideoVolume.Position / TrackBar_Options_VideoVolume.MaxValue;
   TrackBar_Options_Music.Enabled      := not CheckBox_Options_MusicOff.Checked;
   CheckBox_Options_ShuffleOn.Enabled  := not CheckBox_Options_MusicOff.Checked;
 

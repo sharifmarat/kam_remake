@@ -1431,3 +1431,7 @@ TX_UNSUPPORTED_REPLAY_LOAD_ERROR_MSG = 1381; //Error loading unsupported version
 TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT = 1385; //Loading unsupported version could cause game not being properly loaded or even cause game crash
 
 TX_MENU_DEBUG_UNLOCK_CAMPAIGNS_CONFIRM = 1387; //Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?
+
+TX_MENU_OPTIONS_VIDEOS = 1398; //Videos
+TX_MENU_OPTIONS_VIDEOS_ENABLE = 1399;
+TX_MENU_OPTIONS_VIDEOS_VOLUME = 1400;

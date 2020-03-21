@@ -115,7 +115,7 @@ implementation
 {$IFDEF VIDEOS}
 
 uses
-  KM_Render, KM_RenderUI, dglOpenGL, KM_Controls, KM_ResFonts, KM_ResLocales;
+  KM_Render, KM_RenderUI, dglOpenGL, KM_Controls, KM_ResFonts, KM_ResLocales, KM_GameApp;
 
 procedure lib_vlc_player_event_hdlr(p_event: libvlc_event_t_ptr; data: Pointer); cdecl; forward;
 
@@ -202,6 +202,9 @@ var
   Path: string;
 begin
 {$IFDEF VIDEOS}
+  if not gGameApp.GameSettings.VideoOn then
+    Exit;
+
   if TryGetPathFile(aCampaignPath + aVideoName, Path) or
     TryGetPathFile(VIDEOFILE_PATH + aVideoName, Path) then
     FVideoList.Add(Path);
@@ -214,6 +217,8 @@ var
   Path: string;
 begin
 {$IFDEF VIDEOS}
+  if not gGameApp.GameSettings.VideoOn then
+    Exit;
   MissionPath := ExtractFilePath(aMissionFile);
   FileName := ExtractFileName(ChangeFileExt(aMissionFile, '')) + '.' + aVideoName;
 
@@ -229,6 +234,8 @@ var
   Path: string;
 begin
 {$IFDEF VIDEOS}
+  if not gGameApp.GameSettings.VideoOn then
+    Exit;
   if TryGetPathFile(aVideoName, Path) or
     TryGetPathFile(VIDEOFILE_PATH + aVideoName, Path) then
     FVideoList.Add(Path);
@@ -240,8 +247,7 @@ begin
 {$IFDEF VIDEOS}
   FIndex := 0;
   DoStop;
-
-  if FVideoList.Count > 0 then
+  if gGameApp.GameSettings.VideoOn and (FVideoList.Count > 0) then
     PlayNext;
 {$ENDIF}
 end;
@@ -551,6 +557,7 @@ begin
     libvlc_media_player_set_media(FMediaPlayer, media);
     libvlc_media_player_play(FMediaPlayer);
     SetTrackByLocale;
+    libvlc_audio_set_volume(FMediaPlayer, Round(gGameApp.GameSettings.VideoVolume * 100));
   end;
 
   libvlc_media_release(media);
