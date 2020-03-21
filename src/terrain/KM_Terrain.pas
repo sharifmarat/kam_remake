@@ -743,7 +743,9 @@ var
 begin
   Assert((aType <> -1) or (aRot <> -1), 'Either terrain type or rotation should be set');
 
-  if not gRes.Tileset.TileIsAllowedToSet(aType) then
+  // Do not allow to set some special terrain tiles
+  if (aType <> -1) // We could have aType = -1 if only specify rotation
+    and not gRes.Tileset.TileIsAllowedToSet(aType) then
     Exit(False);
  
   Loc := KMPoint(X, Y);
