@@ -76,7 +76,9 @@ type
     function GetReleasedBy: TKMHouseType;
     function GetTabletIcon: Word;
     function GetSnowPic: SmallInt;
+    function GetSnowPicNoShadow: SmallInt;
     function GetUnoccupiedMsgId: SmallInt;
+//    procedure SetSnowPicNoShadow(const Value: SmallInt);
   public
     constructor Create(aHouseType: TKMHouseType);
     procedure LoadFromStream(Stream: TMemoryStream);
@@ -113,6 +115,7 @@ type
     property TabletIcon: Word read GetTabletIcon;
     property UnoccupiedMsgId: SmallInt read GetUnoccupiedMsgId;
     property SnowPic: SmallInt read GetSnowPic;
+    property SnowPicNoShadow: SmallInt read GetSnowPicNoShadow;
     //Functions
     function AcceptsWares: Boolean;
     function MaxHealth: Word;
@@ -226,6 +229,7 @@ type
     Output: THouseRes;
     UnlockedByHouse: TKMHouseType; //Which house type allows to build this house type
     SnowSpriteId: SmallInt;
+    SnowSpriteNoShadowId: SmallInt;
   end;
 
 const
@@ -239,7 +243,8 @@ const
     Input:            (wtCoal,       wtSteel,      wtNone,       wtNone);
     Output:           (wtMetalArmor, wtMetalShield,wtNone,       wtNone);
     UnlockedByHouse:  htIronSmithy;
-    SnowSpriteId:     2074;
+    SnowSpriteId:     2103;
+    SnowSpriteNoShadowId: 2074;
     ),
     ( //Armor workshop
     PlanYX:           ((0,0,0,0), (0,1,1,0), (0,1,1,1), (0,2,1,1));
@@ -249,7 +254,8 @@ const
     Input:            (wtLeather,    wtWood,       wtNone,       wtNone);
     Output:           (wtShield,     wtArmor,      wtNone,       wtNone);
     UnlockedByHouse:  htTannery;
-    SnowSpriteId:     2067;
+    SnowSpriteId:     2096;
+    SnowSpriteNoShadowId: 2067;
     ),
     ( //Bakery
     PlanYX:           ((0,0,0,0), (0,1,1,1), (0,1,1,1), (0,1,1,2));
@@ -259,7 +265,8 @@ const
     Input:            (wtFlour,      wtNone,       wtNone,       wtNone);
     Output:           (wtBread,      wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htMill;
-    SnowSpriteId:     2054;
+    SnowSpriteId:     2083;
+    SnowSpriteNoShadowId: 2054;
     ),
     ( //Barracks
     PlanYX:           ((1,1,1,1), (1,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -269,7 +276,8 @@ const
     Input:            (wtWarfare,    wtNone,       wtNone,       wtNone);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2075;
+    SnowSpriteId:     2104;
+    SnowSpriteNoShadowId: 2075;
     ),
     ( //Butchers
     PlanYX:           ((0,0,0,0), (0,1,1,0), (0,1,1,1), (0,1,1,2));
@@ -279,7 +287,8 @@ const
     Input:            (wtPig,        wtNone,       wtNone,       wtNone);
     Output:           (wtSausages,   wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSwine;
-    SnowSpriteId:     2066;
+    SnowSpriteId:     2095;
+    SnowSpriteNoShadowId: 2066;
     ),
     ( //Coal mine
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,0), (1,2,1,0));
@@ -289,7 +298,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtCoal,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2070;
+    SnowSpriteId:     2099;
+    SnowSpriteNoShadowId: 2070;
     ),
     ( //Farm
     PlanYX:           ((0,0,0,0), (1,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -299,7 +309,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtCorn,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2055;
+    SnowSpriteId:     2084;
+    SnowSpriteNoShadowId: 2055;
     ),
     ( //Fisher hut
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,1,1,0), (0,2,1,1));
@@ -309,7 +320,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtFish,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2053;
+    SnowSpriteId:     2082;
+    SnowSpriteNoShadowId: 2053;
     ),
     ( //Gold mine
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,0,0,0), (0,1,2,0));
@@ -319,7 +331,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtGoldOre,    wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2073;
+    SnowSpriteId:     2102;
+    SnowSpriteNoShadowId: 2073;
     ),
     ( //Inn
     PlanYX:           ((0,0,0,0), (0,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -329,7 +342,8 @@ const
     Input:            (wtBread,      wtSausages,   wtWine,       wtFish);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htStore;
-    SnowSpriteId:     2063;
+    SnowSpriteId:     2092;
+    SnowSpriteNoShadowId: 2063;
     ),
     ( //Iron mine
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,0,0,0), (0,1,2,1));
@@ -339,7 +353,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtIronOre,    wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2052;
+    SnowSpriteId:     2081;
+    SnowSpriteNoShadowId: 2052;
     ),
     ( //Iron smithy
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,1), (1,1,2,1));
@@ -349,7 +364,8 @@ const
     Input:            (wtIronOre,    wtCoal,       wtNone,       wtNone);
     Output:           (wtSteel,      wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htIronMine;
-    SnowSpriteId:     2051;
+    SnowSpriteId:     2080;
+    SnowSpriteNoShadowId: 2051;
     ),
     ( //Marketplace
     PlanYX:           ((0,0,0,0), (0,1,1,1), (1,1,1,1), (1,1,1,2));
@@ -359,7 +375,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2072;
+    SnowSpriteId:     2101;
+    SnowSpriteNoShadowId: 2072;
     ),
     ( //Metallurgist
     PlanYX:           ((0,0,0,0), (1,1,1,0), (1,1,1,0), (1,2,1,0));
@@ -369,7 +386,8 @@ const
     Input:            (wtGoldOre,    wtCoal,       wtNone,       wtNone);
     Output:           (wtGold,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htGoldMine;
-    SnowSpriteId:     2068;
+    SnowSpriteId:     2097;
+    SnowSpriteNoShadowId: 2068;
     ),
     ( //Mill
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,1,1,1), (0,1,2,1));
@@ -379,7 +397,8 @@ const
     Input:            (wtCorn,       wtNone,       wtNone,       wtNone);
     Output:           (wtFlour,      wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htFarm;
-    SnowSpriteId:     2062;
+    SnowSpriteId:     2091;
+    SnowSpriteNoShadowId: 2062;
     ),
     ( //Quarry
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,1,1,1), (0,1,2,1));
@@ -389,7 +408,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtStone,      wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSchool;
-    SnowSpriteId:     2058;
+    SnowSpriteId:     2087;
+    SnowSpriteNoShadowId: 2058;
     ),
     ( //Sawmill
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,1), (1,2,1,1));
@@ -399,7 +419,8 @@ const
     Input:            (wtTrunk,      wtNone,       wtNone,       wtNone);
     Output:           (wtWood,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htWoodcutters;
-    SnowSpriteId:     2050;
+    SnowSpriteId:     2079;
+    SnowSpriteNoShadowId: 2050;
     ),
     ( //School
     PlanYX:           ((0,0,0,0), (1,1,1,0), (1,1,1,0), (1,2,1,0));
@@ -409,7 +430,8 @@ const
     Input:            (wtGold,       wtNone,       wtNone,       wtNone);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htStore;
-    SnowSpriteId:     2059;
+    SnowSpriteId:     2088;
+    SnowSpriteNoShadowId: 2059;
     ),
     ( //Siege workshop
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,1,1,1), (0,2,1,1));
@@ -419,7 +441,8 @@ const
     Input:            (wtWood,       wtSteel,      wtNone,       wtNone);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htIronSmithy;
-    SnowSpriteId:     2078;
+    SnowSpriteId:     2107;
+    SnowSpriteNoShadowId: 2078;
     ),
     ( //Stables
     PlanYX:           ((0,0,0,0), (1,1,1,1), (1,1,1,1), (1,1,2,1));
@@ -429,7 +452,8 @@ const
     Input:            (wtCorn,       wtNone,       wtNone,       wtNone);
     Output:           (wtHorse,      wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htFarm;
-    SnowSpriteId:     2071;
+    SnowSpriteId:     2100;
+    SnowSpriteNoShadowId: 2071;
     ),
     ( //Store
     PlanYX:           ((0,0,0,0), (1,1,1,0), (1,1,1,0), (1,2,1,0));
@@ -438,8 +462,9 @@ const
     TabletSpriteId:   262;
     Input:            (wtAll,        wtNone,       wtNone,       wtNone);
     Output:           (wtAll,        wtNone,       wtNone,       wtNone);
-    UnlockedByHouse:  htNone; //
-    SnowSpriteId:     2056;
+    UnlockedByHouse:  htNone;
+    SnowSpriteId:     2085;
+    SnowSpriteNoShadowId: 2056;
     ),
     ( //Swine
     PlanYX:           ((0,0,0,0), (0,1,1,1), (1,1,1,1), (1,1,1,2));
@@ -449,7 +474,8 @@ const
     Input:            (wtCorn,       wtNone,       wtNone,       wtNone);
     Output:           (wtPig,        wtSkin,       wtNone,       wtNone);
     UnlockedByHouse:  htFarm;
-    SnowSpriteId:     2064;
+    SnowSpriteId:     2093;
+    SnowSpriteNoShadowId: 2064;
     ),
     ( //Tannery
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,1,1,1), (0,1,2,1));
@@ -459,7 +485,8 @@ const
     Input:            (wtSkin,       wtNone,       wtNone,       wtNone);
     Output:           (wtLeather,    wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSwine;
-    SnowSpriteId:     2076;
+    SnowSpriteId:     2105;
+    SnowSpriteNoShadowId: 2076;
     ),
     ( //Town hall
     PlanYX:           ((0,0,0,0), (1,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -469,7 +496,8 @@ const
     Input:            (wtGold,       wtNone,       wtNone,       wtNone);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htMetallurgists;
-    SnowSpriteId:     2077;
+    SnowSpriteId:     2106;
+    SnowSpriteNoShadowId: 2077;
     ),
     ( //Watch tower
     PlanYX:   ((0,0,0,0), (0,0,0,0), (0,1,1,0), (0,1,2,0));
@@ -479,7 +507,8 @@ const
     Input:            (wtStone,      wtNone,       wtNone,       wtNone);
     Output:           (wtNone,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htQuary;
-    SnowSpriteId:     2060;
+    SnowSpriteId:     2089;
+    SnowSpriteNoShadowId: 2060;
     ),
     ( //Weapon smithy
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,1), (1,2,1,1));
@@ -489,7 +518,8 @@ const
     Input:            (wtCoal,       wtSteel,      wtNone,       wtNone);
     Output:           (wtSword,      wtHallebard,  wtArbalet,    wtNone);
     UnlockedByHouse:  htIronSmithy;
-    SnowSpriteId:     2069;
+    SnowSpriteId:     2098;
+    SnowSpriteNoShadowId: 2069;
     ),
     ( //Weapon workshop
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,1), (1,2,1,1));
@@ -499,7 +529,8 @@ const
     Input:            (wtWood,       wtNone,       wtNone,       wtNone);
     Output:           (wtAxe,        wtPike,       wtBow,        wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2061;
+    SnowSpriteId:     2090;
+    SnowSpriteNoShadowId: 2061;
     ),
     ( //Wineyard
     PlanYX:           ((0,0,0,0), (0,0,0,0), (0,1,1,1), (0,1,1,2));
@@ -509,7 +540,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtWine,       wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSawmill;
-    SnowSpriteId:     2065;
+    SnowSpriteId:     2094;
+    SnowSpriteNoShadowId: 2065;
     ),
     ( //Woodcutter
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,0), (1,1,2,0));
@@ -519,7 +551,8 @@ const
     Input:            (wtNone,       wtNone,       wtNone,       wtNone);
     Output:           (wtTrunk,      wtNone,       wtNone,       wtNone);
     UnlockedByHouse:  htSchool;
-    SnowSpriteId:     2057;
+    SnowSpriteId:     2086;
+    SnowSpriteNoShadowId: 2057;
     )
     );
 
@@ -635,6 +668,12 @@ begin
 end;
 
 
+//procedure TKMHouseSpec.SetSnowPicNoShadow(const Value: SmallInt);
+//begin
+//  HouseDatX[fHouseType].SnowSpriteNoShadowId := Value;
+//end;
+
+
 function TKMHouseSpec.GetReleasedBy: TKMHouseType;
 begin
   Result := HouseDatX[fHouseType].UnlockedByHouse;
@@ -656,6 +695,12 @@ end;
 function TKMHouseSpec.GetSnowPic: SmallInt;
 begin
   Result := HouseDatX[fHouseType].SnowSpriteId;
+end;
+
+
+function TKMHouseSpec.GetSnowPicNoShadow: SmallInt;
+begin
+  Result := HouseDatX[fHouseType].SnowSpriteNoShadowId;
 end;
 
 

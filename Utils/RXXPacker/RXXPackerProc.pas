@@ -72,6 +72,7 @@ begin
         resHouses := TKMResHouses.Create;
         SpritePack.AdjoinHouseMasks(resHouses);
         SpritePack.GrowHouseMasks(resHouses);
+        SpritePack.RemoveSnowHouseShadows(resHouses);
         resHouses.Free;
       end;
 

@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   Classes, Graphics, Math, SysUtils,
-  KM_CommonTypes, KM_Defaults, KM_Pics, KM_PNG, KM_Render, KM_ResTexts, KM_ResTileset
+  KM_CommonTypes, KM_Defaults, KM_Pics, KM_PNG, KM_Render, KM_ResTexts, KM_ResTileset, KM_ResHouses
   {$IFDEF FPC}, zstream {$ENDIF}
   {$IFDEF WDC}, ZLib {$ENDIF};
 
@@ -87,6 +87,7 @@ type
     procedure SoftenShadows(aStart: Integer = 1; aEnd: Integer = -1; aOnlyShadows: Boolean = True); overload;
     procedure SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True); overload;
     procedure DetermineImagesObjectSize(aStart: Integer = 1; aEnd: Integer = -1);
+    procedure RemoveSnowHouseShadows(aResHouses: TKMResHouses);
 
     function GetSpriteColors(aCount: Word): TRGBArray;
 
@@ -133,6 +134,7 @@ type
     class function AllTilesOnOneAtlas: Boolean;
 
     procedure GenerateTerrainTransitions(aSprites: TKMSpritePack; aLegacyGeneration: Boolean = False);
+    procedure GenerateHouseSnowNoShadow(aSprites: TKMSpritePack);
 
     function GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
     function GetGenTerrainInfoLegacy(aTerrain: Integer): TKMGenTerrainInfo;
@@ -346,6 +348,31 @@ begin
     for I := aStart to aEnd do
       if (fRXData.Flag[I] <> 0) then
         ShadowConverter.DetermineImageObjectSize(I);
+  finally
+    ShadowConverter.Free;
+  end;
+end;
+
+
+procedure TKMSpritePack.RemoveSnowHouseShadows(aResHouses: TKMResHouses);
+var
+  SnowID, SnowNoShadowID: Integer;
+  ShadowConverter: TKMSoftShadowConverter;
+  HT: TKMHouseType;
+begin
+  Assert(fRT = rxHouses);
+
+//  Allocate(fRXData.Count + Byte(HOUSE_MAX) - Byte(HOUSE_MIN) + 1);
+
+  ShadowConverter := TKMSoftShadowConverter.Create(Self);
+  try
+    for HT := HOUSE_MIN to HOUSE_MAX do
+    begin
+      SnowID := aResHouses[HT].SnowPic;
+      SnowNoShadowID := aResHouses[HT].SnowPicNoShadow;
+      if (fRXData.Flag[SnowID] <> 0) and (fRXData.Flag[SnowNoShadowID] <> 0) then
+        ShadowConverter.RemoveShadow(SnowID, SnowNoShadowID);
+    end;
   finally
     ShadowConverter.Free;
   end;
@@ -1288,6 +1315,12 @@ begin
 end;
 
 
+procedure TKMResSprites.GenerateHouseSnowNoShadow(aSprites: TKMSpritePack);
+begin
+
+end;
+
+
 function TKMResSprites.GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
 begin
   Result := fGenTerrainToTerKind[aTerrain + 1 - fGenTexIdStartI]; //TexId is 1-based, but textures we use - 0 based
@@ -1429,6 +1462,8 @@ begin
     GenerateTerrainTransitions(nil, True); //To get support for maps rev <= 10745
   end;
 
+  if aRT = rxHouses then
+    GenerateHouseSnowNoShadow(fSprites[aRT]);
 end;
 
 

@@ -659,7 +659,7 @@ end;
 procedure TRenderPool.AddHouse(aHouse: TKMHouseType; const aLoc: TKMPoint; aWoodStep, aStoneStep, aSnowStep: Single; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   R: TRXData;
-  PicWood, PicStone, PicSnow: Integer;
+  PicWood, PicStone, PicSnow, PicSnowNoShadow: Integer;
   GroundWood, GroundStone, gX, gY: Single;
 
   function CornerX(aPic: Integer): Single;
@@ -682,6 +682,7 @@ begin
   PicWood := gRes.Houses[aHouse].WoodPic + 1;
   PicStone := gRes.Houses[aHouse].StonePic + 1;
   PicSnow := gRes.Houses[aHouse].SnowPic + 1;
+  PicSnowNoShadow := gRes.Houses[aHouse].SnowPicNoShadow + 1;
 
   GroundWood := R.Pivot[PicWood].Y + R.Size[PicWood].Y;
   GroundStone := R.Pivot[PicStone].Y + R.Size[PicStone].Y;
@@ -689,6 +690,7 @@ begin
   gX := aLoc.X + (R.Pivot[PicWood].X + R.Size[PicWood].X / 2) / CELL_SIZE_PX - 1;
   gY := aLoc.Y + Max(GroundWood, GroundStone) / CELL_SIZE_PX - 1.5;
 
+//  aSnowStep := 0.5;
   // If it's fully built we can render without alpha
   if (aWoodStep = 1) and (aStoneStep = 1) then
   begin
@@ -705,7 +707,7 @@ begin
         // Render stone with snow blended on top using AlphaTest
         //todo: Shadow shouldn't get rendered twice
         fRenderList.AddSpriteG(rxHouses, PicStone, 0, CornerX(PicStone), CornerY(PicStone), gX, gY, $0);
-        fRenderList.AddSpriteG(rxHouses, PicSnow, 0, CornerX(PicSnow), CornerY(PicSnow), gX, gY, $0, aSnowStep);
+        fRenderList.AddSpriteG(rxHouses, PicSnowNoShadow, 0, CornerX(PicSnowNoShadow), CornerY(PicSnowNoShadow), gX, gY, $0, aSnowStep);
       end;
     end
     else if DoImmediateRender then
