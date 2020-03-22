@@ -368,8 +368,8 @@ begin
   try
     for HT := HOUSE_MIN to HOUSE_MAX do
     begin
-      SnowID := aResHouses[HT].SnowPic;
-      SnowNoShadowID := aResHouses[HT].SnowPicNoShadow;
+      SnowID := aResHouses[HT].SnowPic + 1;
+      SnowNoShadowID := aResHouses[HT].SnowPicNoShadow + 1;
       if (fRXData.Flag[SnowID] <> 0) and (fRXData.Flag[SnowNoShadowID] <> 0) then
         ShadowConverter.RemoveShadow(SnowID, SnowNoShadowID);
     end;
