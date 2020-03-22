@@ -1429,7 +1429,7 @@ begin
     begin // START Unequalize
       if fRaise then
       begin
-        if (I >= 1) and (K >= 1) and (I < gTerrain.MapY) and (K < gTerrain.MapX) then
+        if (I > 1) and (K >= 1) and (I < gTerrain.MapY) and (K < gTerrain.MapX) then
         begin
           // Unequalize compares heights of adjacent tiles and increases differences
           if (gTerrain.Land[I,K].Height < gTerrain.Land[I-1,K+1].Height) then
