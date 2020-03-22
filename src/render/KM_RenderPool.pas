@@ -1902,7 +1902,7 @@ procedure TRenderList.AddSpriteG(aRX: TRXType; aId: Word; aUID: Integer; pX,pY,g
 const
   MAX_SEL_RECT_HEIGHT = CELL_SIZE_PX * 1.5; //Restrict too long images selection rect
 var
-  W, H: Integer;
+  W, H, WS: Integer;
 begin
   if fCount >= Length(RenderList) then
     SetLength(RenderList, fCount + 256); // Book some space
@@ -1919,13 +1919,14 @@ begin
     if aUID > 0 then
     with RenderList[fCount].SelectionRect do
     begin
+      WS := (fUnitsRXData.SizeNoShadow[aId].right div 2) + fUnitsRXData.Pivot[aId].x; //Fix for bow and crossbowman
       //Enlarge rect from image size to the left and right, to be at least CELL_SIZE_PX width and height
-      W := Max(0, CELL_SIZE_PX - (fUnitsRXData.SizeNoShadow[aId].right - fUnitsRXData.SizeNoShadow[aId].left)); //width to add to image pos. half to the left, half to the right
+      W := Max(0, CELL_SIZE_PX - (Abs(WS div 2) + fUnitsRXData.SizeNoShadow[aId].right - fUnitsRXData.SizeNoShadow[aId].left)); //width to add to image pos. half to the left, half to the right
       H := Max(0, CELL_SIZE_PX - (fUnitsRXData.SizeNoShadow[aId].bottom - fUnitsRXData.SizeNoShadow[aId].top)); //height to add to image pos. half to the top, half to the bottom
 
-      Left := RenderList[fCount].Loc.X + (-(W div 2) - 0.5 + fUnitsRXData.SizeNoShadow[aId].left) / CELL_SIZE_PX; //-0.5 to get some insurance on uneven terrain
+      Left := RenderList[fCount].Loc.X + (-(W div 2) - Max(0,WS) + fUnitsRXData.SizeNoShadow[aId].left) / CELL_SIZE_PX;
       Bottom := gY - ((H div 2) + fUnitsRXData.Size[aId].Y - 1 - fUnitsRXData.SizeNoShadow[aId].bottom) / CELL_SIZE_PX;
-      Right := Left + (W + 0.5 + gGFXData[aRX, aId].PxWidth - (fUnitsRXData.Size[aId].X - 1 - fUnitsRXData.SizeNoShadow[aId].right)) / CELL_SIZE_PX; //+0.5 to get some insurance on uneven terrain
+      Right := Left + (W - Min(0, WS) + gGFXData[aRX, aId].PxWidth - (fUnitsRXData.Size[aId].X - 1 - fUnitsRXData.SizeNoShadow[aId].right)) / CELL_SIZE_PX;
       Top := Bottom - Min(MAX_SEL_RECT_HEIGHT, H + gGFXData[aRX, aId].PxHeight - fUnitsRXData.SizeNoShadow[aId].top) / CELL_SIZE_PX;
     end;
 
