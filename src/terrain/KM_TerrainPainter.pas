@@ -1401,7 +1401,7 @@ begin
   if fBrushMask <> mkNone then
     UseMagicBrush(X, Y, fSize, (fShape = hsSquare), True);
 
-  gTerrain.UpdatePassability(KMRectGrow(KMRect(KMPoint(fMapXc, fMapXc)), (fSize div 2) + 1));
+  gTerrain.UpdatePassability(KMRectGrow(KMRect(KMPoint(fMapXc, fMapYc)), (fSize div 2) + 1));
 end;
 
 
