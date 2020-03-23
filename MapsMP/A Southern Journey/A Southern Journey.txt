@@ -1,8 +1,8 @@
 Author
 andreus
 
-BigDesc
-A coop mission by andreus||Version 1.5 Beta (15 mar 2020)
+BigDescLIBX
+9
 
 SetCoop
 
@@ -13,5 +13,5 @@ BlockTeamSelection
 BlockFullMapPreview
 
 DifficultyLevels
-mdEasy1,mdNormal,mdHard1
+mdEasy1,mdNormal,mdHard1,mdHard2,mdHard3
 

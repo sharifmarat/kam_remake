@@ -144,6 +144,23 @@ begin
 end;
 
 
+{$COMMAND help: ShowHelpMsg}
+
+
+procedure ShowHelpMsg(P: Integer);
+begin
+  Actions.ShowMsg(P, '<$4>');
+  Actions.ShowMsg(P, '<$5>');
+  Actions.ShowMsg(P, '<$12>');
+  Actions.ShowMsg(P, '<$19>');
+  Actions.ShowMsg(P, '<$20>');
+  if GameState[P] >= 15 then
+    Actions.ShowMsg(P, '<$11>');
+  if GameState[P] = 11 then
+    Actions.ShowMsg(P, '<$6>');
+end;
+
+
 function BoatsCount(P: Integer): Integer;
 begin
   Result := Byte(not Boat[1][P].Killed) + Byte(not Boat[2][P].Killed) + Byte(not Boat[3][P].Killed) + Byte(not Boat[4][P].Killed);
@@ -546,6 +563,9 @@ begin
 end;
 
 
+{$COMMAND random: RandomShips}
+
+
 procedure RandomShips(P: Integer);
 var
   aX, aY: Integer;
@@ -591,10 +611,16 @@ begin
 end;
 
 
-procedure StartNewGame;
+{$COMMAND new: StartNewGame}
+
+
+procedure StartNewGame(P: Integer);
 var
   aX, aY: Integer;
 begin
+
+  if GameState[P] < 15 then
+    Exit;
 
   for I := 0 to 1 do
   begin
@@ -808,9 +834,52 @@ begin
 end;
 
 
-procedure OnHousePlanPlaced(P, X, Y, aType: Integer);
+{$COMMAND undo: UndoPlacement}
+
+
+procedure UndoPlacement(P, aSteps: Integer);
 var
-  aX, aY: Integer;
+  I, K, Steps: Integer;
+begin
+  Steps := Utils.EnsureRangeI(aSteps, 1, 10);
+
+  for I := 1 to Steps do
+  begin
+    if not InRange(GameState[P], 2, 11) then
+      Exit;
+    for K := 1 to 100 do
+      if (Placements[P][GameState[P] - 1].X[K] > 0)
+      and (Placements[P][GameState[P] - 1].Y[K] > 0) then
+        Actions.MapTileSet(Placements[P][GameState[P] - 1].X[K], Placements[P][GameState[P] - 1].Y[K], 37, 0);
+    GameState[P] := GameState[P] - 1;
+  end;
+
+end;
+
+
+{$COMMAND clear: UndoAllPlacements}
+
+
+procedure UndoAllPlacements(P: Integer);
+begin
+  UndoPlacement(P, 10);
+end;
+
+
+{$COMMAND ready: PlayerReady}
+
+
+procedure PlayerReady(P: Integer);
+begin
+  if GameState[P] = 11 then
+  begin
+    GameState[P] := 12;
+    NewGame := False;
+  end;
+end;
+
+
+procedure OnHousePlanPlaced(P, X, Y, aType: Integer);
 begin
   Actions.PlanRemove(P, X, Y);
 
@@ -820,35 +889,19 @@ begin
 
   if (aType = 21)
   and (GameState[P] = 11) then
-  begin
-    GameState[P] := 12;
-    NewGame := False;
-  end;
+    PlayerReady(P);
 
   if (aType = 17)
   and (GameState[P] >= 15) then
-    StartNewGame;
+    StartNewGame(P);
 
   if (aType = 11)
   and (InRange(GameState[P], 2, 11)) then
-  begin
-    for aX := OwnBattlefieldLimitX(P, 0) to OwnBattlefieldLimitX(P, 1) do
-    for aY := OwnBattlefieldLimitY(P, 0) to OwnBattlefieldLimitY(P, 1) do
-      Actions.MapTileSet(aX, aY, 37, 0);
-
-    GameState[P] := 1;
-
-  end;
+    UndoPlacement(P, 10);
 
   if (aType = 13)
   and (InRange(GameState[P], 2, 11)) then
-  begin
-    for I := 1 to 100 do
-      if (Placements[P][GameState[P] - 1].X[I] > 0)
-      and (Placements[P][GameState[P] - 1].Y[I] > 0) then
-        Actions.MapTileSet(Placements[P][GameState[P] - 1].X[I], Placements[P][GameState[P] - 1].Y[I], 37, 0);
-    GameState[P] := GameState[P] - 1;
-  end;
+    UndoPlacement(P, 1);
 
 end;
 
