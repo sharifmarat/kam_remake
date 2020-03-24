@@ -135,7 +135,7 @@ end;
 
 function TKMHandsCollection.GetHand(aIndex: Integer): TKMHand;
 begin
-  if (Self = nil) or (aIndex >= Length(fHandsList)) then Exit(nil);
+  if (Self = nil) or not InRange(aIndex, 0, Length(fHandsList) - 1) then Exit(nil);
 
   //We have Range Checks enabled so such an error will be caught and reported already
   //Assert(InRange(aIndex, 0, fCount-1));

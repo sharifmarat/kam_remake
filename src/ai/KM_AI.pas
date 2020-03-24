@@ -255,18 +255,24 @@ end;
 
 function TKMHandAI.GetHasWon: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fWonOrLost = wolWon;
 end;
 
 
 function TKMHandAI.GetHasLost: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fWonOrLost = wolLost;
 end;
 
 
 function TKMHandAI.GetIsNotWinnerNotLoser: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fWonOrLost = wolNone;
 end;
 
