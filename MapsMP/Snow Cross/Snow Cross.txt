@@ -1,3 +1,6 @@
 BigDesc
-Four armies eye each other across the snow covered forest. Who shall outmanoeuvre their opponents and claim victory?||Map uses dynamic script: your armies are absolutely random now :D||Made by andreus.
+Four armies eye each other across the snow covered forest. Who shall outmanoeuvre their opponents and claim victory?||[$74AE78]Normal difficulty[]: classic edition|[$35ABAD]Hard difficulty[]: random edition|[$1162AF]Harder difficulty[]: epic madness full random edition||Made by andreus.
+
+DifficultyLevels
+mdNormal,mdHard1,mdHard2
 
