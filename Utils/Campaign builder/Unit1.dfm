@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 72
   Top = 90
   Caption = 'Campaign Builder'
-  ClientHeight = 720
-  ClientWidth = 1280
+  ClientHeight = 808
+  ClientWidth = 1253
   Color = clBtnFace
   Constraints.MinHeight = 492
   Constraints.MinWidth = 689
@@ -20,8 +20,8 @@ object Form1: TForm1
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   DesignSize = (
-    1280
-    720)
+    1253
+    808)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -35,13 +35,14 @@ object Form1: TForm1
   end
   object Label2: TLabel
     Left = 8
-    Top = 426
+    Top = 514
     Width = 60
     Height = 16
     Anchors = [akLeft, akBottom]
     AutoSize = False
     Caption = 'Nodes count'
     Layout = tlCenter
+    ExplicitTop = 426
   end
   object Bevel1: TBevel
     Left = 8
@@ -60,17 +61,19 @@ object Form1: TForm1
   end
   object Bevel2: TBevel
     Left = 8
-    Top = 574
+    Top = 662
     Width = 200
     Height = 2
     Anchors = [akLeft, akBottom]
+    ExplicitTop = 574
   end
   object Bevel3: TBevel
     Left = 8
-    Top = 610
+    Top = 698
     Width = 200
     Height = 2
     Anchors = [akLeft, akBottom]
+    ExplicitTop = 610
   end
   object Label3: TLabel
     Left = 8
@@ -85,7 +88,7 @@ object Form1: TForm1
     Left = 8
     Top = 224
     Width = 200
-    Height = 194
+    Height = 282
     Anchors = [akLeft, akTop, akBottom]
     AutoExpand = True
     HideSelection = False
@@ -134,7 +137,7 @@ object Form1: TForm1
   end
   object seNodeCount: TSpinEdit
     Left = 8
-    Top = 450
+    Top = 538
     Width = 41
     Height = 22
     Anchors = [akLeft, akBottom]
@@ -146,8 +149,8 @@ object Form1: TForm1
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 700
-    Width = 1280
+    Top = 788
+    Width = 1253
     Height = 20
     Panels = <
       item
@@ -166,8 +169,8 @@ object Form1: TForm1
   object ScrollBox1: TScrollBox
     Left = 216
     Top = 8
-    Width = 1056
-    Height = 684
+    Width = 1029
+    Height = 772
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 7
     object Image1: TImage
@@ -383,7 +386,7 @@ object Form1: TForm1
   end
   object rgBriefingPos: TRadioGroup
     Left = 8
-    Top = 504
+    Top = 592
     Width = 200
     Height = 60
     Anchors = [akLeft, akBottom]
@@ -409,7 +412,7 @@ object Form1: TForm1
   end
   object cbShowNodeNumbers: TCheckBox
     Left = 8
-    Top = 584
+    Top = 672
     Width = 113
     Height = 18
     Anchors = [akLeft, akBottom]
@@ -421,7 +424,7 @@ object Form1: TForm1
   end
   object GroupBox1: TGroupBox
     Left = 8
-    Top = 620
+    Top = 708
     Width = 200
     Height = 72
     Hint = 'Double click to quick-add'#13#10'Drag&Drop to add to mouse position.'
@@ -544,7 +547,7 @@ object Form1: TForm1
   end
   object cbShowBriefingPosition: TCheckBox
     Left = 8
-    Top = 480
+    Top = 568
     Width = 121
     Height = 18
     Anchors = [akLeft, akBottom]
@@ -578,6 +581,16 @@ object Form1: TForm1
     Caption = 'Unload CMP'
     TabOrder = 14
     OnClick = btnUnloadCMPClick
+  end
+  object btnEditMission: TButton
+    Left = 114
+    Top = 512
+    Width = 96
+    Height = 24
+    Caption = 'Edit mission'
+    Enabled = False
+    TabOrder = 15
+    OnClick = btnEditMissionClick
   end
   object dlgOpenPicture: TOpenDialog
     Filter = 'Supported images (*.png)|*.png'

@@ -218,6 +218,8 @@ type
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     function ConfirmExport: Boolean;
     function GetMouseWheelStepsCnt(aWheelData: Integer): Integer;
+    procedure ScanParams;
+    procedure ParamOpenMap(aFileName: string);
     {$IFDEF MSWindows}
     function GetWindowParams: TKMWindowParamsRecord;
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -261,6 +263,7 @@ uses
   KM_HandsCollection,
   KM_ResSound,
   KM_Pics,
+  KM_Maps,
   KM_RenderPool,
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
@@ -326,9 +329,11 @@ begin
 
   fMissionDefOpenPath := ExeDir;
 
+  ScanParams;  
+  //ParamOpenMap('i:\Projects\kam_remake\Campaigns\The Shattered Kingdom\TSK06\TSK06.dat');
+  
   Application.ProcessMessages;
-
-  if fShowStartVideo and (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
+  if (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
   begin
     gVideoPlayer.AddVideo('Campaigns\The Shattered Kingdom\Logo');
     gVideoPlayer.AddVideo('KaM');
@@ -337,6 +342,37 @@ begin
   fShowStartVideo := False;
 end;
 
+procedure TFormMain.ParamOpenMap(aFileName: string);
+var
+  MapInfo: TKMapInfo;
+begin
+  MapInfo := TKMapInfo.Create(aFileName, false, mfDL);
+  try
+    gGameApp.NewMapEditor(aFileName, 0, 0, MapInfo.CRC);
+  finally
+    MapInfo.Free;
+  end;
+end;
+
+procedure TFormMain.ScanParams;
+var
+  i, SepPosition: Integer;
+  param, Code, Value: string;
+begin
+  if ParamCount = 0 then
+    Exit;
+
+  for i := 0 to ParamCount do
+    if ParamStr(i)[1] = '-' then
+    begin
+      param := ParamStr(i);
+      SepPosition := pos('=', param);
+      Code := LowerCase(Copy(param, 2, SepPosition - 2));
+      Value := Copy(param, SepPosition + 1, Length(param) - SepPosition);
+      if Code = 'open' then
+        ParamOpenMap(Value);
+    end;
+end;
 
 procedure TFormMain.SetSaveEditableMission(aEnabled: Boolean);
 begin

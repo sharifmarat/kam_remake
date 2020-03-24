@@ -40,6 +40,7 @@ type
     edtName: TEdit;
     Label3: TLabel;
     btnUnloadCMP: TButton;
+    btnEditMission: TButton;
     procedure btnLoadPictureClick(Sender: TObject);
     procedure btnLoadCMPClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -64,6 +65,7 @@ type
     procedure btnUnloadCMPClick(Sender: TObject);
     procedure Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure btnEditMissionClick(Sender: TObject);
   private
     fExePath: string;
     fCampaignsPath: string;
@@ -84,6 +86,7 @@ type
     procedure LoadCampaignName(aFileName, aLocale: string);
     procedure SaveCampaignName(aFileName: string);
     procedure CreateDefaultLocaleLibxTemplate(aFileName: string);
+    function ExecAndWait(const FileName, Params: ShortString; const WinState: Word): boolean; export;
   public
     procedure FlagDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure FlagMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -915,6 +918,7 @@ begin
 
   fUpdating := True;
 
+  btnEditMission.Enabled := True;
   //Try to select map in TreeList
   M := -1;
   N := -1;
@@ -944,6 +948,47 @@ begin
 
   UpdateNodeCount;
   RefreshFlags;
+end;
+
+procedure TForm1.btnEditMissionClick(Sender: TObject);
+var
+  MissionName: string;
+  p: string;
+begin
+  if fSelectedMap < 9 then
+    MissionName := edtShortName.Text + '0' + IntToStr(fSelectedMap + 1)
+  else
+    MissionName := edtShortName.Text + IntToStr(fSelectedMap + 1);
+
+  ExecAndWait(C.Path + '../../KaM_Remake.exe', '"-open=' + C.Path + MissionName + '\' + MissionName + '.dat"', SW_SHOWNORMAL);
+end;
+
+function TForm1.ExecAndWait(const FileName, Params: ShortString; const WinState: Word): boolean; export;
+var
+  StartInfo: TStartupInfo;
+  ProcInfo: TProcessInformation;
+  CmdLine: ShortString;
+begin
+  CmdLine := '"' + Filename + '" ' + Params;
+  FillChar(StartInfo, SizeOf(StartInfo), #0);
+  with StartInfo do
+  begin
+    cb := SizeOf(StartInfo);
+    dwFlags := STARTF_USESHOWWINDOW;
+    wShowWindow := WinState;
+  end;
+
+  Result := CreateProcess(nil, PChar(string(CmdLine)), nil, nil, false, CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, nil,
+    PChar(ExtractFilePath(Filename)), StartInfo, ProcInfo);
+  {
+  if Result then
+  begin
+    WaitForSingleObject(ProcInfo.hProcess, INFINITE);
+
+    CloseHandle(ProcInfo.hProcess);
+    CloseHandle(ProcInfo.hThread);
+  end;
+  }
 end;
 
 end.
