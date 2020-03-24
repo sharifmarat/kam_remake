@@ -1994,11 +1994,7 @@ begin
 //        KFrom := EnsureRange(K - aInsetRect.Left, 1, aInsetRect.Left + gTerrain.MapX - 1);
         if (IFrom <> I - aInsetRect.Top)
           or (KFrom <> K - aInsetRect.Left) then
-        begin
-//          if TryGetVertexEffectiveTerKind(
-
-            S.Write(Byte(tkGrass));             // Its ok if we fill all with grass
-        end
+            S.Write(Byte(tkGrass)) // Its ok if we fill all with grass
         else
           S.Write(LandTerKind[IFrom,KFrom].TerKind, 1);
       end;
