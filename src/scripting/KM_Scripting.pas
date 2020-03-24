@@ -796,7 +796,8 @@ begin
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
 
-    RegisterMethodCheck(c, 'function Format(aFormatting: string; aData: array of const): string;');
+    RegisterMethodCheck(c, 'function Format(aFormatting: string; aData: array of const): string');
+    RegisterMethodCheck(c, 'function FormatFloat(const aFormat: string; aValue: Single): string');
 
     RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString');
     RegisterMethodCheck(c, 'function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer');
@@ -1424,6 +1425,7 @@ begin
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
 
       RegisterMethod(@TKMScriptUtils.Format,                                    'Format');
+      RegisterMethod(@TKMScriptUtils.FormatFloat,                               'FormatFloat');
 
       RegisterMethod(@TKMScriptUtils.IfThen,                                    'IfThen');
       RegisterMethod(@TKMScriptUtils.IfThenI,                                   'IfThenI');

@@ -31,6 +31,7 @@ type
     function EnsureRangeS(aValue, aMin, aMax: Single): Single;
 
     function Format(const aFormatting: string; aData: array of const): string;
+    function FormatFloat(const aFormat: string; aValue: Single): string;
 
     function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString;
     function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer;
@@ -406,6 +407,20 @@ function TKMScriptUtils.Format(const aFormatting: string; aData: array of const)
 begin
   try
     Result := SysUtils.Format(aFormatting, aData);
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Wrapper for pascal FormatFloat function
+//* Formats aValue with specified aFormat
+function TKMScriptUtils.FormatFloat(const aFormat: string; aValue: Single): string;
+begin
+  try
+    Result := SysUtils.FormatFloat(aFormat, aValue);
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
