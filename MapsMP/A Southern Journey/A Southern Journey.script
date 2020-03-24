@@ -490,6 +490,8 @@ end;
 
 procedure OnHouseDestroyed(aID, aDestroyer: Integer);
 begin
+  if not Utils.InRangeI(States.HouseOwner(aID), 0, 1) then
+    Exit;
   if States.StatHouseTypeCount(States.HouseOwner(aID), 29) = 0 then
     OffersAllowed[States.HouseOwner(aID)] := False;
 end;

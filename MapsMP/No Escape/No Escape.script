@@ -85,24 +85,24 @@ end;
 
 function FloodSoundTime: Integer;
 begin
-  case States.GameSpeed of
-    0.99..1.01: Result := 200;
-    1.09..1.11: Result := 195;
-    1.19..1.21: Result := 190;
-    1.29..1.31: Result := 186;
-    1.39..1.41: Result := 182;
-    1.49..1.51: Result := 177;
-    1.59..1.61: Result := 172;
-    1.69..1.71: Result := 169;
-    1.79..1.81: Result := 161;
-    1.89..1.91: Result := 155;
-    1.99..2.01: Result := 148;
-    2.09..2.11: Result := 142;
-    2.19..2.21: Result := 139;
-    2.29..2.31: Result := 133;
-    2.39..2.41: Result := 128;
-    2.49..2.51: Result := 120
-    else        Result := -1;
+  case Round(10 * States.GameSpeed) of
+    10:  Result := 200;
+    11:  Result := 195;
+    12:  Result := 190;
+    13:  Result := 186;
+    14:  Result := 182;
+    15:  Result := 177;
+    16:  Result := 172;
+    17:  Result := 169;
+    18:  Result := 161;
+    19:  Result := 155;
+    20:  Result := 148;
+    21:  Result := 142;
+    22:  Result := 139;
+    23:  Result := 133;
+    24:  Result := 128;
+    25:  Result := 120
+    else Result := -1;
   end;
 end;
 
