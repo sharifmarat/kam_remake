@@ -2015,6 +2015,8 @@ procedure TKMTerrainPainter.MakeCheckpoint;
 var
   I, J, L: Integer;
 begin
+  if not gGame.IsMapEditor then Exit;
+
   //Get next pos in circular buffer
   fUndoPos := (fUndoPos + 1) mod MAX_UNDO;
 
