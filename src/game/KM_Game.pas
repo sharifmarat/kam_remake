@@ -1747,6 +1747,7 @@ begin
     aSaveStream.Write(GameResult, SizeOf(GameResult));
 
   gTerrain.Save(aSaveStream); //Saves the map
+  fTerrainPainter.Save(aSaveStream);
   gHands.Save(aSaveStream, fGameMode in [gmMulti, gmMultiSpectate]); //Saves all players properties individually
   if not IsMultiPlayerOrSpec then
     gMySpectator.Save(aSaveStream);
@@ -1982,6 +1983,7 @@ begin
 
   //Load the data into the game
   gTerrain.Load(LoadStream);
+  fTerrainPainter.Load(LoadStream);
 
   gHands.Load(LoadStream);
   gMySpectator := TKMSpectator.Create(0);

@@ -107,6 +107,9 @@ type
     procedure SaveToFile(const aFileName: UnicodeString); overload;
     procedure SaveToFile(const aFileName: UnicodeString; const aInsetRect: TKMRect); overload;
 
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
+
     procedure Eyedropper(const aLoc: TKMPoint);
     procedure RotateTile(const aLoc: TKMPoint);
     procedure MagicWater(const aLoc: TKMPoint);
@@ -257,7 +260,8 @@ const
 
 implementation
 uses
-  KM_GameCursor, KM_Resource, KM_Log, KM_CommonUtils, KM_Utils, KM_CommonTypes, KM_ResSprites, KM_GUIMapEdTerrainBrushes;
+  KM_Game, KM_GameCursor, KM_Resource, KM_Log, KM_CommonUtils, KM_Utils, KM_CommonTypes,
+  KM_ResSprites, KM_GUIMapEdTerrainBrushes;
 
 
 type
@@ -1901,6 +1905,35 @@ begin
   end;
 
   MakeCheckpoint;
+end;
+
+
+procedure TKMTerrainPainter.Save(SaveStream: TKMemoryStream);
+var
+  I, K: Integer;
+begin
+  for I := 1 to gTerrain.MapY do
+    for K := 1 to gTerrain.MapX do
+    begin
+      SaveStream.Write(LandTerKind[I,K].TerKind, SizeOf(LandTerKind[I,K].TerKind));
+      SaveStream.Write(LandTerKind[I,K].Tiles);
+      SaveStream.Write(LandTerKind[I,K].HeightAdd);
+    end;
+end;
+
+
+procedure TKMTerrainPainter.Load(LoadStream: TKMemoryStream);
+var
+  I, K: Integer;
+begin
+  InitSize(gTerrain.MapX, gTerrain.MapY);
+  for I := 1 to gTerrain.MapY do
+    for K := 1 to gTerrain.MapX do
+    begin
+      LoadStream.Read(LandTerKind[I,K].TerKind, SizeOf(LandTerKind[I,K].TerKind));
+      LoadStream.Read(LandTerKind[I,K].Tiles);
+      LoadStream.Read(LandTerKind[I,K].HeightAdd);
+    end;
 end;
 
 
