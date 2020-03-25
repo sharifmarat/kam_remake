@@ -1532,6 +1532,8 @@ begin
       SetGameSpeed(fGameOptions.SpeedAfterPT, False);
       fNetworking.PostLocalMessage(gResTexts[TX_MP_PEACETIME_OVER], csNone);
       IssueAutosaveCommand(True);
+
+      gScriptEvents.ProcPeacetimeEnd;
     end;
   end;
 end;

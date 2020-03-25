@@ -22,6 +22,7 @@ type
     evtGroupOrderSplit,
     evtMarketTrade,
     evtMissionStart,
+    evtPeacetimeEnd,
     evtPlanRoadDigged,
     evtPlanRoadPlaced,
     evtPlanRoadRemoved,

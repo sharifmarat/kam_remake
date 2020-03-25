@@ -79,6 +79,7 @@ type
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
     procedure ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TKMWareType);
     procedure ProcMissionStart;
+    procedure ProcPeacetimeEnd;
     procedure ProcPlanRoadDigged(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcPlanRoadPlaced(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcPlanRoadRemoved(aPlayer: TKMHandID; aX, aY: Word);
@@ -194,6 +195,7 @@ begin
   AddEventHandlerName(evtGroupOrderSplit,       'OnGroupOrderSplit');
   AddEventHandlerName(evtMarketTrade,           'OnMarketTrade');
   AddEventHandlerName(evtMissionStart,          'OnMissionStart');
+  AddEventHandlerName(evtPeacetimeEnd,          'OnPeacetimeEnd');
   AddEventHandlerName(evtPlanRoadDigged,        'OnPlanRoadDigged');
   AddEventHandlerName(evtPlanRoadPlaced,        'OnPlanRoadPlaced');
   AddEventHandlerName(evtPlanRoadRemoved,       'OnPlanRoadRemoved');
@@ -252,6 +254,8 @@ function TKMScriptEvents.MethodAssigned(aEventType: TKMScriptEventType): Boolean
 var
   I: Integer;
 begin
+  if Self = nil then Exit(False);
+  
   Result := False;
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
     if fEventHandlers[aEventType][I].Handler.Code <> nil then
@@ -575,6 +579,15 @@ procedure TKMScriptEvents.ProcMissionStart;
 begin
   if MethodAssigned(evtMissionStart) then
     CallEventHandlers(evtMissionStart, []);
+end;
+
+
+//* Version: 11000
+//* Occurs immediately after the end of peacetime
+procedure TKMScriptEvents.ProcPeacetimeEnd;
+begin
+  if MethodAssigned(evtPeacetimeEnd) then
+    CallEventHandlers(evtPeacetimeEnd, []);
 end;
 
 
