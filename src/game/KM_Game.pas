@@ -1587,12 +1587,19 @@ end;
 
 
 procedure TKMGame.SetGameSpeedGIP(aSpeed: Single; aUpdateActual: Boolean = False);
+var
+  speedChanged: Boolean;
 begin
+  speedChanged := fGameSpeedGIP <> aSpeed;
+
   fGameSpeedGIP := aSpeed;
   if aUpdateActual then
     SetGameSpeedActual(aSpeed)
   else
     UpdateClockUI;
+
+  if speedChanged then
+    gScriptEvents.ProcGameSpeedChanged(aSpeed);
 end;
 
 
