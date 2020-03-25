@@ -961,7 +961,7 @@ begin
               end;
             end;
 
-    60..99: begin
+    80..99: begin
               bReborn := True;
               if not bMsg then
               begin
