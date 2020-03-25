@@ -849,7 +849,7 @@ end;
 function TKMScriptStates.GameSpeed: Single;
 begin
   try
-    Result := gGame.GameSpeed;
+    Result := gGame.GameSpeedGIP; //Return recorded as GIP speed, not actual!
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

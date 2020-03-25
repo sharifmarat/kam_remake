@@ -35,7 +35,8 @@ type
 
     fIsExiting: Boolean; //Set this to true on Exit and unit/house pointers will be released without cross-checking
     fIsPaused: Boolean;
-    fGameSpeed: Single; //Actual speedup value
+    fGameSpeedActual: Single; //Actual speedup value, used to play the game
+    fGameSpeedGIP: Single; //GameSpeed, recorded to GIP, could be requested by scripts
     fGameSpeedMultiplier: Word; //How many ticks are compressed into one
     fGameMode: TKMGameMode;
     fWaitingForNetwork: Boolean; //Indicates that we are waiting for other players commands in MP
@@ -110,6 +111,9 @@ type
     function DoSaveGameAsText: Boolean;
 
     function GetMissionFile: UnicodeString;
+
+    procedure SetGameSpeedActualValue(aSpeed: Single);
+    procedure UpdateClockUI;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -193,7 +197,8 @@ type
     property GameName: UnicodeString read fGameName;
     property CampaignName: TKMCampaignId read fCampaignName;
     property CampaignMap: Byte read fCampaignMap;
-    property GameSpeed: Single read fGameSpeed;
+    property GameSpeedActual: Single read fGameSpeedActual;
+    property GameSpeedGIP: Single read fGameSpeedGIP;
     property GameTickDuration: Single read GetGameTickDuration;
     property SavedReplays: TKMSavedReplays read fSavedReplays write fSavedReplays;
 
@@ -218,7 +223,12 @@ type
     function GetNewUID: Integer;
     function GetNormalGameSpeed: Single;
     procedure StepOneFrame;
-    procedure SetGameSpeed(aSpeed: Single; aToggle: Boolean);
+
+    procedure SetGameSpeed(aSpeed: Single); overload;
+    procedure SetGameSpeed(aSpeed: Single; aToggle: Boolean); overload;
+
+    procedure SetGameSpeedActual(aSpeed: Single);
+    procedure SetGameSpeedGIP(aSpeed: Single; aUpdateActual: Boolean = False);
 
     function SavePath(const aName: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
     function SaveName(const aFolder, aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString; overload;
@@ -331,7 +341,8 @@ begin
   end;
 
   fTimerGame := TTimer.Create(nil);
-  SetGameSpeed(1, False); //Initialize relevant variables
+  //pseudo GIP command, since we just want to initialize speed with default values
+  SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
   fTimerGame.OnTimer := UpdateGame;
   fTimerGame.Enabled := True;
 
@@ -711,7 +722,7 @@ begin
   fGameOptions.SpeedPT := fNetworking.NetGameOptions.SpeedPT;
   fGameOptions.SpeedAfterPT := fNetworking.NetGameOptions.SpeedAfterPT;
 
-  SetGameSpeed(GetNormalGameSpeed, False);
+  SetGameSpeed(GetNormalGameSpeed, True);
 
   //Check for default advanced AI's
   if fNetworking.IsMap then
@@ -1556,61 +1567,111 @@ begin
       Result := fGameOptions.SpeedPT
     else
       Result := fGameOptions.SpeedAfterPT;
-  end else
-    Result := 1;
+  end
+  else
+  if IsReplay then
+    Result := fGameSpeedGIP
+  else
+    Result := GAME_SPEED_NORMAL;
+end;
+
+
+procedure TKMGame.UpdateClockUI;
+begin
+  //don't show speed clock in MP since you can't turn it on/off
+  if IsSpeedUpAllowed or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK then
+    fGamePlayInterface.UpdateClock(fGameSpeedActual, fGameSpeedGIP, IsReplay);
+end;
+
+
+procedure TKMGame.SetGameSpeedGIP(aSpeed: Single; aUpdateActual: Boolean = False);
+begin
+  fGameSpeedGIP := aSpeed;
+  if aUpdateActual then
+    SetGameSpeedActual(aSpeed)
+  else
+    UpdateClockUI;
+end;
+
+
+procedure TKMGame.SetGameSpeedActual(aSpeed: Single);
+var
+  OldGameSpeed: Single;
+begin
+  //MapEd always runs at x1
+  if IsMapEditor then
+  begin
+    SetGameSpeedActualValue(GAME_SPEED_NORMAL);
+    Exit;
+  end;
+
+  OldGameSpeed := fGameSpeedActual;
+
+  UpdateTickCounters;
+
+  SetGameSpeedActualValue(aSpeed);
+
+  UpdateClockUI;
+
+  //Need to adjust the delay immediately in MP
+  if IsMultiPlayerOrSpec and (fGameInputProcess <> nil) then
+    TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeedActual);
+
+  if Assigned(gGameApp.OnGameSpeedChange) then
+    gGameApp.OnGameSpeedChange(fGameSpeedActual);
+
+  GameSpeedChanged(OldGameSpeed, fGameSpeedActual);
+end;
+
+
+procedure TKMGame.SetGameSpeedActualValue(aSpeed: Single);
+begin
+  fGameSpeedActual := aSpeed;
+
+  //When speed is above x5 we start to skip rendering frames
+  //by doing several updates per timer tick
+  if fGameSpeedActual > 5 then
+  begin
+    fGameSpeedMultiplier := Round(fGameSpeedActual / 4);
+    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeedActual * fGameSpeedMultiplier);
+  end
+  else
+  begin
+    fGameSpeedMultiplier := 1;
+    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeedActual);
+  end;
+end;
+
+
+procedure TKMGame.SetGameSpeed(aSpeed: Single);
+begin
+  Assert(aSpeed > 0);
+
+  //MapEd always runs at x1
+  if IsMapEditor then
+  begin
+    SetGameSpeedActualValue(GAME_SPEED_NORMAL);
+    Exit;
+  end;
+
+  if IsReplay then
+    SetGameSpeedActual(aSpeed)
+  else
+    fGameInputProcess.CmdGame(gicGameSpeed, aSpeed);
 end;
 
 
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
 var
-  OldGameSpeed: Single;
+  NewGameSpeed: Single;
 begin
-  Assert(aSpeed > 0);
-
-  OldGameSpeed := fGameSpeed;
-
-  //MapEd always runs at x1
-  if IsMapEditor then
-  begin
-    fGameSpeed := 1;
-    fGameSpeedMultiplier := 1;
-    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeed);
-    Exit;
-  end;
-
-  UpdateTickCounters;
-
   //Make the speed toggle between normal speed and desired value
-  if (aSpeed = fGameSpeed) and aToggle then
-    fGameSpeed := GetNormalGameSpeed
+  if (aSpeed = fGameSpeedActual) and aToggle then
+    NewGameSpeed := GetNormalGameSpeed
   else
-    fGameSpeed := aSpeed;
+    NewGameSpeed := aSpeed;
 
-  //When speed is above x5 we start to skip rendering frames
-  //by doing several updates per timer tick
-  if fGameSpeed > 5 then
-  begin
-    fGameSpeedMultiplier := Round(fGameSpeed / 4);
-    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeed * fGameSpeedMultiplier);
-  end
-  else
-  begin
-    fGameSpeedMultiplier := 1;
-    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeed);
-  end;
-
-  //don't show speed clock in MP since you can't turn it on/off
-  if (fGamePlayInterface <> nil) and (IsSpeedUpAllowed or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK) then
-    fGamePlayInterface.ShowClock(fGameSpeed);
-
-  //Need to adjust the delay immediately in MP
-  if IsMultiPlayerOrSpec and (fGameInputProcess <> nil) then
-    TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeed);
-
-  if Assigned(gGameApp.OnGameSpeedChange) then
-    gGameApp.OnGameSpeedChange(fGameSpeed);
-
-  GameSpeedChanged(OldGameSpeed, fGameSpeed);
+  SetGameSpeed(NewGameSpeed);
 end;
 
 
@@ -2180,7 +2241,7 @@ end;
 
 function TKMGame.GetGameTickDuration: Single;
 begin
-  Result := gGameApp.GameSettings.SpeedPace / fGameSpeed;
+  Result := gGameApp.GameSettings.SpeedPace / fGameSpeedActual;
 end;
 
 
@@ -2191,7 +2252,7 @@ var
 begin
   //Lets calculate tick, that shoud be at that moment in theory, depending of speed multiplier and game duration
   TimeSince := GetTimeSince(fGameSpeedChangeTime);
-  CalculatedTick := TimeSince*fGameSpeed/gGameApp.GameSettings.SpeedPace - fPausedTicksCnt;
+  CalculatedTick := TimeSince*fGameSpeedActual/gGameApp.GameSettings.SpeedPace - fPausedTicksCnt;
   //Calc how far behind are we, in ticks
   Result := CalculatedTick + fGameSpeedChangeTick - fGameTick;
 end;
