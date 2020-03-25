@@ -339,13 +339,10 @@ begin
     or (T = 10)
     or (T = 23)
     or (T = 8)
-    or (T = 27) do
+    or (T = 27)
+    or (T = 21) do
       T := Utils.RandomRangeI(0, 29);
-    if (States.MapTilePassability(X, Y + 1, 5))
-    and (States.MapTilePassability(X - 1, Y + 1, 5))
-    and (States.MapTilePassability(X - 2, Y + 1, 5))
-    and (States.MapTilePassability(X + 1, Y + 1, 5))
-    and (States.MapTilePassability(X + 2, Y + 1, 5)) then
+    if CanBuildRoads(X - 2, Y + 1, X + 2, Y + 1) then
       if Actions.PlanAddHouse(4, T, X, Y) then
       begin
         Actions.PlanRemove(4, X, Y);
