@@ -36,7 +36,6 @@ type
     fIsExiting: Boolean; //Set this to true on Exit and unit/house pointers will be released without cross-checking
     fIsPaused: Boolean;
     fGameSpeedActual: Single; //Actual speedup value, used to play the game
-    fGameSpeedGIP: Single; //GameSpeed, recorded to GIP, could be requested by scripts
     fGameSpeedMultiplier: Word; //How many ticks are compressed into one
     fGameMode: TKMGameMode;
     fWaitingForNetwork: Boolean; //Indicates that we are waiting for other players commands in MP
@@ -53,7 +52,9 @@ type
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
     fCampaignName: TKMCampaignId;  //Is this a game part of some campaign
     fDynamicFOW: Boolean;
-    fBlockGetPointer: Boolean;
+    fGameSpeedGIP: Single; //GameSpeed, recorded to GIP, could be requested by scripts
+
+    fBlockGetPointer: Boolean; //?? should be saved ??
 
     //Saved and loaded via GameInfo
     fGameName: UnicodeString;
@@ -85,7 +86,7 @@ type
 
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
-    procedure MultiplayerRig;
+    procedure MultiplayerRig(aNewGame: Boolean);
     procedure SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryStream; aReplayStream: Boolean = False);
     procedure SaveGameToFile(const aPathName: String; aTimestamp: TDateTime; const aMPLocalDataPathName: String = '');
     procedure UpdatePeaceTime;
@@ -621,7 +622,7 @@ begin
     gLog.AddTime('Gameplay recording initialized', True);
 
     if fGameMode in [gmMulti, gmMultiSpectate] then
-      MultiplayerRig;
+      MultiplayerRig(True);
 
     //some late operations for parser (f.e. ProcessAttackPositions, which should be done after MultiplayerRig)
     Parser.PostLoadMission;
@@ -712,7 +713,7 @@ end;
 
 
 //All setup data gets taken from fNetworking class
-procedure TKMGame.MultiplayerRig;
+procedure TKMGame.MultiplayerRig(aNewGame: Boolean);
 var
   I: Integer;
   HIndex: TKMHandID;
@@ -722,7 +723,8 @@ begin
   fGameOptions.SpeedPT := fNetworking.NetGameOptions.SpeedPT;
   fGameOptions.SpeedAfterPT := fNetworking.NetGameOptions.SpeedAfterPT;
 
-  SetGameSpeed(GetNormalGameSpeed, True);
+  if aNewGame then
+    SetGameSpeed(GetNormalGameSpeed, True);
 
   //Check for default advanced AI's
   if fNetworking.IsMap then
@@ -1620,8 +1622,6 @@ begin
 
   SetGameSpeedActualValue(aSpeed);
 
-  UpdateClockUI;
-
   //Need to adjust the delay immediately in MP
   if IsMultiPlayerOrSpec and (fGameInputProcess <> nil) then
     TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeedActual);
@@ -1649,6 +1649,8 @@ begin
     fGameSpeedMultiplier := 1;
     fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeedActual);
   end;
+
+  UpdateClockUI;
 end;
 
 
@@ -1801,7 +1803,7 @@ begin
   aSaveStream.Write(fCampaignMap);
 
   aSaveStream.Write(fDynamicFOW);
-
+  aSaveStream.Write(fGameSpeedGIP);
 
   if aReplayStream then
     aSaveStream.PlaceMarker('ConsistencyCheck2');
@@ -2026,6 +2028,8 @@ begin
   LoadStream.Read(fCampaignMap);
 
   LoadStream.Read(fDynamicFOW);
+  LoadStream.Read(fGameSpeedGIP);
+  SetGameSpeedActualValue(fGameSpeedGIP);
 
   if aReplayStream then
     LoadStream.CheckMarker('ConsistencyCheck2');
@@ -2215,7 +2219,7 @@ begin
   fScripting.SyncLoad;
 
   if fGameMode in [gmMulti, gmMultiSpectate] then
-    MultiplayerRig;
+    MultiplayerRig(False);
 
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
   begin
