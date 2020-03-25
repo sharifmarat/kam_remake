@@ -2308,9 +2308,13 @@ begin
     try
       fMapsMP[I].IsFavourite := not fMapsMP[I].IsFavourite;
       if fMapsMP[I].IsFavourite then
-        gGameApp.GameSettings.FavouriteMaps.Add(fMapsMP[I].CRC)
-      else
-        gGameApp.GameSettings.FavouriteMaps.Remove(fMapsMP[I].CRC);
+      begin
+        gGameApp.GameSettings.FavouriteMaps.Add(fMapsMP[I].MapAndDatCRC);
+        gGameApp.GameSettings.ServerMapsRoster.Add(fMapsMP[I].CRC);
+      end else begin
+        gGameApp.GameSettings.FavouriteMaps.Remove(fMapsMP[I].MapAndDatCRC);
+        gGameApp.GameSettings.ServerMapsRoster.Remove(fMapsMP[I].CRC);
+      end;
 
       //Update pic
       DropCol_Maps.Item[Y].Cells[0].Pic := fMapsMP[I].FavouriteMapPic;

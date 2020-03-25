@@ -351,10 +351,12 @@ type
 
   TKMMapsCRCList = class
   private
+    fEnabled: Boolean;
     fMapsList: TStringList;
     fOnMapsUpdate: TUnicodeStringEvent;
 
     procedure MapsUpdated;
+    function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
@@ -363,6 +365,8 @@ type
     function PackToString: UnicodeString;
 
     property OnMapsUpdate: TUnicodeStringEvent read fOnMapsUpdate write fOnMapsUpdate;
+    property Count: Integer read GetCount;
+    property Enabled: Boolean read fEnabled write fEnabled;
 
     procedure Clear;
     procedure RemoveMissing(aMapsCRCArray: TKMCardinalArray);
@@ -1127,7 +1131,9 @@ end;
 { TKMMapsCRCList }
 constructor TKMMapsCRCList.Create;
 begin
-  inherited;
+  inherited Create;
+
+  fEnabled := True;
   fMapsList := TStringList.Create;
   fMapsList.Delimiter       := MAPS_CRC_DELIMITER;
   fMapsList.StrictDelimiter := True; // Requires D2006 or newer.
@@ -1141,6 +1147,14 @@ begin
 end;
 
 
+function TKMMapsCRCList.GetCount: Integer;
+begin
+  if not fEnabled then Exit(0);
+
+  Result := fMapsList.Count;
+end;
+
+
 procedure TKMMapsCRCList.MapsUpdated;
 begin
   if Assigned(fOnMapsUpdate) then
@@ -1149,10 +1163,13 @@ end;
 
 
 procedure TKMMapsCRCList.LoadFromString(const aString: UnicodeString);
-var I: Integer;
-    MapCRC : Int64;
-    StringList: TStringList;
+var
+  I: Integer;
+  MapCRC : Int64;
+  StringList: TStringList;
 begin
+  if not fEnabled then Exit;
+
   fMapsList.Clear;
   StringList := TStringList.Create;
   StringList.Delimiter := MAPS_CRC_DELIMITER;
@@ -1172,12 +1189,16 @@ end;
 
 function TKMMapsCRCList.PackToString: UnicodeString;
 begin
+  if not fEnabled then Exit('');
+
   Result := fMapsList.DelimitedText;
 end;
 
 
 procedure TKMMapsCRCList.Clear;
 begin
+  if not fEnabled then Exit;
+
   fMapsList.Clear;
 end;
 
@@ -1197,6 +1218,8 @@ procedure TKMMapsCRCList.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
   end;
 var I: Integer;
 begin
+  if not fEnabled then Exit;
+
   I := fMapsList.Count - 1;
   //We must check, that all values from favorites are presented in maps CRC array. If not - then remove it from favourites
   while (fMapsList.Count > 0) and (I >= 0) do
@@ -1214,12 +1237,16 @@ end;
 
 function TKMMapsCRCList.Contains(aMapCRC: Cardinal): Boolean;
 begin
+  if not fEnabled then Exit(False);
+
   Result := fMapsList.IndexOf(IntToStr(aMapCRC)) <> -1;
 end;
 
 
 procedure TKMMapsCRCList.Add(aMapCRC: Cardinal);
 begin
+  if not fEnabled then Exit;
+
   if not Contains(aMapCRC) then
   begin
     fMapsList.Add(IntToStr(aMapCRC));
@@ -1229,17 +1256,23 @@ end;
 
 
 procedure TKMMapsCRCList.Remove(aMapCRC: Cardinal);
-var Index: Integer;
+var
+  index: Integer;
 begin
-  Index := fMapsList.IndexOf(IntToStr(aMapCRC));
-  if Index <> -1 then
-    fMapsList.Delete(Index);
+  if not fEnabled then Exit;
+
+  index := fMapsList.IndexOf(IntToStr(aMapCRC));
+  if index <> -1 then
+    fMapsList.Delete(index);
+
   MapsUpdated;
 end;
 
 
 procedure TKMMapsCRCList.Replace(aOldCRC, aNewCRC: Cardinal);
 begin
+  if not fEnabled then Exit;
+
   if Contains(aOldCRC) then
   begin
     Remove(aOldCRC);

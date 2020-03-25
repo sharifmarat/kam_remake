@@ -440,9 +440,13 @@ begin
     try
       fMaps[I].IsFavourite := not fMaps[I].IsFavourite;
       if fMaps[I].IsFavourite then
-        gGameApp.GameSettings.FavouriteMaps.Add(fMaps[I].CRC)
-      else
-        gGameApp.GameSettings.FavouriteMaps.Remove(fMaps[I].CRC);
+      begin
+        gGameApp.GameSettings.FavouriteMaps.Add(fMaps[I].MapAndDatCRC);
+        gGameApp.GameSettings.ServerMapsRoster.Add(fMaps[I].CRC);
+      end else begin
+        gGameApp.GameSettings.FavouriteMaps.Remove(fMaps[I].MapAndDatCRC);
+        gGameApp.GameSettings.ServerMapsRoster.Remove(fMaps[I].CRC);
+      end;
 
       //Update pic
       ColumnBox_MapEd.Item[Y].Cells[0].Pic := fMaps[I].FavouriteMapPic;
@@ -474,7 +478,7 @@ begin
       //Terminate all
       fMaps.TerminateScan;
 
-      gGameApp.NewMapEditor(Map.FullPath('.dat'), 0, 0, Map.CRC);
+      gGameApp.NewMapEditor(Map.FullPath('.dat'), 0, 0, Map.CRC, Map.MapAndDatCRC);
 
       //Keep MP/SP selected in the map editor interface
       //(if mission failed to load we would have gGame = nil)
@@ -643,18 +647,27 @@ end;
 
 procedure TKMMenuMapEditor.ScanComplete(Sender: TObject);
 var
-  MapsCRCArray: TKMCardinalArray;
+  MapsSimpleCRCArray, MapsFullCRCArray: TKMCardinalArray;
   I: Integer;
 begin
   //Cleanup missing Favourite maps from the lists
   if (Sender = fMaps) and (fMaps.Count > 0) then
   begin
-    SetLength(MapsCRCArray, fMaps.Count);
+    SetLength(MapsSimpleCRCArray, fMaps.Count);
+    SetLength(MapsFullCRCArray, fMaps.Count);
 
     for I := 0 to fMaps.Count - 1 do
-      MapsCRCArray[I] := fMaps[I].CRC;
+    begin
+      MapsSimpleCRCArray[I] := fMaps[I].MapAndDatCRC;
+      MapsFullCRCArray[I] := fMaps[I].CRC;
 
-    gGameApp.GameSettings.FavouriteMaps.RemoveMissing(MapsCRCArray)
+      if gGameApp.GameSettings.ServerMapsRosterEnabled
+        and gGameApp.GameSettings.FavouriteMaps.Contains(MapsSimpleCRCArray[I]) then
+        gGameApp.GameSettings.ServerMapsRoster.Add(MapsFullCRCArray[I]);
+    end;
+
+    gGameApp.GameSettings.FavouriteMaps.RemoveMissing(MapsSimpleCRCArray);
+    gGameApp.GameSettings.ServerMapsRoster.RemoveMissing(MapsFullCRCArray);
   end;
 end;
 
@@ -715,7 +728,7 @@ begin
       R.Tag := I;
       ColumnBox_MapEd.AddItem(R);
 
-      if (fMaps[I].CRC = fSelectedMapInfo.CRC)
+      if (fMaps[I].MapAndDatCRC = fSelectedMapInfo.CRC)
         and ((Radio_MapType.ItemIndex = 0)
           or (Radio_MapType.ItemIndex = 2)
           or (fMaps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
@@ -936,7 +949,7 @@ var CRC: Cardinal;
 begin
   if (aID <> -1) then
   begin
-    CRC := fMaps[aID].CRC;
+    CRC := fMaps[aID].MapAndDatCRC;
     Name := fMaps[aID].FileName;
   end else begin
     CRC := 0;

@@ -59,7 +59,8 @@ type
 
     //Saved and loaded via GameInfo
     fGameName: UnicodeString;
-    fGameMapCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
+    fGameMapSimpleCRC: Cardinal; //CRC of map (based on Map and Dat) used in MapEd
+    fGameMapFullCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
     fGameTick: Cardinal;
     fMissionMode: TKMissionMode;
     fMissionDifficulty: TKMMissionDifficulty;
@@ -127,7 +128,7 @@ type
     constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
     destructor Destroy; override;
 
-    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                         aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone;
                         aAIType: TKMAIType = aitNone; aAutoselectHumanLoc: Boolean = False);
 
@@ -449,7 +450,7 @@ end;
 
 
 //New mission
-procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                             aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal;
                             aMapDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
                             aAutoselectHumanLoc: Boolean = False);
@@ -473,7 +474,8 @@ begin
   gRes.Wares.ResetToDefaults;
 
   fGameName := aGameName;
-  fGameMapCRC := aCRC;
+  fGameMapSimpleCRC := aSimpleCRC;
+  fGameMapFullCRC := aFullCRC;
   if aCampaign <> nil then
     fCampaignName := aCampaign.CampaignId
   else
@@ -1273,25 +1275,34 @@ begin
     MapInfo := TKMapInfo.Create(GetFileDirName(aPathName), True, MapFolder); //Force recreate map CRC
     case MapInfo.MapFolder of
       mfSP:       begin
-                    gGameApp.GameSettings.MenuMapEdSPMapCRC := MapInfo.CRC;
+                    gGameApp.GameSettings.MenuMapEdSPMapCRC := MapInfo.MapAndDatCRC;
                     gGameApp.GameSettings.MenuMapEdMapType := 0;
                     // Update saved SP game list saved selected map position CRC if we resave this map
-                    if fGameMapCRC = gGameApp.GameSettings.MenuSPMissionMapCRC then
-                      gGameApp.GameSettings.MenuSPMissionMapCRC := MapInfo.CRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPScenarioMapCRC then
+                      gGameApp.GameSettings.MenuSPScenarioMapCRC := MapInfo.MapAndDatCRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPMissionMapCRC then
+                      gGameApp.GameSettings.MenuSPMissionMapCRC := MapInfo.MapAndDatCRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPTacticMapCRC then
+                      gGameApp.GameSettings.MenuSPTacticMapCRC := MapInfo.MapAndDatCRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPSpecialMapCRC then
+                      gGameApp.GameSettings.MenuSPSpecialMapCRC := MapInfo.MapAndDatCRC;
                   end;
       mfMP:       begin
-                    gGameApp.GameSettings.MenuMapEdMPMapCRC := MapInfo.CRC;
+                    gGameApp.GameSettings.MenuMapEdMPMapCRC := MapInfo.MapAndDatCRC;
                     gGameApp.GameSettings.MenuMapEdMPMapName := MapInfo.FileName;
                     gGameApp.GameSettings.MenuMapEdMapType := 1;
                   end;
       mfDL:       begin
-                    gGameApp.GameSettings.MenuMapEdDLMapCRC := MapInfo.CRC;
+                    gGameApp.GameSettings.MenuMapEdDLMapCRC := MapInfo.MapAndDatCRC;
                     gGameApp.GameSettings.MenuMapEdMapType := 2;
                   end;
     end;
     // Update favorite map CRC if we resave favourite map with the same name
     if fGameName = MapInfo.FileName then
-      gGameApp.GameSettings.FavouriteMaps.Replace(fGameMapCRC, MapInfo.CRC);
+    begin
+      gGameApp.GameSettings.FavouriteMaps.Replace(fGameMapSimpleCRC, MapInfo.MapAndDatCRC);
+      gGameApp.GameSettings.ServerMapsRoster.Replace(fGameMapFullCRC, MapInfo.CRC);
+    end;
     MapInfo.Free;
   end;
 
@@ -1326,7 +1337,7 @@ begin
     Result := fMissionFileSP //In SP we store it
   else
     //In MP we can't store it since it will be MapsMP or MapsDL on different clients
-    Result := TKMapsCollection.GuessMPPath(fGameName, '.dat', fGameMapCRC);
+    Result := TKMapsCollection.GuessMPPath(fGameName, '.dat', fGameMapFullCRC);
 end;
 
 
@@ -1742,7 +1753,8 @@ begin
   GameInfo := TKMGameInfo.Create;
   try
     GameInfo.Title := fGameName;
-    GameInfo.MapCRC := fGameMapCRC;
+    GameInfo.MapFullCRC := fGameMapFullCRC;
+    GameInfo.MapSimpleCRC := fGameMapSimpleCRC;
     GameInfo.TickCount := fGameTick;
     GameInfo.SaveTimestamp := aTimestamp;
     GameInfo.MissionMode := fMissionMode;
@@ -1998,7 +2010,8 @@ begin
   try
     GameInfo.Load(LoadStream);
     fGameName := GameInfo.Title;
-    fGameMapCRC := GameInfo.MapCRC;
+    fGameMapFullCRC := GameInfo.MapFullCRC;
+    fGameMapSimpleCRC := GameInfo.MapSimpleCRC;
     fGameTick := GameInfo.TickCount;
     fMissionMode := GameInfo.MissionMode;
     fMissionDifficulty := GameInfo.MissionDifficulty;
@@ -2455,7 +2468,7 @@ begin
                           if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
                             and (((fMissionMode = mmNormal) and (fGameTick = ANNOUNCE_BUILD_MAP))
                             or ((fMissionMode = mmTactic) and (fGameTick = ANNOUNCE_BATTLE_MAP))) then
-                            fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapCRC, fNetworking.NetPlayers.GetConnectedCount);
+                            fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapFullCRC, fNetworking.NetPlayers.GetConnectedCount);
 
                           fScripting.UpdateState;
                           UpdatePeacetime; //Send warning messages about peacetime if required

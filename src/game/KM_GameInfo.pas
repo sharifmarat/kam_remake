@@ -22,7 +22,8 @@ type
   public
     Title: UnicodeString; //Used for campaigns and to store in savegames
     Version: AnsiString; //Savegame version, yet unused in maps, they always have actual version
-    MapCRC: Cardinal; //CRC of entire map, used for reporting which map was played to master server
+    MapFullCRC: Cardinal; //CRC of entire map, used for reporting which map was played to master server
+    MapSimpleCRC: Cardinal; //CRC of .dat + .map files
     DATCRC: Cardinal; //CRC of defines .dat files (data\defines)
     TickCount: Cardinal; //Current tick count of the game (unused for maps)
     SaveTimestamp: TDateTime; //UTC time when the save was created (unused for maps)
@@ -91,7 +92,8 @@ procedure TKMGameInfo.Load(LoadStream: TKMemoryStream);
     I: Integer;
   begin
     LoadStream.Read(DATCRC); //Don't check it here (maps don't care), if required somebody else will check it
-    LoadStream.Read(MapCRC);
+    LoadStream.Read(MapFullCRC);
+    LoadStream.Read(MapSimpleCRC);
 
     LoadStream.ReadW(Title); //GameName
     LoadStream.Read(TickCount);
@@ -154,7 +156,8 @@ begin
   SaveStream.WriteA('KaM_GameInfo');
   SaveStream.WriteA(GAME_REVISION); //Save current revision
   SaveStream.Write(gRes.GetDATCRC);
-  SaveStream.Write(MapCRC);
+  SaveStream.Write(MapFullCRC);
+  SaveStream.Write(MapSimpleCRC);
 
   SaveStream.WriteW(Title); //GameName
   SaveStream.Write(TickCount);

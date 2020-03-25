@@ -347,7 +347,7 @@ begin
       R.Tag := I;
       ColumnBox_Maps.AddItem(R);
 
-      if (fMaps[I].CRC = fLastMapCRC) then
+      if (fMaps[I].MapAndDatCRC = fLastMapCRC) then
       begin
         ColumnBox_Maps.ItemIndex := ListI;
         ListClick(nil);
@@ -410,7 +410,7 @@ begin
       //Prepare extra data we are about to display
       fMaps[MapId].LoadExtra;
 
-      fLastMapCRC := fMaps[MapId].CRC;
+      fLastMapCRC := fMaps[MapId].MapAndDatCRC;
       case Radio_MapType.ItemIndex of
         0:  gGameApp.GameSettings.MenuSPScenarioMapCRC := fLastMapCRC;
         1:  gGameApp.GameSettings.MenuSPMissionMapCRC := fLastMapCRC;
@@ -696,7 +696,7 @@ begin
   fMaps.Lock;
   try
     for I := 0 to fMaps.Count - 1 do
-      if fLastMapCRC = fMaps[I].CRC then
+      if fLastMapCRC = fMaps[I].MapAndDatCRC then
       begin
         Map := fMaps[I]; //save map locally, cause we will unlock fMaps before using it
 

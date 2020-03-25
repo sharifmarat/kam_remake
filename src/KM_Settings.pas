@@ -184,6 +184,7 @@ type
     fDebug_SaveGameAsText: Boolean;
 
     fFavouriteMaps: TKMMapsCRCList;
+    fServerMapsRoster: TKMMapsCRCList;
 
     //GFX
     procedure SetBrightness(aValue: Byte);
@@ -247,6 +248,7 @@ type
     procedure SetHTMLStatusFile(const eValue: UnicodeString);
     procedure SetMaxRooms(eValue: Integer);
     procedure SetServerPacketsAccumulatingDelay(aValue: Integer);
+    procedure SetServerMapsRosterStr(const aValue: UnicodeString);
 
     //Menu
     procedure SetMenuFavouriteMapsStr(const aValue: UnicodeString);
@@ -389,6 +391,7 @@ type
     property DebugSaveGameAsText: Boolean read fDebug_SaveGameAsText write SetDebugSaveGameAsText;
 
     property FavouriteMaps: TKMMapsCRCList read fFavouriteMaps;
+    property ServerMapsRoster: TKMMapsCRCList read fServerMapsRoster;
   end;
 
 
@@ -561,6 +564,9 @@ begin
   fFavouriteMaps := TKMMapsCRCList.Create;
   fFavouriteMaps.OnMapsUpdate := SetMenuFavouriteMapsStr;
 
+  fServerMapsRoster := TKMMapsCRCList.Create;
+  fServerMapsRoster.OnMapsUpdate := SetServerMapsRosterStr;
+
   ReloadSettings;
 end;
 
@@ -570,6 +576,7 @@ begin
   SaveToINI(ExeDir + SETTINGS_FILE);
   FreeAndNil(fWareDistribution);
   FreeAndNil(fFavouriteMaps);
+  FreeAndNil(fServerMapsRoster);
 
   inherited;
 end;
@@ -690,7 +697,15 @@ begin
 
     fServerDynamicFOW       := F.ReadBool  ('Server', 'DynamicFOW', False);
     fServerMapsRosterEnabled:= F.ReadBool  ('Server', 'MapsRosterEnabled', False);
-    fServerMapsRosterStr    := F.ReadString('Server', 'MapsRoster', '');
+    fServerMapsRoster.Enabled := fServerMapsRosterEnabled; //Set enabled before fServerMapsRoster load
+
+    if fServerMapsRosterEnabled then
+      fServerMapsRosterStr := F.ReadString('Server', 'MapsRoster', '')
+    else
+      fServerMapsRosterStr := '';
+
+    fServerMapsRoster.LoadFromString(fServerMapsRosterStr);
+
     fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     0);
     fServerLimitPTTo        := F.ReadInteger('Server', 'LimitPTTo',       300);
     fServerLimitSpeedFrom   := F.ReadFloat  ('Server', 'LimitSpeedFrom',  0);
@@ -873,6 +888,13 @@ end;
 procedure TKMGameSettings.SetFlashOnMessage(aValue: Boolean);
 begin
   fFlashOnMessage := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetServerMapsRosterStr(const aValue: UnicodeString);
+begin
+  fServerMapsRosterStr := aValue;
   Changed;
 end;
 
