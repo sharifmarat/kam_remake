@@ -365,6 +365,7 @@ end;
 
 procedure OnMissionStart;
 begin
+  Actions.PlayerGoalsRemoveAll(4, False); //Set AI as neutral NPC
 
   if States.MissionDifficulty = mdHard1 then
     SetRandomMap;
