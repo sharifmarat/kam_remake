@@ -718,6 +718,8 @@ begin
     RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString)');
     RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
 
+    RegisterMethodCheck(c, 'procedure Peacetime(aPeacetime: Cardinal)');
+
     RegisterMethodCheck(c, 'function  PlanAddField(aPlayer, X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function  PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function  PlanAddRoad(aPlayer, X, Y: Word): Boolean');
@@ -1346,6 +1348,8 @@ begin
       RegisterMethod(@TKMScriptActions.OverlayTextAppendFormatted,              'OverlayTextAppendFormatted');
       RegisterMethod(@TKMScriptActions.OverlayTextSet,                          'OverlayTextSet');
       RegisterMethod(@TKMScriptActions.OverlayTextSetFormatted,                 'OverlayTextSetFormatted');
+
+      RegisterMethod(@TKMScriptActions.Peacetime,                               'Peacetime');
 
       RegisterMethod(@TKMScriptActions.PlanAddField,                            'PlanAddField');
       RegisterMethod(@TKMScriptActions.PlanAddHouse,                            'PlanAddHouse');

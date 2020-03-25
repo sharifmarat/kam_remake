@@ -128,6 +128,8 @@ type
     procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
 
+    procedure Peacetime(aPeacetime: Cardinal);
+
     function PlanAddField(aPlayer, X, Y: Word): Boolean;
     function PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean;
     function PlanAddRoad(aPlayer, X, Y: Word): Boolean;
@@ -3183,6 +3185,20 @@ begin
     end
     else
       LogParamWarning('Actions.PlanAddRoad', [aPlayer, X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Sets game peacetime. Peacetime will be set to the value of aPeacetime div 600
+//* aPeacetime: game time in ticks
+procedure TKMScriptActions.Peacetime(aPeacetime: Cardinal);
+begin
+  try
+    gGame.GameOptions.Peacetime := aPeacetime div 600; //PT in minutes
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
