@@ -318,8 +318,12 @@ begin
   fMissionDefOpenPath := ExeDir;
 
   Application.ProcessMessages;
-  gVideoPlayer.AddVideo('KaM');
-  gVideoPlayer.Play;
+
+  if gGameApp.GameSettings.VideoStartup then
+  begin
+    gVideoPlayer.AddVideo('KaM');
+    gVideoPlayer.Play;
+  end;
 end;
 
 

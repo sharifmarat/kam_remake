@@ -307,9 +307,7 @@
 308:Fullscreen
 309:Apply
 310:Language:
-311:Shadow quality:
-312:Low
-313:High
+311:High shadow quality
 314:Loading... Please wait
 315:An Error Has Occurred!
 316:Loading new locale
@@ -1349,4 +1347,5 @@
 1397:Set tile overlays.|Use LMB for safe mode and LMB+Shift to overwrite roads
 1398:Video clips:
 1399:Enable
-1400:Volume
+1400:Show at startup
+1401:Volume
