@@ -923,7 +923,7 @@ end;
 
 procedure CheckBonus;
 begin
-  case States.KaMRandomI(150) of
+  case States.KaMRandomI(160) of
 
     0..19: begin
              bImmediateKill := True;
@@ -988,7 +988,7 @@ begin
                 end;
             end;
 
-    120..149: begin
+    140..159: begin
                 bRetribution := True;
                 if not bMsg then
                 begin
