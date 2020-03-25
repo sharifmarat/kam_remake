@@ -97,7 +97,7 @@ type
     procedure IssueAutosaveCommand(aAfterPT: Boolean = False);
 
     function GetGameTickDuration: Single;
-    procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+    procedure GameSpeedActualChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandID;
     procedure IncGameTick;
     procedure CheckPauseGameAtTick;
@@ -1594,12 +1594,12 @@ begin
 
   fGameSpeedGIP := aSpeed;
   if aUpdateActual then
-    SetGameSpeedActual(aSpeed)
+    SetGameSpeedActual(aSpeed) //will also UpdateClockUI
   else
     UpdateClockUI;
 
   if speedChanged then
-    gScriptEvents.ProcGameSpeedChanged(aSpeed);
+    gScriptEvents.ProcGameSpeedChanged(aSpeed); //Script events should trigger on GIP game speed, not on the actual speed
 end;
 
 
@@ -1626,10 +1626,10 @@ begin
   if IsMultiPlayerOrSpec and (fGameInputProcess <> nil) then
     TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeedActual);
 
-  if Assigned(gGameApp.OnGameSpeedChange) then
-    gGameApp.OnGameSpeedChange(fGameSpeedActual);
+  if Assigned(gGameApp.OnGameSpeedActualChange) then
+    gGameApp.OnGameSpeedActualChange(fGameSpeedActual);
 
-  GameSpeedChanged(OldGameSpeed, fGameSpeedActual);
+  GameSpeedActualChanged(OldGameSpeed, fGameSpeedActual);
 end;
 
 
@@ -1684,7 +1684,7 @@ begin
 end;
 
 
-procedure TKMGame.GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+procedure TKMGame.GameSpeedActualChanged(aFromSpeed, aToSpeed: Single);
 begin
   fActiveInterface.GameSpeedChanged(aFromSpeed, aToSpeed);
 end;

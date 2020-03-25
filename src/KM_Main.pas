@@ -386,7 +386,7 @@ begin
                                 fFormLoading.LoadingStep,
                                 fFormLoading.LoadingText,
                                 StatusBarText);
-  gGameApp.OnGameSpeedChange := GameSpeedChange;
+  gGameApp.OnGameSpeedActualChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
   //Preload game resources while in menu to make 1st game start faster
   gGameApp.PreloadGameResources;
