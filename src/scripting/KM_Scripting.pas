@@ -437,6 +437,7 @@ begin
     RegisterMethodCheck(c, 'function FogRevealed(aPlayer: Byte; aX, aY: Word): Boolean');
 
     RegisterMethodCheck(c, 'function GameSpeed: Single');
+    RegisterMethodCheck(c, 'function GameSpeedChangeAllowed: Boolean');
     RegisterMethodCheck(c, 'function GameTime: Cardinal');
 
     RegisterMethodCheck(c, 'function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean');
@@ -637,6 +638,7 @@ begin
     RegisterMethodCheck(c, 'procedure FogRevealRect(aPlayer, X1, Y1, X2, Y2: Word)');
 
     RegisterMethodCheck(c, 'procedure GameSpeed(aSpeed: Single)');
+    RegisterMethodCheck(c, 'procedure GameSpeedChangeAllowed(aAllowed: Boolean)');
 
     RegisterMethodCheck(c, 'function  GiveAnimal(aType, X,Y: Word): Integer');
     RegisterMethodCheck(c, 'function  GiveField(aPlayer, X, Y: Word): Boolean');
@@ -1066,6 +1068,7 @@ begin
       RegisterMethod(@TKMScriptStates.FogRevealed,                              'FogRevealed');
 
       RegisterMethod(@TKMScriptStates.GameSpeed,                                'GameSpeed');
+      RegisterMethod(@TKMScriptStates.GameSpeedChangeAllowed,                   'GameSpeedChangeAllowed');
       RegisterMethod(@TKMScriptStates.GameTime,                                 'GameTime');
 
       RegisterMethod(@TKMScriptStates.GroupAssignedToDefencePosition,           'GroupAssignedToDefencePosition');
@@ -1266,6 +1269,7 @@ begin
       RegisterMethod(@TKMScriptActions.FogRevealRect,                           'FogRevealRect');
 
       RegisterMethod(@TKMScriptActions.GameSpeed,                               'GameSpeed');
+      RegisterMethod(@TKMScriptActions.GameSpeedChangeAllowed,                  'GameSpeedChangeAllowed');
 
       RegisterMethod(@TKMScriptActions.GiveAnimal,                              'GiveAnimal');
       RegisterMethod(@TKMScriptActions.GiveField,                               'GiveField');

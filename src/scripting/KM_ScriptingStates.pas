@@ -38,6 +38,7 @@ type
     function FogRevealed(aPlayer: Byte; aX, aY: Word): Boolean;
 
     function GameSpeed: Single;
+    function GameSpeedChangeAllowed: Boolean;
     function GameTime: Cardinal;
 
     function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean;
@@ -850,6 +851,21 @@ function TKMScriptStates.GameSpeed: Single;
 begin
   try
     Result := gGame.GameSpeedGIP; //Return recorded as GIP speed, not actual!
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+
+//* Version: 11000
+//* Return true if game speed change is allowed
+//* Result: Is game speed change allowed
+function TKMScriptStates.GameSpeedChangeAllowed: Boolean;
+begin
+  try
+    Result := gGame.GameSpeedChangeAllowed;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

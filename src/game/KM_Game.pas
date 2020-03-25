@@ -53,6 +53,7 @@ type
     fCampaignName: TKMCampaignId;  //Is this a game part of some campaign
     fDynamicFOW: Boolean;
     fGameSpeedGIP: Single; //GameSpeed, recorded to GIP, could be requested by scripts
+    fGameSpeedChangeAllowed: Boolean; //Is game speed change allowed?
 
     fBlockGetPointer: Boolean; //?? should be saved ??
 
@@ -200,6 +201,7 @@ type
     property CampaignMap: Byte read fCampaignMap;
     property GameSpeedActual: Single read fGameSpeedActual;
     property GameSpeedGIP: Single read fGameSpeedGIP;
+    property GameSpeedChangeAllowed: Boolean read fGameSpeedChangeAllowed write fGameSpeedChangeAllowed;
     property GameTickDuration: Single read GetGameTickDuration;
     property SavedReplays: TKMSavedReplays read fSavedReplays write fSavedReplays;
 
@@ -307,6 +309,7 @@ begin
   fDynamicFOW := False;
   fGameSpeedChangeTick := 0;
   fGameSpeedChangeTime := 0;
+  fGameSpeedChangeAllowed := True;
   fPausedTicksCnt := 0;
   fBlockGetPointer := False;
   fLastTimeUserAction := TimeGet;
@@ -1667,7 +1670,7 @@ begin
 
   if IsReplay then
     SetGameSpeedActual(aSpeed)
-  else
+  else if fGameSpeedChangeAllowed then
     fGameInputProcess.CmdGame(gicGameSpeed, aSpeed);
 end;
 
@@ -1804,6 +1807,7 @@ begin
 
   aSaveStream.Write(fDynamicFOW);
   aSaveStream.Write(fGameSpeedGIP);
+  aSaveStream.Write(fGameSpeedChangeAllowed);
 
   if aReplayStream then
     aSaveStream.PlaceMarker('ConsistencyCheck2');
@@ -2030,6 +2034,8 @@ begin
   LoadStream.Read(fDynamicFOW);
   LoadStream.Read(fGameSpeedGIP);
   SetGameSpeedActualValue(fGameSpeedGIP);
+
+  LoadStream.Read(fGameSpeedChangeAllowed);
 
   if aReplayStream then
     LoadStream.CheckMarker('ConsistencyCheck2');

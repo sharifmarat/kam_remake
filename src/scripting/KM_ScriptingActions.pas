@@ -60,6 +60,7 @@ type
     procedure FogRevealCircle(aPlayer, X, Y, aRadius: Word);
 
     procedure GameSpeed(aSpeed: Single);
+    procedure GameSpeedChangeAllowed(aAllowed: Boolean);
 
     procedure GroupBlockOrders(aGroupID: Integer; aBlock: Boolean);
     procedure GroupDisableHungryMessage(aGroupID: Integer; aDisable: Boolean);
@@ -3609,6 +3610,20 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+end;
+
+
+//* Version: 11000
+//* Allows or blocks game speed change
+procedure TKMScriptActions.GameSpeedChangeAllowed(aAllowed: Boolean);
+begin
+  try
+    gGame.GameSpeedChangeAllowed := aAllowed;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+
 end;
 
 
