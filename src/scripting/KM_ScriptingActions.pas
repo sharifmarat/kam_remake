@@ -141,6 +141,7 @@ type
     procedure PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean);
     procedure PlayerAddDefaultGoals(aPlayer: Byte; aBuildings: Boolean);
     procedure PlayerDefeat(aPlayer: Word);
+    procedure PlayerGoalsRemoveAll(aPlayer: Word; aForAllPlayers: Boolean);
     procedure PlayerShareBeacons(aPlayer1, aPlayer2: Word; aBothWays, aShare: Boolean);
     procedure PlayerShareFog(aPlayer1, aPlayer2: Word; aShare: Boolean);
     procedure PlayerShareFogCompliment(aPlayer1, aPlayer2: Word; aShare: Boolean);
@@ -279,10 +280,33 @@ procedure TKMScriptActions.PlayerDefeat(aPlayer: Word);
 begin
   try
     //Verify all input parameters
-    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    if InRange(aPlayer, 0, gHands.Count - 1) and gHands[aPlayer].Enabled then
       gHands[aPlayer].AI.Defeat
     else
       LogParamWarning('Actions.PlayerDefeat', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Remove all player goals
+//* aPlayer: PlayerID
+//* aForAllPlayers: also remove other player goals, related to this player
+procedure TKMScriptActions.PlayerGoalsRemoveAll(aPlayer: Word; aForAllPlayers: Boolean);
+begin
+  try
+    //Verify all input parameters
+    if InRange(aPlayer, 0, gHands.Count - 1) and gHands[aPlayer].Enabled then
+    begin
+      gHands[aPlayer].AI.Goals.Clear;
+      if aForAllPlayers then
+        gHands.UpdateGoalsForHand(aPlayer, False); //Goal disable works as good as delete goal
+    end
+    else
+      LogParamWarning('Actions.PlayerGoalsRemoveAll', [aPlayer]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
