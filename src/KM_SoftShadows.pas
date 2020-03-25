@@ -27,7 +27,7 @@ type
     constructor Create(aSpritePack: TKMSpritePack);
     procedure ConvertShadows(ID: Word; aOnlyShadows: Boolean);
     procedure DetermineImageObjectSize(ID: Word);
-    procedure RemoveShadow(aRemoveFromID, aNoShadowId: Word);
+    procedure RemoveShadow(aID: Word);
   end;
 
 
@@ -156,19 +156,17 @@ begin
 end;
 
 
-procedure TKMSoftShadowConverter.RemoveShadow(aRemoveFromID, aNoShadowId: Word);
+//RemoveShadow via removing its mask
+procedure TKMSoftShadowConverter.RemoveShadow(aID: Word);
 var
   X,Y: Integer;
 begin
-  PrepareShadows(aRemoveFromID, True);
+  PrepareShadows(aID, False);
 
-  for X := 0 to fRXData.Size[aRemoveFromID].X - 1 do
-    for Y := 0 to fRXData.Size[aRemoveFromID].Y - 1 do
-      if IsObjectPixel(aRemoveFromID, X, Y) then
-//        fRXData.RGBA[aNoShadowId, Y*fRXData.Size[aNoShadowId].X + X] := fRXData.RGBA[aNoShadowId, Y*fRXData.Size[aNoShadowId].X + X]
-      else
-      if IsShadowPixel(aRemoveFromID, X, Y) then
-        fRXData.RGBA[aNoShadowId, Y*fRXData.Size[aNoShadowId].X + X] := $00FF0000;
+  for X := 0 to fRXData.Size[aID].X - 1 do
+    for Y := 0 to fRXData.Size[aID].Y - 1 do
+      if IsShadowPixel(aID, X, Y) then
+        fRXData.Mask[aID, Y*fRXData.Size[aID].X + X] := 0; //Remove mask image outside of object
 end;
 
 

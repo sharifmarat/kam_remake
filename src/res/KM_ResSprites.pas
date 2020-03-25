@@ -78,7 +78,7 @@ type
     property Padding: Byte read fPad write fPad;
 
     procedure LoadFromRXXFile(const aFileName: string; aStartingIndex: Integer = 1);
-    procedure OverloadFromFolder(const aFolder: string);
+    procedure OverloadFromFolder(const aFolder: string; aSoftenShadows: Boolean = True);
     procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True; aOnStopExecution: TBooleanFuncSimple = nil);
     procedure DeleteSpriteTexture(aIndex: Integer);
 
@@ -362,16 +362,13 @@ var
 begin
   Assert(fRT = rxHouses);
 
-//  Allocate(fRXData.Count + Byte(HOUSE_MAX) - Byte(HOUSE_MIN) + 1);
-
   ShadowConverter := TKMSoftShadowConverter.Create(Self);
   try
     for HT := HOUSE_MIN to HOUSE_MAX do
     begin
       SnowID := aResHouses[HT].SnowPic + 1;
-      SnowNoShadowID := aResHouses[HT].SnowPicNoShadow + 1;
-      if (fRXData.Flag[SnowID] <> 0) and (fRXData.Flag[SnowNoShadowID] <> 0) then
-        ShadowConverter.RemoveShadow(SnowID, SnowNoShadowID);
+      if (fRXData.Flag[SnowID] <> 0) then
+        ShadowConverter.RemoveShadow(SnowID);
     end;
   finally
     ShadowConverter.Free;
@@ -585,7 +582,7 @@ end;
 
 
 //Parse all valid files in Sprites folder and load them additionaly to or replacing original sprites
-procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
+procedure TKMSpritePack.OverloadFromFolder(const aFolder: string; aSoftenShadows: Boolean = True);
   procedure ProcessFolder(const aProcFolder: string);
   var
     FileList, IDList: TStringList;
@@ -618,7 +615,8 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
             IDList.Add(IntToStr(ID));
           end;
 
-        SoftenShadows(IDList); // Soften shadows for overloaded sprites
+        if aSoftenShadows then
+          SoftenShadows(IDList); // Soften shadows for overloaded sprites
 
         try
           //Delete following sprites
