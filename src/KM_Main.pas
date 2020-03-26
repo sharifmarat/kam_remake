@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   KM_FormMain, KM_FormLoading, KM_Maps,
-  KM_Settings, KM_Resolutions;
+  KM_Settings, KM_Resolutions, KM_Video;
 
 
 type
@@ -159,6 +159,8 @@ begin
       fMainSettings.FullScreen := False;
   end;
 
+  gVideoPlayer := TKMVideoPlayer.Create;
+
   fFormMain.Caption := 'KaM Remake - ' + UnicodeString(GAME_VERSION);
   //Will make the form slightly higher, so do it before ReinitRender so it is reset
   fFormMain.ControlsSetVisibile(SHOW_DEBUG_CONTROLS);
@@ -262,6 +264,9 @@ begin
 
     // Do not call gMain.Stop from FormClose handler again
     fFormMain.OnClose := nil;
+
+    if Assigned(gVideoPlayer) then
+      gVideoPlayer.Free;
 
     if Sender <> fFormMain then
       fFormMain.Close;

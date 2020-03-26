@@ -743,7 +743,9 @@ var
 begin
   Assert((aType <> -1) or (aRot <> -1), 'Either terrain type or rotation should be set');
 
-  if not gRes.Tileset.TileIsAllowedToSet(aType) then
+  // Do not allow to set some special terrain tiles
+  if (aType <> -1) // We could have aType = -1 if only specify rotation
+    and not gRes.Tileset.TileIsAllowedToSet(aType) then
     Exit(False);
  
   Loc := KMPoint(X, Y);
@@ -4592,6 +4594,7 @@ begin
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
+      Land[I,J].TileOverlay := TileBasic.TileOverlay;
       Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
       for L := 0 to 2 do

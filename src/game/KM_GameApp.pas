@@ -5,7 +5,7 @@ uses
   {$IFDEF WDC} UITypes, {$ENDIF}
   {$IFDEF FPC} Controls, {$ENDIF}
   Classes, Dialogs, ExtCtrls,
-  KM_CommonTypes, KM_Defaults, KM_RenderControl,
+  KM_CommonTypes, KM_Defaults, KM_RenderControl, KM_Video,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
   KM_Music, KM_Maps, KM_MapTypes, KM_Networking, KM_Settings, KM_Render,
   KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
@@ -301,14 +301,18 @@ end;
 
 procedure TKMGameApp.Resize(X,Y: Integer);
 begin
-  if fIsExiting then Exit;
+  if fIsExiting then
+    Exit;
+
   fRender.Resize(X, Y);
+  gVideoPlayer.Resize(X, Y);
 
   //Main menu is invisible while in game, but it still exists and when we return to it
   //it must be properly sized (player could resize the screen while playing)
   fMainMenuInterface.Resize(X, Y);
 
-  if gGame <> nil then gGame.ActiveInterface.Resize(X, Y);
+  if gGame <> nil then
+    gGame.ActiveInterface.Resize(X, Y);
 end;
 
 
@@ -316,6 +320,12 @@ procedure TKMGameApp.KeyDown(Key: Word; Shift: TShiftState);
 var
   KeyHandled: Boolean;
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.KeyDown(Key, Shift);
+    Exit;
+  end;
+
   if gGame <> nil then
     gGame.ActiveInterface.KeyDown(Key, Shift, KeyHandled)
   else
@@ -325,6 +335,9 @@ end;
 
 procedure TKMGameApp.KeyPress(Key: Char);
 begin
+  if gVideoPlayer.IsActive then
+    Exit;
+
   if gGame <> nil then
     gGame.ActiveInterface.KeyPress(Key)
   else
@@ -336,6 +349,9 @@ procedure TKMGameApp.KeyUp(Key: Word; Shift: TShiftState);
 var
   KeyHandled: Boolean;
 begin
+  if gVideoPlayer.IsActive then
+    Exit;
+
   //List of conflicting keys that we should try to avoid using in debug/game:
   //  F12 Pauses Execution and switches to debug
   //  F10 sets focus on MainMenu1
@@ -352,6 +368,9 @@ end;
 
 procedure TKMGameApp.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  if gVideoPlayer.IsActive then
+    Exit;
+
   if gGame <> nil then
     gGame.ActiveInterface.MouseDown(Button,Shift,X,Y)
   else
@@ -363,6 +382,9 @@ procedure TKMGameApp.MouseMove(Shift: TShiftState; X,Y: Integer);
 var Ctrl: TKMControl;
     CtrlID: Integer;
 begin
+  if gVideoPlayer.IsActive then
+    Exit;
+
   if not InRange(X, 1, fRender.ScreenX - 1)
   or not InRange(Y, 1, fRender.ScreenY - 1) then
     Exit; // Exit if Cursor is outside of frame
@@ -397,6 +419,9 @@ end;
 
 procedure TKMGameApp.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  if gVideoPlayer.IsActive then
+    Exit;
+
   if gGame <> nil then
     gGame.ActiveInterface.MouseUp(Button,Shift,X,Y)
   else
@@ -408,6 +433,9 @@ procedure TKMGameApp.MouseWheel(Shift: TShiftState; WheelSteps: Integer; X, Y: I
 var
   Handled: Boolean;
 begin
+  if gVideoPlayer.IsActive then
+    Exit;
+
   Handled := False; // False by Default
   if gGame <> nil then
     gGame.ActiveInterface.MouseWheel(Shift, WheelSteps, X, Y, Handled)
@@ -1033,10 +1061,13 @@ begin
 
   fRender.BeginFrame;
 
-  if gGame <> nil then
-    gGame.Render(fRender)
+  if gVideoPlayer.IsActive then
+    gVideoPlayer.Paint
   else
-    fMainMenuInterface.Paint;
+    if gGame <> nil then
+      gGame.Render(fRender)
+    else
+      fMainMenuInterface.Paint;
 
   fRender.RenderBrightness(GameSettings.Brightness);
 

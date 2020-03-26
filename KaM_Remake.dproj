@@ -395,6 +395,7 @@
         <DCCReference Include="src\utils\method_parser\KM_MethodParserParams.pas"/>
         <DCCReference Include="src\KM_Viewport.pas"/>
         <DCCReference Include="src\KM_WareDistribution.pas"/>
+        <DCCReference Include="src\KM_Video.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>

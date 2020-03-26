@@ -56,7 +56,7 @@ type
 
 implementation
 uses
-  KM_GameApp, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_Sound, KM_ResSound, KM_Defaults;
+  KM_GameApp, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_Sound, KM_ResSound, KM_Defaults, KM_Video;
 
 const
   FLAG_LABEL_OFFSET_X = 10;
@@ -356,6 +356,16 @@ begin
 
   //Refresh;
   Panel_Campaign.Show;
+
+  if not fCampaign.Viewed then
+  begin
+    fCampaign.Viewed := True;
+    gGameApp.Campaigns.SaveProgress;
+
+    gVideoPlayer.AddCampaignVideo(fCampaign.Path, 'Logo');
+    gVideoPlayer.AddCampaignVideo(fCampaign.Path, 'Intro');
+    gVideoPlayer.Play;
+  end;
 end;
 
 procedure TKMMenuCampaign.BackClick(Sender: TObject);

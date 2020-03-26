@@ -3,7 +3,7 @@ unit KM_FormMain;
 interface
 uses
   Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
-  KM_RenderControl, KM_Settings,
+  KM_RenderControl, KM_Settings, KM_Video,
   KM_GameTypes,
   {$IFDEF FPC} LResources, {$ENDIF}
   {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
@@ -316,6 +316,14 @@ begin
   end;
 
   fMissionDefOpenPath := ExeDir;
+
+  Application.ProcessMessages;
+
+  if gGameApp.GameSettings.VideoStartup then
+  begin
+    gVideoPlayer.AddVideo('KaM');
+    gVideoPlayer.Play;
+  end;
 end;
 
 
@@ -356,11 +364,27 @@ begin
   if gGameApp <> nil then gGameApp.KeyUp(aKey, aShift);
 end;
 
-
 procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   Assert(KeyPreview, 'MainForm should recieve all keys to pass them to fGame');
   FormKeyDownProc(Key, Shift);
+
+  if Key = 65 then
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.AddVideo('KaM');
+    gVideoPlayer.Play;
+  end;
+  if Key = 83 then
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.Play;
+  end;
+  if Key = 68 then
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.Play;
+  end;
 end;
 
 
