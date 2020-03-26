@@ -102,15 +102,17 @@ begin
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;
 
-  with TKMImage.Create(aParent,705,220,round(207*1.3),round(295*1.3),6,rxGuiMain) do
+
+  // We cant pass pointers to Settings in here cos on GUI creation fMain/gGameApp are not initialized yet
+
+  Panel_Options := TKMPanel.Create(aParent,(aParent.Width - 880) div 2,(aParent.Height - 580) div 2,880, 580);
+  Panel_Options.AnchorsStretch;
+
+  with TKMImage.Create(Panel_Options,705 - Panel_Options.Left,220 - Panel_Options.Top,round(207*1.3),round(295*1.3),6,rxGuiMain) do
   begin
     ImageStretch;
     Anchors := [anLeft];
   end;
-  // We cant pass pointers to Settings in here cos on GUI creation fMain/gGameApp are not initialized yet
-
-  Panel_Options := TKMPanel.Create(aParent,(aParent.Width - 880) div 2,(aParent.Height - 580) div 2,880, aParent.Height);
-  Panel_Options.AnchorsStretch;
 
     //--- Column 1 --------------------------------------------------------------
 
