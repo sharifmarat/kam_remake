@@ -6,6 +6,7 @@ const
   ROGUE_CHANCE = 0.4;                  //40% chance to get rogue when equipping militia
   KILL_CHANCE = 0.125;                 //12,5% chance to activate Immediate Kill bonus
   RETRIBUTION_CHANCE = 0.115;          //11,5% chance to activate Retribution bonus
+  ARMOR_CHANCE = 0.125;                //12,5% chance to activate Reinforced Armor bonus
   DOUBLE_CHANCE = 0.135;               //13,5% chance to activate Double bonus
   REBORN_CHANCE = 0.225;               //22,5% chance to activate Reborn bonus
   NEWBORN_CHANCE = 0.125;              //12,5% chance to activate Newborn Ally  bonus
@@ -20,7 +21,7 @@ const
   START_WAVES_DELAY = 1200;            //2 minutes delay
   MID_WAVES_DELAY = 1800;              //3 minutes delay
   LATE_WAVES_DELAY = 2400;             //4 minutes delay
-  RESCUES_PER_PLAYER = 3;              //Player can use bonus 3 times
+  RESCUES_PER_PLAYER = 4;              //Player can use bonus 4 times
   RESCUE_WAVE = 26;                    //Bonus available since 26th wave
   MAX_RANGED = 150;                    //Maximum ranged count per player
   DEBUG_MODE = False;                  //Debug option, to see how script works
@@ -34,7 +35,10 @@ const
   RANDOM_FACTOR = 100;                 //Random
   ENABLE_SPLITTING = False;            //Anti-cheat (disables cmowla style abuse)
   SPLIT_CHECK_FACTOR = 15;             //Once per 15 ticks
-  MAX_TOWERS = 2;                      //2 towers per player
+  MAX_TOWERS = 4;                      //4 towers per player
+  START_TOWERS = 2;                    //2 towers per player
+  TOWER_COST = 50;                     //50 gold
+  TOWER_COMMAND = '/tower';            //Enter /tower into chat to buy a tower
   DIFFICULTY_FACTOR_NORMAL = 1;        //Difficulty factor for normal mode
   DIFFICULTY_FACTOR_EASY = 0.8;        //Difficulty factor for easy mode
   DIFFICULTY_FACTOR_HARD = 1.2;        //Difficulty factor for hard mode
@@ -48,7 +52,7 @@ const
   BARB_POINTS = 1000;                  //1000 on normal difficulty lvl
   KNIGHT_POINTS = 1250;                //1250 on normal difficulty lvl
   ARMY_UNLOCK_FACTOR = 0.9;            //x0.9 multiplier, for balance
-  AUTOFEED_TIME = 6000;                //every 10 min
+  AUTOFEED_TIME = 6000;                //Every 10 min
   SHOW_MAP_VERSION = False;            //False by default, true in debug mode
   MAP_VERSION = '[$CD9B4B]3.0 RC1[]';  //Map version
 
@@ -72,13 +76,14 @@ type
 
 
 var
-  Scores, Barracks, SpawnX, SpawnY, RescueTileX, RescueTileY, RescuesCount, RescuesDelay, RescueArmy, RescueRecruits, Direction: array[0..3] of Integer;
+  Scores, Barracks, SpawnX, SpawnY, RescueTileX, RescueTileY, RescuesCount, RescuesDelay, RescueArmy,
+  RescueRecruits, Direction, ExtraTowers, Storehouse: array[0..3] of Integer;
   RescueColor: array[0..3] of ANSIString;
   LateBonusHeaderName: array[0..2] of ANSIString;
   RescueSquadPositionX, RescueSquadPositionY, RescueSquadFormation: array[0..3] of array[0..4] of Integer;
   I, K, Wave, General, WaveTime, AIBarracks, AIGroup, LateBonusDelay: Integer;
   Unlocked: array[0..3] of array[15..23] of Boolean;
-  bImmediateKill, bDouble, bNewConscription, bRetribution,
+  bImmediateKill, bDouble, bNewConscription, bRetribution, bArmor,
   bReinforce, bReborn, bNewborn, Check, bMsg, bRescueMsg, bRanged, LateBonusCheck: Boolean;
   RallyPointX, RallyPointY, AttackPointX, AttackPointY: array[4..7] of Integer;
   AISpawnX, AISpawnY: array[0..2] of array[4..7] of Integer;
@@ -573,9 +578,15 @@ begin
     bNewborn := True;
   end;
 
-  if Wave = 33 then
+  if Wave = 32 then
   begin
     bNewborn := False;
+    bArmor := True;
+  end;
+
+  if Wave = 33 then
+  begin
+    bArmor := False;
     bRetribution := True;
   end;
 end;
@@ -654,6 +665,9 @@ begin
     if bRetribution then
       Result := 'DEBUG MODE ON! You now test bonus: Retribution|' + Info + '||';
 
+    if bArmor then
+      Result := 'DEBUG MODE ON! You now test bonus: Reinforced Armor|' + Info + '||';
+
   end;
 end;
 
@@ -716,6 +730,9 @@ begin
       SortedPlayers[Length(SortedPlayers) - 1] := I;
     end;
 
+  for I := 0 to 3 do
+    ExtraTowers[I] := 0;
+
   Wave := 1;
   WaveTime := 1200;
   General := States.UnitAt(75, 77);
@@ -725,6 +742,11 @@ begin
   Barracks[1] := States.HouseAt(63, 80);
   Barracks[2] := States.HouseAt(88, 80);
   Barracks[3] := States.HouseAt(88, 71);
+
+  Storehouse[0] := States.HouseAt(68, 66);
+  Storehouse[1] := States.HouseAt(63, 86);
+  Storehouse[2] := States.HouseAt(88, 86);
+  Storehouse[3] := States.HouseAt(82, 66);
 
   SpawnX[0] := 46;
   SpawnX[1] := 46;
@@ -878,6 +900,7 @@ begin
   bReborn := False;
   bNewborn := False;
   bRetribution := False;
+  bArmor := False;
   Check := False;
   bMsg := False;
   bRescueMsg := False;
@@ -923,7 +946,7 @@ end;
 
 procedure CheckBonus;
 begin
-  case States.KaMRandomI(160) of
+  case States.KaMRandomI(180) of
 
     0..19: begin
              bImmediateKill := True;
@@ -997,6 +1020,97 @@ begin
                 end;
             end;
 
+    160..179: begin
+                bArmor := True;
+                if not bMsg then
+                begin
+                  Actions.ShowMsg(-1, '<$6> ' + '<$94>: ' + '<$95>');
+                  bMsg := True;
+                end;
+            end;
+
+  end;
+end;
+
+
+function BonusName: ANSIString;
+begin
+
+  if Wave < BONUS_WAVE then
+    Result := '';
+
+  if bImmediateKill then
+    Result := '<$7>';
+
+  if bDouble then
+    Result := '<$8>';
+
+  if bNewConscription then
+    Result := '<$9>';
+
+  if bReinforce then
+    Result := '<$10>';
+
+  if bReborn then
+    Result := '<$11>';
+
+  if bNewborn then
+    Result := '<$12>';
+
+  if bRanged then
+    Result := '<$52>';
+
+  if bRetribution then
+    Result := '<$59>';
+
+  if bArmor then
+    Result := '<$94>';
+  
+end;
+
+
+function BonusChanceString: ANSIString;
+begin
+  
+  if Wave < BONUS_WAVE then
+    Result := '';
+
+  if bImmediateKill then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * KILL_CHANCE / DifficultyFactor) + '%)';
+
+  if bDouble then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * DOUBLE_CHANCE / DifficultyFactor) + '%)';
+
+  if bNewConscription then
+    Result := '';
+
+  if bReinforce then
+    Result := '';
+
+  if bReborn then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * REBORN_CHANCE / DifficultyFactor) + '%)';
+
+  if bNewborn then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * NEWBORN_CHANCE / DifficultyFactor) + '%)';
+
+  if bRanged then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * RANGED_CHANCE / DifficultyFactor) + '%)';
+
+  if bRetribution then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * RETRIBUTION_CHANCE / DifficultyFactor) + '%)';
+
+  if bArmor then
+    Result := '(' + Utils.FormatFloat('0.##', 100 * ARMOR_CHANCE / DifficultyFactor) + '%)';
+
+end;
+
+
+function TowersWave: Integer;
+begin
+  case States.MissionDifficulty of
+    mdEasy1:  Result := 2;
+    mdNormal: Result := 5;
+    mdHard1:  Result := 8;
   end;
 end;
 
@@ -1517,6 +1631,17 @@ begin
       end;
     end;
   end;
+
+  if bArmor then
+  begin
+    if States.KaMRandom < (ARMOR_CHANCE / DifficultyFactor) then
+    begin
+      if (Utils.InRangeI(States.UnitOwner(aUnitID), 0, 3))
+      and (Utils.InRangeI(States.UnitType(aUnitID), 14, 27))
+      and (Utils.InRangeI(States.UnitOwner(aAttacker), 4, 7)) then
+        Actions.UnitHPChange(aUnitID, 1);
+    end;
+  end;
 end;
 
 
@@ -1904,7 +2029,7 @@ begin
              if States.MissionDifficulty = mdEasy1 then
              begin
                Actions.HouseUnlock(I, 17);               
-               Actions.ShowMsgFormatted(I, '<$91>', [MAX_TOWERS + Byte(States.MissionDifficulty = mdEasy1)]);
+               Actions.ShowMsgFormatted(I, '<$91>', [START_TOWERS + Byte(States.MissionDifficulty = mdEasy1), Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5), TOWER_COMMAND, MAX_TOWERS]);
              end;
            end;
          end;
@@ -2082,7 +2207,7 @@ begin
              if States.MissionDifficulty = mdNormal then
              begin
                Actions.HouseUnlock(I, 17);
-               Actions.ShowMsgFormatted(I, '<$91>', [MAX_TOWERS + Byte(States.MissionDifficulty = mdEasy1)]);
+               Actions.ShowMsgFormatted(I, '<$91>', [START_TOWERS + Byte(States.MissionDifficulty = mdEasy1), Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5), TOWER_COMMAND, MAX_TOWERS]);
              end;
            end;
          end;
@@ -2256,7 +2381,7 @@ begin
              if States.MissionDifficulty = mdHard1 then
              begin
                Actions.HouseUnlock(I, 17);
-               Actions.ShowMsgFormatted(I, '<$91>', [MAX_TOWERS + Byte(States.MissionDifficulty = mdEasy1)]);
+               Actions.ShowMsgFormatted(I, '<$91>', [START_TOWERS + Byte(States.MissionDifficulty = mdEasy1), Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5), TOWER_COMMAND, MAX_TOWERS]);
              end;
            end;
          end;
@@ -4657,6 +4782,51 @@ begin
 end;
 
 
+function CanBuildRoads(FromX, FromY, ToX, ToY: Integer): Boolean;
+var
+  aX, aY: Integer;
+begin
+  Result := True;
+  for aX := FromX to ToX do
+    for aY := FromY to ToY do
+      if not States.MapTilePassability(aX, aY, 4) then
+      begin
+        Result := False;
+        Exit;
+      end;
+end;
+
+
+{$COMMAND tower: GetExtraTower}
+
+
+procedure GetExtraTower(P: Integer);
+begin
+
+  if Wave < TowersWave then
+    Exit;
+
+  if ExtraTowers[P] >= MAX_TOWERS - START_TOWERS - Byte(States.MissionDifficulty = mdEasy1) then
+  begin
+    Actions.ShowMsg(P, '<$99>');
+    Exit;
+  end;
+
+  if States.HouseResourceAmount(Storehouse[P], 7) < Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5) then
+  begin
+    Actions.ShowMsgFormatted(P, '<$98>', [States.HouseResourceAmount(Storehouse[P], 7), Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5)]);
+    Exit;
+  end;
+
+  ExtraTowers[P] := ExtraTowers[P] + 1;
+
+  Actions.HouseTakeWaresFrom(Storehouse[P], 7, Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5));
+  ShowStatusStart[P] := States.GameTime;
+  StatusString[P] := '[$35FF57]<--- <$97>[]';
+
+end;
+
+
 procedure OnHousePlanPlaced(P, X, Y, HT: Integer);
 begin
 
@@ -4664,14 +4834,18 @@ begin
 
   if HT = 17 then
   begin
-    if States.StatHouseTypeCount(P, 17) >= MAX_TOWERS + Byte(States.MissionDifficulty = mdEasy1) then
+    if States.StatHouseTypeCount(P, 17) >= Utils.EnsureRangeI(States.StatHouseTypeCount(P, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P], MAX_TOWERS) then
       Actions.ShowMsg(P, '<$92>');
 
-    if (States.StatHouseTypeCount(P, 17) < MAX_TOWERS + Byte(States.MissionDifficulty = mdEasy1))
+    if (States.StatHouseTypeCount(P, 17) < Utils.EnsureRangeI(States.StatHouseTypeCount(P, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P], MAX_TOWERS))
     and (Utils.InRangeI(X, 46, 105))
     and (Utils.InRangeI(Y, 46, 105))
     and not ((Utils.InRangeI(X, 74, 76))
-    and (Utils.InRangeI(Y, 80, 81))) then
+    and (Utils.InRangeI(Y, 80, 81)))
+    and ((CanBuildRoads(X - 2, Y + 1, X, Y + 1))
+    or (CanBuildRoads(X - 1, Y + 1, X + 1, Y + 1)))
+    and ((CanBuildRoads(X - 2, Y - 1, X - 2, Y + 1))
+    or (CanBuildRoads(X + 1, Y - 1, X + 1, Y + 1))) then
     begin
       Actions.GiveHouse(P, 17, X, Y);
       Actions.PlanConnectRoad(P, X, Y + 1, States.HousePositionX(States.ClosestHouse(P, X, Y, 11)), States.HousePositionY(States.ClosestHouse(P, X, Y, 11)) + 1, True);
@@ -4887,15 +5061,23 @@ begin
     for I := 0 to Length(SortedPlayers) - 1 do
       Actions.OverlayTextAppendFormatted(-1, '|<$0>' + ' ' + StatusString[SortedPlayers[I]], [States.PlayerColorText(SortedPlayers[I]), States.PlayerName(SortedPlayers[I]), Scores[SortedPlayers[I]]]);
 
+  if Wave >= TowersWave then
+    for I := 0 to 3 do
+      if States.PlayerEnabled(I) then
+        Actions.OverlayTextAppendFormatted(I, '||<$100>', [States.StatHouseTypeCount(I, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[I]]);
+
+  if Wave >= BONUS_WAVE then
+    Actions.OverlayTextAppend(-1, '||<$96>: ' + '[$AA8970]' + BonusName + ' ' + BonusChanceString + '[]');
+
   for I := 0 to 3 do
   begin
     if States.PlayerEnabled(I) then
       if Wave >= RESCUE_WAVE then
-        Actions.OverlayTextAppendFormatted(I, '<$50>', [RescueColor[I], RescuesCount[I], ((RescuesDelay[I] div 600) mod 60), ((RescuesDelay[I] div 10) mod 60), States.StatArmyCount(I), RescueArmy[I], States.StatUnitTypeCount(I, 13), RescueRecruits[I]]);
+        Actions.OverlayTextAppendFormatted(I, '||||<$50>', [RescueColor[I], RescuesCount[I], ((RescuesDelay[I] div 600) mod 60), ((RescuesDelay[I] div 10) mod 60), States.StatArmyCount(I), RescueArmy[I], States.StatUnitTypeCount(I, 13), RescueRecruits[I]]);
   end;
 
   if Wave >= LATE_BONUS_WAVE then
-    Actions.OverlayTextAppendFormatted(-1, '<$71>', [LateBonusHeaderColor(74, 80), LateBonusHeaderName[0], LateBonusHeaderColor(75, 80), LateBonusHeaderName[1], LateBonusHeaderColor(76, 80), LateBonusHeaderName[2], ((LateBonusDelay div 600) mod 60), ((LateBonusDelay div 10) mod 60)]);
+    Actions.OverlayTextAppendFormatted(-1, '||||<$71>', [LateBonusHeaderColor(74, 80), LateBonusHeaderName[0], LateBonusHeaderColor(75, 80), LateBonusHeaderName[1], LateBonusHeaderColor(76, 80), LateBonusHeaderName[2], ((LateBonusDelay div 600) mod 60), ((LateBonusDelay div 10) mod 60)]);
 
   if (((States.GameTime <= 25200) and (States.GameTime mod START_WAVES_DELAY = 0))
   or ((States.GameTime > 25200) and (States.GameTime <= 36000) and (States.GameTime mod MID_WAVES_DELAY = 0))

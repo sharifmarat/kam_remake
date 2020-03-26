@@ -48,8 +48,8 @@
 47:Still alive? No problem!
 48:Time to die!
 49:Congrats! You reached 26th wave! New bonus available: Rescue Squad: You can get a reinforcement immediately if you have too less soldiers.|To use this bonus, place road plan on special Rescue Tile.|NOTE: You can use this bonus 4 times. Every next use is delayed.|You can't use this bonus if you have enough soldiers and recruits!
-50:||||[$%s]Rescue squads available: %d |Delay: %.2d:%.2d ||Your army (CURRENT/USAGE LIMIT): %d/%d|Your recruits (CURRENT/USAGE LIMIT): %d/%d[]
-51:[$FE437A]Castle Defenders 3.0 (25.03.2020)[]||In this mission you should defend the Castle and defeat 35 enemy attacks. Every next attack is stronger than previous. You have a lot of weapons, but not so much gold and can't equip strong soldiers at start. You can unlock new soldiers by killing enemy troops.||ARMY UNLOCK ORDER ON NORMAL DIFFICULTY LVL:||50 kills - Lance Carrier;|100 kills - Axe Fighter;|160 kills - Bowman;|250 kills - Crossbowman;|400 kills - Pikeman;|500 kills - Scout;|700 kills - Sword Fighter;|1000 kills - Barbarian;|1250 kills - Knight.||To get Barbarian, enable barracks repair and equip militia when you have more than 1000 points.||You can also get rogues when equipping militias and get extra recruit training recruits. |Also, if you reach 18th, 26th and 31st wave you get useful bonuses!||Made by andreus.
+50:[$%s]Rescue squads available: %d |Delay: %.2d:%.2d ||Your army (CURRENT/USAGE LIMIT): %d/%d|Your recruits (CURRENT/USAGE LIMIT): %d/%d[]
+51:[$FE437A]Castle Defenders 3.0 (26.03.2020)[]||In this mission you should defend the Castle and defeat 35 enemy attacks. Every next attack is stronger than previous. You have a lot of weapons, but not so much gold and can't equip strong soldiers at start. You can unlock new soldiers by killing enemy troops.||ARMY UNLOCK ORDER ON NORMAL DIFFICULTY LVL:||50 kills - Lance Carrier;|100 kills - Axe Fighter;|160 kills - Bowman;|250 kills - Crossbowman;|400 kills - Pikeman;|500 kills - Scout;|700 kills - Sword Fighter;|1000 kills - Barbarian;|1250 kills - Knight.||To get Barbarian, enable barracks repair and equip militia when you have more than 1000 points.||You can also get rogues when equipping militias and get extra recruit training recruits. |Also, if you reach 18th, 26th and 31st wave you get useful bonuses!||Made by andreus.
 52:Rifle Division
 53:You have chances to get extra ranged units when equipping melee units.
 54:Barbarians incoming?
@@ -69,7 +69,7 @@
 68:Poisoning bonus will kill randomly 50-70% of enemy soldiers but also can kill some of your troops. To use this bonus, place winefield plan in the special tile next to Red Mushroom.
 69:Drought bonus will set hunger level of random 50-70% of enemy soldiers to critical but also can do this for some of your troops. To use this bonus, place winefield plan in the special tile next to Cactus.
 70:[$CD9B4B]Castle Defenders[]
-71:||||Team bonuses available: [$%s]%s[], [$%s]%s[], [$%s]%s[] |Delay: %.2d:%.2d
+71:Team bonuses available: [$%s]%s[], [$%s]%s[], [$%s]%s[] |Delay: %.2d:%.2d
 72:Don't forget about Rescue Squad bonus - you can use it right now! Just place road plan in the special rescue tile located in the wall corner where this message sends you!
 73:Tip #2: Don't waste gold! You have not so much gold, and a lot of weak soldiers equipped too early will be useless later.
 74:Tip #3: Arrange defence positions within team. The best way is to defend corners (two flank and one middle entrances per player).
@@ -89,6 +89,13 @@
 88:Used Moat bonus
 89:Used Poisoning bonus
 90:Used Drought bonus
-91:Now you can build Watchtowers. Place a tower plan within the Castle, where you need to have it. You can build only %d towers.
+91:Now you can build Watchtowers. Place a tower plan within the Castle, where you need to have it. At the moment you can build only %d towers. You can buy extra towers, each of them costs %d gold. To buy a tower enter command %s into chat. You can have maximum of %d towers.
 92:You have enough towers already!
 93:Tip #1: Soldiers unlocking order: %s - %d kills; %s - %d kills; %s - %d kills; %s - %d kills; %s - %d kills; %s - %d kills; %s - %d kills; %s - %d kills; %s - %d kills.
+94:Reinforced Armor
+95:Your soldiers now have better armor, which can absorb a part of received damage.
+96:Your bonus
+97:Bought extra tower!
+98:Not enough gold (%d). You need %d to buy a tower.
+99:Towers limit is reached.
+100:Towers: %d/%d
