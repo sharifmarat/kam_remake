@@ -1460,8 +1460,6 @@ begin
     GenerateTerrainTransitions(fSprites[aRT]);
     GenerateTerrainTransitions(nil, True); //To get support for maps rev <= 10745
   end;
-
-    GenerateHouseSnowNoShadow(fSprites[aRT]);
 end;
 
 
