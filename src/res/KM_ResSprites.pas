@@ -716,7 +716,13 @@ begin
   for K := 0 to pngWidth - 1 do
   begin
     TreatMask := fRXData.HasMask[aIndex] and (fRXData.Mask[aIndex, I*pngWidth + K] > 0);
-    if (fRT = rxHouses) and ((aIndex < 680) or (aIndex = 1657) or (aIndex = 1659) or (aIndex = 1681) or (aIndex = 1683)) then
+    if (fRT = rxHouses)
+      and ((aIndex < 680)
+        or (aIndex = 1657)
+        or (aIndex = 1659)
+        or (aIndex = 1681)
+        or (aIndex = 1683)
+        or (aIndex > 2050)) then
       TreatMask := False;
 
     if TreatMask then
