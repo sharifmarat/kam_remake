@@ -149,6 +149,8 @@ end;
 
 procedure ShowHelpMsg(P: Integer);
 begin
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
   Actions.ShowMsg(P, '<$4>');
   Actions.ShowMsg(P, '<$5>');
   Actions.ShowMsg(P, '<$12>');
@@ -570,6 +572,9 @@ procedure RandomShips(P: Integer);
 var
   aX, aY: Integer;
 begin
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
+
   if (GameState[P] <= 11)
   or (GameState[P] = 15) then
   begin
@@ -618,6 +623,9 @@ procedure StartNewGame(P: Integer);
 var
   aX, aY: Integer;
 begin
+
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
 
   if GameState[P] < 15 then
     Exit;
@@ -841,6 +849,10 @@ procedure UndoPlacement(P, aSteps: Integer);
 var
   I, K, Steps: Integer;
 begin
+
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
+
   Steps := Utils.EnsureRangeI(aSteps, 1, 10);
 
   for I := 1 to Steps do
@@ -862,6 +874,8 @@ end;
 
 procedure UndoAllPlacements(P: Integer);
 begin
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
   UndoPlacement(P, 10);
 end;
 
@@ -871,6 +885,8 @@ end;
 
 procedure PlayerReady(P: Integer);
 begin
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
   if GameState[P] = 11 then
   begin
     GameState[P] := 12;

@@ -408,6 +408,9 @@ var
   G: Integer;
 begin
 
+  if not Utils.InRangeI(P, 0, 1) then
+    Exit;
+
   if not OffersAllowed[P] then
     Exit;
 

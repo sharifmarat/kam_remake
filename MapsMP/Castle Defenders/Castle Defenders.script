@@ -4803,6 +4803,9 @@ end;
 procedure GetExtraTower(P: Integer);
 begin
 
+  if not Utils.InRangeI(P, 0, 3) then
+    Exit;
+
   if Wave < TowersWave then
     Exit;
 
