@@ -134,7 +134,6 @@ type
     class function AllTilesOnOneAtlas: Boolean;
 
     procedure GenerateTerrainTransitions(aSprites: TKMSpritePack; aLegacyGeneration: Boolean = False);
-    procedure GenerateHouseSnowNoShadow(aSprites: TKMSpritePack);
 
     function GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
     function GetGenTerrainInfoLegacy(aTerrain: Integer): TKMGenTerrainInfo;
@@ -356,7 +355,7 @@ end;
 
 procedure TKMSpritePack.RemoveSnowHouseShadows(aResHouses: TKMResHouses);
 var
-  SnowID, SnowNoShadowID: Integer;
+  SnowID: Integer;
   ShadowConverter: TKMSoftShadowConverter;
   HT: TKMHouseType;
 begin
@@ -1319,12 +1318,6 @@ begin
 end;
 
 
-procedure TKMResSprites.GenerateHouseSnowNoShadow(aSprites: TKMSpritePack);
-begin
-
-end;
-
-
 function TKMResSprites.GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
 begin
   Result := fGenTerrainToTerKind[aTerrain + 1 - fGenTexIdStartI]; //TexId is 1-based, but textures we use - 0 based
@@ -1466,7 +1459,6 @@ begin
     GenerateTerrainTransitions(nil, True); //To get support for maps rev <= 10745
   end;
 
-  if aRT = rxHouses then
     GenerateHouseSnowNoShadow(fSprites[aRT]);
 end;
 
