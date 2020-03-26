@@ -294,6 +294,8 @@ var
   ShadowConverter: TKMSoftShadowConverter;
   SoftenShadowType: TSoftenShadowType;
 begin
+  if aIdList.Count = 0 then Exit;
+
   ShadowConverter := TKMSoftShadowConverter.Create(Self);
   try
     for I := 0 to aIdList.Count - 1 do
