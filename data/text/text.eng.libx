@@ -1347,5 +1347,6 @@
 1397:Set tile overlays.|Use LMB for safe mode and LMB+Shift to overwrite roads
 1398:Video clips:
 1399:Enable
-1400:Show at startup
-1401:Volume
+1400:Stretch
+1401:Show at startup
+1402:Volume

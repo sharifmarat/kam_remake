@@ -131,6 +131,7 @@ type
 
     //Video
     fVideoOn: Boolean;
+    fVideoStretch: Boolean;
     fVideoStartup: Boolean;
     fVideoVolume: Single;
 
@@ -232,6 +233,7 @@ type
 
     //Video
     procedure SetVideoOn(aValue: Boolean);
+    procedure SetVideoStretch(aValue: Boolean);
     procedure SetVideoStartup(aValue: Boolean);
     procedure SetVideoVolume(aValue: Single);
 
@@ -343,6 +345,7 @@ type
 
     //Video
     property VideoOn: Boolean read fVideoOn write SetVideoOn;
+    property VideoStretch: Boolean read fVideoStretch write SetVideoStretch;
     property VideoStartup: Boolean read fVideoStartup write SetVideoStartup;
     property VideoVolume: Single read fVideoVolume write SetVideoVolume;
 
@@ -672,6 +675,7 @@ begin
     fShuffleOn      := F.ReadBool   ('SFX',  'ShuffleEnabled', False);
 
     fVideoOn      := F.ReadBool ('Video',  'Enabled', True);
+    fVideoStretch := F.ReadBool ('Video',  'Stretch', True);
     fVideoStartup := F.ReadBool ('Video',  'Startup', True);
     fVideoVolume  := F.ReadFloat('Video',  'Volume',   0.5);
 
@@ -807,6 +811,7 @@ begin
     F.WriteBool   ('SFX','ShuffleEnabled',fShuffleOn);
 
     F.WriteBool   ('Video','Enabled',fVideoOn);
+    F.WriteBool   ('Video','Stretch',fVideoStretch);
     F.WriteBool   ('Video','Startup',fVideoStartup);
     F.WriteFloat  ('Video','Volume', fVideoVolume);
 
@@ -1306,9 +1311,15 @@ begin
   Changed;
 end;
 
-procedure TKMGameSettings.SetVideoStartUp(aValue: Boolean);
+procedure TKMGameSettings.SetVideoStretch(aValue: Boolean);
 begin
-  fVideoStartUp := aValue;
+  fVideoStretch := aValue;
+  Changed;
+end;
+
+procedure TKMGameSettings.SetVideoStartup(aValue: Boolean);
+begin
+  fVideoStartup := aValue;
   Changed;
 end;
 

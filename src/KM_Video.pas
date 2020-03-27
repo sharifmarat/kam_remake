@@ -314,16 +314,24 @@ begin
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FWidth, FHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, FBuffer);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    AspectRatio := FWidth / FHeight;
-    if AspectRatio > FScreenWidth / FScreenHeight then
+    if gGameApp.GameSettings.VideoStretch then
     begin
-      Width := FScreenWidth;
-      Height := Round(FScreenWidth / AspectRatio);
+      AspectRatio := FWidth / FHeight;
+      if AspectRatio > FScreenWidth / FScreenHeight then
+      begin
+        Width := FScreenWidth;
+        Height := Round(FScreenWidth / AspectRatio);
+      end
+      else
+      begin
+        Width := Round(FScreenHeight * AspectRatio);
+        Height := FScreenHeight;
+      end;
     end
     else
     begin
-      Width := Round(FScreenHeight * AspectRatio);
-      Height := FScreenHeight;
+      Width := FWidth;
+      Height := FHeight;
     end;
 
     TKMRenderUI.WriteTexture((FScreenWidth - Width) div 2, (FScreenHeight - Height) div 2, Width, Height, FTexture, $FFFFFFFF);
@@ -357,11 +365,11 @@ begin
   if not IsPlay then
     Exit;
 
-  PlayNext;
-  {
-  if Key = 27 then // Esc
+  //  Space         Esc           Enter
+  if (Key = 27) or (Key = 32) or (Key = 13) then
     PlayNext;
 
+  {
   if Key = 32 then // Space
   begin
     if IsPlay then

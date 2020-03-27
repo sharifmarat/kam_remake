@@ -43,6 +43,7 @@ type
       Panel_Options_Video: TKMPanel;
         CheckBox_Options_VideoEnable: TKMCheckBox;
         CheckBox_Options_VideoStartup: TKMCheckBox;
+        CheckBox_Options_VideoStretch: TKMCheckBox;
         TrackBar_Options_VideoVolume: TKMTrackBar;
 
       Panel_Options_Fonts: TKMPanel;
@@ -146,15 +147,17 @@ begin
       TrackBar_Options_Brightness.OnChange:=Change;
 
     // Videos
-    Panel_Options_Video := TKMPanel.Create(Panel_Options,0,325,280,125);
+    Panel_Options_Video := TKMPanel.Create(Panel_Options,0,325,280,145);
     Panel_Options_Video.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Video,6,0,270,20,gResTexts[TX_MENU_OPTIONS_VIDEOS],fntOutline,taLeft);
-      TKMBevel.Create(Panel_Options_Video,0,20,280,105);
+      TKMBevel.Create(Panel_Options_Video,0,20,280,125);
       CheckBox_Options_VideoEnable := TKMCheckBox.Create(Panel_Options_Video, 10, 30, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_ENABLE], fntMetal);
       CheckBox_Options_VideoEnable.OnClick := Change;
-      CheckBox_Options_VideoStartup := TKMCheckBox.Create(Panel_Options_Video, 10, 50, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_STARTUP], fntMetal);
+      CheckBox_Options_VideoStretch := TKMCheckBox.Create(Panel_Options_Video, 10, 50, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_STRETCH], fntMetal);
+      CheckBox_Options_VideoStretch.OnClick := Change;
+      CheckBox_Options_VideoStartup := TKMCheckBox.Create(Panel_Options_Video, 10, 70, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_STARTUP], fntMetal);
       CheckBox_Options_VideoStartup.OnClick := Change;
-      TrackBar_Options_VideoVolume := TKMTrackBar.Create(Panel_Options_Video, 10, 70, 256, OPT_SLIDER_MIN, OPT_SLIDER_MAX);
+      TrackBar_Options_VideoVolume := TKMTrackBar.Create(Panel_Options_Video, 10, 90, 256, OPT_SLIDER_MIN, OPT_SLIDER_MAX);
       TrackBar_Options_VideoVolume.Caption := gResTexts[TX_MENU_OPTIONS_VIDEOS_VOLUME];
       TrackBar_Options_VideoVolume.OnChange := Change;
 
@@ -315,6 +318,7 @@ begin
   CheckBox_Options_ShuffleOn.Checked       := fGameSettings.ShuffleOn;
   CheckBox_Options_ShuffleOn.Enabled       := not CheckBox_Options_MusicOff.Checked;
   CheckBox_Options_VideoEnable.Checked     := fGameSettings.VideoOn;
+  CheckBox_Options_VideoStretch.Checked    := fGameSettings.VideoStretch;
   CheckBox_Options_VideoStartup.Checked    := fGameSettings.VideoStartup;
   TrackBar_Options_VideoVolume.Position    := Round(fGameSettings.VideoVolume * TrackBar_Options_VideoVolume.MaxValue);
 
@@ -346,6 +350,7 @@ begin
   fGameSettings.MusicOff        := CheckBox_Options_MusicOff.Checked;
   fGameSettings.ShuffleOn       := CheckBox_Options_ShuffleOn.Checked;
   fGameSettings.VideoOn         := CheckBox_Options_VideoEnable.Checked;
+  fGameSettings.VideoStretch    := CheckBox_Options_VideoStretch.Checked;
   fGameSettings.VideoStartup    := CheckBox_Options_VideoStartup.Checked;
   fGameSettings.VideoVolume     := TrackBar_Options_VideoVolume.Position / TrackBar_Options_VideoVolume.MaxValue;
   TrackBar_Options_Music.Enabled      := not CheckBox_Options_MusicOff.Checked;
