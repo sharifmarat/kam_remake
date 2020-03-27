@@ -3646,6 +3646,7 @@ begin
   try
     Speed := EnsureRange(aSpeed, GAME_SPEED_NORMAL, GAME_MP_SPEED_MAX);
     gGame.SetGameSpeedActual(Speed);
+    gGame.SetGameSpeedGIP(Speed, True);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
