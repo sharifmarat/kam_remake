@@ -3,6 +3,14 @@ const
   OFFSET_X = 55;
   MAX_TIMEOUT = 300;
 
+  HELP_CMD    = '/help';
+  NEWGAME_CMD = '/new';
+  RANDOM_CMD  = '/random';
+  READY_CMD   = '/ready';
+  UNDO_CMD    = '/undo';
+  CLEAR_CMD   = '/clear';
+
+  CMD_COLOR   = '[$6BD0FA]';
 
 type
   aBattleship = Record
@@ -59,12 +67,6 @@ var
   Placements: array[0..1] of array[1..10] of aPlacement;
 
 
-function InRange(Value, Min, Max: Integer): Boolean;
-begin
-  Result := (Value >= Min) and (Value <= Max);
-end;
-
-
 procedure OnMissionStart;
 var
   Units: array of Integer;
@@ -82,11 +84,12 @@ begin
       Actions.UnitKill(Units[K], True);
   end;
 
-  Actions.ShowMsg(-1, '<$4>');
+  Actions.ShowMsg(-1, '<$4> <$22> <$23> ' + CMD_COLOR + RANDOM_CMD + '[]');
   Actions.ShowMsg(-1, '<$5>');
   Actions.ShowMsg(-1, '<$12>');
-  Actions.ShowMsg(-1, '<$19>');
-  Actions.ShowMsg(-1, '<$20>');
+  Actions.ShowMsg(-1, '<$19> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 10[]' + ' <$22> ' + CMD_COLOR + CLEAR_CMD + '[]');
+  Actions.ShowMsg(-1, '<$20> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 1[]' + '|<$25> <$26> ' + CMD_COLOR + UNDO_CMD + ' 5[] <$27>');
+  Actions.ShowMsg(-1, '<$6> <$22> <$23> ' + CMD_COLOR + READY_CMD + '[]');
 
   if States.PlayerEnabled(0) then
   begin
@@ -151,15 +154,16 @@ procedure ShowHelpMsg(P: Integer);
 begin
   if not Utils.InRangeI(P, 0, 1) then
     Exit;
-  Actions.ShowMsg(P, '<$4>');
+
+  Actions.ShowMsg(P, '<$4> <$22> <$23> ' + CMD_COLOR + RANDOM_CMD + '[]');
   Actions.ShowMsg(P, '<$5>');
   Actions.ShowMsg(P, '<$12>');
-  Actions.ShowMsg(P, '<$19>');
-  Actions.ShowMsg(P, '<$20>');
+  Actions.ShowMsg(P, '<$19> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 10[]' + ' <$22> ' + CMD_COLOR + CLEAR_CMD + '[]');
+  Actions.ShowMsg(P, '<$20> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 1[]' + '|<$25> <$26> ' + CMD_COLOR + UNDO_CMD + ' 5[] <$27>');
   if GameState[P] >= 15 then
-    Actions.ShowMsg(P, '<$11>');
+    Actions.ShowMsg(P, '<$11> <$22> <$23> ' + CMD_COLOR + NEWGAME_CMD + '[]');
   if GameState[P] = 11 then
-    Actions.ShowMsg(P, '<$6>');
+    Actions.ShowMsg(P, '<$6> <$22> <$23> ' + CMD_COLOR + READY_CMD + '[]');
 end;
 
 
@@ -227,14 +231,14 @@ end;
 
 function TileOnOwnBattlefield(P, X, Y: Integer): Boolean;
 begin
-  Result := InRange(X, OwnBattlefieldLimitX(P, 0), OwnBattlefieldLimitX(P, 1)) and (InRange(Y, OwnBattlefieldLimitY(P, 0), OwnBattlefieldLimitY(P, 1)));
+  Result := Utils.InRangeI(X, OwnBattlefieldLimitX(P, 0), OwnBattlefieldLimitX(P, 1)) and (Utils.InRangeI(Y, OwnBattlefieldLimitY(P, 0), OwnBattlefieldLimitY(P, 1)));
   Result := Result and (States.MapTileType(X, Y) <> 214) and (States.MapTileType(X, Y) <> 193);
 end;
 
 
 function TileOnEnemyBattlefield(P, X, Y: Integer): Boolean;
 begin
-  Result := InRange(X, OwnBattlefieldLimitX(P, 0), OwnBattlefieldLimitX(P, 1)) and (InRange(Y, OFFSET_Y + OwnBattlefieldLimitY(P, 0), OFFSET_Y + OwnBattlefieldLimitY(P, 1)));
+  Result := Utils.InRangeI(X, OwnBattlefieldLimitX(P, 0), OwnBattlefieldLimitX(P, 1)) and (Utils.InRangeI(Y, OFFSET_Y + OwnBattlefieldLimitY(P, 0), OFFSET_Y + OwnBattlefieldLimitY(P, 1)));
 end;
 
 
@@ -587,13 +591,13 @@ begin
     while GameState[P] = 1 do
       PlaceBattleship(P, OwnBattlefieldLimitX(P, 0) + States.KaMRandomI(10), OwnBattlefieldLimitY(P, 0) + States.KaMRandomI(10), States.KaMRandomI(2));
 
-    while InRange(GameState[P], 2, 3) do
+    while Utils.InRangeI(GameState[P], 2, 3) do
       PlaceCruiser(P, OwnBattlefieldLimitX(P, 0) + States.KaMRandomI(10), OwnBattlefieldLimitY(P, 0) + States.KaMRandomI(10), States.KaMRandomI(2), GameState[P] - 1);
 
-    while InRange(GameState[P], 4, 6) do
+    while Utils.InRangeI(GameState[P], 4, 6) do
       PlaceDestroyer(P, OwnBattlefieldLimitX(P, 0) + States.KaMRandomI(10), OwnBattlefieldLimitY(P, 0) + States.KaMRandomI(10), States.KaMRandomI(2), GameState[P] - 3);
 
-    while InRange(GameState[P], 7, 10) do
+    while Utils.InRangeI(GameState[P], 7, 10) do
       PlaceBoat(P, OwnBattlefieldLimitX(P, 0) + States.KaMRandomI(10), OwnBattlefieldLimitY(P, 0) + States.KaMRandomI(10), GameState[P] - 6);
 
   end;
@@ -673,16 +677,22 @@ begin
   case GameState[P] of
     0: Result := '<$17> ' + Winner;
     1: Result := '<$0>';
-    2, 3: Result := '<$1>|<$19>|<$20>';
-    4..6: Result := '<$2>|<$19>|<$20>';
-    7..10: Result := '<$3>|<$19>|<$20>';
-    11: Result := '<$13>|<$19>|<$20>';
+    2, 3: Result := '<$1>|<$19> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 10[]' + ' <$22> ' + CMD_COLOR + CLEAR_CMD + '[]'
+    + '|<$20> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 1[]' + '|<$25> <$26> ' + CMD_COLOR + UNDO_CMD + ' 5[] <$27>';
+    4..6: Result := '<$2>|<$19> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 10[]' + ' <$22> ' + CMD_COLOR + CLEAR_CMD + '[]'
+    + '|<$20> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 1[]' + '|<$25> <$26> ' + CMD_COLOR + UNDO_CMD + ' 5[] <$27>';
+    7..10: Result := '<$3>|<$19> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 10[]' + ' <$22> ' + CMD_COLOR + CLEAR_CMD + '[]'
+    + '|<$20> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 1[]' + '|<$25> <$26> ' + CMD_COLOR + UNDO_CMD + ' 5[] <$27>';
+    11: Result := '<$13> (' + States.HouseTypeName(21) + ' <$22> ' + CMD_COLOR + READY_CMD
+    + '[]) <$22> <$24> (' + States.HouseTypeName(29) + ' <$22> ' + CMD_COLOR + RANDOM_CMD + '[])|'
+    + '<$19> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 10[]' + ' <$22> ' + CMD_COLOR + CLEAR_CMD + '[]'
+    + '|<$20> <$22> <$23> ' + CMD_COLOR + UNDO_CMD + ' 1[]' + '|<$25> <$26> ' + CMD_COLOR + UNDO_CMD + ' 5[] <$27>';
     12: Result := '<$10>';
     13: Result := '[$' + States.PlayerColorText(Enemy(P)) + ']' + States.PlayerName(Enemy(P)) + '[] <$7>' + '|<$18> ' + IntToStr(Timeout/10);
     14: Result := '[$' + States.PlayerColorText(P) + ']' + States.PlayerName(P) + '[] <$7>' + '|<$18> ' + IntToStr(Timeout/10);
-    15: Result := '<$11>';
-    16: Result := '<$9> ' + '<$11>';
-    17: Result := '<$8> ' + '<$11>'
+    15: Result := '<$11> <$22> <$23> ' + CMD_COLOR + NEWGAME_CMD + '[]';
+    16: Result := '<$9>|<$11> <$22> <$23> ' + CMD_COLOR + NEWGAME_CMD + '[]';
+    17: Result := '<$8>|<$11> <$22> <$23> ' + CMD_COLOR + NEWGAME_CMD + '[]'
     else Result := '';
   end;
 end;
@@ -751,10 +761,10 @@ begin
   for I := 0 to 1 do
   begin
 
-    Battleship[I].Killed := (InRange(States.MapTileObject(Battleship[I].X[1], Battleship[I].Y[1]), 68, 73))
-    and (InRange(States.MapTileObject(Battleship[I].X[2], Battleship[I].Y[2]), 68, 73))
-    and (InRange(States.MapTileObject(Battleship[I].X[3], Battleship[I].Y[3]), 68, 73))
-    and (InRange(States.MapTileObject(Battleship[I].X[4], Battleship[I].Y[4]), 68, 73));
+    Battleship[I].Killed := (Utils.InRangeI(States.MapTileObject(Battleship[I].X[1], Battleship[I].Y[1]), 68, 73))
+    and (Utils.InRangeI(States.MapTileObject(Battleship[I].X[2], Battleship[I].Y[2]), 68, 73))
+    and (Utils.InRangeI(States.MapTileObject(Battleship[I].X[3], Battleship[I].Y[3]), 68, 73))
+    and (Utils.InRangeI(States.MapTileObject(Battleship[I].X[4], Battleship[I].Y[4]), 68, 73));
 
     if Battleship[I].Killed then
     begin
@@ -773,9 +783,9 @@ begin
 
     for K := 1 to 2 do
     begin
-      Cruiser[K][I].Killed := (InRange(States.MapTileObject(Cruiser[K][I].X[1], Cruiser[K][I].Y[1]), 68, 73))
-      and (InRange(States.MapTileObject(Cruiser[K][I].X[2], Cruiser[K][I].Y[2]), 68, 73))
-      and (InRange(States.MapTileObject(Cruiser[K][I].X[3], Cruiser[K][I].Y[3]), 68, 73));
+      Cruiser[K][I].Killed := (Utils.InRangeI(States.MapTileObject(Cruiser[K][I].X[1], Cruiser[K][I].Y[1]), 68, 73))
+      and (Utils.InRangeI(States.MapTileObject(Cruiser[K][I].X[2], Cruiser[K][I].Y[2]), 68, 73))
+      and (Utils.InRangeI(States.MapTileObject(Cruiser[K][I].X[3], Cruiser[K][I].Y[3]), 68, 73));
 
       if Cruiser[K][I].Killed then
       begin
@@ -796,8 +806,8 @@ begin
 
     for K := 1 to 3 do
     begin
-      Destroyer[K][I].Killed := (InRange(States.MapTileObject(Destroyer[K][I].X[1], Destroyer[K][I].Y[1]), 68, 73))
-      and (InRange(States.MapTileObject(Destroyer[K][I].X[2], Destroyer[K][I].Y[2]), 68, 73));
+      Destroyer[K][I].Killed := (Utils.InRangeI(States.MapTileObject(Destroyer[K][I].X[1], Destroyer[K][I].Y[1]), 68, 73))
+      and (Utils.InRangeI(States.MapTileObject(Destroyer[K][I].X[2], Destroyer[K][I].Y[2]), 68, 73));
 
       if Destroyer[K][I].Killed then
       begin
@@ -818,7 +828,7 @@ begin
 
     for K := 1 to 4 do
     begin
-      Boat[K][I].Killed := (InRange(States.MapTileObject(Boat[K][I].X, Boat[K][I].Y), 68, 73));
+      Boat[K][I].Killed := (Utils.InRangeI(States.MapTileObject(Boat[K][I].X, Boat[K][I].Y), 68, 73));
 
       if Boat[K][I].Killed then
       begin
@@ -857,7 +867,7 @@ begin
 
   for I := 1 to Steps do
   begin
-    if not InRange(GameState[P], 2, 11) then
+    if not Utils.InRangeI(GameState[P], 2, 11) then
       Exit;
     for K := 1 to 100 do
       if (Placements[P][GameState[P] - 1].X[K] > 0)
@@ -912,11 +922,11 @@ begin
     StartNewGame(P);
 
   if (aType = 11)
-  and (InRange(GameState[P], 2, 11)) then
+  and (Utils.InRangeI(GameState[P], 2, 11)) then
     UndoPlacement(P, 10);
 
   if (aType = 13)
-  and (InRange(GameState[P], 2, 11)) then
+  and (Utils.InRangeI(GameState[P], 2, 11)) then
     UndoPlacement(P, 1);
 
 end;
