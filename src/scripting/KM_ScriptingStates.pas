@@ -1514,7 +1514,9 @@ function TKMScriptStates.PlayerName(aPlayer: Byte): AnsiString;
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
-      Result := AnsiString(gHands[aPlayer].OwnerName)
+      // Don't use localized names, since AI will be return differently for script,
+      // and we could get desync or save difference
+      Result := AnsiString(gHands[aPlayer].OwnerName(True, False))
     else
     begin
       Result := '';

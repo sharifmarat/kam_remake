@@ -1620,6 +1620,7 @@ begin
   if fScriptCode <> '' then
     CompileScript;
 
+  LoadStream.CheckMarker('ScriptVars');
   //Read script variables
   LoadStream.Read(I);
   Assert(I = fExec.GetVarCount, 'Script variable count mismatches saved variables count');
@@ -1737,6 +1738,7 @@ begin
   gScriptEvents.Save(SaveStream);
   fIDCache.Save(SaveStream);
 
+  SaveStream.PlaceMarker('ScriptVars');
   //Write script global variables
   SaveStream.Write(fExec.GetVarCount);
   for I := 0 to fExec.GetVarCount - 1 do
