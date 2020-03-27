@@ -74,7 +74,7 @@ implementation
 uses
   KM_ResTexts, KM_Game, KM_GameApp, KM_HandsCollection,
   KM_CommonUtils, KM_Resource, KM_Hand, KM_RenderUI, KM_ResFonts,
-  KM_ResWares, KM_HandStats;
+  KM_ResWares, KM_HandStats, KM_Video;
 
 
 { TKMGUIMenuResultsSP }
@@ -167,6 +167,22 @@ begin
     Button_Back.Caption := gResTexts[TX_RESULTS_BACK_TO_GAME]
   else
     Button_Back.Caption := gResTexts[TX_MENU_BACK];  
+
+  if fGameMode = gmCampaign then
+  begin
+    case fGameResultMsg of
+      grWin: gVideoPlayer.AddMissionVideo(fRepeatMission, 'Victory');
+      grDefeat, grCancel: gVideoPlayer.AddMissionVideo(fRepeatMission, 'Defeat');
+    end;
+  end
+  else
+  begin
+    case fGameResultMsg of
+      grWin: gVideoPlayer.AddVideo('Victory');
+      grDefeat, grCancel: gVideoPlayer.AddVideo('Defeat');
+    end;
+  end;
+  gVideoPlayer.Play;
 
   //Header
   case fGameResultMsg of

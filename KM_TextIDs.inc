@@ -347,9 +347,7 @@ TX_MENU_OPTIONS_FONTS = 830; //Load Asian fonts
 TX_MENU_OPTIONS_FULLSCREEN = 308; //Fullscreen
 TX_MENU_OPTIONS_APPLY = 309; //Apply
 TX_MENU_OPTIONS_LANGUAGE = 310; //Language:
-TX_MENU_OPTIONS_SHADOW_QUALITY = 311; //Shadow quality:
-TX_MENU_OPTIONS_SHADOW_QUALITY_LOW = 312; //Low
-TX_MENU_OPTIONS_SHADOW_QUALITY_HIGH = 313; //High
+TX_MENU_OPTIONS_SHADOW_QUALITY = 311; //Shadow quality
 TX_MENU_OPTIONS_EDIT_KEYS = 837; //Edit Key-bindings
 TX_MENU_OPTIONS_KEYBIND = 838; //Key-bindings
 TX_MENU_OPTIONS_OK = 839; //OK
@@ -1431,3 +1429,9 @@ TX_UNSUPPORTED_REPLAY_LOAD_ERROR_MSG = 1381; //Error loading unsupported version
 TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT = 1385; //Loading unsupported version could cause game not being properly loaded or even cause game crash
 
 TX_MENU_DEBUG_UNLOCK_CAMPAIGNS_CONFIRM = 1387; //Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?
+
+TX_MENU_OPTIONS_VIDEOS = 1398; //Videos
+TX_MENU_OPTIONS_VIDEOS_ENABLE = 1399; //Videos on/off
+TX_MENU_OPTIONS_VIDEOS_STRETCH = 1400; //Stretch on/off
+TX_MENU_OPTIONS_VIDEOS_STARTUP = 1401; //Startup on/off
+TX_MENU_OPTIONS_VIDEOS_VOLUME = 1402; //Change  volume

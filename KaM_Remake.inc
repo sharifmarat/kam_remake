@@ -37,3 +37,6 @@
 
 //Use secure authentication unit (KM_NetAuthSecure)
 {$DEFINE USESECUREAUTH}
+
+// Delphi compiler video play
+{$DEFINE VIDEOS}

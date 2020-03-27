@@ -45,6 +45,7 @@ type
     fBackGroundPic: TKMPic;
     fMapCount: Byte;
     fShortName: UnicodeString;
+    fViewed: Boolean;
 
     fMapsInfo: TKMCampaignMapDataArray;
 
@@ -74,6 +75,7 @@ type
     procedure LoadFromFile(const aFileName: UnicodeString);
     procedure SaveToFile(const aFileName: UnicodeString);
 
+    property Path: UnicodeString read fPath;
     property BackGroundPic: TKMPic read fBackGroundPic write fBackGroundPic;
     property MapCount: Byte read fMapCount write SetMapCount;
     property CampaignId: TKMCampaignId read fCampaignId write SetCampaignId;
@@ -82,6 +84,7 @@ type
     property ScriptData: TKMemoryStreamBinary read fScriptData;
     property MapsInfo: TKMCampaignMapDataArray read fMapsInfo;
     property MapsProgressData: TKMCampaignMapProgressDataArray read fMapsProgressData;
+    property Viewed: Boolean read fViewed write fViewed;
 
     function GetCampaignTitle: UnicodeString;
     function GetCampaignDescription: UnicodeString;
@@ -135,7 +138,7 @@ implementation
 uses
   SysUtils, Math, KromUtils,
   KM_Game, KM_Resource, KM_ResLocales, KM_ResSprites,
-  KM_Log, KM_Defaults;
+  KM_Log, KM_Defaults, KM_GameApp;
 
 
 const
@@ -265,6 +268,7 @@ begin
       C := CampaignById(campName);
       if C <> nil then
       begin
+        C.Viewed := True;
         C.UnlockedMap := unlocked;
         for J := 0 to C.MapCount - 1 do
           M.Read(C.fMapsProgressData[J], SizeOf(C.fMapsProgressData[J]));
@@ -287,26 +291,32 @@ end;
 procedure TKMCampaignsCollection.SaveProgress;
 var
   M: TKMemoryStreamBinary;
-  I,J: Integer;
+  I,J, CampaignCount: Integer;
   FilePath: UnicodeString;
 begin
   FilePath := ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat';
   //Makes the folder incase it is missing
   ForceDirectories(ExtractFilePath(FilePath));
 
+  CampaignCount := 0;
+  for I := 0 to Count - 1 do
+    if Campaigns[I].Viewed then
+      Inc(CampaignCount);
+
   M := TKMemoryStreamBinary.Create;
   try
     M.Write(Integer(CAMP_HEADER_V2)); //Identify our format
     M.Write(Count);
     for I := 0 to Count - 1 do
-    begin
-      M.Write(Campaigns[I].CampaignId, SizeOf(TKMCampaignId));
-      M.Write(Campaigns[I].UnlockedMap);
-      for J := 0 to Campaigns[I].MapCount - 1 do
-        M.Write(Campaigns[I].fMapsProgressData[J], SizeOf(Campaigns[I].fMapsProgressData[J]));
-      M.Write(Cardinal(Campaigns[I].ScriptData.Size));
-      M.Write(Campaigns[I].ScriptData.Memory^, Campaigns[I].ScriptData.Size);
-    end;
+      if Campaigns[I].Viewed then
+      begin
+        M.Write(Campaigns[I].CampaignId, SizeOf(TKMCampaignId));
+        M.Write(Campaigns[I].UnlockedMap);
+        for J := 0 to Campaigns[I].MapCount - 1 do
+          M.Write(Campaigns[I].fMapsProgressData[J], SizeOf(Campaigns[I].fMapsProgressData[J]));
+        M.Write(Cardinal(Campaigns[I].ScriptData.Size));
+        M.Write(Campaigns[I].ScriptData.Memory^, Campaigns[I].ScriptData.Size);
+      end;
 
     M.SaveToFile(FilePath);
   finally
@@ -319,8 +329,8 @@ end;
 
 procedure TKMCampaignsCollection.Load;
 begin
-  ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  ScanFolder({ExeDir +} CAMPAIGNS_FOLDER_NAME + PathDelim);
+  LoadProgress({ExeDir +} SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
 end;
 
 
@@ -371,6 +381,7 @@ begin
   inherited;
 
   //1st map is always unlocked to allow to start campaign
+  fViewed := False;
   fUnlockedMap := 0;
   fScriptData := TKMemoryStreamBinary.Create;
 end;
@@ -568,7 +579,6 @@ begin
   SetLength(fMapsProgressData, fMapCount);
   SetLength(fMapsInfo, fMapCount);
 end;
-
 
 procedure TKMCampaign.SetCampaignId(aCampaignId: TKMCampaignId);
 begin

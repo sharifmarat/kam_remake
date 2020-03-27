@@ -129,6 +129,12 @@ type
     fMusicVolume: Single;
     fSoundFXVolume: Single;
 
+    //Video
+    fVideoOn: Boolean;
+    fVideoStretch: Boolean;
+    fVideoStartup: Boolean;
+    fVideoVolume: Single;
+
     //Multiplayer
     fMultiplayerName: AnsiString;
     fLastIP: string;
@@ -225,6 +231,12 @@ type
     procedure SetShuffleOn(aValue: Boolean);
     procedure SetMusicVolume(aValue: Single);
     procedure SetSoundFXVolume(aValue: Single);
+
+    //Video
+    procedure SetVideoOn(aValue: Boolean);
+    procedure SetVideoStretch(aValue: Boolean);
+    procedure SetVideoStartup(aValue: Boolean);
+    procedure SetVideoVolume(aValue: Single);
 
     //Multiplayer
     procedure SetMultiplayerName(const aValue: AnsiString);
@@ -332,6 +344,12 @@ type
     property ShuffleOn: Boolean read fShuffleOn write SetShuffleOn;
     property MusicVolume: Single read fMusicVolume write SetMusicVolume;
     property SoundFXVolume: Single read fSoundFXVolume write SetSoundFXVolume;
+
+    //Video
+    property VideoOn: Boolean read fVideoOn write SetVideoOn;
+    property VideoStretch: Boolean read fVideoStretch write SetVideoStretch;
+    property VideoStartup: Boolean read fVideoStartup write SetVideoStartup;
+    property VideoVolume: Single read fVideoVolume write SetVideoVolume;
 
     //Multiplayer
     property MultiplayerName: AnsiString read fMultiplayerName write SetMultiplayerName;
@@ -663,6 +681,11 @@ begin
     fMusicOff       := F.ReadBool   ('SFX',  'MusicDisabled',  False);
     fShuffleOn      := F.ReadBool   ('SFX',  'ShuffleEnabled', False);
 
+    fVideoOn      := F.ReadBool ('Video',  'Enabled', True);
+    fVideoStretch := F.ReadBool ('Video',  'Stretch', True);
+    fVideoStartup := F.ReadBool ('Video',  'Startup', True);
+    fVideoVolume  := F.ReadFloat('Video',  'Volume',   0.5);
+
     if INI_HITPOINT_RESTORE then
       HITPOINT_RESTORE_PACE := F.ReadInteger('Fights', 'HitPointRestorePace', DEFAULT_HITPOINT_RESTORE)
     else
@@ -801,6 +824,11 @@ begin
     F.WriteFloat  ('SFX','MusicVolume',   fMusicVolume);
     F.WriteBool   ('SFX','MusicDisabled', fMusicOff);
     F.WriteBool   ('SFX','ShuffleEnabled',fShuffleOn);
+
+    F.WriteBool   ('Video','Enabled',fVideoOn);
+    F.WriteBool   ('Video','Stretch',fVideoStretch);
+    F.WriteBool   ('Video','Startup',fVideoStartup);
+    F.WriteFloat  ('Video','Volume', fVideoVolume);
 
     if INI_HITPOINT_RESTORE then
       F.WriteInteger('Fights','HitPointRestorePace', HITPOINT_RESTORE_PACE);
@@ -1299,6 +1327,29 @@ begin
   Changed;
 end;
 
+procedure TKMGameSettings.SetVideoOn(aValue: Boolean);
+begin
+  fVideoOn := aValue;
+  Changed;
+end;
+
+procedure TKMGameSettings.SetVideoStretch(aValue: Boolean);
+begin
+  fVideoStretch := aValue;
+  Changed;
+end;
+
+procedure TKMGameSettings.SetVideoStartup(aValue: Boolean);
+begin
+  fVideoStartup := aValue;
+  Changed;
+end;
+
+procedure TKMGameSettings.SetVideoVolume(aValue: Single);
+begin
+  fVideoVolume := EnsureRange(aValue, 0, 1);
+  Changed;
+end;
 
 procedure TKMGameSettings.SetMaxRooms(eValue: Integer);
 begin
