@@ -3644,8 +3644,11 @@ var
   Speed: Single;
 begin
   try
-    Speed := EnsureRange(aSpeed, GAME_SPEED_NORMAL, GAME_MP_SPEED_MAX);
-    gGame.SetGameSpeedActual(Speed);
+    if gGame.IsMultiplayer then
+      Speed := EnsureRange(aSpeed, GAME_SPEED_NORMAL, GAME_MP_SPEED_MAX)
+    else
+      Speed := EnsureRange(aSpeed, GAME_SPEED_NORMAL, GAME_SP_SPEED_MAX);
+
     gGame.SetGameSpeedGIP(Speed, True);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
