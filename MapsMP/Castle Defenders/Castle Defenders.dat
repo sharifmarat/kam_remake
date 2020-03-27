@@ -1,4 +1,4 @@
-!SET_MAP "data\mission\smaps\Castle Defenders 2.0.map"
+!SET_MAP "data\mission\smaps\Castle Defenders.map"
 !SET_MAX_PLAYER 9
 !SET_HUMAN_PLAYER 0
 
@@ -1020,4 +1020,4 @@
 !SET_UNIT 26 44 111
 !SET_UNIT 26 43 87
 
-//This mission was made with KaM Remake Map Editor version r10745 at 05.01.2020 18:32:46
+//This mission was made with KaM Remake Map Editor version r11130 at 27.03.2020 18:20:08

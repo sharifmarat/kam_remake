@@ -1786,12 +1786,13 @@ end;
 
 procedure UpdateFOW;
 begin
-  for I := 0 to 3 do
-    if States.PlayerEnabled(I) then
-    begin
-      Actions.FogCoverAll(I);
-      Actions.FogRevealCircle(I, 75, 76, 45);
-    end;
+  if States.MissionDifficulty <> mdEasy1 then
+    for I := 0 to 3 do
+      if States.PlayerEnabled(I) then
+      begin
+        Actions.FogCoverAll(I);
+        Actions.FogRevealCircle(I, 75, 76, 45);
+      end;
 end;
 
 
@@ -4752,18 +4753,7 @@ end;
 
 
 procedure OnPlanWinefieldPlaced(aIndex, aX, aY: Integer);
-var
-  Troops: array of Integer;
 begin
-  if (DEBUG_MODE)
-  and not ((Utils.InRangeI(aX, 74, 76))
-  and (aY = 81)) then
-  begin
-    Troops := States.PlayerGetAllUnits(aIndex);
-    for K := 0 to length(Troops) - 1 do
-      Actions.UnitHungerSet(Troops[K], States.UnitMaxHunger);
-  end;
-
   if (Utils.InRangeI(aX, 74, 76))
   and (aY = 81)
   and (LateBonusDelay = 0) then
@@ -4777,7 +4767,6 @@ begin
     Actions.MapTileObjectSet(aX, aY - 1, 255);
     LateBonusDelay := LATE_BONUS_DELAY;
   end;
-
   Actions.PlanRemove(aIndex, aX, aY);
 end;
 
@@ -4830,29 +4819,56 @@ begin
 end;
 
 
+function CanPlaceTower(X, Y: Integer): Boolean;
+begin
+  Result := (Utils.InRangeI(X, 46, 105))
+  and (Utils.InRangeI(Y, 46, 105))
+  and not ((Utils.InRangeI(X, 74, 76))
+  and (Utils.InRangeI(Y, 80, 81)))
+  and ((CanBuildRoads(X - 2, Y + 1, X, Y + 1))
+  or (CanBuildRoads(X - 1, Y + 1, X + 1, Y + 1)))
+  and ((CanBuildRoads(X - 2, Y - 1, X - 2, Y + 1))
+  or (CanBuildRoads(X + 1, Y - 1, X + 1, Y + 1)));
+end;
+
+
+procedure PlaceTower(P, X, Y: Integer);
+begin 
+
+  if States.StatHouseTypeCount(P, 17) >= Utils.EnsureRangeI(States.StatHouseTypeCount(P, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P], MAX_TOWERS) then
+    Actions.ShowMsg(P, Utils.IfThen(START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P] >= MAX_TOWERS, '<$92>', '<$92> <$101>'));
+
+  if States.StatHouseTypeCount(P, 17) < Utils.EnsureRangeI(States.StatHouseTypeCount(P, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P], MAX_TOWERS) then
+  begin
+    Actions.GiveHouse(P, 17, X, Y);
+    Actions.PlanConnectRoad(P, X, Y + 1, States.HousePositionX(States.ClosestHouse(P, X, Y, 11)), States.HousePositionY(States.ClosestHouse(P, X, Y, 11)) + 1, True);
+  end;
+
+end;
+
+
 procedure OnHousePlanPlaced(P, X, Y, HT: Integer);
 begin
 
   Actions.PlanRemove(P, X, Y);
 
+  if not Utils.InRangeI(P, 0, 3) then
+    Exit;
+
+  if not CanPlaceTower(X, Y) then
+    Exit;
+
   if HT = 17 then
   begin
-    if States.StatHouseTypeCount(P, 17) >= Utils.EnsureRangeI(States.StatHouseTypeCount(P, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P], MAX_TOWERS) then
-      Actions.ShowMsg(P, '<$92>');
 
-    if (States.StatHouseTypeCount(P, 17) < Utils.EnsureRangeI(States.StatHouseTypeCount(P, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[P], MAX_TOWERS))
-    and (Utils.InRangeI(X, 46, 105))
-    and (Utils.InRangeI(Y, 46, 105))
-    and not ((Utils.InRangeI(X, 74, 76))
-    and (Utils.InRangeI(Y, 80, 81)))
-    and ((CanBuildRoads(X - 2, Y + 1, X, Y + 1))
-    or (CanBuildRoads(X - 1, Y + 1, X + 1, Y + 1)))
-    and ((CanBuildRoads(X - 2, Y - 1, X - 2, Y + 1))
-    or (CanBuildRoads(X + 1, Y - 1, X + 1, Y + 1))) then
+    if States.HouseRepair(Storehouse[P]) then
     begin
-      Actions.GiveHouse(P, 17, X, Y);
-      Actions.PlanConnectRoad(P, X, Y + 1, States.HousePositionX(States.ClosestHouse(P, X, Y, 11)), States.HousePositionY(States.ClosestHouse(P, X, Y, 11)) + 1, True);
+      GetExtraTower(P);
+      PlaceTower(P, X, Y);
     end;
+
+    if not States.HouseRepair(Storehouse[P]) then
+      PlaceTower(P, X, Y);
 
   end;
 
