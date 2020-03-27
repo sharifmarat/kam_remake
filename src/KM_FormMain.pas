@@ -148,6 +148,8 @@ type
     N10: TMenuItem;
     N9: TMenuItem;
     Debug_UnlockCmpMissions: TMenuItem;
+    N11: TMenuItem;
+    mnExportRngChecks: TMenuItem;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -205,6 +207,7 @@ type
     procedure LoadSavThenRplClick(Sender: TObject);
     procedure ReloadLibxClick(Sender: TObject);
     procedure Debug_UnlockCmpMissionsClick(Sender: TObject);
+    procedure mnExportRngChecksClick(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -257,6 +260,7 @@ uses
   KM_RenderPool,
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
+  KM_RandomChecks,
   KM_Log, KM_CommonClasses;
 
 
@@ -465,6 +469,23 @@ begin
   begin
     gGameApp.NewMapEditor(OpenDialog1.FileName);
     fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
+end;
+
+
+procedure TFormMain.mnExportRngChecksClick(Sender: TObject);
+var
+  rngLogger: TKMRandomCheckLogger;
+  rngPath: string;
+begin
+  if RunOpenDialog(OpenDialog1, '', ExeDir, 'KaM Remake Random checks log (*.rng)|*.rng') then
+  begin
+    rngLogger := TKMRandomCheckLogger.Create;
+
+    rngLogger.LoadFromPathAndParseToDict(OpenDialog1.FileName);
+    rngLogger.SaveAsText(OpenDialog1.FileName + '.log');
+
+    rngLogger.Free;
   end;
 end;
 
