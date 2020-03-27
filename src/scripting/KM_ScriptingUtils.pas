@@ -690,11 +690,11 @@ end;
 
 
 //* Version: 11000
-//* Generates a random number in requested range aFrom..aTo
+//* Generates a random number in requested range aFrom..aTo (inclusive)
 function TKMScriptUtils.RandomRangeI(aFrom, aTo: Integer): Integer;
 begin
   try
-    Result := Math.RandomRange(aFrom, aTo);
+    Result := KaMRandom(aTo - aFrom + 1, 'TKMScriptUtils.RandomRangeI') + aFrom;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
