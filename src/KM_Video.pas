@@ -9,6 +9,8 @@ uses
 {$IFDEF VIDEOS}
   , PasLibVlcUnit
 {$ENDIF}
+  {$IFDEF WDC} , UITypes {$ENDIF}
+  {$IFDEF FPC} , Controls {$ENDIF}
   ;
 
 {$IFDEF VIDEOS}
@@ -101,6 +103,12 @@ type
     procedure Paint;
 
     procedure KeyDown(Key: Word; Shift: TShiftState);
+    procedure KeyPress(Key: Char);
+    procedure KeyUp(Key: Word; Shift: TShiftState);
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
+    procedure MouseMove(Shift: TShiftState; X,Y: Integer);
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
+    procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer);
 
     function IsActive: Boolean;
     function IsPlay: Boolean;
@@ -346,16 +354,62 @@ end;
 procedure TKMVideoPlayer.KeyDown(Key: Word; Shift: TShiftState);
 begin
 {$IFDEF VIDEOS}
-  if Key = 27 then
+  if not IsPlay then
+    Exit;
+
+  PlayNext;
+  {
+  if Key = 27 then // Esc
     PlayNext;
 
-  if Key = 32 then
+  if Key = 32 then // Space
   begin
     if IsPlay then
       Pause
     else
       Resume;
   end;
+  }
+{$ENDIF}
+end;
+
+procedure TKMVideoPlayer.KeyPress(Key: Char);
+begin
+{$IFDEF VIDEOS}
+
+{$ENDIF}
+end;
+procedure TKMVideoPlayer.KeyUp(Key: Word; Shift: TShiftState);
+begin
+{$IFDEF VIDEOS}
+
+{$ENDIF}
+end;
+procedure TKMVideoPlayer.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
+begin
+{$IFDEF VIDEOS}
+  if not IsPlay then
+    Exit;
+
+  PlayNext;
+{$ENDIF}
+end;
+procedure TKMVideoPlayer.MouseMove(Shift: TShiftState; X,Y: Integer);
+begin
+{$IFDEF VIDEOS}
+
+{$ENDIF}
+end;
+procedure TKMVideoPlayer.MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
+begin
+{$IFDEF VIDEOS}
+
+{$ENDIF}
+end;
+procedure TKMVideoPlayer.MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer);
+begin
+{$IFDEF VIDEOS}
+
 {$ENDIF}
 end;
 

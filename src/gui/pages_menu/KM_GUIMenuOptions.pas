@@ -101,16 +101,16 @@ begin
 
   fOnPageChange := aOnPageChange;
   OnEscKeyDown := EscKeyDown;
-
-  with TKMImage.Create(aParent,705,220,round(207*1.3),round(295*1.3),6,rxGuiMain) do
-  begin
-    ImageStretch;
-    Anchors := [anLeft];
-  end;
   // We cant pass pointers to Settings in here cos on GUI creation fMain/gGameApp are not initialized yet
 
   Panel_Options := TKMPanel.Create(aParent,(aParent.Width - 880) div 2,(aParent.Height - 580) div 2,880, aParent.Height);
   Panel_Options.AnchorsStretch;
+
+  with TKMImage.Create(Panel_Options,705 - Panel_Options.Left,220 - Panel_Options.Top,round(207*1.3),round(295*1.3),6,rxGuiMain) do
+  begin
+    ImageStretch;
+    Anchors := [anLeft];
+  end;
 
     //--- Column 1 --------------------------------------------------------------
 
@@ -223,10 +223,10 @@ begin
     //--- Column 3 --------------------------------------------------------------
 
     // Language section
-    Panel_Options_Lang := TKMPanel.Create(Panel_Options,600,0,240,30+gResLocales.Count*20+30);
+    Panel_Options_Lang := TKMPanel.Create(Panel_Options,600,0,240,30+gResLocales.Count*20);
     Panel_Options_Lang.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Lang,6,0,242,20,gResTexts[TX_MENU_OPTIONS_LANGUAGE],fntOutline,taLeft);
-      TKMBevel.Create(Panel_Options_Lang,0,20,280,10+gResLocales.Count*20+30);
+      TKMBevel.Create(Panel_Options_Lang,0,20,280,10+gResLocales.Count*20);
 
       Radio_Options_Lang := TKMRadioGroup.Create(Panel_Options_Lang, 28, 27, 220, 20*gResLocales.Count, fntMetal);
       SetLength(Image_Options_Lang_Flags,gResLocales.Count);
@@ -241,8 +241,10 @@ begin
 
     // Language Fonts section
 
-    CheckBox_Options_FullFonts := TKMCheckBox.Create(Panel_Options_Lang, 10,30+gResLocales.Count*20+5,220,20, gResTexts[TX_MENU_OPTIONS_FONTS], fntMetal);
-    CheckBox_Options_FullFonts.OnClick := Change;
+      TKMBevel.Create(Panel_Options_Lang,0,30+gResLocales.Count*20+10,280,30);
+
+      CheckBox_Options_FullFonts := TKMCheckBox.Create(Panel_Options_Lang, 10,30+gResLocales.Count*20+17,220,20, gResTexts[TX_MENU_OPTIONS_FONTS], fntMetal);
+      CheckBox_Options_FullFonts.OnClick := Change;
 
     // Panel_Options_Keys
     PopUp_OptionsKeys := TKMPopUpMenu.Create(aParent, 740);

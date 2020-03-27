@@ -336,7 +336,10 @@ end;
 procedure TKMGameApp.KeyPress(Key: Char);
 begin
   if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.KeyPress(Key);
     Exit;
+  end;
 
   if gGame <> nil then
     gGame.ActiveInterface.KeyPress(Key)
@@ -350,7 +353,10 @@ var
   KeyHandled: Boolean;
 begin
   if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.KeyUp(Key, Shift);
     Exit;
+  end;
 
   //List of conflicting keys that we should try to avoid using in debug/game:
   //  F12 Pauses Execution and switches to debug
@@ -369,7 +375,10 @@ end;
 procedure TKMGameApp.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseDown(Button, Shift, X, Y);
     Exit;
+  end;
 
   if gGame <> nil then
     gGame.ActiveInterface.MouseDown(Button,Shift,X,Y)
@@ -383,7 +392,10 @@ var Ctrl: TKMControl;
     CtrlID: Integer;
 begin
   if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseMove(Shift, X,Y);
     Exit;
+  end;
 
   if not InRange(X, 1, fRender.ScreenX - 1)
   or not InRange(Y, 1, fRender.ScreenY - 1) then
@@ -420,7 +432,10 @@ end;
 procedure TKMGameApp.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseUp(Button, Shift, X,Y);
     Exit;
+  end;
 
   if gGame <> nil then
     gGame.ActiveInterface.MouseUp(Button,Shift,X,Y)
@@ -434,7 +449,10 @@ var
   Handled: Boolean;
 begin
   if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseWheel(Shift, WheelSteps, X,Y);
     Exit;
+  end;
 
   Handled := False; // False by Default
   if gGame <> nil then
