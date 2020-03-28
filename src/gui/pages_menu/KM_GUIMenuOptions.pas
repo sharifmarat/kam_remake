@@ -162,9 +162,13 @@ begin
       TrackBar_Options_VideoVolume := TKMTrackBar.Create(Panel_Options_Video, 10, 90, 256, OPT_SLIDER_MIN, OPT_SLIDER_MAX);
       TrackBar_Options_VideoVolume.Caption := gResTexts[TX_MENU_OPTIONS_VIDEOS_VOLUME];
       TrackBar_Options_VideoVolume.OnChange := Change;
+    {$IFNDEF VIDEOS}
+    Panel_Options_Video.Hide; //Hide panel when no videos defined
+    {$ENDIF}
 
     // Mods
-    Panel_Options_Mods := TKMPanel.Create(Panel_Options,0,490,280,50);
+//    Panel_Options_Mods := TKMPanel.Create(Panel_Options,0,490,280,50);
+    Panel_Options_Mods := TKMPanel.Create(Panel_Options,0,325,280,50);
     Panel_Options_Mods.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Mods,6,0,270,20,gResTexts[TX_MENU_OPTIONS_MODS] + ':',fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Mods,0,20,280,30);
