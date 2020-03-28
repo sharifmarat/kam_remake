@@ -4301,7 +4301,10 @@ begin
     if (gMySpectator.Selected <> nil) and not gMySpectator.IsSelectedMyObj then
     begin
       if gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.Setup.NewAI then
-        S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.CityManagement.BalanceText + '|'
+      begin
+        S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.ArmyManagement.BalanceText + '|';
+        S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.CityManagement.BalanceText + '|';
+      end
       else
         S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.Mayor.BalanceText + '|'
     end
@@ -4309,8 +4312,8 @@ begin
     begin
       if gMySpectator.Hand.AI.Setup.NewAI then
       begin
-        S := S + gMySpectator.Hand.AI.CityManagement.BalanceText + '|';
         S := S + gMySpectator.Hand.AI.ArmyManagement.BalanceText + '|';
+        S := S + gMySpectator.Hand.AI.CityManagement.BalanceText + '|';
       end
       else
         S := S + gMySpectator.Hand.AI.Mayor.BalanceText + '|'

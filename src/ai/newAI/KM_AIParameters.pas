@@ -27,7 +27,7 @@ var
   GA_ATTACK_SQUAD_TargetReached_Unit                 : Word =   12;
   GA_ATTACK_SQUAD_TargetReached_House                : Word =    8;
   GA_ATTACK_SQUAD_TargetReached_RangedSquad          : Word =   14;
-  GA_ATTACK_SQUAD_MinWalkingDistance                 : Word =   10;
+  GA_ATTACK_SQUAD_MinWalkingDistance                 : Word =    4;
 
   GA_ATTACK_COMPANY_AttackRadius                     : Word =   14;
   GA_ATTACK_COMPANY_ProtectRangedRadius              : Word =    9;

@@ -11,7 +11,7 @@ uses
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
   KM_Houses, KM_Units, KM_UnitWarrior,
   KM_UnitGroup, KM_AISetup,
-  KM_HandStats, KM_ArmyAttack, KM_ArmyDefence, KM_AIAttacks,
+  KM_HandStats, KM_ArmyDefence, KM_AIAttacks, KM_ArmyAttack, KM_ArmyAttackNew,
   KM_NavMeshFloodPositioning, KM_NavMeshInfluences;
 
 type
@@ -34,6 +34,7 @@ type
 
     fHostileGroups: TList;
     fAttack: TKMArmyAttack;
+    fAttackNew: TKMArmyAttackNew;
     fDefence: TKMArmyDefence;
 
     fBalanceText: UnicodeString;
@@ -54,6 +55,7 @@ type
     procedure SyncLoad();
 
     property Attack: TKMArmyAttack read fAttack write fAttack;
+    property AttackNew: TKMArmyAttackNew read fAttackNew;
     property Defence: TKMArmyDefence read fDefence write fDefence;
     property AttackRequest: TKMAttackRequest read fAttackRequest write SetAttackRequest;
     property DefendRequest: TKMDefendRequest read fDefendRequest;
@@ -88,6 +90,7 @@ begin
 
   fHostileGroups := TList.Create();
   fAttack := TKMArmyAttack.Create(aPlayer);
+  fAttackNew := TKMArmyAttackNew.Create(aPlayer);
   fDefence := TKMArmyDefence.Create(aPlayer, fAttack, fHostileGroups);
 end;
 
@@ -106,6 +109,7 @@ begin
   end;
   fHostileGroups.Free;
   fAttack.Free;
+  fAttackNew.Free;
   fDefence.Free;
 
   inherited;
@@ -157,6 +161,7 @@ begin
   end;
 
   fAttack.Save(SaveStream);
+  fAttackNew.Save(SaveStream);
   fDefence.Save(SaveStream);
 end;
 
@@ -206,6 +211,7 @@ begin
   end;
 
   fAttack.Load(LoadStream);
+  fAttackNew.Load(LoadStream);
   fDefence.Load(LoadStream);
 end;
 
@@ -218,6 +224,7 @@ begin
     fHostileGroups.Items[I] := gHands.GetGroupByUID( Cardinal(fHostileGroups.Items[I]) );
 
   fAttack.SyncLoad();
+  fAttackNew.SyncLoad();
   fDefence.SyncLoad();
 end;
 
@@ -225,6 +232,7 @@ end;
 procedure TKMArmyManagement.AfterMissionInit();
 begin
   fAttack.AfterMissionInit();
+  fAttackNew.AfterMissionInit();
   fDefence.AfterMissionInit();
 end;
 
@@ -233,6 +241,7 @@ procedure TKMArmyManagement.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fAttack.OwnerUpdate(aPlayer);
+  fAttackNew.OwnerUpdate(aPlayer);
   fDefence.OwnerUpdate(aPlayer);
 end;
 
@@ -355,7 +364,7 @@ begin
         Continue;
 
       // Group is in combat classes
-      if fAttack.IsGroupInAction(Group) then
+      if fAttack.IsGroupInAction(Group) OR fAttackNew.IsGroupInAction(Group) then
         Continue;
 
       // Group is in defence position
@@ -403,7 +412,7 @@ type
       if (aMobilizationCoef = 1) then
       begin
         // Take all groups out of attack class
-        if not fAttack.IsGroupInAction(Group) then
+        if not fAttack.IsGroupInAction(Group) OR fAttack.IsGroupInAction(Group) OR fAttackNew.IsGroupInAction(Group) then
           Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
       end
       else
@@ -592,7 +601,10 @@ type
       end;
 
       SetLength(Groups, GCnt);
-      fAttack.CreateCompany(aTargetPoint, Groups);
+      if SP_OLD_ATTACK_AI then
+        fAttack.CreateCompany(aTargetPoint, Groups)
+      else
+        fAttackNew.AddGroups(Groups);
     end;
   end;
 const
@@ -740,6 +752,8 @@ begin
   try
     if (aTick mod MAX_HANDS = fOwner) then
     begin
+      //SP_OLD_ATTACK_AI := fOwner <> 1;
+      SP_OLD_ATTACK_AI := (gGame.MissionMode <> mmTactic);
       CheckThreats();
       if not gGame.IsPeaceTime then
       begin
@@ -747,8 +761,12 @@ begin
         RecruitSoldiers();
       end;
       CheckGroupsState();
-      fAttack.UpdateState(aTick);
+      if SP_OLD_ATTACK_AI then
+        fAttack.UpdateState(aTick)
+      else
+        fAttackNew.UpdateState(aTick);
       fDefence.UpdateState(aTick);
+      SP_OLD_ATTACK_AI := False;
     end;
   finally
     gPerfLogs.SectionLeave(psAIArmyAdv);
@@ -760,13 +778,14 @@ function TKMArmyManagement.CombineBalanceStrings(): UnicodeString;
 begin
   Result := fBalanceText;
   fAttack.LogStatus(Result);
+  fAttackNew.LogStatus(Result);
   fDefence.LogStatus(Result);
 end;
 
 
 procedure TKMArmyManagement.Paint();
 begin
-
+  fAttackNew.Paint();
 end;
 
 

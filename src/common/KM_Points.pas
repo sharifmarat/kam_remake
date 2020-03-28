@@ -39,6 +39,7 @@ type
 
   TKMPointArray = array of TKMPoint;
   TKMPoint2Array = array of array of TKMPoint;
+  TKMPointDirArray = array of TKMPointDir;
   TKMTrisArray = array of array [0..2] of Integer;
 
   TKMPointFArray = array of TKMPointF;
