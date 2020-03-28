@@ -41,8 +41,6 @@ type
 {$ENDIF}
 
 type
-  TKMVideoPlayerEvent = reference to procedure;
-
   TKMVideoPlayer = class
   private
 {$IFDEF VIDEOS}
@@ -69,17 +67,14 @@ type
 
     FTrackList: TStringList;
     FVideoList: TStringList;
-    FEndVideo: TKMVideoPlayerEvent;
 
     procedure InitInstance;
     procedure InitMediaPlayer;
     procedure DestroyMediaPlayer;
     procedure EventsEnable();
     procedure EventsDisable();
-    procedure DoPlay(aVideoName: array of string; aEndVideo: TKMVideoPlayerEvent = nil);
     procedure DoStop;
     procedure PlayNext;
-    procedure Finish;
 
     function TryGetPathFile(aPath: string; var aFileName: string): Boolean;
     procedure SetTrackByLocale;
@@ -206,7 +201,6 @@ end;
 
 procedure TKMVideoPlayer.AddCampaignVideo(aCampaignPath: string; aVideoName: String);
 var
-  MissionPath, FileName: string;
   Path: string;
 begin
 {$IFDEF VIDEOS}
@@ -295,7 +289,6 @@ end;
 
 procedure TKMVideoPlayer.Paint;
 var
-  i: Integer;
   AspectRatio: Single;
   Width, Height: Integer;
 begin
@@ -504,24 +497,6 @@ begin
   end;
 end;
 
-procedure TKMVideoPlayer.DoPlay(AVideoName: array of string; AEndVideo: TKMVideoPlayerEvent = nil);
-var
-  fileName: string;
-begin
-  FIndex := 0;
-  DoStop;
-  FVideoList.Clear;
-  if Length(AVideoName) = 0 then
-    Exit;
-
-  for fileName in AVideoName do
-    if FileExists(fileName) then
-      FVideoList.Add(fileName);
-
-  if FVideoList.Count > 0 then
-    PlayNext;
-end;
-
 procedure TKMVideoPlayer.DoStop;
 const
   TIME_STEP = 50;
@@ -554,15 +529,9 @@ begin
 {$ENDIF}
 end;
 
-procedure TKMVideoPlayer.Finish;
-begin
-  FVideoList.Clear;
-end;
-
 procedure TKMVideoPlayer.PlayNext;
 var
   i: Integer;
-  path: string;
   media: libvlc_media_t_ptr;
 
   trackCount: Cardinal;
@@ -601,7 +570,7 @@ begin
           end;
         libvlc_track_audio:
           if track.psz_language <> nil then
-            FTrackList.AddObject(UpperCase(track.psz_language), TObject(track.i_id));
+            FTrackList.AddObject(UpperCase(string(track.psz_language)), TObject(track.i_id));
       end;
     end;
 
@@ -681,9 +650,9 @@ begin
   if FTrackList.Count = 0 then
     Exit;
 
-  if not FTrackList.Find(UpperCase(gResLocales.UserLocale), index) and
-    not FTrackList.Find(UpperCase(gResLocales.FallbackLocale), index) and
-    not FTrackList.Find(UpperCase(gResLocales.DefaultLocale), index) then
+  if not FTrackList.Find(UpperCase(string(gResLocales.UserLocale)), index) and
+    not FTrackList.Find(UpperCase(string(gResLocales.FallbackLocale)), index) and
+    not FTrackList.Find(UpperCase(string(gResLocales.DefaultLocale)), index) then
     Exit;
 
   id := Integer(FTrackList.Objects[index]);
