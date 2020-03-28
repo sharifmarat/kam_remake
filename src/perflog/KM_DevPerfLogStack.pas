@@ -34,7 +34,7 @@ type
 
 
   TKMPerfLogStack = class
-  protected
+  private
     fSectionNames: TStringList; // String contains Key, Object contains integer Count
     fCount: Integer;
     fTimes: array of array of Int64; // in usec
@@ -50,7 +50,7 @@ type
     function GetSectionData(aIndex: Integer): TKMSectionData; overload;
 
     property SectionDataI[aIndex: Integer]: TKMSectionData read GetSectionData;
-
+    function GetCount: Integer;
   protected
     procedure SectionRollback; overload;
     function SectionEnterI(aSection: Integer; aRollback: Boolean = False): Boolean; virtual;
@@ -66,7 +66,7 @@ type
     procedure GetSectionsStats(aList: TStringList);
     procedure Render(aLeft, aWidth, aHeight, aScaleY: Integer; aEmaAlpha: Single; aFrameBudget: Integer; aSmoothing: Boolean);
     property SectionData[aSection: TPerfSectionDev]: TKMSectionData read GetSectionData; default;
-    property Count: Integer read fCount;
+    property Count: Integer read GetCount;
     procedure SectionRollback(aName: string); overload;
     procedure SectionRollback(aSection: TPerfSectionDev); overload;
 
@@ -194,6 +194,8 @@ var
   I, K: Integer;
   secTime, totalTime: Single;
 begin
+  if Self = nil then Exit;
+
   aList.Clear;
 
   totalTime := 0;
@@ -214,6 +216,13 @@ begin
   aList.AddObject('[Total]', TObject(totalTime));
 end;
 
+
+function TKMPerfLogStack.GetCount: Integer;
+begin
+  if Self = nil then Exit(0);
+
+  Result := fCount;
+end;
 
 function TKMPerfLogStack.GetSectionData(aIndex: Integer): TKMSectionData;
 begin
@@ -271,6 +280,7 @@ var
   sectionData: TKMSectionData;
   isFirstSection: Boolean;
 begin
+  if Self = nil then Exit;
   if not Display then Exit;
   if fCount <= 1 then Exit;
 
@@ -377,7 +387,7 @@ var
   I: Integer;
   sectionData: TKMSectionData;
 begin
-  if not Enabled then Exit;
+  if (Self = nil) or not Enabled then Exit;
 
   fThisSection := -1;
   fPrevSection.Clear;
@@ -445,6 +455,8 @@ procedure TKMPerfLogStack.SectionRollback(aName: string);
 var
   I: Integer;
 begin
+  if Self = nil then Exit;
+
   I := fSectionNames.IndexOf(aName);
 
   if (I = -1) or not SectionDataI[I].Enabled then Exit;
@@ -513,6 +525,8 @@ end;
 
 function TKMPerfLogStackCPU.GetSectionTime: Int64;
 begin
+  if Self = nil then Exit(0);
+
   // Get us time from previous frame
   if HighPrecision then
     Result := GetTimeUsecSince(fEnterTime)
@@ -542,7 +556,7 @@ procedure TKMPerfLogStackCPU.TickEnd;
 const
   LERP_AVG = 0.025;
 begin
-  if not Enabled then Exit;
+  if (Self = nil) or not Enabled then Exit;
 
   SectionLeave;
 
@@ -559,7 +573,7 @@ var
   I: Integer;
   sectionData: TKMSectionData;
 begin
-  if not Enabled then Exit;
+  if (Self = nil) or not Enabled then Exit;
 
   fThisSection := -1;
   fPrevSection.Clear;
@@ -626,7 +640,7 @@ end;
 
 procedure TKMPerfLogStackGFX.FrameEnd;
 begin
-  if not Enabled then Exit;
+  if (Self = nil) or not Enabled then Exit;
 
   SectionLeave;
 
