@@ -1,0 +1,17 @@
+Author
+andreus
+
+BigDescLIBX
+9
+
+SetCoop
+
+BlockPeacetime
+
+BlockTeamSelection
+
+BlockFullMapPreview
+
+DifficultyLevels
+mdEasy1,mdNormal,mdHard1,mdHard2,mdHard3
+

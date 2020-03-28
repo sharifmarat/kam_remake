@@ -307,7 +307,7 @@ TX_RESOURCES_ALL = 276; //All wares
 TX_RESOURCES_WARFARE = 277; //Warfare
 TX_RESOURCES_FOOD = 278; //Food
 
-TX_CREDITS_TEXT = 279; //JOYMANIA ENTERTAINMENT||PROGRAMMING:|Peter Ohlmann||GAME GRAPHICS:|Adam Sprys||LEVEL DESIGN:|Adam Sprys|AndrA© QuaAY||SOUND EDITING AND MIXING:|Tonstudio Mannheim||MUSIC:|Gerd Hofmann|Joachim SchA¤fer|JA?rgen Rebhann|Klaus Staendike|Steffen SchA?ngel||ILLUSTRATIONS:|Boleslaw Kasza|Christoph Werner||TRANSLATION:|Ronnie Shankland|Patricia Bellantuono|Andrea Rumpelt|||ZUXXEZ ENTERTAINMENT AG||PRODUCER:|Uwe SchA¤fer||MANUAL:|Peter Ohlmann|Uwe SchA¤fer||BETA TESTING:|Peter Ohlmann|Adam Sprys|Alexandra Constandache|Dirk P. Hassinger|Achim Heidelauf|Uwe SchA¤fer|Ingrid SchA¤fer|Dirk U. Jantz|Ion Constandache|Yaman Egeli|Roman Eich|Iris Mocsnek|Anke Jantz|Paul Hassinger|Liza Hassinger||GAMES DIRECTOR:|Achim Heidelauf||PUBLISHED BY:|TopWare Interactive||CUTSCENES:||DIRECTION:|Slawomir Jedrzejewski||Kajetan Czarnecki|Wojciech Drazek|Daniel Duplaga|Rafal Januszkiewicz|Andrzej Rams|Piotr Rulka|Krzysztof Rybczynski|Grzegorz Wisniewski||VOICES:|Claus Boyen (Storyteller)||Tim Timmermann|Peter Houska|Dirk MA?hlbach|Ralf Ditze|Gerhard Piske|Gernot Wassmann||ARTWORK:|Boleslaw Kasza|Adam Sprys||OPENING ANIMATION:|Uwe SchA¤fer|Christian Bigalk|Additional 3D-Modelling:|Niels Horstmann||SPECIAL THANKS TO:|Tadeusz Zuber|Dieter Ohlmann|Alexandra Constandache|Ingrid SchA¤fer
+TX_CREDITS_TEXT = 279; //JOYMANIA ENTERTAINMENT||PROGRAMMING:|Peter Ohlmann||GAME GRAPHICS:|Adam Sprys||LEVEL DESIGN:|Adam Sprys|AndrAï¿½ QuaAY||SOUND EDITING AND MIXING:|Tonstudio Mannheim||MUSIC:|Gerd Hofmann|Joachim SchAï¿½fer|JA?rgen Rebhann|Klaus Staendike|Steffen SchA?ngel||ILLUSTRATIONS:|Boleslaw Kasza|Christoph Werner||TRANSLATION:|Ronnie Shankland|Patricia Bellantuono|Andrea Rumpelt|||ZUXXEZ ENTERTAINMENT AG||PRODUCER:|Uwe SchAï¿½fer||MANUAL:|Peter Ohlmann|Uwe SchAï¿½fer||BETA TESTING:|Peter Ohlmann|Adam Sprys|Alexandra Constandache|Dirk P. Hassinger|Achim Heidelauf|Uwe SchAï¿½fer|Ingrid SchAï¿½fer|Dirk U. Jantz|Ion Constandache|Yaman Egeli|Roman Eich|Iris Mocsnek|Anke Jantz|Paul Hassinger|Liza Hassinger||GAMES DIRECTOR:|Achim Heidelauf||PUBLISHED BY:|TopWare Interactive||CUTSCENES:||DIRECTION:|Slawomir Jedrzejewski||Kajetan Czarnecki|Wojciech Drazek|Daniel Duplaga|Rafal Januszkiewicz|Andrzej Rams|Piotr Rulka|Krzysztof Rybczynski|Grzegorz Wisniewski||VOICES:|Claus Boyen (Storyteller)||Tim Timmermann|Peter Houska|Dirk MA?hlbach|Ralf Ditze|Gerhard Piske|Gernot Wassmann||ARTWORK:|Boleslaw Kasza|Adam Sprys||OPENING ANIMATION:|Uwe SchAï¿½fer|Christian Bigalk|Additional 3D-Modelling:|Niels Horstmann||SPECIAL THANKS TO:|Tadeusz Zuber|Dieter Ohlmann|Alexandra Constandache|Ingrid SchAï¿½fer
 
 TX_MENU_MISSION_CANCELED = 280; //Mission canceled
 TX_MENU_REPLAY_ENDED = 281; //Replay ended
@@ -347,9 +347,7 @@ TX_MENU_OPTIONS_FONTS = 830; //Load Asian fonts
 TX_MENU_OPTIONS_FULLSCREEN = 308; //Fullscreen
 TX_MENU_OPTIONS_APPLY = 309; //Apply
 TX_MENU_OPTIONS_LANGUAGE = 310; //Language:
-TX_MENU_OPTIONS_SHADOW_QUALITY = 311; //Shadow quality:
-TX_MENU_OPTIONS_SHADOW_QUALITY_LOW = 312; //Low
-TX_MENU_OPTIONS_SHADOW_QUALITY_HIGH = 313; //High
+TX_MENU_OPTIONS_SHADOW_QUALITY = 311; //Shadow quality
 TX_MENU_OPTIONS_EDIT_KEYS = 837; //Edit Key-bindings
 TX_MENU_OPTIONS_KEYBIND = 838; //Key-bindings
 TX_MENU_OPTIONS_OK = 839; //OK
@@ -1431,3 +1429,12 @@ TX_UNSUPPORTED_REPLAY_LOAD_ERROR_MSG = 1381; //Error loading unsupported version
 TX_UNSUPPORTED_SAVE_LOAD_WARNING_TXT = 1385; //Loading unsupported version could cause game not being properly loaded or even cause game crash
 
 TX_MENU_DEBUG_UNLOCK_CAMPAIGNS_CONFIRM = 1387; //Are you sure want to unlock all campaigns?\nThis can't be undone.\n\nIf you want to save your campaigns progress be sure you backed up your 'Campaigns.dat' file located at\n'%s'\n\nDo you confirm this operation?
+
+TX_MENU_OPTIONS_VIDEOS = 1398; //Videos
+TX_MENU_OPTIONS_VIDEOS_ENABLE = 1399; //Videos on/off
+TX_MENU_OPTIONS_VIDEOS_STRETCH = 1400; //Stretch on/off
+TX_MENU_OPTIONS_VIDEOS_STARTUP = 1401; //Startup on/off
+TX_MENU_OPTIONS_VIDEOS_VOLUME = 1402; //Change  volume
+
+TX_MENU_OPTIONS_MODS = 1403; //Mods
+TX_MENU_OPTIONS_MODS_SNOW_HOUSES = 1404; //Snow houses

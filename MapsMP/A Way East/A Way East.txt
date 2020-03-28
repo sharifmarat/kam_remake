@@ -1,5 +1,8 @@
+Author
+andreus
+
 BigDesc
-A coop mission by andreus
+A coop mission by andreus||Version 1.5 Beta (15 mar 2020)
 
 SetCoop
 
@@ -8,4 +11,7 @@ BlockPeacetime
 BlockTeamSelection
 
 BlockFullMapPreview
+
+DifficultyLevels
+mdEasy1,mdNormal,mdHard1
 

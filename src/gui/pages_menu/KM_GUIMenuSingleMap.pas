@@ -141,7 +141,7 @@ end;
 
 procedure TKMMenuSingleMap.Create_SingleMap(aParent: TKMPanel);
 var
-  I, Left: Integer;
+  I: Integer;
   Half, ButtonW: Word; //Half width for panes
   L: TKMLabel;
   B: TKMBevel;
@@ -272,8 +272,6 @@ begin
       L := TKMLabel.Create(Panel_Desc, 4, 614, 190, 20, gResTexts[TX_MENU_ENEMIES], fntMetal, taLeft);
       L.Anchors := [anLeft, anBottom];
 
-
-      Left := Min(200, Half - 1 - MAX_HANDS*FLAG_W);
       for I := 0 to MAX_HANDS - 1 do
       begin
         Image_Allies[I] := TKMImage.Create(Panel_Desc, 200 + I*FLAG_W, 593, 50, 20, 81, rxGuiMain);
@@ -347,7 +345,7 @@ begin
       R.Tag := I;
       ColumnBox_Maps.AddItem(R);
 
-      if (fMaps[I].CRC = fLastMapCRC) then
+      if (fMaps[I].MapAndDatCRC = fLastMapCRC) then
       begin
         ColumnBox_Maps.ItemIndex := ListI;
         ListClick(nil);
@@ -410,7 +408,7 @@ begin
       //Prepare extra data we are about to display
       fMaps[MapId].LoadExtra;
 
-      fLastMapCRC := fMaps[MapId].CRC;
+      fLastMapCRC := fMaps[MapId].MapAndDatCRC;
       case Radio_MapType.ItemIndex of
         0:  gGameApp.GameSettings.MenuSPScenarioMapCRC := fLastMapCRC;
         1:  gGameApp.GameSettings.MenuSPMissionMapCRC := fLastMapCRC;
@@ -696,7 +694,7 @@ begin
   fMaps.Lock;
   try
     for I := 0 to fMaps.Count - 1 do
-      if fLastMapCRC = fMaps[I].CRC then
+      if fLastMapCRC = fMaps[I].MapAndDatCRC then
       begin
         Map := fMaps[I]; //save map locally, cause we will unlock fMaps before using it
 

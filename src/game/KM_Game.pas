@@ -35,7 +35,7 @@ type
 
     fIsExiting: Boolean; //Set this to true on Exit and unit/house pointers will be released without cross-checking
     fIsPaused: Boolean;
-    fGameSpeed: Single; //Actual speedup value
+    fGameSpeedActual: Single; //Actual speedup value, used to play the game
     fGameSpeedMultiplier: Word; //How many ticks are compressed into one
     fGameMode: TKMGameMode;
     fWaitingForNetwork: Boolean; //Indicates that we are waiting for other players commands in MP
@@ -52,11 +52,15 @@ type
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
     fCampaignName: TKMCampaignId;  //Is this a game part of some campaign
     fDynamicFOW: Boolean;
-    fBlockGetPointer: Boolean;
+    fGameSpeedGIP: Single; //GameSpeed, recorded to GIP, could be requested by scripts
+    fGameSpeedChangeAllowed: Boolean; //Is game speed change allowed?
+
+    fBlockGetPointer: Boolean; //?? should be saved ??
 
     //Saved and loaded via GameInfo
     fGameName: UnicodeString;
-    fGameMapCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
+    fGameMapSimpleCRC: Cardinal; //CRC of map (based on Map and Dat) used in MapEd
+    fGameMapFullCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
     fGameTick: Cardinal;
     fMissionMode: TKMissionMode;
     fMissionDifficulty: TKMMissionDifficulty;
@@ -84,7 +88,7 @@ type
 
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
-    procedure MultiplayerRig;
+    procedure MultiplayerRig(aNewGame: Boolean);
     procedure SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryStream; aReplayStream: Boolean = False);
     procedure SaveGameToFile(const aPathName: String; aTimestamp: TDateTime; const aMPLocalDataPathName: String = '');
     procedure UpdatePeaceTime;
@@ -96,7 +100,7 @@ type
     procedure IssueAutosaveCommand(aAfterPT: Boolean = False);
 
     function GetGameTickDuration: Single;
-    procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+    procedure GameSpeedActualChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandID;
     procedure IncGameTick;
     procedure CheckPauseGameAtTick;
@@ -110,6 +114,9 @@ type
     function DoSaveGameAsText: Boolean;
 
     function GetMissionFile: UnicodeString;
+
+    procedure SetGameSpeedActualValue(aSpeed: Single);
+    procedure UpdateClockUI;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -121,7 +128,7 @@ type
     constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
     destructor Destroy; override;
 
-    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                         aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone;
                         aAIType: TKMAIType = aitNone; aAutoselectHumanLoc: Boolean = False);
 
@@ -193,7 +200,9 @@ type
     property GameName: UnicodeString read fGameName;
     property CampaignName: TKMCampaignId read fCampaignName;
     property CampaignMap: Byte read fCampaignMap;
-    property GameSpeed: Single read fGameSpeed;
+    property GameSpeedActual: Single read fGameSpeedActual;
+    property GameSpeedGIP: Single read fGameSpeedGIP;
+    property GameSpeedChangeAllowed: Boolean read fGameSpeedChangeAllowed write fGameSpeedChangeAllowed;
     property GameTickDuration: Single read GetGameTickDuration;
     property SavedReplays: TKMSavedReplays read fSavedReplays write fSavedReplays;
 
@@ -218,7 +227,12 @@ type
     function GetNewUID: Integer;
     function GetNormalGameSpeed: Single;
     procedure StepOneFrame;
-    procedure SetGameSpeed(aSpeed: Single; aToggle: Boolean);
+
+    procedure SetGameSpeed(aSpeed: Single); overload;
+    procedure SetGameSpeed(aSpeed: Single; aToggle: Boolean); overload;
+
+    procedure SetGameSpeedActual(aSpeed: Single);
+    procedure SetGameSpeedGIP(aSpeed: Single; aUpdateActual: Boolean = False);
 
     function SavePath(const aName: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
     function SaveName(const aFolder, aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString; overload;
@@ -296,6 +310,7 @@ begin
   fDynamicFOW := False;
   fGameSpeedChangeTick := 0;
   fGameSpeedChangeTime := 0;
+  fGameSpeedChangeAllowed := True;
   fPausedTicksCnt := 0;
   fBlockGetPointer := False;
   fLastTimeUserAction := TimeGet;
@@ -331,7 +346,8 @@ begin
   end;
 
   fTimerGame := TTimer.Create(nil);
-  SetGameSpeed(1, False); //Initialize relevant variables
+  //pseudo GIP command, since we just want to initialize speed with default values
+  SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
   fTimerGame.OnTimer := UpdateGame;
   fTimerGame.Enabled := True;
 
@@ -434,7 +450,7 @@ end;
 
 
 //New mission
-procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                             aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal;
                             aMapDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
                             aAutoselectHumanLoc: Boolean = False);
@@ -458,7 +474,8 @@ begin
   gRes.Wares.ResetToDefaults;
 
   fGameName := aGameName;
-  fGameMapCRC := aCRC;
+  fGameMapSimpleCRC := aSimpleCRC;
+  fGameMapFullCRC := aFullCRC;
   if aCampaign <> nil then
     fCampaignName := aCampaign.CampaignId
   else
@@ -610,7 +627,7 @@ begin
     gLog.AddTime('Gameplay recording initialized', True);
 
     if fGameMode in [gmMulti, gmMultiSpectate] then
-      MultiplayerRig;
+      MultiplayerRig(True);
 
     //some late operations for parser (f.e. ProcessAttackPositions, which should be done after MultiplayerRig)
     Parser.PostLoadMission;
@@ -701,7 +718,7 @@ end;
 
 
 //All setup data gets taken from fNetworking class
-procedure TKMGame.MultiplayerRig;
+procedure TKMGame.MultiplayerRig(aNewGame: Boolean);
 var
   I: Integer;
   HIndex: TKMHandID;
@@ -711,7 +728,8 @@ begin
   fGameOptions.SpeedPT := fNetworking.NetGameOptions.SpeedPT;
   fGameOptions.SpeedAfterPT := fNetworking.NetGameOptions.SpeedAfterPT;
 
-  SetGameSpeed(GetNormalGameSpeed, False);
+  if aNewGame then
+    SetGameSpeed(GetNormalGameSpeed, True);
 
   //Check for default advanced AI's
   if fNetworking.IsMap then
@@ -1257,25 +1275,34 @@ begin
     MapInfo := TKMapInfo.Create(GetFileDirName(aPathName), True, MapFolder); //Force recreate map CRC
     case MapInfo.MapFolder of
       mfSP:       begin
-                    gGameApp.GameSettings.MenuMapEdSPMapCRC := MapInfo.CRC;
+                    gGameApp.GameSettings.MenuMapEdSPMapCRC := MapInfo.MapAndDatCRC;
                     gGameApp.GameSettings.MenuMapEdMapType := 0;
                     // Update saved SP game list saved selected map position CRC if we resave this map
-                    if fGameMapCRC = gGameApp.GameSettings.MenuSPMissionMapCRC then
-                      gGameApp.GameSettings.MenuSPMissionMapCRC := MapInfo.CRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPScenarioMapCRC then
+                      gGameApp.GameSettings.MenuSPScenarioMapCRC := MapInfo.MapAndDatCRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPMissionMapCRC then
+                      gGameApp.GameSettings.MenuSPMissionMapCRC := MapInfo.MapAndDatCRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPTacticMapCRC then
+                      gGameApp.GameSettings.MenuSPTacticMapCRC := MapInfo.MapAndDatCRC;
+                    if fGameMapSimpleCRC = gGameApp.GameSettings.MenuSPSpecialMapCRC then
+                      gGameApp.GameSettings.MenuSPSpecialMapCRC := MapInfo.MapAndDatCRC;
                   end;
       mfMP:       begin
-                    gGameApp.GameSettings.MenuMapEdMPMapCRC := MapInfo.CRC;
+                    gGameApp.GameSettings.MenuMapEdMPMapCRC := MapInfo.MapAndDatCRC;
                     gGameApp.GameSettings.MenuMapEdMPMapName := MapInfo.FileName;
                     gGameApp.GameSettings.MenuMapEdMapType := 1;
                   end;
       mfDL:       begin
-                    gGameApp.GameSettings.MenuMapEdDLMapCRC := MapInfo.CRC;
+                    gGameApp.GameSettings.MenuMapEdDLMapCRC := MapInfo.MapAndDatCRC;
                     gGameApp.GameSettings.MenuMapEdMapType := 2;
                   end;
     end;
     // Update favorite map CRC if we resave favourite map with the same name
     if fGameName = MapInfo.FileName then
-      gGameApp.GameSettings.FavouriteMaps.Replace(fGameMapCRC, MapInfo.CRC);
+    begin
+      gGameApp.GameSettings.FavouriteMaps.Replace(fGameMapSimpleCRC, MapInfo.MapAndDatCRC);
+      gGameApp.GameSettings.ServerMapsRoster.Replace(fGameMapFullCRC, MapInfo.CRC);
+    end;
     MapInfo.Free;
   end;
 
@@ -1310,7 +1337,7 @@ begin
     Result := fMissionFileSP //In SP we store it
   else
     //In MP we can't store it since it will be MapsMP or MapsDL on different clients
-    Result := TKMapsCollection.GuessMPPath(fGameName, '.dat', fGameMapCRC);
+    Result := TKMapsCollection.GuessMPPath(fGameName, '.dat', fGameMapFullCRC);
 end;
 
 
@@ -1521,6 +1548,8 @@ begin
       SetGameSpeed(fGameOptions.SpeedAfterPT, False);
       fNetworking.PostLocalMessage(gResTexts[TX_MP_PEACETIME_OVER], csNone);
       IssueAutosaveCommand(True);
+
+      gScriptEvents.ProcPeacetimeEnd;
     end;
   end;
 end;
@@ -1556,65 +1585,122 @@ begin
       Result := fGameOptions.SpeedPT
     else
       Result := fGameOptions.SpeedAfterPT;
-  end else
-    Result := 1;
+  end
+  else
+  if IsReplay then
+    Result := fGameSpeedGIP
+  else
+    Result := GAME_SPEED_NORMAL;
+end;
+
+
+procedure TKMGame.UpdateClockUI;
+begin
+  //don't show speed clock in MP since you can't turn it on/off
+  if IsSpeedUpAllowed or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK then
+    fGamePlayInterface.UpdateClock(fGameSpeedActual, fGameSpeedGIP, IsReplay);
+end;
+
+
+procedure TKMGame.SetGameSpeedGIP(aSpeed: Single; aUpdateActual: Boolean = False);
+var
+  speedChanged: Boolean;
+begin
+  speedChanged := fGameSpeedGIP <> aSpeed;
+
+  fGameSpeedGIP := aSpeed;
+  if aUpdateActual then
+    SetGameSpeedActual(aSpeed) //will also UpdateClockUI
+  else
+    UpdateClockUI;
+
+  if speedChanged then
+    gScriptEvents.ProcGameSpeedChanged(aSpeed); //Script events should trigger on GIP game speed, not on the actual speed
+end;
+
+
+procedure TKMGame.SetGameSpeedActual(aSpeed: Single);
+var
+  OldGameSpeed: Single;
+begin
+  //MapEd always runs at x1
+  if IsMapEditor then
+  begin
+    SetGameSpeedActualValue(GAME_SPEED_NORMAL);
+    Exit;
+  end;
+
+  OldGameSpeed := fGameSpeedActual;
+
+  UpdateTickCounters;
+
+  SetGameSpeedActualValue(aSpeed);
+
+  //Need to adjust the delay immediately in MP
+  if IsMultiPlayerOrSpec and (fGameInputProcess <> nil) then
+    TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeedActual);
+
+  if Assigned(gGameApp.OnGameSpeedActualChange) then
+    gGameApp.OnGameSpeedActualChange(fGameSpeedActual);
+
+  GameSpeedActualChanged(OldGameSpeed, fGameSpeedActual);
+end;
+
+
+procedure TKMGame.SetGameSpeedActualValue(aSpeed: Single);
+begin
+  fGameSpeedActual := aSpeed;
+
+  //When speed is above x5 we start to skip rendering frames
+  //by doing several updates per timer tick
+  if fGameSpeedActual > 5 then
+  begin
+    fGameSpeedMultiplier := Round(fGameSpeedActual / 4);
+    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeedActual * fGameSpeedMultiplier);
+  end
+  else
+  begin
+    fGameSpeedMultiplier := 1;
+    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeedActual);
+  end;
+
+  UpdateClockUI;
+end;
+
+
+procedure TKMGame.SetGameSpeed(aSpeed: Single);
+begin
+  Assert(aSpeed > 0);
+
+  //MapEd always runs at x1
+  if IsMapEditor then
+  begin
+    SetGameSpeedActualValue(GAME_SPEED_NORMAL);
+    Exit;
+  end;
+
+  if IsReplay then
+    SetGameSpeedActual(aSpeed)
+  else if fGameSpeedChangeAllowed then
+    fGameInputProcess.CmdGame(gicGameSpeed, aSpeed);
 end;
 
 
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
 var
-  OldGameSpeed: Single;
+  NewGameSpeed: Single;
 begin
-  Assert(aSpeed > 0);
-
-  OldGameSpeed := fGameSpeed;
-
-  //MapEd always runs at x1
-  if IsMapEditor then
-  begin
-    fGameSpeed := 1;
-    fGameSpeedMultiplier := 1;
-    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeed);
-    Exit;
-  end;
-
-  UpdateTickCounters;
-
   //Make the speed toggle between normal speed and desired value
-  if (aSpeed = fGameSpeed) and aToggle then
-    fGameSpeed := GetNormalGameSpeed
+  if (aSpeed = fGameSpeedActual) and aToggle then
+    NewGameSpeed := GetNormalGameSpeed
   else
-    fGameSpeed := aSpeed;
+    NewGameSpeed := aSpeed;
 
-  //When speed is above x5 we start to skip rendering frames
-  //by doing several updates per timer tick
-  if fGameSpeed > 5 then
-  begin
-    fGameSpeedMultiplier := Round(fGameSpeed / 4);
-    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeed * fGameSpeedMultiplier);
-  end
-  else
-  begin
-    fGameSpeedMultiplier := 1;
-    fTimerGame.Interval := Round(gGameApp.GameSettings.SpeedPace / fGameSpeed);
-  end;
-
-  //don't show speed clock in MP since you can't turn it on/off
-  if (fGamePlayInterface <> nil) and (IsSpeedUpAllowed or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK) then
-    fGamePlayInterface.ShowClock(fGameSpeed);
-
-  //Need to adjust the delay immediately in MP
-  if IsMultiPlayerOrSpec and (fGameInputProcess <> nil) then
-    TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeed);
-
-  if Assigned(gGameApp.OnGameSpeedChange) then
-    gGameApp.OnGameSpeedChange(fGameSpeed);
-
-  GameSpeedChanged(OldGameSpeed, fGameSpeed);
+  SetGameSpeed(NewGameSpeed);
 end;
 
 
-procedure TKMGame.GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+procedure TKMGame.GameSpeedActualChanged(aFromSpeed, aToSpeed: Single);
 begin
   fActiveInterface.GameSpeedChanged(aFromSpeed, aToSpeed);
 end;
@@ -1667,7 +1753,8 @@ begin
   GameInfo := TKMGameInfo.Create;
   try
     GameInfo.Title := fGameName;
-    GameInfo.MapCRC := fGameMapCRC;
+    GameInfo.MapFullCRC := fGameMapFullCRC;
+    GameInfo.MapSimpleCRC := fGameMapSimpleCRC;
     GameInfo.TickCount := fGameTick;
     GameInfo.SaveTimestamp := aTimestamp;
     GameInfo.MissionMode := fMissionMode;
@@ -1731,7 +1818,8 @@ begin
   aSaveStream.Write(fCampaignMap);
 
   aSaveStream.Write(fDynamicFOW);
-
+  aSaveStream.Write(fGameSpeedGIP);
+  aSaveStream.Write(fGameSpeedChangeAllowed);
 
   if aReplayStream then
     aSaveStream.PlaceMarker('ConsistencyCheck2');
@@ -1747,6 +1835,7 @@ begin
     aSaveStream.Write(GameResult, SizeOf(GameResult));
 
   gTerrain.Save(aSaveStream); //Saves the map
+  fTerrainPainter.Save(aSaveStream);
   gHands.Save(aSaveStream, fGameMode in [gmMulti, gmMultiSpectate]); //Saves all players properties individually
   if not IsMultiPlayerOrSpec then
     gMySpectator.Save(aSaveStream);
@@ -1921,7 +2010,8 @@ begin
   try
     GameInfo.Load(LoadStream);
     fGameName := GameInfo.Title;
-    fGameMapCRC := GameInfo.MapCRC;
+    fGameMapFullCRC := GameInfo.MapFullCRC;
+    fGameMapSimpleCRC := GameInfo.MapSimpleCRC;
     fGameTick := GameInfo.TickCount;
     fMissionMode := GameInfo.MissionMode;
     fMissionDifficulty := GameInfo.MissionDifficulty;
@@ -1955,6 +2045,10 @@ begin
   LoadStream.Read(fCampaignMap);
 
   LoadStream.Read(fDynamicFOW);
+  LoadStream.Read(fGameSpeedGIP);
+  SetGameSpeedActualValue(fGameSpeedGIP);
+
+  LoadStream.Read(fGameSpeedChangeAllowed);
 
   if aReplayStream then
     LoadStream.CheckMarker('ConsistencyCheck2');
@@ -1982,6 +2076,7 @@ begin
 
   //Load the data into the game
   gTerrain.Load(LoadStream);
+  fTerrainPainter.Load(LoadStream);
 
   gHands.Load(LoadStream);
   gMySpectator := TKMSpectator.Create(0);
@@ -2143,7 +2238,7 @@ begin
   fScripting.SyncLoad;
 
   if fGameMode in [gmMulti, gmMultiSpectate] then
-    MultiplayerRig;
+    MultiplayerRig(False);
 
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
   begin
@@ -2178,7 +2273,7 @@ end;
 
 function TKMGame.GetGameTickDuration: Single;
 begin
-  Result := gGameApp.GameSettings.SpeedPace / fGameSpeed;
+  Result := gGameApp.GameSettings.SpeedPace / fGameSpeedActual;
 end;
 
 
@@ -2189,7 +2284,7 @@ var
 begin
   //Lets calculate tick, that shoud be at that moment in theory, depending of speed multiplier and game duration
   TimeSince := GetTimeSince(fGameSpeedChangeTime);
-  CalculatedTick := TimeSince*fGameSpeed/gGameApp.GameSettings.SpeedPace - fPausedTicksCnt;
+  CalculatedTick := TimeSince*fGameSpeedActual/gGameApp.GameSettings.SpeedPace - fPausedTicksCnt;
   //Calc how far behind are we, in ticks
   Result := CalculatedTick + fGameSpeedChangeTick - fGameTick;
 end;
@@ -2373,7 +2468,7 @@ begin
                           if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
                             and (((fMissionMode = mmNormal) and (fGameTick = ANNOUNCE_BUILD_MAP))
                             or ((fMissionMode = mmTactic) and (fGameTick = ANNOUNCE_BATTLE_MAP))) then
-                            fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapCRC, fNetworking.NetPlayers.GetConnectedCount);
+                            fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapFullCRC, fNetworking.NetPlayers.GetConnectedCount);
 
                           fScripting.UpdateState;
                           UpdatePeacetime; //Send warning messages about peacetime if required

@@ -909,6 +909,13 @@ object FormMain: TFormMain
         Caption = 'Export UI pages'
         OnClick = Debug_ExportUIPagesClick
       end
+      object N11: TMenuItem
+        Caption = '-'
+      end
+      object mnExportRngChecks: TMenuItem
+        Caption = 'Random checks'
+        OnClick = mnExportRngChecksClick
+      end
     end
     object About1: TMenuItem
       Caption = 'About..'

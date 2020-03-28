@@ -28,12 +28,13 @@ type
     function GetHasWon: Boolean;
     function GetHasLost: Boolean;
     function GetIsNotWinnerNotLoser: Boolean;
+    function GetGoals: TKMGoals;
   public
     constructor Create(aHandIndex: TKMHandID);
     destructor Destroy; override;
 
     property General: TKMGeneral read fGeneral;
-    property Goals: TKMGoals read fGoals;
+    property Goals: TKMGoals read GetGoals;
     property Mayor: TKMayor read fMayor;
     property Setup: TKMHandAISetup read fSetup;
 
@@ -255,18 +256,32 @@ end;
 
 function TKMHandAI.GetHasWon: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fWonOrLost = wolWon;
+end;
+
+
+function TKMHandAI.GetGoals: TKMGoals;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fGoals;
 end;
 
 
 function TKMHandAI.GetHasLost: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fWonOrLost = wolLost;
 end;
 
 
 function TKMHandAI.GetIsNotWinnerNotLoser: Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := fWonOrLost = wolNone;
 end;
 

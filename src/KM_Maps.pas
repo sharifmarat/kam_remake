@@ -70,6 +70,7 @@ type
     fFileName: UnicodeString; //without extension
     fCRC: Cardinal;
     fDatCRC: Cardinal; //Used to speed up scanning
+    fMapAndDatCRC: Cardinal; //Used to determine map by its .map + .dat files, ignoring other map data (.txt and .script)
     fVersion: AnsiString; //Savegame version, yet unused in maps, they always have actual version
     fInfoAmount: TKMMapInfoAmount;
     fMapFolder: TKMapFolder;
@@ -125,6 +126,7 @@ type
     function AIUsableLocs: TKMHandIDArray;
     function AdvancedAIUsableLocs: TKMHandIDArray;
     property CRC: Cardinal read fCRC;
+    property MapAndDatCRC : Cardinal read fMapAndDatCRC;
     function LocationName(aIndex: TKMHandID): string;
     property Size: TKMMapSize read GetSize;
     property SizeText: string read GetSizeText;
@@ -275,7 +277,7 @@ constructor TKMapInfo.Create(const aFolder: string; aStrictParsing: Boolean; aMa
 var
   I: Integer;
   DatFile, MapFile, ScriptFile, TxtFile, LIBXFiles: string;
-  DatCRC, OthersCRC: Cardinal;
+  DatCRC, MapCRC, OthersCRC: Cardinal;
   fMissionParser: TKMMissionParserInfo;
   ScriptPreProcessor: TKMScriptingPreProcessor;
   ScriptFiles: TKMScriptFilesCollection;
@@ -314,9 +316,12 @@ begin
   DatCRC := Adler32CRC(DatFile);
   //.map file CRC is the slowest, so only calculate it if necessary
   OthersCRC := 0; //Supresses incorrect warning by Delphi
+  MapCRC := 0;
   if aStrictParsing then
   begin
-    OthersCRC := Adler32CRC(MapFile) xor Adler32CRC(TxtFile) xor GetLIBXCRC(LIBXFiles);
+    MapCRC := Adler32CRC(MapFile);
+    OthersCRC := MapCRC xor Adler32CRC(TxtFile) xor GetLIBXCRC(LIBXFiles);
+    fMapAndDatCRC := DatCRC xor MapCRC;
 
     //Add main script CRC and all included scripts CRC
     if FileExists(ScriptFile) then
@@ -348,10 +353,14 @@ begin
   begin
     //Calculate OthersCRC if it wasn't calculated before
     if not aStrictParsing then
-      OthersCRC := Adler32CRC(MapFile) xor Adler32CRC(ScriptFile) xor Adler32CRC(TxtFile);
+    begin
+      MapCRC := Adler32CRC(MapFile);
+      OthersCRC := MapCRC xor Adler32CRC(ScriptFile) xor Adler32CRC(TxtFile);
+    end;
 
     fCRC := DatCRC xor OthersCRC;
     fDatCRC := DatCRC;
+    fMapAndDatCRC := DatCRC xor MapCRC;
     fVersion := GAME_REVISION;
 
     //First reset everything because e.g. CanBeHuman is assumed false by default and set true when we encounter SET_USER_PLAYER
@@ -371,7 +380,7 @@ begin
     if gGameApp.GameSettings = nil // In case we are closing app and settings object is already destroyed
       then Exit;
 
-    IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
+    IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fMapAndDatCRC);
 
     SaveToFile(fPath + fFileName + '.mi'); //Save new cache file
   end;
@@ -550,6 +559,7 @@ begin
   //Internal properties
   S.Read(fCRC);
   S.Read(fDatCRC);
+  S.Read(fMapAndDatCRC);
   S.ReadA(fVersion);
 
   //Exposed properties
@@ -561,7 +571,7 @@ begin
 
   fTxtInfo.Load(S);
 
-  IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
+  IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fMapAndDatCRC);
 end;
 
 
@@ -607,6 +617,7 @@ begin
     //Internal properties
     S.Write(fCRC);
     S.Write(fDatCRC);
+    S.Write(fMapAndDatCRC);
     S.WriteA(fVersion);
 
     //Exposed properties

@@ -39,6 +39,7 @@ type
 
     procedure StepRefresh;
     procedure StepCaption(const aCaption: UnicodeString);
+    function GetHouses: TKMResHouses;
   public
     OnLoadingStep: TEvent;
     OnLoadingText: TUnicodeStringEvent;
@@ -56,7 +57,7 @@ type
 
     property DataState: TResourceLoadState read fDataState;
     property Cursors: TKMResCursors read fCursors;
-    property Houses: TKMResHouses read fHouses;
+    property Houses: TKMResHouses read GetHouses;
     property MapElements: TKMResMapElements read fMapElements;
     property Palettes: TKMResPalettes read fPalettes;
     property Fonts: TKMResFonts read fFonts;
@@ -142,6 +143,14 @@ begin
             fUnits.CRC xor
             fMapElements.CRC xor
             fTileset.CRC;
+end;
+
+
+function TKMResource.GetHouses: TKMResHouses;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fHouses;
 end;
 
 

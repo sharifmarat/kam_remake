@@ -145,6 +145,8 @@ end;
 
 function TKMSpectator.Hand: TKMHand;
 begin
+  if Self = nil then Exit(nil);
+
   Result := gHands[fHandIndex];
 end;
 

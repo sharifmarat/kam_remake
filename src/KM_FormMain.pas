@@ -3,7 +3,7 @@ unit KM_FormMain;
 interface
 uses
   Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
-  KM_RenderControl, KM_Settings,
+  KM_RenderControl, KM_Settings, KM_Video,
   KM_GameTypes,
   {$IFDEF FPC} LResources, {$ENDIF}
   {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
@@ -148,6 +148,8 @@ type
     N10: TMenuItem;
     N9: TMenuItem;
     Debug_UnlockCmpMissions: TMenuItem;
+    N11: TMenuItem;
+    mnExportRngChecks: TMenuItem;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -205,6 +207,7 @@ type
     procedure LoadSavThenRplClick(Sender: TObject);
     procedure ReloadLibxClick(Sender: TObject);
     procedure Debug_UnlockCmpMissionsClick(Sender: TObject);
+    procedure mnExportRngChecksClick(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -257,6 +260,7 @@ uses
   KM_RenderPool,
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
+  KM_RandomChecks,
   KM_Log, KM_CommonClasses;
 
 
@@ -316,6 +320,14 @@ begin
   end;
 
   fMissionDefOpenPath := ExeDir;
+
+  Application.ProcessMessages;
+
+  if gGameApp.GameSettings.VideoStartup then
+  begin
+    gVideoPlayer.AddVideo('KaM');
+    gVideoPlayer.Play;
+  end;
 end;
 
 
@@ -356,11 +368,27 @@ begin
   if gGameApp <> nil then gGameApp.KeyUp(aKey, aShift);
 end;
 
-
 procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   Assert(KeyPreview, 'MainForm should recieve all keys to pass them to fGame');
   FormKeyDownProc(Key, Shift);
+
+  if Key = 65 then
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.AddVideo('KaM');
+    gVideoPlayer.Play;
+  end;
+  if Key = 83 then
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.Play;
+  end;
+  if Key = 68 then
+  begin
+    gVideoPlayer.AddVideo('Victory');
+    gVideoPlayer.Play;
+  end;
 end;
 
 
@@ -465,6 +493,22 @@ begin
   begin
     gGameApp.NewMapEditor(OpenDialog1.FileName);
     fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
+end;
+
+
+procedure TFormMain.mnExportRngChecksClick(Sender: TObject);
+var
+  rngLogger: TKMRandomCheckLogger;
+begin
+  if RunOpenDialog(OpenDialog1, '', ExeDir, 'KaM Remake Random checks log (*.rng)|*.rng') then
+  begin
+    rngLogger := TKMRandomCheckLogger.Create;
+
+    rngLogger.LoadFromPathAndParseToDict(OpenDialog1.FileName);
+    rngLogger.SaveAsText(OpenDialog1.FileName + '.log');
+
+    rngLogger.Free;
   end;
 end;
 

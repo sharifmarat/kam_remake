@@ -342,13 +342,12 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
 
   procedure SwapLayers(var Layer1, Layer2: TKMTerrainLayer);
   var
-    TmpCorners: set of Byte;
+    I: Integer;
   begin
     SwapInt(Layer1.Terrain, Layer2.Terrain);
     SwapInt(Layer1.Rotation, Layer2.Rotation);
-    TmpCorners := Layer1.Corners;
-    Layer1.Corners := Layer2.Corners;
-    Layer2.Corners := TmpCorners;
+    for I := 0 to 3 do
+      SwapBool(Layer1.Corners[I], Layer2.Corners[I]);
   end;
 
   procedure SwapTiles(X1, Y1, X2, Y2: Word);
@@ -385,11 +384,12 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
     begin
       J := 0;
 
-      for I in aLayer.Corners do
-      begin
-        Corners[J] := I;
-        Inc(J);
-      end;
+      for I := 0 to 3 do
+        if aLayer.Corners[I] then
+        begin
+          Corners[J] := I;
+          Inc(J);
+        end;
 
       //Lets try to get initial Rot from Corners information, if possible
       case J of
@@ -401,7 +401,7 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
                   Rot := (Rot+1) mod 4
                 else
                   Rot := (Rot+3) mod 4;
-                aLayer.Corners := [Rot];
+                aLayer.SetCorners([Rot]);
               end;
         2:    begin
                 if Abs(Corners[0] - Corners[1]) = 2 then  //Opposite corners
@@ -415,7 +415,7 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
                     Rot := (Rot+1) mod 4
                   else
                     Rot := (Rot+3) mod 4;
-                  aLayer.Corners := [(Corners[0] + 1) mod 4, (Corners[1] + 1) mod 4]; //no difference for +1 or +3, as they are same on (mod 4)
+                  aLayer.SetCorners([(Corners[0] + 1) mod 4, (Corners[1] + 1) mod 4]); //no difference for +1 or +3, as they are same on (mod 4)
                 end else begin
                   if (Corners[0] = 0) and (Corners[1] = 3) then // left vertical straight  = initial Rot = 3
                     Rot := 3
@@ -425,7 +425,7 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
                   if (Rot in [1,3]) xor (aAxis = faVertical) then
                   begin
                     Rot := (Rot+2) mod 4;
-                    aLayer.Corners := [(Corners[0] + 2) mod 4, (Corners[1] + 2) mod 4];
+                    aLayer.SetCorners([(Corners[0] + 2) mod 4, (Corners[1] + 2) mod 4]);
                   end;
                 end;
               end;
@@ -440,8 +440,8 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
                   Rot := (Rot+1) mod 4
                 else
                   Rot := (Rot+3) mod 4;
-                aLayer.Corners := [0,1,2,3];
-                Exclude(aLayer.Corners, (Rot + 2) mod 4); // all corners except opposite to rotation
+                aLayer.SetCorners([0,1,2,3]);
+                aLayer.Corners[(Rot + 2) mod 4] := False; // all corners except opposite to rotation
               end;
         else  raise Exception.Create('Wrong number of corners');
       end;
@@ -590,7 +590,7 @@ end;
 initialization
 begin
   {$IFDEF WDC}
-  CF_MAPDATA := RegisterClipboardFormat(PWideChar('KaM Remake ' + GAME_REVISION + ' Map Data'));
+  CF_MAPDATA := RegisterClipboardFormat(PWideChar('KaM Remake ' + string(GAME_REVISION) + ' Map Data'));
   {$ENDIF}
 end;
 

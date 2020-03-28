@@ -56,7 +56,7 @@ begin
       if RT <> rxTiles then
       begin
         SpritePack.LoadFromRXFile(RXName);
-        SpritePack.OverloadFromFolder(ExeDir + 'SpriteResource\');
+        SpritePack.OverloadFromFolder(ExeDir + 'SpriteResource\', False); // Do not soften shadows, it will be done later on
       end
       else
       if DirectoryExists(ExeDir + 'SpriteResource\') then
@@ -72,6 +72,7 @@ begin
         resHouses := TKMResHouses.Create;
         SpritePack.AdjoinHouseMasks(resHouses);
         SpritePack.GrowHouseMasks(resHouses);
+        SpritePack.RemoveSnowHouseShadows(resHouses);
         resHouses.Free;
       end;
 

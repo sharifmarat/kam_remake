@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   Classes, Graphics, Math, SysUtils,
-  KM_CommonTypes, KM_Defaults, KM_Pics, KM_PNG, KM_Render, KM_ResTexts, KM_ResTileset
+  KM_CommonTypes, KM_Defaults, KM_Pics, KM_PNG, KM_Render, KM_ResTexts, KM_ResTileset, KM_ResHouses
   {$IFDEF FPC}, zstream {$ENDIF}
   {$IFDEF WDC}, ZLib {$ENDIF};
 
@@ -78,7 +78,7 @@ type
     property Padding: Byte read fPad write fPad;
 
     procedure LoadFromRXXFile(const aFileName: string; aStartingIndex: Integer = 1);
-    procedure OverloadFromFolder(const aFolder: string);
+    procedure OverloadFromFolder(const aFolder: string; aSoftenShadows: Boolean = True);
     procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True; aOnStopExecution: TBooleanFuncSimple = nil);
     procedure DeleteSpriteTexture(aIndex: Integer);
 
@@ -87,6 +87,7 @@ type
     procedure SoftenShadows(aStart: Integer = 1; aEnd: Integer = -1; aOnlyShadows: Boolean = True); overload;
     procedure SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True); overload;
     procedure DetermineImagesObjectSize(aStart: Integer = 1; aEnd: Integer = -1);
+    procedure RemoveSnowHouseShadows(aResHouses: TKMResHouses);
 
     function GetSpriteColors(aCount: Word): TRGBArray;
 
@@ -293,6 +294,8 @@ var
   ShadowConverter: TKMSoftShadowConverter;
   SoftenShadowType: TSoftenShadowType;
 begin
+  if aIdList.Count = 0 then Exit;
+
   ShadowConverter := TKMSoftShadowConverter.Create(Self);
   try
     for I := 0 to aIdList.Count - 1 do
@@ -346,6 +349,28 @@ begin
     for I := aStart to aEnd do
       if (fRXData.Flag[I] <> 0) then
         ShadowConverter.DetermineImageObjectSize(I);
+  finally
+    ShadowConverter.Free;
+  end;
+end;
+
+
+procedure TKMSpritePack.RemoveSnowHouseShadows(aResHouses: TKMResHouses);
+var
+  SnowID: Integer;
+  ShadowConverter: TKMSoftShadowConverter;
+  HT: TKMHouseType;
+begin
+  Assert(fRT = rxHouses);
+
+  ShadowConverter := TKMSoftShadowConverter.Create(Self);
+  try
+    for HT := HOUSE_MIN to HOUSE_MAX do
+    begin
+      SnowID := aResHouses[HT].SnowPic + 1;
+      if (fRXData.Flag[SnowID] <> 0) then
+        ShadowConverter.RemoveShadow(SnowID);
+    end;
   finally
     ShadowConverter.Free;
   end;
@@ -558,7 +583,7 @@ end;
 
 
 //Parse all valid files in Sprites folder and load them additionaly to or replacing original sprites
-procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
+procedure TKMSpritePack.OverloadFromFolder(const aFolder: string; aSoftenShadows: Boolean = True);
   procedure ProcessFolder(const aProcFolder: string);
   var
     FileList, IDList: TStringList;
@@ -591,7 +616,8 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
             IDList.Add(IntToStr(ID));
           end;
 
-        SoftenShadows(IDList); // Soften shadows for overloaded sprites
+        if aSoftenShadows then
+          SoftenShadows(IDList); // Soften shadows for overloaded sprites
 
         try
           //Delete following sprites
@@ -691,7 +717,13 @@ begin
   for K := 0 to pngWidth - 1 do
   begin
     TreatMask := fRXData.HasMask[aIndex] and (fRXData.Mask[aIndex, I*pngWidth + K] > 0);
-    if (fRT = rxHouses) and ((aIndex < 680) or (aIndex = 1657) or (aIndex = 1659) or (aIndex = 1681) or (aIndex = 1683)) then
+    if (fRT = rxHouses)
+      and ((aIndex < 680)
+        or (aIndex = 1657)
+        or (aIndex = 1659)
+        or (aIndex = 1681)
+        or (aIndex = 1683)
+        or (aIndex > 2050)) then
       TreatMask := False;
 
     if TreatMask then
@@ -1428,7 +1460,6 @@ begin
     GenerateTerrainTransitions(fSprites[aRT]);
     GenerateTerrainTransitions(nil, True); //To get support for maps rev <= 10745
   end;
-
 end;
 
 

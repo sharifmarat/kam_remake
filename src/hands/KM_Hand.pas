@@ -96,6 +96,8 @@ type
     function GetGameFlagColor: Cardinal;
     function GetOwnerNiknameU: UnicodeString;
     procedure ChooseFirstStorehouse();
+
+    function GetAI: TKMHandAI;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -106,7 +108,7 @@ type
     constructor Create(aHandIndex: TKMHandID; aOnAllianceChange: TEvent);
     destructor Destroy; override;
 
-    property AI: TKMHandAI read fAI;
+    property AI: TKMHandAI read GetAI;
     property BuildList: TKMBuildList read fBuildList;
     property Deliveries: TKMHandLogistics read fDeliveries;
     property Houses: TKMHousesCollection read fHouses;
@@ -1547,6 +1549,13 @@ begin
   Result := WrapColor(GetOwnerName, FlagColorToTextColor(FlagColor));
 end;
 
+
+function TKMHand.GetAI: TKMHandAI;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fAI;
+end;
 
 
 function TKMHand.GetAlliances(aIndex: Integer): TKMAllianceType;

@@ -11,3 +11,4 @@ Script is licensed under GPLv2, you can find its text here: http://www.gnu.org/l
 ===SOUND CREDITS===
 
 'Waterfall Creek.wav' derived from waterfall_creek.wav by koroz under CC 3.0 by NC license http://creativecommons.org/licenses/by-nc/3.0/
+'Flood.ogg' and 'Flood2.ogg' derived from noisefx.ru, sound IDs 5717 and 3082, under CC 3.0 by NC license http://creativecommons.org/licenses/by-nc/3.0/

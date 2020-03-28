@@ -188,7 +188,7 @@ type
     Image_Message: array[0..MAX_VISIBLE_MSGS] of TKMImage; // Queue of messages covers 32*48=1536px height
     Image_Clock: TKMImage; // Clock displayed when game speed is increased
     Label_Clock: TKMLabel;
-    Label_ClockSpeedup: TKMLabel;
+    Label_ClockSpeedActual, Label_ClockSpeedRecorded: TKMLabel;
 
     Label_ScriptedOverlay: TKMLabel; // Label that can be set from script
     Button_ScriptedOverlay: TKMButton;
@@ -304,7 +304,7 @@ type
     procedure MessageIssue(aKind: TKMMessageKind; const aText: UnicodeString); overload;
     procedure MessageIssue(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint); overload;
     procedure SetMenuState(aTactic: Boolean);
-    procedure ShowClock(aSpeed: Single);
+    procedure UpdateClock(aSpeedActual, aSpeedRecorded: Single; aShowRecorded: Boolean);
     procedure ShowPlayMore(DoShow: Boolean; Msg: TKMGameResultMsg);
     procedure ShowMPPlayMore(Msg: TKMGameResultMsg);
     procedure ShowNetworkLag(aShow: Boolean; aPlayers: TKMByteArray; IsHost: Boolean);
@@ -804,8 +804,10 @@ begin
   Image_Clock.Hide;
   Label_Clock := TKMLabel.Create(Panel_Main,265,80,'mm:ss',fntOutline,taCenter);
   Label_Clock.Hide;
-  Label_ClockSpeedup := TKMLabel.Create(Panel_Main,265,48,'x1',fntMetal,taCenter);
-  Label_ClockSpeedup.Hide;
+  Label_ClockSpeedActual := TKMLabel.Create(Panel_Main,265,48,'x1',fntMetal,taCenter);
+  Label_ClockSpeedActual.Hide;
+  Label_ClockSpeedRecorded := TKMLabel.Create(Panel_Main,265,68,'x1',fntGrey,taCenter);
+  Label_ClockSpeedRecorded.Hide;
 
   Create_ScriptingOverlay; // Scripting Overlay controls
 
@@ -2467,12 +2469,27 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ShowClock(aSpeed: Single);
+procedure TKMGamePlayInterface.UpdateClock(aSpeedActual, aSpeedRecorded: Single; aShowRecorded: Boolean);
+var
+  doShowClock: Boolean;
 begin
-  Image_Clock.Visible := (aSpeed <> 1);
-  Label_Clock.Visible := (aSpeed <> 1) or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK;
-  Label_ClockSpeedup.Visible := aSpeed <> 1;
-  Label_ClockSpeedup.Caption := 'x' + FormatFloat('##0.##', aSpeed);
+  if Self = nil then Exit;
+
+  doShowClock := (aSpeedActual <> GAME_SPEED_NORMAL)
+              or (aShowRecorded and (aSpeedRecorded <> GAME_SPEED_NORMAL));
+
+  Image_Clock.Visible := doShowClock;
+  Label_Clock.Visible := doShowClock or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK;
+  Label_ClockSpeedActual.Visible := doShowClock;
+  Label_ClockSpeedActual.Caption := 'x' + FormatFloat('##0.##', aSpeedActual);
+
+  if aShowRecorded then
+  begin
+    Label_ClockSpeedRecorded.Visible := doShowClock;
+    Label_ClockSpeedRecorded.Caption := 'x' + FormatFloat('##0.##', aSpeedRecorded);
+  end
+  else
+    Label_ClockSpeedRecorded.Hide;
 
   if not Image_Clock.Visible and Label_Clock.Visible then
     Label_Clock.Top := 8
@@ -2481,7 +2498,7 @@ begin
 
   // With slow GPUs it will keep old values till next frame, that can take some seconds
   // Thats why we refresh Clock.Caption here
-  if (aSpeed <> 1) then
+  if doShowClock then
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
 end;
 
@@ -3365,7 +3382,7 @@ begin
   begin
     // Game speed/pause: available in multiplayer mode if the only player left in the game
     if Key = gResKeys[SC_SPEEDUP_1].Key then
-      gGame.SetGameSpeed(1, True);
+      gGame.SetGameSpeed(GAME_SPEED_NORMAL, True);
     if Key = gResKeys[SC_SPEEDUP_2].Key then
       gGame.SetGameSpeed(gGameApp.GameSettings.SpeedMedium, True);
     if Key = gResKeys[SC_SPEEDUP_3].Key then

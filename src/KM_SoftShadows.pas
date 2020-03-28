@@ -8,7 +8,10 @@ type
   TKMSoftShadowConverter = class
   private
     fRXData: TRXData;
-    fOnlyShadows:boolean;
+    fOnlyShadows: boolean;
+    TempShadowMap: array of array of Boolean;
+    ShadowMap: array of array of Boolean;
+
     function ReadPixelSafe(ID, X, Y: Integer): Cardinal;
 
     function IsBlack(Color: Cardinal): Boolean;
@@ -16,11 +19,15 @@ type
     function IsObject(Color: Cardinal): Boolean;
     function IsTransparentOrObject(Color: Cardinal): Boolean;
     function IsShadow(ID, X, Y: Integer): Boolean;
-    procedure AnalyzeShadows(ID: Word; aOnlyShadows: Boolean; aDoConvert: Boolean; aDoUpdateSizes: Boolean);
+    procedure PrepareShadows(ID: Word; aOnlyShadows: Boolean);
+
+    function IsShadowPixel(ID, X, Y: Word): Boolean;
+    function IsObjectPixel(ID, X, Y: Word): Boolean;
   public
     constructor Create(aSpritePack: TKMSpritePack);
     procedure ConvertShadows(ID: Word; aOnlyShadows: Boolean);
     procedure DetermineImageObjectSize(ID: Word);
+    procedure RemoveShadow(aID: Word);
   end;
 
 
@@ -107,49 +114,63 @@ begin
     end;
 end;
 
-procedure TKMSoftShadowConverter.DetermineImageObjectSize(ID: Word);
+
+function TKMSoftShadowConverter.IsShadowPixel(ID, X, Y: Word): Boolean;
+var
+  Color: Cardinal;
 begin
-  AnalyzeShadows(ID, True, False, True); //Only update sizes info
+  Color := ReadPixelSafe(ID, X, Y);
+  Result := (TempShadowMap[X, Y] or ShadowMap[X, Y] or IsTransparent(Color)) and not IsObject(Color);
 end;
+
+
+function TKMSoftShadowConverter.IsObjectPixel(ID, X, Y: Word): Boolean;
+var
+  Color: Cardinal;
+begin
+  Color := ReadPixelSafe(ID, X, Y);
+  Result := IsObject(Color) and not TempShadowMap[X, Y] and not ShadowMap[X, Y];
+end;
+
+
+procedure TKMSoftShadowConverter.DetermineImageObjectSize(ID: Word);
+var
+  X,Y: Integer;
+begin
+  PrepareShadows(ID, True);
+
+  fRXData.SizeNoShadow[ID].left := fRXData.Size[ID].X - 1;
+  fRXData.SizeNoShadow[ID].right := 0;
+  fRXData.SizeNoShadow[ID].top := fRXData.Size[ID].Y - 1;
+  fRXData.SizeNoShadow[ID].bottom := 0;
+
+  for X := 0 to fRXData.Size[ID].X - 1 do
+    for Y := 0 to fRXData.Size[ID].Y - 1 do
+      if IsObjectPixel(ID, X, Y) then
+      begin
+        fRXData.SizeNoShadow[ID].left := Min(fRXData.SizeNoShadow[ID].left, X);
+        fRXData.SizeNoShadow[ID].right := Max(fRXData.SizeNoShadow[ID].right, X);
+        fRXData.SizeNoShadow[ID].top := Min(fRXData.SizeNoShadow[ID].top, Y);
+        fRXData.SizeNoShadow[ID].bottom := Max(fRXData.SizeNoShadow[ID].bottom, Y);
+      end;
+end;
+
+
+//RemoveShadow via removing its mask
+procedure TKMSoftShadowConverter.RemoveShadow(aID: Word);
+var
+  X,Y: Integer;
+begin
+  PrepareShadows(aID, False);
+
+  for X := 0 to fRXData.Size[aID].X - 1 do
+    for Y := 0 to fRXData.Size[aID].Y - 1 do
+      if IsShadowPixel(aID, X, Y) then
+        fRXData.Mask[aID, Y*fRXData.Size[aID].X + X] := 0; //Remove mask image outside of object
+end;
+
 
 procedure TKMSoftShadowConverter.ConvertShadows(ID: Word; aOnlyShadows: Boolean);
-begin
-  AnalyzeShadows(ID, aOnlyShadows, True, False); //Only convert shadows
-end;
-
-procedure TKMSoftShadowConverter.AnalyzeShadows(ID: Word; aOnlyShadows: Boolean; aDoConvert: Boolean; aDoUpdateSizes: Boolean);
-var
-  TempShadowMap: array of array of Boolean;
-  ShadowMap: array of array of Boolean;
-
-  function ReadTempShadowMapSafe(X, Y: Integer): Boolean;
-  begin
-    if (X < 0) or (Y < 0) or (X >= fRXData.Size[ID].X) or (Y >= fRXData.Size[ID].Y) then
-      Result := False
-    else
-      Result := TempShadowMap[X, Y];
-  end;
-
-  function IsShadowOrObject(X, Y: Integer): Boolean;
-  begin
-    if (X < 0) or (Y < 0) or (X >= fRXData.Size[ID].X) or (Y >= fRXData.Size[ID].Y) then
-      Result := False
-    else
-      Result := TempShadowMap[X, Y] or IsObject(ReadPixelSafe(ID,X,Y));
-  end;
-
-  function ShadowsNearby(X,Y: Integer):Byte;
-  begin
-    Result := 0;
-    if ReadTempShadowMapSafe(X-1, Y  ) or
-       ReadTempShadowMapSafe(X+1, Y  ) or
-       ReadTempShadowMapSafe(X,   Y-1) or
-       ReadTempShadowMapSafe(X,   Y+1) then
-      Result := Byte(IsShadowOrObject(X-1, Y  )) +
-                Byte(IsShadowOrObject(X+1, Y  )) +
-                Byte(IsShadowOrObject(X,   Y-1)) +
-                Byte(IsShadowOrObject(X,   Y+1));
-  end;
 
   function GetBlurredShadow(X,Y: Integer): Single;
   var
@@ -215,47 +236,17 @@ var
 var
   X,Y: Integer;
   Shadow: Boolean;
-  Color, OriginalColor: Cardinal;
+  OriginalColor: Cardinal;
   RealShadow: Byte;
 begin
-  fOnlyShadows := aOnlyShadows;
-  SetLength(TempShadowMap, fRXData.Size[ID].X, fRXData.Size[ID].Y);
-  SetLength(ShadowMap,     fRXData.Size[ID].X, fRXData.Size[ID].Y);
-
-  for X := 0 to fRXData.Size[ID].X - 1 do
-    for Y := 0 to fRXData.Size[ID].Y - 1 do
-      TempShadowMap[X, Y] := IsShadow(ID,X,Y);
-
-  for X := 0 to fRXData.Size[ID].X - 1 do
-    for Y := 0 to fRXData.Size[ID].Y - 1 do
-    begin
-      Shadow := TempShadowMap[X, Y];
-
-      if Shadow and not IsObject(ReadPixelSafe(ID, X, Y))
-      and (ShadowsNearby(X, Y) = 1) then
-        Shadow := False;
-
-      ShadowMap[X, Y] := Shadow;
-    end;
+  PrepareShadows(ID, aOnlyShadows);
 
   OriginalColor := 0;
 
-  if aDoUpdateSizes then
-  begin
-    fRXData.SizeNoShadow[ID].left := fRXData.Size[ID].X - 1;
-    fRXData.SizeNoShadow[ID].right := 0;
-    fRXData.SizeNoShadow[ID].top := fRXData.Size[ID].Y - 1;
-    fRXData.SizeNoShadow[ID].bottom := 0;
-  end;
-
   for X := 0 to fRXData.Size[ID].X - 1 do
     for Y := 0 to fRXData.Size[ID].Y - 1 do
-    begin
-      Color := ReadPixelSafe(ID, X, Y);
-      if (TempShadowMap[X, Y] or ShadowMap[X, Y] or IsTransparent(Color)) and not IsObject(Color) then
+      if IsShadowPixel(ID, X, Y) then
       begin
-        if not aDoConvert then Continue;
-        
         RealShadow := Min(Round(GetBlurredShadow(X, Y) * SHADING_LEVEL), 255);
         //If we're doing the entire sprite consider the original color, else use black
         if not fOnlyShadows then
@@ -279,21 +270,70 @@ begin
             OriginalColor := OriginalColor and $00FFFFFF;
         end;
         fRXData.RGBA[ID, Y*fRXData.Size[ID].X + X] := (RealShadow shl 24) or OriginalColor;
-      end
-      else
-      if IsObject(Color) 
-        and not TempShadowMap[X, Y]
-        and not ShadowMap[X, Y] then
-      begin
-        if not aDoUpdateSizes then Continue;
-        
-        fRXData.SizeNoShadow[ID].left := Min(fRXData.SizeNoShadow[ID].left, X);
-        fRXData.SizeNoShadow[ID].right := Max(fRXData.SizeNoShadow[ID].right, X);
-        fRXData.SizeNoShadow[ID].top := Min(fRXData.SizeNoShadow[ID].top, Y);
-        fRXData.SizeNoShadow[ID].bottom := Max(fRXData.SizeNoShadow[ID].bottom, Y);
       end;
+end;
+
+
+procedure TKMSoftShadowConverter.PrepareShadows(ID: Word; aOnlyShadows: Boolean);
+
+  function ReadTempShadowMapSafe(X, Y: Integer): Boolean;
+  begin
+    if (X < 0) or (Y < 0) or (X >= fRXData.Size[ID].X) or (Y >= fRXData.Size[ID].Y) then
+      Result := False
+    else
+      Result := TempShadowMap[X, Y];
+  end;
+
+  function IsShadowOrObject(X, Y: Integer): Boolean;
+  begin
+    if (X < 0) or (Y < 0) or (X >= fRXData.Size[ID].X) or (Y >= fRXData.Size[ID].Y) then
+      Result := False
+    else
+      Result := TempShadowMap[X, Y] or IsObject(ReadPixelSafe(ID,X,Y));
+  end;
+
+  function ShadowsNearby(X,Y: Integer):Byte;
+  begin
+    Result := 0;
+    if ReadTempShadowMapSafe(X-1, Y  ) or
+       ReadTempShadowMapSafe(X+1, Y  ) or
+       ReadTempShadowMapSafe(X,   Y-1) or
+       ReadTempShadowMapSafe(X,   Y+1) then
+      Result := Byte(IsShadowOrObject(X-1, Y  )) +
+                Byte(IsShadowOrObject(X+1, Y  )) +
+                Byte(IsShadowOrObject(X,   Y-1)) +
+                Byte(IsShadowOrObject(X,   Y+1));
+  end;
+
+var
+  X,Y: Integer;
+  Shadow: Boolean;
+begin
+  fOnlyShadows := aOnlyShadows;
+
+  SetLength(TempShadowMap, 0);
+  SetLength(ShadowMap,     0);
+
+  SetLength(TempShadowMap, fRXData.Size[ID].X, fRXData.Size[ID].Y);
+  SetLength(ShadowMap,     fRXData.Size[ID].X, fRXData.Size[ID].Y);
+
+  for X := 0 to fRXData.Size[ID].X - 1 do
+    for Y := 0 to fRXData.Size[ID].Y - 1 do
+      TempShadowMap[X, Y] := IsShadow(ID,X,Y);
+
+  for X := 0 to fRXData.Size[ID].X - 1 do
+    for Y := 0 to fRXData.Size[ID].Y - 1 do
+    begin
+      Shadow := TempShadowMap[X, Y];
+
+      if Shadow and not IsObject(ReadPixelSafe(ID, X, Y))
+      and (ShadowsNearby(X, Y) = 1) then
+        Shadow := False;
+
+      ShadowMap[X, Y] := Shadow;
     end;
 end;
 
 
 end.
+

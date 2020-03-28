@@ -59,6 +59,9 @@ type
     procedure FogRevealAll(aPlayer: Byte);
     procedure FogRevealCircle(aPlayer, X, Y, aRadius: Word);
 
+    procedure GameSpeed(aSpeed: Single);
+    procedure GameSpeedChangeAllowed(aAllowed: Boolean);
+
     procedure GroupBlockOrders(aGroupID: Integer; aBlock: Boolean);
     procedure GroupDisableHungryMessage(aGroupID: Integer; aDisable: Boolean);
     procedure GroupHungerSet(aGroupID, aHungerLevel: Integer);
@@ -125,6 +128,8 @@ type
     procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString);
     procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
 
+    procedure Peacetime(aPeacetime: Cardinal);
+
     function PlanAddField(aPlayer, X, Y: Word): Boolean;
     function PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean;
     function PlanAddRoad(aPlayer, X, Y: Word): Boolean;
@@ -136,6 +141,7 @@ type
     procedure PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean);
     procedure PlayerAddDefaultGoals(aPlayer: Byte; aBuildings: Boolean);
     procedure PlayerDefeat(aPlayer: Word);
+    procedure PlayerGoalsRemoveAll(aPlayer: Word; aForAllPlayers: Boolean);
     procedure PlayerShareBeacons(aPlayer1, aPlayer2: Word; aBothWays, aShare: Boolean);
     procedure PlayerShareFog(aPlayer1, aPlayer2: Word; aShare: Boolean);
     procedure PlayerShareFogCompliment(aPlayer1, aPlayer2: Word; aShare: Boolean);
@@ -274,10 +280,33 @@ procedure TKMScriptActions.PlayerDefeat(aPlayer: Word);
 begin
   try
     //Verify all input parameters
-    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    if InRange(aPlayer, 0, gHands.Count - 1) and gHands[aPlayer].Enabled then
       gHands[aPlayer].AI.Defeat
     else
       LogParamWarning('Actions.PlayerDefeat', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Remove all player goals
+//* aPlayer: PlayerID
+//* aForAllPlayers: also remove other player goals, related to this player
+procedure TKMScriptActions.PlayerGoalsRemoveAll(aPlayer: Word; aForAllPlayers: Boolean);
+begin
+  try
+    //Verify all input parameters
+    if InRange(aPlayer, 0, gHands.Count - 1) and gHands[aPlayer].Enabled then
+    begin
+      gHands[aPlayer].AI.Goals.Clear;
+      if aForAllPlayers then
+        gHands.UpdateGoalsForHand(aPlayer, False); //Goal disable works as good as delete goal
+    end
+    else
+      LogParamWarning('Actions.PlayerGoalsRemoveAll', [aPlayer]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2577,7 +2606,7 @@ begin
     end
     else
     begin
-      LogParamWarning('Actions.MapBrushApply', [X, Y, Byte(aSquare), aSize, Byte(aTerKind),
+      LogParamWarning('Actions.MapBrush', [X, Y, Byte(aSquare), aSize, Byte(aTerKind),
                                                 Byte(aRandomTiles), Byte(aOverrideCustomTiles)]);
     end;
   except
@@ -2605,7 +2634,7 @@ begin
     end
     else
     begin
-      LogParamWarning('Actions.MapElevationApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+      LogParamWarning('Actions.MapBrushElevation', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
     end;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -2631,7 +2660,7 @@ begin
     end
     else
     begin
-      LogParamWarning('Actions.MapEqualizeApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+      LogParamWarning('Actions.MapBrushEqualize', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
     end;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -2657,7 +2686,7 @@ begin
     end
     else
     begin
-      LogParamWarning('Actions.MapFlattenApply', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
+      LogParamWarning('Actions.MapBrushFlatten', [X, Y, Byte(aSquare), aSize, aSlope, aSpeed]);
     end;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -2711,7 +2740,7 @@ begin
     end
     else
     begin
-      LogParamWarning('Actions.MapBrushMaskApply', [X, Y, Byte(aSquare), aSize, Byte(aTerKind), Byte(aRandomTiles),
+      LogParamWarning('Actions.MapBrushWithMask', [X, Y, Byte(aSquare), aSize, Byte(aTerKind), Byte(aRandomTiles),
                                                     Byte(aOverrideCustomTiles), Byte(aBrushMask), aBlendingLvl, Byte(aUseMagicBrush)]);
     end;
   except
@@ -3187,6 +3216,20 @@ begin
 end;
 
 
+//* Version: 11000
+//* Sets game peacetime. Peacetime will be set to the value of aPeacetime div 600
+//* aPeacetime: game time in ticks
+procedure TKMScriptActions.Peacetime(aPeacetime: Cardinal);
+begin
+  try
+    gGame.GameOptions.Peacetime := aPeacetime div 600; //PT in minutes
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Adds a corn field plan.
 //* Returns true if the plan was successfully added or false if it failed (e.g. tile blocked)
@@ -3591,6 +3634,40 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+end;
+
+
+//* Version: 11000
+//* Changes game speed
+procedure TKMScriptActions.GameSpeed(aSpeed: Single);
+var
+  Speed: Single;
+begin
+  try
+    if gGame.IsMultiplayer then
+      Speed := EnsureRange(aSpeed, GAME_SPEED_NORMAL, GAME_MP_SPEED_MAX)
+    else
+      Speed := EnsureRange(aSpeed, GAME_SPEED_NORMAL, GAME_SP_SPEED_MAX);
+
+    gGame.SetGameSpeedGIP(Speed, True);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Allows or blocks game speed change
+procedure TKMScriptActions.GameSpeedChangeAllowed(aAllowed: Boolean);
+begin
+  try
+    gGame.GameSpeedChangeAllowed := aAllowed;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+
 end;
 
 

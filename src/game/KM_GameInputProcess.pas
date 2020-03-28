@@ -93,6 +93,7 @@ type
     //VI.      Game changes
     gicGameAlertBeacon,          //Signal alert (beacon)
     gicGamePause,
+    gicGameSpeed,
     gicGameAutoSave,
     gicGameAutoSaveAfterPT,
     gicGameSaveReturnLobby,
@@ -124,6 +125,7 @@ type
     gicpt_Int2,
     gicpt_Int3,
     gicpt_Int4,
+    gicpt_Float,
     gicpt_UniStr1,
     gicpt_Ansi1Uni4,
     gicpt_Date);
@@ -133,16 +135,16 @@ const
     gicArmyLink, gicArmyAttackUnit, gicArmyAttackHouse, gicArmyHalt,
     gicArmyFormation,  gicArmyWalk, gicArmyStorm, gicHouseBarracksEquip, gicHouseTownHallEquip];
   AllowedAfterDefeat: set of TKMGameInputCommandType =
-    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
   AllowedInCinematic: set of TKMGameInputCommandType =
-    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
   AllowedBySpectators: set of TKMGameInputCommandType =
-    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGamePlayerDefeat, gicTempDoNothing];
+    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGamePlayerDefeat, gicTempDoNothing];
   //Those commands should not have random check, because they they are not strictly happen, depends of player config and actions
   //We want to make it possible to reproduce AI city build knowing only seed + map config
   //Autosave and other commands random checks could break it, since every command have its own random check (and KaMRandom call)
   SkipRandomChecksFor: set of TKMGameInputCommandType =
-    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby];
+    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby];
 
   ArmyOrderCommands: set of TKMGameInputCommandType = [
     gicArmyFeed,
@@ -234,6 +236,7 @@ const
     //VI.      Game changes
     gicpt_Int4,     // gicGameAlertBeacon
     gicpt_NoParams, // gicGamePause
+    gicpt_Float,    // gicGameSpeed
     gicpt_Date,     // gicGameAutoSave
     gicpt_Date,     // gicGameAutoSaveAfterPT
     gicpt_Date,     // gicGameSaveReturnLobby
@@ -256,6 +259,7 @@ type
   TKMGameInputCommand = record
     CommandType: TKMGameInputCommandType;
     Params: array[1..MAX_PARAMS] of Integer;
+    FloatParam: Single;
     AnsiStrParam: AnsiString;
     UnicodeStrParams: TKMScriptCommandParamsArray;
     DateTimeParam: TDateTime;
@@ -283,12 +287,13 @@ type
     fCursor: Integer; //Used only in gipReplaying
     fQueue: array of TKMStoredGIPCommand;
 
-    function MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand;
+    function MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand; inline;
     function MakeCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand; overload;
     function MakeCommand(aGIC: TKMGameInputCommandType; const aParam1: Integer): TKMGameInputCommand; overload;
     function MakeCommand(aGIC: TKMGameInputCommandType; const aParam1, aParam2: Integer): TKMGameInputCommand; overload;
     function MakeCommand(aGIC: TKMGameInputCommandType; const aParam1, aParam2, aParam3: Integer): TKMGameInputCommand; overload;
     function MakeCommand(aGIC: TKMGameInputCommandType; const aParam1, aParam2, aParam3, aParam4: Integer): TKMGameInputCommand; overload;
+    function MakeCommandNoHand(aGIC: TKMGameInputCommandType; const aParam1: Single): TKMGameInputCommand;
     function MakeCommand(aGIC: TKMGameInputCommandType; const aTextParam: UnicodeString): TKMGameInputCommand; overload;
     function MakeCommand(aGIC: TKMGameInputCommandType; const aAnsiTxtParam: AnsiString; const aUniTxtArray: TKMScriptCommandParamsArray): TKMGameInputCommand; overload;
     function MakeCommand(aGIC: TKMGameInputCommandType; aDateTimeParam: TDateTime): TKMGameInputCommand; overload;
@@ -335,6 +340,7 @@ type
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aParam1, aParam2: Integer); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue: Integer); overload;
+    procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue: Single); overload;
 
     procedure CmdTemp(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint); overload;
     procedure CmdTemp(aCommandType: TKMGameInputCommandType); overload;
@@ -404,6 +410,7 @@ begin
                         aMemoryStream.Write(Params[3]);
                         aMemoryStream.Write(Params[4]);
                       end;
+      gicpt_Float:    aMemoryStream.Write(FloatParam);
       gicpt_UniStr1:  aMemoryStream.WriteW(UnicodeStrParams[0]);
       gicpt_Ansi1Uni4:begin
                         aMemoryStream.WriteA(AnsiStrParam);
@@ -442,6 +449,7 @@ begin
                         aMemoryStream.Read(Params[3]);
                         aMemoryStream.Read(Params[4]);
                       end;
+      gicpt_Float:    aMemoryStream.Read(FloatParam);
       gicpt_UniStr1:  aMemoryStream.ReadW(UnicodeStrParams[0]);
       gicpt_Ansi1Uni4:begin
                         aMemoryStream.ReadA(AnsiStrParam);
@@ -484,8 +492,10 @@ begin
       gicpt_Int3:       Result := Result + Format('[%10d,%10d,%10d]', [Params[1], Params[2], Params[3]]);
       gicpt_Int4:       Result := Result + Format('[%10d,%10d,%10d,%10d]', [Params[1], Params[2], Params[3], Params[4]]);
       gicpt_UniStr1:    Result := Result + Format('[%s]', [UnicodeStrParams[0]]);
+      gicpt_Float:      Result := Result + Format('[%f]', [FloatParam]);
       gicpt_Ansi1Uni4:  Result := Result + Format('[S1=%s,S2=%s,S3=%s,S4=%s,S5=%s]', [AnsiStrParam,UnicodeStrParams[0],UnicodeStrParams[1],UnicodeStrParams[2],UnicodeStrParams[3]]);
-      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]);
+      gicpt_Date:       Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]);
+      else              ;
     end;
   end;
 end;
@@ -572,6 +582,18 @@ begin
   Result.Params[2] := aParam2;
   Result.Params[3] := aParam3;
   Result.Params[4] := aParam4;
+end;
+
+
+function TKMGameInputProcess.MakeCommandNoHand(aGIC: TKMGameInputCommandType; const aParam1: Single): TKMGameInputCommand;
+begin
+  Assert(CommandPackType[aGIC] = gicpt_Float,
+         Format('Wrong packing type for command %s: Expected: gicpt_Float Actual: [%s]',
+                [GetEnumName(TypeInfo(TKMGameInputCommandType), Integer(aGIC)),
+                 GetEnumName(TypeInfo(TKMGameInputCommandPackType), Integer(CommandPackType[aGIC]))]));
+  Result.HandIndex := -1;
+  Result.CommandType := aGIC;
+  Result.FloatParam := aParam1;
 end;
 
 
@@ -777,6 +799,7 @@ begin
       gicTempDoNothing:           ;
 
       gicGamePause:               ;//if fReplayState = gipRecording then fGame.fGamePlayInterface.SetPause(boolean(Params[1]));
+      gicGameSpeed:               gGame.SetGameSpeedGIP(FloatParam, fReplayState = gipRecording);
       gicGameAutoSave:            if (fReplayState = gipRecording) and gGameApp.GameSettings.Autosave then
                                     gGame.AutoSave(DateTimeParam); //Timestamp is synchronised
       gicGameAutoSaveAfterPT:     if (fReplayState = gipRecording) and gGameApp.GameSettings.Autosave then
@@ -1043,6 +1066,13 @@ procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; con
 begin
   Assert(aCommandType = gicGameAlertBeacon);
   TakeCommand(MakeCommand(aCommandType, Round(aLoc.X * 10), Round(aLoc.Y * 10), aOwner, (aColor and $FFFFFF)));
+end;
+
+
+procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aValue: Single);
+begin
+  Assert(aCommandType = gicGameSpeed);
+  TakeCommand(MakeCommandNoHand(aCommandType, aValue));
 end;
 
 

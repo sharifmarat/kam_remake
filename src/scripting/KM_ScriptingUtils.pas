@@ -31,6 +31,7 @@ type
     function EnsureRangeS(aValue, aMin, aMax: Single): Single;
 
     function Format(const aFormatting: string; aData: array of const): string;
+    function FormatFloat(const aFormat: string; aValue: Single): string;
 
     function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString;
     function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer;
@@ -57,6 +58,8 @@ type
     function MinInArrayS(aArray: array of Single): Single;
 
     function Power(aBase, aExp: Extended): Extended;
+
+    function RandomRangeI(aFrom, aTo: Integer): Integer;
 
     function RGBDecToBGRHex(aR, aG, aB: Byte): AnsiString;
     function RGBToBGRHex(aHexColor: string): AnsiString;
@@ -411,6 +414,20 @@ begin
 end;
 
 
+//* Version: 11000
+//* Wrapper for pascal FormatFloat function
+//* Formats aValue with specified aFormat
+function TKMScriptUtils.FormatFloat(const aFormat: string; aValue: Single): string;
+begin
+  try
+    Result := SysUtils.FormatFloat(aFormat, aValue);
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
 //* Version: 7000+
 //* Checks condition aBool and returns aTrue/aFalse string depending on check result
 function TKMScriptUtils.IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString;
@@ -665,6 +682,19 @@ function TKMScriptUtils.Power(aBase, aExp: Extended): Extended;
 begin
   try
     Result := Math.Power(aBase, aExp);
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 11000
+//* Generates a random number in requested range aFrom..aTo (inclusive)
+function TKMScriptUtils.RandomRangeI(aFrom, aTo: Integer): Integer;
+begin
+  try
+    Result := KaMRandom(aTo - aFrom + 1, 'TKMScriptUtils.RandomRangeI') + aFrom;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;

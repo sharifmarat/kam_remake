@@ -5,7 +5,7 @@ uses
   {$IFDEF WDC} UITypes, {$ENDIF}
   {$IFDEF FPC} Controls, {$ENDIF}
   Classes, Dialogs, ExtCtrls,
-  KM_CommonTypes, KM_Defaults, KM_RenderControl,
+  KM_CommonTypes, KM_Defaults, KM_RenderControl, KM_Video,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
   KM_Music, KM_Maps, KM_MapTypes, KM_Networking, KM_Settings, KM_Render,
   KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
@@ -37,7 +37,7 @@ type
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
     procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
-    procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
+    procedure LoadGameFromScript(const aMissionFile, aGameName: String; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                  aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
                                  aAutoselectHumanLoc: Boolean = False);
@@ -84,7 +84,8 @@ type
                              aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone;
                              aAIType: TKMAIType = aitNone);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
-    procedure NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
+    procedure NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0;
+                           aMapFullCRC: Cardinal = 0; aMapSimpleCRC: Cardinal = 0);
     procedure NewReplay(const aFilePath: UnicodeString);
     procedure NewSaveAndReplay(const aSavPath, aRplPath: UnicodeString);
     function TryLoadSavedReplay(aTick: Integer): Boolean;
@@ -113,7 +114,7 @@ type
 
     function DynamicFOWEnabled: Boolean;
 
-    property OnGameSpeedChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
+    property OnGameSpeedActualChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
     property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
     property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
 
@@ -301,14 +302,18 @@ end;
 
 procedure TKMGameApp.Resize(X,Y: Integer);
 begin
-  if fIsExiting then Exit;
+  if fIsExiting then
+    Exit;
+
   fRender.Resize(X, Y);
+  gVideoPlayer.Resize(X, Y);
 
   //Main menu is invisible while in game, but it still exists and when we return to it
   //it must be properly sized (player could resize the screen while playing)
   fMainMenuInterface.Resize(X, Y);
 
-  if gGame <> nil then gGame.ActiveInterface.Resize(X, Y);
+  if gGame <> nil then
+    gGame.ActiveInterface.Resize(X, Y);
 end;
 
 
@@ -316,6 +321,12 @@ procedure TKMGameApp.KeyDown(Key: Word; Shift: TShiftState);
 var
   KeyHandled: Boolean;
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.KeyDown(Key, Shift);
+    Exit;
+  end;
+
   if gGame <> nil then
     gGame.ActiveInterface.KeyDown(Key, Shift, KeyHandled)
   else
@@ -325,6 +336,12 @@ end;
 
 procedure TKMGameApp.KeyPress(Key: Char);
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.KeyPress(Key);
+    Exit;
+  end;
+
   if gGame <> nil then
     gGame.ActiveInterface.KeyPress(Key)
   else
@@ -336,6 +353,12 @@ procedure TKMGameApp.KeyUp(Key: Word; Shift: TShiftState);
 var
   KeyHandled: Boolean;
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.KeyUp(Key, Shift);
+    Exit;
+  end;
+
   //List of conflicting keys that we should try to avoid using in debug/game:
   //  F12 Pauses Execution and switches to debug
   //  F10 sets focus on MainMenu1
@@ -352,6 +375,12 @@ end;
 
 procedure TKMGameApp.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseDown(Button, Shift, X, Y);
+    Exit;
+  end;
+
   if gGame <> nil then
     gGame.ActiveInterface.MouseDown(Button,Shift,X,Y)
   else
@@ -363,6 +392,12 @@ procedure TKMGameApp.MouseMove(Shift: TShiftState; X,Y: Integer);
 var Ctrl: TKMControl;
     CtrlID: Integer;
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseMove(Shift, X,Y);
+    Exit;
+  end;
+
   if not InRange(X, 1, fRender.ScreenX - 1)
   or not InRange(Y, 1, fRender.ScreenY - 1) then
     Exit; // Exit if Cursor is outside of frame
@@ -397,6 +432,12 @@ end;
 
 procedure TKMGameApp.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseUp(Button, Shift, X,Y);
+    Exit;
+  end;
+
   if gGame <> nil then
     gGame.ActiveInterface.MouseUp(Button,Shift,X,Y)
   else
@@ -408,6 +449,12 @@ procedure TKMGameApp.MouseWheel(Shift: TShiftState; WheelSteps: Integer; X, Y: I
 var
   Handled: Boolean;
 begin
+  if gVideoPlayer.IsActive then
+  begin
+    gVideoPlayer.MouseWheel(Shift, WheelSteps, X,Y);
+    Exit;
+  end;
+
   Handled := False; // False by Default
   if gGame <> nil then
     gGame.ActiveInterface.MouseWheel(Shift, WheelSteps, X, Y, Handled)
@@ -653,7 +700,7 @@ end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
+procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                                         aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                         aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
                                         aAutoselectHumanLoc: Boolean = False);
@@ -674,7 +721,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.GameStart(MissionFile, GameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType, aAutoselectHumanLoc);
+    gGame.GameStart(MissionFile, GameName, aFullCRC, aSimpleCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType, aAutoselectHumanLoc);
   except
     on E : Exception do
     begin
@@ -789,7 +836,8 @@ end;
 
 procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
-  LoadGameFromScript(aCampaign.GetMissionFile(aMap), aCampaign.GetMissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0, aDifficulty);
+  LoadGameFromScript(aCampaign.GetMissionFile(aMap), aCampaign.GetMissionTitle(aMap), 0, 0, aCampaign, aMap, gmCampaign,
+                     -1, 0, aDifficulty);
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
@@ -800,7 +848,8 @@ procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; 
                                   aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone;
                                   aAIType: TKMAIType = aitNone; aAutoselectHumanLoc: Boolean = False);
 begin
-  LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor, aDifficulty, aAIType, aAutoselectHumanLoc);
+  LoadGameFromScript(aMissionFile, aGameName, 0, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor, aDifficulty, aAIType,
+                     aAutoselectHumanLoc);
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
@@ -826,7 +875,7 @@ begin
     GameMode := gmMultiSpectate
   else
     GameMode := gmMulti;
-  LoadGameFromScript(TKMapsCollection.FullPath(aFileName, '.dat', aMapFolder, aCRC), aFileName, aCRC, nil, 0, GameMode, 0, 0, aDifficulty);
+  LoadGameFromScript(TKMapsCollection.FullPath(aFileName, '.dat', aMapFolder, aCRC), aFileName, aCRC, 0, nil, 0, GameMode, 0, 0, aDifficulty);
 
   //Starting the game might have failed (e.g. fatal script error)
   if gGame <> nil then
@@ -864,7 +913,7 @@ procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeStr
                                     aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 begin
   if FileExists(ExeDir + aMission) then
-    LoadGameFromScript(ExeDir + aMission, aGameName, 0, fCampaigns.CampaignById(aCampName), aCampMap, aGameMode, aLocation, aColor, aDifficulty, aAIType)
+    LoadGameFromScript(ExeDir + aMission, aGameName, 0, 0, fCampaigns.CampaignById(aCampName), aCampMap, aGameMode, aLocation, aColor, aDifficulty, aAIType)
   else
   if FileExists(ChangeFileExt(ExeDir + aSave, EXT_SAVE_BASE_DOT)) then
     LoadGameFromSave(ChangeFileExt(ExeDir + aSave, EXT_SAVE_BASE_DOT), aGameMode)
@@ -888,10 +937,11 @@ begin
 end;
 
 
-procedure TKMGameApp.NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
+procedure TKMGameApp.NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0;
+                                  aMapFullCRC: Cardinal = 0; aMapSimpleCRC: Cardinal = 0);
 begin
   if aFileName <> '' then
-    LoadGameFromScript(aFileName, TruncateExt(ExtractFileName(aFileName)), aMapCRC, nil, 0, gmMapEd, 0, 0)
+    LoadGameFromScript(aFileName, TruncateExt(ExtractFileName(aFileName)), aMapFullCRC, aMapSimpleCRC, nil, 0, gmMapEd, 0, 0)
   else begin
     aSizeX := EnsureRange(aSizeX, MIN_MAP_SIZE, MAX_MAP_SIZE);
     aSizeY := EnsureRange(aSizeY, MIN_MAP_SIZE, MAX_MAP_SIZE);
@@ -1033,10 +1083,13 @@ begin
 
   fRender.BeginFrame;
 
-  if gGame <> nil then
-    gGame.Render(fRender)
+  if gVideoPlayer.IsActive then
+    gVideoPlayer.Paint
   else
-    fMainMenuInterface.Paint;
+    if gGame <> nil then
+      gGame.Render(fRender)
+    else
+      fMainMenuInterface.Paint;
 
   fRender.RenderBrightness(GameSettings.Brightness);
 

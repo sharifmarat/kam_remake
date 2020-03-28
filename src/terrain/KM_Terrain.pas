@@ -39,11 +39,16 @@ type
 
   TKMTerrainTileChangeErrorArray = array of TKMTerrainTileChangeError;
 
+  TKMTileCorners = array [0..3] of Boolean;
+
   TKMTerrainLayer = record
     Terrain: Word;
     Rotation: Byte;
-    Corners: TKMByteSet; //Corners, that this layer 'owns' (corners are distributed between all layers, so any layer can own 1-4 corners)
+    Corners: TKMTileCorners; //Corners, that this layer 'owns' (corners are distributed between all layers, so any layer can own 1-4 corners)
+    procedure SetCorners(aCorners: TKMByteSet);
+    procedure ClearCorners;
   end;
+
 
   TKMTerrainTileBasic = record
     BaseLayer: TKMTerrainLayer;
@@ -285,6 +290,8 @@ type
     function TileIsSand(const Loc: TKMPoint): Boolean;
     function TileIsSoil(X,Y: Word): Boolean; overload;
     function TileIsSoil(const Loc: TKMPoint): Boolean; overload;
+    function TileIsIce(X, Y: Word): Boolean;
+    function TileHasWater(X, Y: Word): Boolean;
     function TileIsFactorable(const Loc: TKMPoint): Boolean;
     function TileIsWalkable(const Loc: TKMPoint): Boolean;
     function TileIsRoadable(const Loc: TKMPoint): Boolean;
@@ -370,6 +377,25 @@ uses
   KM_ResUnits, KM_ResSprites, KM_Hand, KM_Game, KM_GameTypes, KM_ScriptingEvents, KM_Utils;
 
 
+{ TKMTerrainLayer }
+procedure TKMTerrainLayer.SetCorners(aCorners: TKMByteSet);
+var
+  I: Integer;
+begin
+  for I := 0 to 3 do
+    Corners[I] := I in aCorners;
+end;
+
+
+procedure TKMTerrainLayer.ClearCorners;
+var
+  I: Integer;
+begin
+  for I := 0 to 3 do
+    Corners[I] := False;
+end;
+
+
 { TKMTerrain }
 constructor TKMTerrain.Create;
 begin
@@ -390,7 +416,8 @@ end;
 
 //Reset whole map with default values
 procedure TKMTerrain.MakeNewMap(aWidth, aHeight: Integer; aMapEditor: Boolean);
-var I, K: Integer;
+var
+  I, K: Integer;
 begin
   fMapEditor := aMapEditor;
   fMapX := Min(aWidth,  MAX_MAP_SIZE);
@@ -407,7 +434,7 @@ begin
         else
           BaseLayer.Terrain := 0;
         LayersCnt    := 0;
-        BaseLayer.Corners := [0,1,2,3];
+        BaseLayer.SetCorners([0,1,2,3]);
         Height       := 30 + KaMRandom(HEIGHT_RAND_VALUE, 'TKMTerrain.MakeNewMap 3');  //variation in Height
         BaseLayer.Rotation     := KaMRandom(4, 'TKMTerrain.MakeNewMap 4');  //Make it random
         Obj          := OBJ_NONE;             //none
@@ -561,7 +588,7 @@ const
       //Apply some random tiles for artisticity
       TileBasic.BaseLayer.Terrain  := gGame.TerrainPainter.PickRandomTile(terKind, True);
       TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand 2');
-      TileBasic.BaseLayer.Corners := [0,1,2,3];
+      TileBasic.BaseLayer.SetCorners([0,1,2,3]);
       //find height mid point to make random elevation even for close to 0 or 100 height
       hMid := Max(0, Land[aFromY,aFromX].Height - H_RND_HALF) + H_RND_HALF;
       hMid := Min(100, hMid + H_RND_HALF) - H_RND_HALF;
@@ -743,7 +770,9 @@ var
 begin
   Assert((aType <> -1) or (aRot <> -1), 'Either terrain type or rotation should be set');
 
-  if not gRes.Tileset.TileIsAllowedToSet(aType) then
+  // Do not allow to set some special terrain tiles
+  if (aType <> -1) // We could have aType = -1 if only specify rotation
+    and not gRes.Tileset.TileIsAllowedToSet(aType) then
     Exit(False);
  
   Loc := KMPoint(X, Y);
@@ -1393,6 +1422,18 @@ begin
 end;
 
 
+function TKMTerrain.TileIsIce(X, Y: Word): Boolean;
+begin
+  Result := TileHasParameter(X, Y, fTileset.TileIsIce);
+end;
+
+
+function TKMTerrain.TileHasWater(X, Y: Word): Boolean;
+begin
+  Result := fTileset.TileHasWater(Land[Y,X].BaseLayer.Terrain);
+end;
+
+
 function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False;
                                      aStrictCheck: Boolean = False): Boolean;
 const
@@ -1572,11 +1613,11 @@ begin
   Result := TOO_BIG_VALUE;
   with gTerrain.Land[aY,aX] do
   begin
-    if aCorner in BaseLayer.Corners then
+    if BaseLayer.Corners[aCorner] then
       Result := BASE_TERRAIN[TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (aCorner + 4 - BaseLayer.Rotation) mod 4]]
     else
       for L := 0 to LayersCnt - 1 do
-        if aCorner in Layer[L].Corners then
+        if Layer[L].Corners[aCorner] then
           Result := BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind];
   end;
   Assert(Result <> TOO_BIG_VALUE, Format('[TileCornerTerrain] Can''t determine tile [%d:%d] terrain at Corner [%d]', [aX, aY, aCorner]));
@@ -1607,11 +1648,11 @@ begin
     Result[K] := tkCustom;
     with gTerrain.Land[aY,aX] do
     begin
-      if K in BaseLayer.Corners then
+      if BaseLayer.Corners[K] then
         Result[K] := TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]
       else
         for L := 0 to LayersCnt - 1 do
-          if K in Layer[L].Corners then
+          if Layer[L].Corners[K] then
           begin
             Result[K] := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind;
             Break;
@@ -3229,12 +3270,12 @@ var
                           else
                           begin
                             Land[Y,X].BaseLayer.Terrain := 192;
-                            Land[Y,X].BaseLayer.Corners := [1];
+                            Land[Y,X].BaseLayer.SetCorners([1]);
                             Land[Y,X].LayersCnt := 1;
                             Land[Y,X].Layer[0].Terrain := gGenTerrainTransitions[TransitionsTerKinds[Transition],
                                                                                  mkSoft2, mt_2Diagonal, mstMain];
                             Land[Y,X].Layer[0].Rotation := TerRot;
-                            Land[Y,X].Layer[0].Corners := [0,2,3];
+                            Land[Y,X].Layer[0].SetCorners([0,2,3]);
                           end;
                         end;
                 end;
@@ -4592,6 +4633,7 @@ begin
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
+      Land[I,J].TileOverlay := TileBasic.TileOverlay;
       Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
       for L := 0 to 2 do
@@ -4776,11 +4818,11 @@ class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic
     LayerNumber := 0;
     for I := 3 downto 0 do  // go from 3 to 0, as we pack 3 corner to the most left
     begin
-      if I in aTileBasic.BaseLayer.Corners then
+      if aTileBasic.BaseLayer.Corners[I] then
         LayerNumber := 0
       else
         for L := 0 to 2 do
-          if I in aTileBasic.Layer[L].Corners then
+          if aTileBasic.Layer[L].Corners[I] then
           begin
             LayerNumber := L + 1;
             Break;
@@ -4871,7 +4913,7 @@ begin
     aStream.Seek(1, soFromCurrent);
     aStream.Read(ObjectB);     //6
     aTileBasic.Obj := ObjectB;
-    aTileBasic.BaseLayer.Corners := [0,1,2,3];
+    aTileBasic.BaseLayer.SetCorners([0,1,2,3]);
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
     aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
@@ -4894,7 +4936,7 @@ begin
     // First get layers count
     aStream.Read(aTileBasic.LayersCnt);         //9
     if aTileBasic.LayersCnt = 0 then            // No need to save corners, if we have no layers on that tile
-      aTileBasic.BaseLayer.Corners := [0,1,2,3] // Set all corners then
+      aTileBasic.BaseLayer.SetCorners([0,1,2,3]) // Set all corners then
     else begin
       // if there are some layers, then load base layer corners first
       aStream.Read(Corners);
@@ -4913,7 +4955,7 @@ begin
       else
         aTileBasic.BlendingLvl := 50;
 
-      aTileBasic.BaseLayer.Corners := [];
+      aTileBasic.BaseLayer.ClearCorners;
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
         if aGameRev <= 10745 then
@@ -4933,14 +4975,18 @@ begin
         aTileBasic.Layer[I].Terrain := gGenTerrainTransitions[GenInfo.TerKind, GenInfo.Mask.Kind,
                                                               GenInfo.Mask.MType, GenInfo.Mask.SubType];
         aStream.Read(aTileBasic.Layer[I].Rotation);
-        aTileBasic.Layer[I].Corners := [];
+        aTileBasic.Layer[I].ClearCorners;
       end;
+
+      aTileBasic.BaseLayer.ClearCorners;
+      for I := 0 to 2 do
+        aTileBasic.BaseLayer.ClearCorners;
 
       for I := 0 to 3 do
       begin
         case LayersCorners[I] of
-          0:    Include(aTileBasic.BaseLayer.Corners, I);
-          else  Include(aTileBasic.Layer[LayersCorners[I]-1].Corners, I);
+          0:    aTileBasic.BaseLayer.Corners[I] := True;
+          else  aTileBasic.Layer[LayersCorners[I]-1].Corners[I] := True;
         end;
       end;
     end;

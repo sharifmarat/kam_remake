@@ -9,6 +9,9 @@ uses
   KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes, KM_CommonClasses;
 
 
+const
+  FLOAT_PARAM_NONE = MaxSingle;
+
 type
   TKMScriptEntity = class
   protected
@@ -36,11 +39,11 @@ type
     fConsoleCommands: TDictionary<AnsiString, TKMConsoleCommand>;
 
     procedure AddDefaultEventHandlersNames;
-    procedure CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer);
+    procedure CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer; aFloatParam: Single = FLOAT_PARAM_NONE);
     function GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
 
     procedure HandleScriptProcCallError(aMethod: String);
-    procedure CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer);
+    procedure CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
     function MethodAssigned(aProc: TMethod): Boolean; overload; inline;
     function MethodAssigned(aEventType: TKMScriptEventType): Boolean; overload; inline;
     function MethodAssigned(const aCmdName: AnsiString): Boolean; overload; inline;
@@ -71,6 +74,7 @@ type
     procedure ProcHouseDamaged(aHouse: TKMHouse; aAttacker: TKMUnit);
     procedure ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandID);
     procedure ProcHouseWareCountChanged(aHouse: TKMHouse; aWare: TKMWareType; aCnt: Word; aChangeCnt: Integer);
+    procedure ProcGameSpeedChanged(aSpeed: Single);
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderAttackHouse(aGroup: TKMUnitGroup; aHouse: TKMHouse);
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
@@ -79,6 +83,7 @@ type
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
     procedure ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TKMWareType);
     procedure ProcMissionStart;
+    procedure ProcPeacetimeEnd;
     procedure ProcPlanRoadDigged(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcPlanRoadPlaced(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcPlanRoadRemoved(aPlayer: TKMHandID; aX, aY: Word);
@@ -131,6 +136,7 @@ type
   TKMScriptEvent2I = procedure (aIndex, aParam: Integer) of object;
   TKMScriptEvent3I = procedure (aIndex, aParam1, aParam2: Integer) of object;
   TKMScriptEvent4I = procedure (aIndex, aParam1, aParam2, aParam3: Integer) of object;
+  TKMScriptEvent1S = procedure (aParam: Single) of object;
 
 
   //We need to check all input parameters as could be wildly off range due to
@@ -186,6 +192,7 @@ begin
   AddEventHandlerName(evtHouseDamaged,          'OnHouseDamaged');
   AddEventHandlerName(evtHouseDestroyed,        'OnHouseDestroyed');
   AddEventHandlerName(evtHouseWareCountChanged, 'OnHouseWareCountChanged');
+  AddEventHandlerName(evtGameSpeedChanged,      'OnGameSpeedChanged');
   AddEventHandlerName(evtGroupHungry,           'OnGroupHungry');
   AddEventHandlerName(evtGroupOrderAttackHouse, 'OnGroupOrderAttackHouse');
   AddEventHandlerName(evtGroupOrderAttackUnit,  'OnGroupOrderAttackUnit');
@@ -194,6 +201,7 @@ begin
   AddEventHandlerName(evtGroupOrderSplit,       'OnGroupOrderSplit');
   AddEventHandlerName(evtMarketTrade,           'OnMarketTrade');
   AddEventHandlerName(evtMissionStart,          'OnMissionStart');
+  AddEventHandlerName(evtPeacetimeEnd,          'OnPeacetimeEnd');
   AddEventHandlerName(evtPlanRoadDigged,        'OnPlanRoadDigged');
   AddEventHandlerName(evtPlanRoadPlaced,        'OnPlanRoadPlaced');
   AddEventHandlerName(evtPlanRoadRemoved,       'OnPlanRoadRemoved');
@@ -252,6 +260,8 @@ function TKMScriptEvents.MethodAssigned(aEventType: TKMScriptEventType): Boolean
 var
   I: Integer;
 begin
+  if Self = nil then Exit(False);
+  
   Result := False;
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
     if fEventHandlers[aEventType][I].Handler.Code <> nil then
@@ -370,12 +380,13 @@ end;
 
 
 
-procedure TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer);
+procedure TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer;
+                                            aFloatParam: Single = FLOAT_PARAM_NONE);
 var
   I: Integer;
 begin
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-    CallEventProc(fEventHandlers[aEventType][I], aParams);
+    CallEventProc(fEventHandlers[aEventType][I], aParams, aFloatParam);
 end;
 
 
@@ -507,11 +518,14 @@ begin
 end;
 
 
-procedure TKMScriptEvents.CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer);
+procedure TKMScriptEvents.CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
 begin
   if not MethodAssigned(aProc.Handler) then Exit;
 
   try
+    if aFloatParam <> FLOAT_PARAM_NONE then
+      TKMScriptEvent1S(aProc.Handler)(aFloatParam)
+    else
     case Length(aIntParams) of
       0: TKMScriptEvent(aProc.Handler);
       1: TKMScriptEvent1I(aProc.Handler)(aIntParams[0]);
@@ -575,6 +589,15 @@ procedure TKMScriptEvents.ProcMissionStart;
 begin
   if MethodAssigned(evtMissionStart) then
     CallEventHandlers(evtMissionStart, []);
+end;
+
+
+//* Version: 11000
+//* Occurs immediately after the end of peacetime
+procedure TKMScriptEvents.ProcPeacetimeEnd;
+begin
+  if MethodAssigned(evtPeacetimeEnd) then
+    CallEventHandlers(evtPeacetimeEnd, []);
 end;
 
 
@@ -647,6 +670,15 @@ begin
     fIDCache.CacheHouse(aHouse, aHouse.UID); //Improves cache efficiency since aHouse will probably be accessed soon
     CallEventHandlers(evtHouseWareCountChanged, [aHouse.UID, WareTypeToIndex[aWare], aCnt, aChangeCnt]);
   end;
+end;
+
+
+//* Version: 11000
+//* Occurs when game speed was changed
+procedure TKMScriptEvents.ProcGameSpeedChanged(aSpeed: Single);
+begin
+  if MethodAssigned(evtGameSpeedChanged) then
+    CallEventHandlers(evtGameSpeedChanged, [], aSpeed);
 end;
 
 

@@ -122,7 +122,10 @@ end;
 
 procedure TKMGoals.Clear;
 begin
+  if Self = nil then Exit;
+             
   fCount := 0;
+  SetLength(fGoals, 0);
 end;
 
 

@@ -1,0 +1,13 @@
+===MAP===
+
+Made by andreus
+
+
+===DYNAMIC SCRIPT===
+
+Script is licensed under GPLv2, you can find its text here: http://www.gnu.org/licenses/gpl-2.0.html
+
+
+===SOUND CREDITS===
+
+Additional sounds derived from wav-library.net (sound IDs 03723, 03338)
