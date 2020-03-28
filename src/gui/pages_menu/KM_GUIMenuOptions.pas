@@ -431,6 +431,14 @@ begin
     gGameApp.ToggleLocale(gResLocales[Radio_Options_Lang.ItemIndex].Code);
     Exit; // Exit ASAP because whole interface will be recreated
   end;
+
+  if Sender = CheckBox_Options_VideoEnable then
+  begin
+    CheckBox_Options_VideoStartup.Enabled := CheckBox_Options_VideoEnable.Checked;
+    CheckBox_Options_VideoStretch.Enabled := CheckBox_Options_VideoEnable.Checked;
+    TrackBar_Options_VideoVolume.Enabled  := CheckBox_Options_VideoEnable.Checked;
+    Button_Options_VideoTest.Enabled      := CheckBox_Options_VideoEnable.Checked;
+  end;
 end;
 
 
