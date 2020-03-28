@@ -703,7 +703,6 @@ begin
       else
       begin
         // Render stone with snow blended on top using AlphaTest
-        //todo: Shadow shouldn't get rendered twice
         fRenderList.AddSpriteG(rxHouses, PicStone, 0, CornerX(PicStone), CornerY(PicStone), gX, gY, $0);
         fRenderList.AddSpriteG(rxHouses, PicSnow, 0, CornerX(PicSnow), CornerY(PicSnow), gX, gY, $0, aSnowStep);
       end;

@@ -186,6 +186,7 @@ type
     function InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
     procedure GetListOfCellsAround(Cells: TKMPointDirList; aPassability: TKMTerrainPassability);
     procedure GetListOfCellsWithin(Cells: TKMPointList);
+    procedure GetListOfGroundVisibleCells(aCells: TKMPointTagList);
     function GetRandomCellWithin: TKMPoint;
     function HitTest(X, Y: Integer): Boolean;
     property BuildingRepair: Boolean read fBuildingRepair write SetBuildingRepair;
@@ -1061,6 +1062,26 @@ begin
 end;
 
 
+procedure TKMHouse.GetListOfGroundVisibleCells(aCells: TKMPointTagList);
+var
+  i,k,ground: Integer;
+  Loc: TKMPoint;
+  GroundVisibleArea: THouseArea;
+begin
+  aCells.Clear;
+  Loc := fPosition;
+  GroundVisibleArea := gRes.Houses[fType].GroundVisibleArea;
+
+  for i := max(Loc.Y - 3, 1) to Loc.Y do
+    for K := max(Loc.X - 2, 1) to min(Loc.X + 1, gTerrain.MapX) do
+    begin
+      ground := GroundVisibleArea[i - Loc.Y + 4, K - Loc.X + 3];
+      if ground <> 0 then
+        aCells.Add(KMPoint(K, i), ground);
+    end;
+end;
+
+
 function TKMHouse.GetRandomCellWithin: TKMPoint;
 var
   Cells: TKMPointList;
@@ -1338,18 +1359,22 @@ end;
 procedure TKMHouse.CheckOnSnow;
 var
   I: Integer;
-  SnowTiles: Integer;
-  Cells: TKMPointList;
+  SnowTiles, NoSnowTiles: Integer;
+  Cells: TKMPointTagList;
 begin
-  Cells := TKMPointList.Create;
+  Cells := TKMPointTagList.Create;
 
-  GetListOfCellsWithin(Cells);
+  GetListOfGroundVisibleCells(Cells);
 
   SnowTiles := 0;
+  NoSnowTiles := 0;
   for I := 0 to Cells.Count - 1 do
-    SnowTiles := SnowTiles + Byte(gTerrain.TileIsSnow(Cells[I].X, Cells[I].Y));
+    if gTerrain.TileIsSnow(Cells[I].X, Cells[I].Y) then
+      Inc(SnowTiles, Cells.Tag[I])
+    else
+      Inc(NoSnowTiles, Cells.Tag[I]);
 
-  fIsOnSnow := SnowTiles > (Cells.Count div 2);
+  fIsOnSnow := SnowTiles > NoSnowTiles;
 
   Cells.Free;
 end;

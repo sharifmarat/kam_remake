@@ -56,6 +56,8 @@ type
         CheckBox_Options_AutosaveAtGameEnd: TKMCheckBox;
       Panel_Options_Replays: TKMPanel;
         CheckBox_Options_ReplayAutopause: TKMCheckBox;
+      Panel_Options_Mods: TKMPanel;
+        CheckBox_Options_SnowHouses: TKMCheckBox;
       Panel_Options_Sound: TKMPanel;
         Label_Options_MusicOff: TKMLabel;
         TrackBar_Options_SFX,TrackBar_Options_Music: TKMTrackBar;
@@ -161,9 +163,18 @@ begin
       TrackBar_Options_VideoVolume.Caption := gResTexts[TX_MENU_OPTIONS_VIDEOS_VOLUME];
       TrackBar_Options_VideoVolume.OnChange := Change;
 
+    // Mods
+    Panel_Options_Mods := TKMPanel.Create(Panel_Options,0,490,280,50);
+    Panel_Options_Mods.Anchors := [anLeft];
+      TKMLabel.Create(Panel_Options_Mods,6,0,270,20,gResTexts[TX_MENU_OPTIONS_MODS] + ':',fntOutline,taLeft);
+      TKMBevel.Create(Panel_Options_Mods,0,20,280,30);
+
+      CheckBox_Options_SnowHouses := TKMCheckBox.Create(Panel_Options_Mods,10,27,256,20,gResTexts[TX_MENU_OPTIONS_MODS_SNOW_HOUSES], fntMetal);
+      CheckBox_Options_SnowHouses.OnClick := Change;
+
 
     // Back button
-    Button_OptionsBack := TKMButton.Create(Panel_Options,0,550,280,30,gResTexts[TX_MENU_BACK],bsMenu);
+    Button_OptionsBack := TKMButton.Create(Panel_Options,0,30+gResLocales.Count*20+10,280,30,gResTexts[TX_MENU_BACK],bsMenu);
     Button_OptionsBack.Anchors := [anLeft];
     Button_OptionsBack.OnClick := BackClick;
 
@@ -208,7 +219,7 @@ begin
       CheckBox_Options_ReplayAutopause.OnClick := Change;
 
     // Controls section
-    Panel_Options_Ctrl:=TKMPanel.Create(Panel_Options,300,360,280,80);
+    Panel_Options_Ctrl := TKMPanel.Create(Panel_Options,300,360,280,120);
     Panel_Options_Ctrl.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Ctrl,6,0,270,20,gResTexts[TX_MENU_OPTIONS_CONTROLS],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_Ctrl,0,20,280,100);
@@ -321,6 +332,7 @@ begin
   CheckBox_Options_VideoStretch.Checked    := fGameSettings.VideoStretch;
   CheckBox_Options_VideoStartup.Checked    := fGameSettings.VideoStartup;
   TrackBar_Options_VideoVolume.Position    := Round(fGameSettings.VideoVolume * TrackBar_Options_VideoVolume.MaxValue);
+  CheckBox_Options_SnowHouses.Checked      := fGameSettings.AllowSnowHouses;
 
   Radio_Options_Lang.ItemIndex := gResLocales.IndexByCode(fGameSettings.Locale);
 
@@ -353,6 +365,8 @@ begin
   fGameSettings.VideoStretch    := CheckBox_Options_VideoStretch.Checked;
   fGameSettings.VideoStartup    := CheckBox_Options_VideoStartup.Checked;
   fGameSettings.VideoVolume     := TrackBar_Options_VideoVolume.Position / TrackBar_Options_VideoVolume.MaxValue;
+  fGameSettings.AllowSnowHouses := CheckBox_Options_SnowHouses.Checked;
+
   TrackBar_Options_Music.Enabled      := not CheckBox_Options_MusicOff.Checked;
   CheckBox_Options_ShuffleOn.Enabled  := not CheckBox_Options_MusicOff.Checked;
 
