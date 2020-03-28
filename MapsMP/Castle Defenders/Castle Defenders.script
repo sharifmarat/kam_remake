@@ -1465,7 +1465,7 @@ begin
 end;
 
 
-procedure CheckSplittedGroups(aPlayer: Integer);
+procedure CheckSplittedGroups(aPlayer: Integer; aOnOrderSplit: Boolean);
 var
   G1, G2, Count1, Count2, GT, X1, Y1, X2, Y2, J, UT: Integer;
   Groups: array of Integer;
@@ -1513,23 +1513,31 @@ begin
   if G2 <= 0 then
     Exit;
 
-  if (Count1 < Round(MIN_UNITS_COUNT / DifficultyFactor))
-  or (Count2 < Round(MIN_UNITS_COUNT / DifficultyFactor))
+  if (Count1 < Round(MIN_UNITS_COUNT * DifficultyFactor))
+  or (Count2 < Round(MIN_UNITS_COUNT * DifficultyFactor))
   and (G1 > 0)
   and (G2 > 0) then
   begin
     Actions.GroupOrderLink(G1, G2);
-    Actions.GroupSetFormation(G2, Utils.IfThenI(States.GroupManualFormation(G2), LastFormation, 1 + Round(sqrt(States.GroupMemberCount(G2)))));        
+    Actions.GroupSetFormation(G2, Utils.IfThenI(States.GroupManualFormation(G2), LastFormation, 1 + Round(sqrt(States.GroupMemberCount(G2)))));
+    Actions.GroupOrderHalt(G2);
+    if aOnOrderSplit then
+      Actions.ShowMsgFormatted(aPlayer, '<$106>', [Round(MIN_UNITS_COUNT * DifficultyFactor)]);
   end;
 
 end;
 
 
+procedure OnGroupOrderBeforeSplit(G: Integer);
+begin
+  LastFormation := States.GroupColumnCount(G);
+end;
+
+
 procedure OnGroupOrderSplit(G1, G2: Integer);
 begin
-  LastFormation := States.GroupColumnCount(G1);
   if not ALLOW_SPLITTING then
-    CheckSplittedGroups(States.GroupOwner(G1));
+    CheckSplittedGroups(States.GroupOwner(G1), True);
 end;
 
 
@@ -5257,6 +5265,6 @@ begin
   if (States.GameTime mod (1 + SPLIT_CHECK_FACTOR) = 0)
   and (not ALLOW_SPLITTING) then
     for I := 0 to 3 do
-      CheckSplittedGroups(I);
+      CheckSplittedGroups(I, False);
 
 end;
