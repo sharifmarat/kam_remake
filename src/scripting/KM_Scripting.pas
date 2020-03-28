@@ -446,6 +446,7 @@ begin
     RegisterMethodCheck(c, 'function GroupDead(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupIdle(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupInFight(aGroupID: Integer; aCountCitizens: Boolean): Boolean');
+    RegisterMethodCheck(c, 'function GroupManualFormation(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupMember(aGroupID, aMemberIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupMemberCount(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupOrder(aGroupID: Integer): TKMGroupOrder');
@@ -521,7 +522,7 @@ begin
     RegisterMethodCheck(c, 'function MapTileIsSnow(X, Y: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTileIsSoil(X, Y: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTileIsStone(X, Y: Integer): Word');
-    RegisterMethodCheck(c, 'function MapTileIsWater(X, Y: Integer; FullTilesOnle: Boolean): Boolean');
+    RegisterMethodCheck(c, 'function MapTileIsWater(X, Y: Integer; FullTilesOnly: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTileObject(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapTileOverlay(X, Y: Integer): TKMTileOverlay');
     RegisterMethodCheck(c, 'function MapTileOwner(X, Y: Integer): Integer');
@@ -1080,6 +1081,7 @@ begin
       RegisterMethod(@TKMScriptStates.GroupDead,                                'GroupDead');
       RegisterMethod(@TKMScriptStates.GroupIdle,                                'GroupIdle');
       RegisterMethod(@TKMScriptStates.GroupInFight,                             'GroupInFight');
+      RegisterMethod(@TKMScriptStates.GroupManualFormation,                     'GroupManualFormation');
       RegisterMethod(@TKMScriptStates.GroupMember,                              'GroupMember');
       RegisterMethod(@TKMScriptStates.GroupMemberCount,                         'GroupMemberCount');
       RegisterMethod(@TKMScriptStates.GroupOrder,                               'GroupOrder');
