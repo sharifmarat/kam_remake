@@ -94,7 +94,6 @@ var
   Q: Integer;
   SortedPlayers, ActivePlayers: array of Integer;
   ErrorX, ErrorY: Integer;
-  LastFormation: Integer;
 
 
 function DifficultyFactor: Single;
@@ -1519,18 +1518,20 @@ begin
   and (G2 > 0) then
   begin
     Actions.GroupOrderLink(G1, G2);
-    Actions.GroupSetFormation(G2, Utils.IfThenI(States.GroupManualFormation(G2), LastFormation, 1 + Round(sqrt(States.GroupMemberCount(G2)))));
-    Actions.GroupOrderHalt(G2);
+    if not States.GroupManualFormation(G2) then
+      Actions.GroupSetFormation(G2, 1 + Round(sqrt(States.GroupMemberCount(G2))));
     if aOnOrderSplit then
-      Actions.ShowMsgFormatted(aPlayer, '<$106>', [Round(MIN_UNITS_COUNT * DifficultyFactor)]);
+      Actions.ShowMsgFormatted(aPlayer, '<$106>', [Count1, Count2, Round(MIN_UNITS_COUNT * DifficultyFactor)]);
   end;
 
 end;
 
 
-procedure OnGroupOrderBeforeSplit(G: Integer);
+function OnGroupAllowOrderSplit(G: Integer): Boolean;
 begin
-  LastFormation := States.GroupColumnCount(G);
+  Result := States.GroupMemberCount(G) > Round(MIN_UNITS_COUNT * DifficultyFactor);
+  if not Result then
+    Actions.ShowMsgFormatted(States.GroupOwner(G), '<$107>', [States.GroupMemberCount(G), Round(MIN_UNITS_COUNT * DifficultyFactor)]);
 end;
 
 
