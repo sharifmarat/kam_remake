@@ -60,8 +60,11 @@ type
     procedure RenderFence(aFence: TKMFenceType; Pos: TKMDirection; pX,pY: Integer);
     procedure RenderMarkup(pX, pY: Word; aFieldType: TKMFieldType);
     procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
-                           DoHighlight: Boolean = False; HighlightColor: Cardinal = 0; aBlendingLvl: Byte = 0;
-                           aCorners: TKMByteSet = []);
+                           DoHighlight: Boolean = False; HighlightColor: Cardinal = 0;
+                           aBlendingLvl: Byte = 0); overload;
+    procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aCorners: TKMTileCorners; aDoBindTexture: Boolean;
+                           aUseTileLookup: Boolean; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0;
+                           aBlendingLvl: Byte = 0); overload;
     function DoUseVBO: Boolean;
   public
     constructor Create;
@@ -493,7 +496,7 @@ begin
 end;
 
 
-procedure RenderQuadTextureBlended(var TexC: TUVRect; tX,tY: Word; aCorners: TKMByteSet; aBlendingLevel: Byte);
+procedure RenderQuadTextureBlended(var TexC: TUVRect; tX,tY: Word; aCorners: TKMTileCorners; aBlendingLevel: Byte);
 var
   BlendFactor: Single;
 begin
@@ -506,25 +509,25 @@ begin
       glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  ,-Land[tY+1,tX+1].Height/CELL_HEIGHT_DIV);
       glTexCoord2fv(@TexC[4]); glVertex3f(tX  ,tY-1,-Land[tY,  tX+1].Height/CELL_HEIGHT_DIV);
     end else begin
-      if 0 in aCorners then
+      if aCorners[0] then
         glColor4f(1,1,1,1)
       else
         glColor4f(1,1,1,BlendFactor);
       glTexCoord2fv(@TexC[1]); glVertex3f(tX-1,tY-1-Land[tY,  tX].Height / CELL_HEIGHT_DIV, tY-1);
 
-      if 3 in aCorners then
+      if aCorners[3] then
         glColor4f(1,1,1,1)
       else
         glColor4f(1,1,1,BlendFactor);
       glTexCoord2fv(@TexC[2]); glVertex3f(tX-1,tY  -Land[tY+1,tX].Height / CELL_HEIGHT_DIV, tY-1);
 
-      if 2 in aCorners then
+      if aCorners[2] then
         glColor4f(1,1,1,1)
       else
         glColor4f(1,1,1,BlendFactor);
       glTexCoord2fv(@TexC[3]); glVertex3f(tX  ,tY  -Land[tY+1,tX+1].Height / CELL_HEIGHT_DIV, tY-1);
 
-      if 1 in aCorners then
+      if aCorners[1] then
         glColor4f(1,1,1,1)
       else
         glColor4f(1,1,1,BlendFactor);
@@ -1141,8 +1144,22 @@ end;
 
 
 procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean;
-                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0; aBlendingLvl: Byte = 0;
-                                      aCorners: TKMByteSet = []);
+                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0;
+                                      aBlendingLvl: Byte = 0);
+var
+  I: Integer;
+  Corners: TKMTileCorners;
+begin
+  for I := 0 to 3 do
+    Corners[I] := False;
+
+  DoRenderTile(aTerrainId, pX,pY,Rot, Corners, aDoBindTexture, aUseTileLookup, DoHighlight, HighlightColor, aBlendingLvl);
+end;
+
+
+procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aCorners: TKMTileCorners; aDoBindTexture: Boolean;
+                                      aUseTileLookup: Boolean; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0;
+                                      aBlendingLvl: Byte = 0);
 var
   TexC: TUVRect; // Texture UV coordinates
 begin
@@ -1200,8 +1217,8 @@ begin
 
   // Render other Layers
   for L := 0 to aTileBasic.LayersCnt - 1 do
-    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, DoBindTexture,
-                 False, DoHighlight, HighlightColor, aTileBasic.BlendingLvl, aTileBasic.Layer[L].Corners);
+    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, aTileBasic.Layer[L].Corners,
+                 DoBindTexture, False, DoHighlight, HighlightColor, aTileBasic.BlendingLvl);
     
 end;
 
