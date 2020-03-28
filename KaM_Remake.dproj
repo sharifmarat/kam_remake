@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{CB64F5E8-91AE-4497-A8C4-89668924F870}</ProjectGuid>
         <MainSource>KaM_Remake.dpr</MainSource>
@@ -149,6 +149,7 @@
         <DCCReference Include="src\ai\KM_AIMayorBalance.pas"/>
         <DCCReference Include="src\ai\KM_AISetup.pas"/>
         <DCCReference Include="src\ai\newAI\KM_ArmyAttack.pas"/>
+        <DCCReference Include="src\ai\newAI\KM_ArmyAttackNew.pas"/>
         <DCCReference Include="src\ai\newAI\KM_ArmyDefence.pas"/>
         <DCCReference Include="src\ai\newAI\KM_ArmyManagement.pas"/>
         <DCCReference Include="src\ai\newAI\KM_Eye.pas"/>
@@ -288,6 +289,7 @@
         <DCCReference Include="src\navmesh\KM_NavMeshFloodPositioning.pas"/>
         <DCCReference Include="src\navmesh\KM_NavMeshInfluences.pas"/>
         <DCCReference Include="src\navmesh\KM_NavMeshDefences.pas"/>
+        <DCCReference Include="src\navmesh\KM_NavMeshArmyPositioning.pas"/>
         <DCCReference Include="src\net\KM_NetAuthSecure.pas"/>
         <DCCReference Include="src\net\KM_NetAuthUnsecure.pas"/>
         <DCCReference Include="src\net\KM_NetClient.pas"/>

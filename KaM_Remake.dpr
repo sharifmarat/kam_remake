@@ -35,6 +35,7 @@ uses
   KM_AISetup in 'src\ai\KM_AISetup.pas',
 
   KM_ArmyAttack in 'src\ai\newAI\KM_ArmyAttack.pas',
+  KM_ArmyAttackNew in 'src\ai\newAI\KM_ArmyAttackNew.pas',
   KM_ArmyDefence in 'src\ai\newAI\KM_ArmyDefence.pas',
   KM_ArmyManagement in 'src\ai\newAI\KM_ArmyManagement.pas',
   KM_Eye in 'src\ai\newAI\KM_Eye.pas',
@@ -193,6 +194,7 @@ uses
   KM_NavMeshFloodPositioning in 'src\navmesh\KM_NavMeshFloodPositioning.pas',
   KM_NavMeshInfluences in 'src\navmesh\KM_NavMeshInfluences.pas',
   KM_NavMeshDefences in 'src\navmesh\KM_NavMeshDefences.pas',
+  KM_NavMeshArmyPositioning in 'src\navmesh\KM_NavMeshArmyPositioning.pas',
 
   {$IFDEF USESECUREAUTH}
     KM_NetAuthSecure in 'src\net\KM_NetAuthSecure.pas',
