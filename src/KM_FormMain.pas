@@ -500,7 +500,6 @@ end;
 procedure TFormMain.mnExportRngChecksClick(Sender: TObject);
 var
   rngLogger: TKMRandomCheckLogger;
-  rngPath: string;
 begin
   if RunOpenDialog(OpenDialog1, '', ExeDir, 'KaM Remake Random checks log (*.rng)|*.rng') then
   begin

@@ -218,7 +218,7 @@ begin
   // Delete oldest stream object from queue
   if fTickStreamQueue.Count > MAX_TICKS_CNT then
   begin
-    tickStream := fTickStreamQueue.Extract;
+    fTickStreamQueue.Extract;
 //    fTickStreamQueue.TrimExcess;
 //    FreeAndNil(tickStream);
   end;
@@ -383,7 +383,6 @@ end;
 
 procedure TKMRandomCheckLogger.SaveToPath(aPath: String);
 var
-  I: Integer;
   SaveStream, TickStream: TKMemoryStreamBinary;
 //  CompressionStream: TCompressionStream;
   CallerPair: TPair<Byte, AnsiString>;
