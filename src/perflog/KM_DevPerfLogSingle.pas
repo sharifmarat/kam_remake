@@ -124,6 +124,8 @@ end;
 
 procedure TKMPerfLogSingle.Clear;
 begin
+  if Self = nil then Exit;
+
   fCount := 0;
   SetLength(fTimes, 0);
 end;
@@ -168,6 +170,8 @@ procedure TKMPerfLogSingle.SaveToFile(aFilename: string; aSaveThreshold: Integer
 var
   sl: TStringList;
 begin
+  if Self = nil then Exit;
+
   sl := TStringList.Create;
   SaveToStringList(sl, aSaveThreshold);
   sl.SaveToFile(aFilename);
@@ -180,6 +184,8 @@ var
   I: Integer;
   total: Int64;
 begin
+  if Self = nil then Exit;
+
   total := 0;
 
   // Times (when Disabled Count is 0)
