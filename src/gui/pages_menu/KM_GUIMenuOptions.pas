@@ -25,6 +25,7 @@ type
     fDesiredRefRate: Integer;
 
     procedure ApplyResolution(Sender: TObject);
+    procedure TestVideo_Click(Sender: TObject);
     procedure Change(Sender: TObject);
     procedure ChangeResolution(Sender: TObject);
     procedure BackClick(Sender: TObject);
@@ -45,6 +46,7 @@ type
         CheckBox_Options_VideoStartup: TKMCheckBox;
         CheckBox_Options_VideoStretch: TKMCheckBox;
         TrackBar_Options_VideoVolume: TKMTrackBar;
+        Button_Options_VideoTest: TKMButton;
 
       Panel_Options_Fonts: TKMPanel;
         CheckBox_Options_FullFonts: TKMCheckBox;
@@ -90,7 +92,7 @@ type
 
 implementation
 uses
-  KM_Main, KM_GameApp, KM_Sound, KM_RenderUI, KM_Resource, KM_ResTexts, KM_ResLocales, KM_ResFonts, KM_ResSound;
+  KM_Main, KM_GameApp, KM_Sound, KM_RenderUI, KM_Resource, KM_ResTexts, KM_ResLocales, KM_ResFonts, KM_ResSound, KM_Video;
 
 
 { TKMGUIMainOptions }
@@ -136,7 +138,7 @@ begin
       Button_Options_ResApply.OnClick := ApplyResolution;
 
     // Graphics section
-    Panel_Options_GFX:=TKMPanel.Create(Panel_Options,0,180,280,125);
+    Panel_Options_GFX := TKMPanel.Create(Panel_Options,0,180,280,125);
     Panel_Options_GFX.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_GFX,6,0,270,20,gResTexts[TX_MENU_OPTIONS_GRAPHICS],fntOutline,taLeft);
       TKMBevel.Create(Panel_Options_GFX,0,20,280,105);
@@ -149,10 +151,10 @@ begin
       TrackBar_Options_Brightness.OnChange:=Change;
 
     // Videos
-    Panel_Options_Video := TKMPanel.Create(Panel_Options,0,325,280,145);
+    Panel_Options_Video := TKMPanel.Create(Panel_Options,0,325,280,195);
     Panel_Options_Video.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Video,6,0,270,20,gResTexts[TX_MENU_OPTIONS_VIDEOS],fntOutline,taLeft);
-      TKMBevel.Create(Panel_Options_Video,0,20,280,125);
+      TKMBevel.Create(Panel_Options_Video,0,20,280,175);
       CheckBox_Options_VideoEnable := TKMCheckBox.Create(Panel_Options_Video, 10, 30, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_ENABLE], fntMetal);
       CheckBox_Options_VideoEnable.OnClick := Change;
       CheckBox_Options_VideoStretch := TKMCheckBox.Create(Panel_Options_Video, 10, 50, 260, 20, gResTexts[TX_MENU_OPTIONS_VIDEOS_STRETCH], fntMetal);
@@ -162,20 +164,13 @@ begin
       TrackBar_Options_VideoVolume := TKMTrackBar.Create(Panel_Options_Video, 10, 90, 256, OPT_SLIDER_MIN, OPT_SLIDER_MAX);
       TrackBar_Options_VideoVolume.Caption := gResTexts[TX_MENU_OPTIONS_VIDEOS_VOLUME];
       TrackBar_Options_VideoVolume.OnChange := Change;
+
+      Button_Options_VideoTest := TKMButton.Create(Panel_Options_Video, 10, 150, 260, 30, gResTexts[TX_MENU_OPTIONS_VIDEOS_TEST], bsMenu);
+      Button_Options_VideoTest.OnClick := TestVideo_Click;
+
     {$IFNDEF VIDEOS}
     Panel_Options_Video.Hide; //Hide panel when no videos defined
     {$ENDIF}
-
-    // Mods
-//    Panel_Options_Mods := TKMPanel.Create(Panel_Options,0,490,280,50);
-    Panel_Options_Mods := TKMPanel.Create(Panel_Options,0,325,280,50);
-    Panel_Options_Mods.Anchors := [anLeft];
-      TKMLabel.Create(Panel_Options_Mods,6,0,270,20,gResTexts[TX_MENU_OPTIONS_MODS] + ':',fntOutline,taLeft);
-      TKMBevel.Create(Panel_Options_Mods,0,20,280,30);
-
-      CheckBox_Options_SnowHouses := TKMCheckBox.Create(Panel_Options_Mods,10,27,256,20,gResTexts[TX_MENU_OPTIONS_MODS_SNOW_HOUSES], fntMetal);
-      CheckBox_Options_SnowHouses.OnClick := Change;
-
 
     // Back button
     Button_OptionsBack := TKMButton.Create(Panel_Options,0,30+gResLocales.Count*20+10,280,30,gResTexts[TX_MENU_BACK],bsMenu);
@@ -236,6 +231,15 @@ begin
       Button_OptionsKeys := TKMButton.Create(Panel_Options_Ctrl, 10, 77, 260, 30, gResTexts[TX_MENU_OPTIONS_KEYBIND], bsMenu);
       Button_OptionsKeys.Anchors := [anLeft];
       Button_OptionsKeys.OnClick := KeysClick;
+
+    // Mods
+    Panel_Options_Mods := TKMPanel.Create(Panel_Options,300,500,280,50);
+    Panel_Options_Mods.Anchors := [anLeft];
+      TKMLabel.Create(Panel_Options_Mods,6,0,270,20,gResTexts[TX_MENU_OPTIONS_MODS] + ':',fntOutline,taLeft);
+      TKMBevel.Create(Panel_Options_Mods,0,20,280,30);
+
+      CheckBox_Options_SnowHouses := TKMCheckBox.Create(Panel_Options_Mods,10,27,256,20,gResTexts[TX_MENU_OPTIONS_MODS_SNOW_HOUSES], fntMetal);
+      CheckBox_Options_SnowHouses.OnClick := Change;
 
 
     //--- Column 3 --------------------------------------------------------------
@@ -461,6 +465,13 @@ begin
 
   fMainSettings.Resolution := NewResolution;
   gMain.ReinitRender(True);
+end;
+
+
+procedure TKMMenuOptions.TestVideo_Click(Sender: TObject);
+begin
+  gVideoPlayer.AddVideo('_KaM');
+  gVideoPlayer.Play;
 end;
 
 

@@ -681,7 +681,7 @@ begin
     fMusicOff       := F.ReadBool   ('SFX',  'MusicDisabled',  False);
     fShuffleOn      := F.ReadBool   ('SFX',  'ShuffleEnabled', False);
 
-    fVideoOn      := F.ReadBool ('Video',  'Enabled', True);
+    fVideoOn      := F.ReadBool ('Video',  'Enabled', False);
     fVideoStretch := F.ReadBool ('Video',  'Stretch', True);
     fVideoStartup := F.ReadBool ('Video',  'Startup', True);
     fVideoVolume  := F.ReadFloat('Video',  'Volume',   0.5);

@@ -39,4 +39,4 @@
 {$DEFINE USESECUREAUTH}
 
 // Delphi compiler video play
-{.$DEFINE VIDEOS}
+{$DEFINE VIDEOS}
