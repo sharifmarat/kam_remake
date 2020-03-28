@@ -772,9 +772,8 @@ end;
 
 
 //* Version: 11200
-//* Occurs when the group gets order to split
+//* Occurs right before the group gets order to split, so you can get INITIAL group parameters and use them later. F.e. initial group formation.
 //* aGroup: group ID
-//* aNewGroup: splitted group ID
 procedure TKMScriptEvents.ProcGroupOrderBeforeSplit(aGroup: TKMUnitGroup);
 begin
   if MethodAssigned(evtGroupOrderBeforeSplit) then
