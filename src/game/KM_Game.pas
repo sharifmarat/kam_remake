@@ -1319,7 +1319,7 @@ end;
 
 procedure TKMGame.Render(aRender: TRender);
 begin
-  gPerfLogs.SectionEnter(psFrameFullC, fGameTick);
+  gPerfLogs.SectionEnter(psFrameFullC);
   gPerfLogs.SectionEnter(psFrameGame);
   try
     gRenderPool.Render;
