@@ -104,4 +104,5 @@
 103:location
 104:is too far away from the castle
 105:tower entrance could be blocked or can't build walkable road at location
-106:Can't split this group. There should be at least %d group members
+106:Can't split this troop to groups of %d and %d members. Each group should have at least %d group members after splitting
+107:Can't split this troop of %d members. Each group should have at least %d group members after splitting
