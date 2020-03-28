@@ -5085,6 +5085,10 @@ begin
       if States.PlayerEnabled(I) then
         Actions.OverlayTextAppendFormatted(I, '||<$100>', [States.StatHouseTypeCount(I, 17), START_TOWERS + Byte(States.MissionDifficulty = mdEasy1) + ExtraTowers[I]]);
 
+  for I := 0 to 3 do
+    if States.PlayerEnabled(I) then
+      Actions.OverlayTextAppend(I, Utils.IfThen(Wave >= TowersWave, '|', '||') + States.WareTypeName(7) + ': ' + IntToStr(States.HouseResourceAmount(Storehouse[I], 7)));
+
   if Wave >= BONUS_WAVE then
     Actions.OverlayTextAppend(-1, '||<$96>: ' + '[$AA8970]' + BonusName + ' ' + BonusChanceString + '[]');
 
