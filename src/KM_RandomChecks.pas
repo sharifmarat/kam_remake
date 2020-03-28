@@ -27,10 +27,12 @@ type
     fGameTick: Cardinal;
     fSavedTicksCnt: Cardinal;
     fRngChecksInTick: TKMRLRecordList;
-    fSaveStream: TKMemoryStreamBinary;
+//    fSaveStream: TKMemoryStreamBinary;
 //    fRngLogStream: TKMemoryStream;
     fCallers: TDictionary<Byte, AnsiString>;
     fRngLog: TDictionary<Cardinal, TKMRLRecordList>;
+    fTickStreamQueue: TObjectQueue<TKMemoryStreamBinary>;
+
     function GetCallerID(const aCaller: AnsiString; aValue: Extended; aValueType: TKMLogRngType): Byte;
     procedure AddRecordToList(aTick: Cardinal; const aRec: TKMRngLogRecord);
     procedure AddRecordToDict(aTick: Cardinal; const aRec: TKMRngLogRecord);
@@ -40,8 +42,8 @@ type
 
     procedure LoadHeader(aLoadStream: TKMemoryStream);
 
-    procedure ParseSaveStream; overload;
-    procedure ParseSaveStream(aLoadStream: TKMemoryStream); overload;
+//    procedure ParseSaveStream;
+    procedure ParseStreamToDict(aLoadStream: TKMemoryStream);
   public
     constructor Create;
     destructor Destroy; override;
@@ -55,7 +57,7 @@ type
     property Enabled: Boolean read fEnabled write fEnabled;
 
     procedure SaveToPath(aPath: String);
-    procedure ParseSaveStreamAndSaveAsText(aPath: String);
+//    procedure ParseSaveStreamAndSaveAsText(aPath: String);
     procedure SaveAsText(aPath: String);
     procedure LoadFromPath(aPath: String);
     procedure LoadFromPathAndParseToDict(aPath: String);
@@ -72,10 +74,11 @@ var
 
 implementation
 uses
+  Math,
   KM_Log, Classes, SysUtils, KromUtils, KM_Defaults;
 
-//const
-//  MAX_LOG_LENGTH = 200000;
+var
+  MAX_TICKS_CNT: Integer = 30*60*10; // 30 minutes
 
 
 { TKMRandomLogger }
@@ -84,11 +87,12 @@ begin
 //  fRngLogStream := TKMemoryStream.Create;
   fCallers := TDictionary<Byte, AnsiString>.Create;
   fRngLog := TDictionary<Cardinal, TKMRLRecordList>.Create;
+  fTickStreamQueue := TObjectQueue<TKMemoryStreamBinary>.Create;
   fRngChecksInTick := TKMRLRecordList.Create;
   fSavedTicksCnt := 0;
   fEnabled := True;
 
-  fSaveStream := TKMemoryStreamBinary.Create;
+//  fSaveStream := TKMemoryStreamBinary.Create;
 end;
 
 
@@ -98,9 +102,10 @@ begin
   FreeAndNil(fRngLog);
   FreeAndNil(fCallers);
   FreeAndNil(fRngChecksInTick);
+  FreeAndNil(fTickStreamQueue);
 //  FreeAndNil(fRngLogStream);
 
-  FreeAndNil(fSaveStream);
+//  FreeAndNil(fSaveStream);
 
   inherited;
 end;
@@ -203,16 +208,28 @@ end;
 
 
 procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal);
+var
+  tickStream: TKMemoryStreamBinary;
 begin
   if not fEnabled then Exit;
 
   fGameTick := aGameTick;
-  SaveTickToStream(fSaveStream, fRngChecksInTick);
+
+  // Delete oldest stream object from queue
+  if fTickStreamQueue.Count > MAX_TICKS_CNT then
+  begin
+    tickStream := fTickStreamQueue.Extract;
+//    fTickStreamQueue.TrimExcess;
+//    FreeAndNil(tickStream);
+  end;
+
+  tickStream := TKMemoryStreamBinary.Create;
+  SaveTickToStream(tickStream, fRngChecksInTick);
+  fTickStreamQueue.Enqueue(tickStream);
+
   fRngChecksInTick.Clear;
 
-  Inc(fSavedTicksCnt);
-//  if fRngLog.Count > MAX_LOG_LENGTH then
-//    fRngLog.DeleteRange(0, fRngLog.Count - MAX_LOG_LENGTH);
+  fSavedTicksCnt := fTickStreamQueue.Count;
 end;
 
 
@@ -237,7 +254,9 @@ end;
 
 procedure TKMRandomCheckLogger.LoadFromPath(aPath: String);
 var
-  LoadStream: TKMemoryStreamBinary;
+  I: Integer;
+  tickStreamSize: Cardinal;
+  LoadStream, tickStream: TKMemoryStreamBinary;
 begin
   if not FileExists(aPath) then
   begin
@@ -252,7 +271,17 @@ begin
 
     LoadHeader(LoadStream);
 
-    fSaveStream.CopyFrom(LoadStream, LoadStream.Size - LoadStream.Position);
+    for I := 0 to fSavedTicksCnt - 1 do
+    begin
+      tickStream := TKMemoryStreamBinary.Create;
+
+      LoadStream.Read(tickStreamSize);
+      tickStream.CopyFrom(LoadStream, tickStreamSize);
+
+      fTickStreamQueue.Enqueue(tickStream);
+    end;
+
+//    fSaveStream.CopyFrom(LoadStream, LoadStream.Size - LoadStream.Position);
   finally
     LoadStream.Free;
   end;
@@ -265,7 +294,7 @@ begin
 
   LoadHeader(aLoadStream);
 
-  ParseSaveStream(aLoadStream);
+  ParseStreamToDict(aLoadStream);
 end;
 
 
@@ -289,22 +318,22 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.ParseSaveStream;
-var
-  ReadStream: TKMemoryStream;
-begin
-  ReadStream := TKMemoryStreamBinary.Create;
-  try
-    ReadStream.CopyFrom(fSaveStream, 0);
-    ReadStream.Position := 0;
-    ParseSaveStream(ReadStream);
-  finally
-    ReadStream.Free;
-  end;
-end;
+//procedure TKMRandomCheckLogger.ParseSaveStream;
+//var
+//  ReadStream: TKMemoryStream;
+//begin
+//  ReadStream := TKMemoryStreamBinary.Create;
+//  try
+//    ReadStream.CopyFrom(fSaveStream, 0);
+//    ReadStream.Position := 0;
+//    ParseStreamToDict(ReadStream);
+//  finally
+//    ReadStream.Free;
+//  end;
+//end;
 
 
-procedure TKMRandomCheckLogger.ParseSaveStream(aLoadStream: TKMemoryStream);
+procedure TKMRandomCheckLogger.ParseStreamToDict(aLoadStream: TKMemoryStream);
 var
   LogRec: TKMRngLogRecord;
 
@@ -319,10 +348,12 @@ var
 
 var
   I, K, CountInTick: Integer;
-  Tick: Cardinal;
+  Tick, tickStreamSize: Cardinal;
 begin
   for I := 0 to fSavedTicksCnt - 1 do
   begin
+    aLoadStream.Read(tickStreamSize); // load tick stream size and omit it, we don't use it here
+
     aLoadStream.Read(Tick);
     aLoadStream.Read(CountInTick);
 
@@ -343,18 +374,20 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.ParseSaveStreamAndSaveAsText(aPath: String);
-begin
-  ParseSaveStream;
-  SaveAsText(aPath);
-end;
+//procedure TKMRandomCheckLogger.ParseSaveStreamAndSaveAsText(aPath: String);
+//begin
+//  ParseSaveStream;
+//  SaveAsText(aPath);
+//end;
 
 
 procedure TKMRandomCheckLogger.SaveToPath(aPath: String);
 var
-  SaveStream: TKMemoryStreamBinary;
+  I: Integer;
+  SaveStream, TickStream: TKMemoryStreamBinary;
 //  CompressionStream: TCompressionStream;
   CallerPair: TPair<Byte, AnsiString>;
+  enumerator: TEnumerator<TKMemoryStreamBinary>;
 begin
   if not SAVE_RANDOM_CHECKS then
     Exit;
@@ -372,8 +405,18 @@ begin
 
   SaveStream.PlaceMarker('KaMRandom_calls');
 
-  SaveStream.Write(Integer(fGameTick));
-  SaveStream.CopyFrom(fSaveStream, 0);
+  SaveStream.Write(Integer(fSavedTicksCnt));
+
+  enumerator := fTickStreamQueue.GetEnumerator;
+
+  while enumerator.MoveNext do
+  begin
+    TickStream := enumerator.Current;
+    SaveStream.Write(Cardinal(TickStream.Size));
+    SaveStream.CopyFrom(TickStream, 0);
+  end;
+
+//  SaveStream.CopyFrom(fSaveStream, 0);
 
 
 //  for LogPair in fRngLog do
@@ -455,15 +498,30 @@ end;
 procedure TKMRandomCheckLogger.Clear;
 var
   list: TList<TKMRngLogRecord>;
+//  TickStream: TKMemoryStreamBinary;
+//  enumerator: TEnumerator<TKMemoryStreamBinary>;
 begin
   fCallers.Clear;
+  fCallers.TrimExcess;
 
-  fSaveStream.Clear;
+//  fSaveStream.Clear;
+
+//  enumerator := fTickStreamQueue.GetEnumerator;
+//
+//  while enumerator.MoveNext do
+//  begin
+//    TickStream := enumerator.Current;
+//    TickStream.Free;
+//  end;
+
+  fTickStreamQueue.Clear;
+  fTickStreamQueue.TrimExcess;
 
   for list in fRngLog.Values do
     list.Free;
 
   fRngLog.Clear;
+  fRngLog.TrimExcess;
   fEnabled := True;
 end;
 
