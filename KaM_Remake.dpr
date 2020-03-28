@@ -58,6 +58,13 @@ uses
 	KM_Points in 'src\common\KM_Points.pas', 
 	
   KM_Controls in 'src\KM_Controls.pas',
+  
+  KM_DevPerfLog in 'src\perflog\KM_DevPerfLog.pas',
+  KM_DevPerfLogForm in 'src\perflog\KM_DevPerfLogForm.pas',
+  KM_DevPerfLogSingle in 'src\perflog\KM_DevPerfLogSingle.pas',
+  KM_DevPerfLogStack in 'src\perflog\KM_DevPerfLogStack.pas',
+  KM_DevPerfLogTypes in 'src\perflog\KM_DevPerfLogTypes.pas',
+  
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}
   KM_FogOfWar in 'src\KM_FogOfWar.pas',
 
@@ -237,6 +244,7 @@ uses
   KM_RenderControl in 'src\render\KM_RenderControl.pas',
   KM_RenderPool in 'src\render\KM_RenderPool.pas',
   KM_RenderTerrain in 'src\render\KM_RenderTerrain.pas',
+  KM_RenderQuery in 'src\render\KM_RenderQuery.pas',
   KM_RenderUI in 'src\render\KM_RenderUI.pas',
 
   KM_Resolutions in 'src\KM_Resolutions.pas',

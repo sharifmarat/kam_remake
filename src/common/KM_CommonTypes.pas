@@ -101,10 +101,88 @@ type
 
   TKMGameRevision = Word; //Word looks enought for now...
 
+  TKMColor3f = record
+    R,G,B: Single;
+    function ToCardinal: Cardinal;
+    class function Generic(aIndex: Integer): TKMColor3f; static;
+  end;
+//             Result := R + G shl 8 + B shl 16 + A shl 24;
+  TKMColor4f = record
+    R,G,B,A: Single;
+    constructor New(aCol: TKMColor3f); overload;
+    constructor New(aCol: TKMColor3f; aAlpha: Single); overload;
+    class function White(): TKMColor4f; static;
+    function Alpha50(): TKMColor4f;
+    function Alpha(aAlpha: Single): TKMColor4f;
+  end;
+
 const
   WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');
 
 implementation
+uses
+  Math;
+
+{ TKMColor3f }
+function TKMColor3f.ToCardinal: Cardinal;
+begin
+  Result := (Round(R * 255) + (Round(G * 255) shl 8) + (Round(B * 255) shl 16)) {or $FF000000};
+end;
+
+
+class function TKMColor3f.Generic(aIndex: Integer): TKMColor3f;
+const
+  MAX_GENERIC_COLORS = 6;
+  GENERIC_COLORS: array [0..MAX_GENERIC_COLORS-1] of TKMColor3f = (
+    (R:1.0; G:0.2; B:0.2),
+    (R:1.0; G:1.0; B:0.2),
+    (R:0.2; G:1.0; B:0.2),
+    (R:0.2; G:1.0; B:1.0),
+    (R:0.2; G:0.2; B:1.0),
+    (R:1.0; G:0.2; B:1.0)
+  );
+begin
+  Result := GENERIC_COLORS[aIndex mod MAX_GENERIC_COLORS];
+end;
+
+
+{ TKMColor4f }
+constructor TKMColor4f.New(aCol: TKMColor3f);
+begin
+  New(aCol, 1);
+end;
+
+
+constructor TKMColor4f.New(aCol: TKMColor3f; aAlpha: Single);
+begin
+  R := aCol.R;
+  G := aCol.G;
+  B := aCol.B;
+  A := aAlpha;
+end;
+
+
+class function TKMColor4f.White(): TKMColor4f;
+begin
+  Result.R := 1;
+  Result.G := 1;
+  Result.B := 1;
+  Result.A := 1;
+end;
+
+
+function TKMColor4f.Alpha50(): TKMColor4f;
+begin
+  Result := Self;
+  Result.A := 0.5;
+end;
+
+
+function TKMColor4f.Alpha(aAlpha: Single): TKMColor4f;
+begin
+  Result := Self;
+  Result.A := aAlpha;
+end;
 
 
 end.

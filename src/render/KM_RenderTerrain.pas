@@ -22,6 +22,12 @@ type
     X, Y, Z, UAnim, VAnim: Single;
   end;
 
+  TTileVerticeExtArray = array of TTileVerticeExt;
+
+  TTileFowVerticeArray = array of TTileFowVertice;
+
+  TTileVerticeArray = array of TTileVertice;
+
   //Render terrain without sprites
   TRenderTerrain = class
   private
@@ -29,13 +35,13 @@ type
     fTextG: GLuint; //Shading gradient for lighting
     fTextB: GLuint; //Contrast BW for FOW over color-coder
     fUseVBO: Boolean; //Wherever to render terrain through VBO (faster but needs GL1.5) or DrawCalls (slower but needs only GL1.1)
-    fTilesVtx: array of TTileVerticeExt; //Vertice cache for tiles
+    fTilesVtx: TTileVerticeExtArray; //Vertice cache for tiles
     fTilesInd: array of Integer;      //Indexes for tiles array
     fTilesLayersVtx: array of TTileVertice; //Vertice cache for tiles
     fTilesLayersInd: array of Integer;      //Indexes for tiles array
-    fAnimTilesVtx: array of TTileVertice; //Vertice cache for tiles animations (water/falls/swamp)
+    fAnimTilesVtx: TTileVerticeArray; //Vertice cache for tiles animations (water/falls/swamp)
     fAnimTilesInd: array of Integer;          //Indexes for array tiles animation array
-    fTilesFowVtx: array of TTileFowVertice; //Vertice cache for tiles
+    fTilesFowVtx: TTileFowVerticeArray; //Vertice cache for tiles
     fTilesFowInd: array of Integer;      //Indexes for tiles array
     fVtxTilesShd: GLUint;
     fIndTilesShd: GLUint;
@@ -47,8 +53,8 @@ type
     fIndTilesFowShd: GLUint;
     fTileUVLookup: array [0..TILES_CNT-1, 0..3] of TUVRect;
     fLastBindVBOArrayType: TVBOArrayType;
-    function GetTileUV(Index: Word; Rot: Byte): TUVRect;
-    procedure BindVBOArray(aVBOArrayType: TVBOArrayType);
+    function GetTileUV(Index: Word; Rot: Byte): TUVRect; inline;
+    procedure BindVBOArray(aVBOArrayType: TVBOArrayType); inline;
     procedure UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
     procedure DoTiles(aFOW: TKMFogOfWarCommon);
     procedure DoTilesLayers(aFOW: TKMFogOfWarCommon);
@@ -82,7 +88,7 @@ type
 
 implementation
 uses
-  KM_Game, KM_Render, KM_Resource;
+  KM_Game, KM_Render, KM_Resource, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 type
   TAnimLayer = (alWater, alFalls, alSwamp);
@@ -212,7 +218,7 @@ begin
 end;
 
 
-function IsWaterAnimTerId(aTexOffset, aTerId: Word): Boolean;
+function IsWaterAnimTerId(aTexOffset, aTerId: Word): Boolean; inline;
 var
   FullTerId: Integer;
 begin
@@ -232,7 +238,7 @@ begin
 end;
 
 
-function TileHasToBeRendered(IsFirst: Boolean; aTX,aTY: Word; aFOW: TKMFogOfWarCommon): Boolean;
+function TileHasToBeRendered(IsFirst: Boolean; aTX,aTY: Word; aFOW: TKMFogOfWarCommon): Boolean; inline;
 begin
   // We have to render at least 1 tile (otherwise smth wrong with gl contex and all UI and other sprites are not rendered at all
   // so lets take the 1st tile
@@ -244,7 +250,8 @@ procedure TRenderTerrain.UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
 var
   Fog: PKMByte2Array;
 
-  procedure SetTileVertexExt(aH: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUTile, aVTile: Single);
+  procedure SetTileVertexExt(fTilesVtx: TTileVerticeExtArray; aH: Integer; aTX, aTY: Word;
+                             aIsBottomRow: Boolean; aUTile, aVTile: Single); inline;
   begin
     with gTerrain do
     begin
@@ -258,7 +265,7 @@ var
     end;
   end;
 
-  procedure SetTileFowVertex(aF: Integer; aTX, aTY: Word; aIsBottomRow: Boolean);
+  procedure SetTileFowVertex(fTilesFowVtx: TTileFowVerticeArray; Fog: PKMByte2Array; aF: Integer; aTX, aTY: Word; aIsBottomRow: Boolean); inline;
   begin
     fTilesFowVtx[aF].X := aTX;
     fTilesFowVtx[aF].Y := aTY - gTerrain.Land[aTY+1, aTX+1].Height / CELL_HEIGHT_DIV;
@@ -269,7 +276,7 @@ var
       fTilesFowVtx[aF].UFow := 255;
   end;
 
-  procedure SetTileVertex(var aTilesVtxArr: array of TTileVertice; aQ: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUAnimTile, aVAnimTile: Single);
+  procedure SetTileVertex(var aTilesVtxArr: TTileVerticeArray; aQ: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUAnimTile, aVAnimTile: Single); inline;
   begin
     with gTerrain do
     begin
@@ -313,7 +320,7 @@ var
   end;
 
 var
-  I,J,K,KP,KF,H,F,Q,P,L,TilesCnt,FowCnt,TilesLayersCnt,AnimCnt: Integer;
+  I,J,K,KP,KF,H,F,Q,P,L,Buf,TilesCnt,FowCnt,TilesLayersCnt,AnimCnt: Integer;
   SizeX, SizeY: Word;
   tX, tY: Word;
   TexTileC: TUVRect;
@@ -321,6 +328,7 @@ var
   TexOffsetWater, TexOffsetFalls, TexOffsetSwamp: Word;
 begin
   if not fUseVBO then Exit;
+  gPerfLogs.SectionEnter(psUpdateVBO, gGame.GameTick);
 
   fLastBindVBOArrayType := vatNone;
 
@@ -350,7 +358,7 @@ begin
 
   SetLength(fTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
   SetLength(fTilesFowVtx, (SizeX + 1) * 4 * (SizeY + 1));
-  SetLength(fTilesLayersVtx, (SizeX + 1) * 4 * 3 * (SizeY + 1));
+//  SetLength(fTilesLayersVtx, (SizeX + 1) * 4 * 3 * (SizeY + 1));
   SetLength(fAnimTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
   with gTerrain do
     if (MapX > 0) and (MapY > 0) then
@@ -365,31 +373,31 @@ begin
             TexTileC := fTileUVLookup[Land[tY, tX].BaseLayer.Terrain, Land[tY, tX].BaseLayer.Rotation mod 4];
 
             //Fill Tile vertices array
-            SetTileVertexExt(H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
-            SetTileVertexExt(H+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
-            SetTileVertexExt(H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
-            SetTileVertexExt(H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
+            SetTileVertexExt(fTilesVtx, H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
+            SetTileVertexExt(fTilesVtx, H+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
+            SetTileVertexExt(fTilesVtx, H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
+            SetTileVertexExt(fTilesVtx, H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
             H := H + 4;
 
-            if Land[tY, tX].LayersCnt > 0 then
-              for L := 0 to Land[tY, tX].LayersCnt - 1 do
-              begin
-                TexTileC := GetTileUV(Land[tY,tX].Layer[L].Terrain, Land[TY,TX].Layer[L].Rotation mod 4);
-
-                //Fill Tile vertices array
-                SetTileVertex(fTilesLayersVtx, P,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
-                SetTileVertex(fTilesLayersVtx, P+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
-                SetTileVertex(fTilesLayersVtx, P+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
-                SetTileVertex(fTilesLayersVtx, P+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
-                P := P + 4;
-              end;
+//            if Land[tY, tX].LayersCnt > 0 then
+//              for L := 0 to Land[tY, tX].LayersCnt - 1 do
+//              begin
+//                TexTileC := GetTileUV(Land[tY,tX].Layer[L].Terrain, Land[TY,TX].Layer[L].Rotation mod 4);
+//
+//                //Fill Tile vertices array
+//                SetTileVertex(fTilesLayersVtx, P,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
+//                SetTileVertex(fTilesLayersVtx, P+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
+//                SetTileVertex(fTilesLayersVtx, P+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
+//                SetTileVertex(fTilesLayersVtx, P+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
+//                P := P + 4;
+//              end;
           end;
 
           // Always set FOW
-          SetTileFowVertex(F,   tX-1, tY-1, False);
-          SetTileFowVertex(F+1, tX-1, tY,   True);
-          SetTileFowVertex(F+2, tX,   tY,   True);
-          SetTileFowVertex(F+3, tX,   tY-1, False);
+          SetTileFowVertex(fTilesFowVtx, Fog, F,   tX-1, tY-1, False);
+          SetTileFowVertex(fTilesFowVtx, Fog, F+1, tX-1, tY,   True);
+          SetTileFowVertex(fTilesFowVtx, Fog, F+2, tX,   tY,   True);
+          SetTileFowVertex(fTilesFowVtx, Fog, F+3, tX,   tY-1, False);
           F := F + 4;
 
           //Fill tiles animation vertices array
@@ -402,7 +410,7 @@ begin
   //Cut vertices arrays to actual size
   SetLength(fTilesVtx, H);
   SetLength(fTilesFowVtx, F);
-  SetLength(fTilesLayersVtx, P);
+//  SetLength(fTilesLayersVtx, P);
   SetLength(fAnimTilesVtx, Q);
 
   TilesCnt := H div 4;
@@ -417,45 +425,47 @@ begin
   KF := 0;
   SetLength(fTilesInd, TilesCnt*6);
   SetLength(fTilesFowInd, FowCnt*6);
-  SetLength(fTileslayersInd, TilesLayersCnt*6);
+//  SetLength(fTileslayersInd, TilesLayersCnt*6);
   for I := 0 to SizeY do
     for J := 0 to SizeX do
     begin
       tX := J + fClipRect.Left;
       tY := I + fClipRect.Top;
       // Set FOW indices
-      fTilesFowInd[F+0] := KF shl 2; // shl 2 = *4
-      fTilesFowInd[F+1] := (KF shl 2) + 1;
-      fTilesFowInd[F+2] := (KF shl 2) + 2;
-      fTilesFowInd[F+3] := (KF shl 2);
-      fTilesFowInd[F+4] := (KF shl 2) + 3;
-      fTilesFowInd[F+5] := (KF shl 2) + 2;
+      Buf := KF shl 2;
+      fTilesFowInd[F+0] := Buf; // shl 2 = *4
+      fTilesFowInd[F+1] := Buf + 1;
+      fTilesFowInd[F+2] := Buf + 2;
+      fTilesFowInd[F+3] := Buf;
+      fTilesFowInd[F+4] := Buf + 3;
+      fTilesFowInd[F+5] := Buf + 2;
       F := F + 6;
       Inc(KF);
       if TileHasToBeRendered(I*J = 0,tX,tY,aFow) then // Do not render tiles fully covered by FOW
       begin
         // Set Tile terrain indices
-        fTilesInd[H+0] := K shl 2; // shl 2 = *4
-        fTilesInd[H+1] := (K shl 2) + 1;
-        fTilesInd[H+2] := (K shl 2) + 2;
-        fTilesInd[H+3] := (K shl 2);
-        fTilesInd[H+4] := (K shl 2) + 3;
-        fTilesInd[H+5] := (K shl 2) + 2;
+        Buf := K shl 2;
+        fTilesInd[H+0] := Buf; // shl 2 = *4
+        fTilesInd[H+1] := Buf + 1;
+        fTilesInd[H+2] := Buf + 2;
+        fTilesInd[H+3] := Buf;
+        fTilesInd[H+4] := Buf + 3;
+        fTilesInd[H+5] := Buf + 2;
         H := H + 6;
         Inc(K);
-        if gTerrain.Land[tY, tX].LayersCnt > 0 then
-          // Set Tile layers terrain indices
-          for L := 0 to gTerrain.Land[tY, tX].LayersCnt - 1 do
-          begin
-            fTilesLayersInd[P+0] := KP shl 2; // shl 2 = *4
-            fTilesLayersInd[P+1] := (KP shl 2) + 1;
-            fTilesLayersInd[P+2] := (KP shl 2) + 2;
-            fTilesLayersInd[P+3] := (KP shl 2);
-            fTilesLayersInd[P+4] := (KP shl 2) + 3;
-            fTilesLayersInd[P+5] := (KP shl 2) + 2;
-            P := P + 6;
-            Inc(KP);
-          end;
+//        if gTerrain.Land[tY, tX].LayersCnt > 0 then
+//          // Set Tile layers terrain indices
+//          for L := 0 to gTerrain.Land[tY, tX].LayersCnt - 1 do
+//          begin
+//            fTilesLayersInd[P+0] := KP shl 2; // shl 2 = *4
+//            fTilesLayersInd[P+1] := (KP shl 2) + 1;
+//            fTilesLayersInd[P+2] := (KP shl 2) + 2;
+//            fTilesLayersInd[P+3] := (KP shl 2);
+//            fTilesLayersInd[P+4] := (KP shl 2) + 3;
+//            fTilesLayersInd[P+5] := (KP shl 2) + 2;
+//            P := P + 6;
+//            Inc(KP);
+//          end;
       end;
     end;
 
@@ -466,19 +476,22 @@ begin
   SetLength(fAnimTilesInd, AnimCnt*6);
   while I < AnimCnt do
   begin
-    fAnimTilesInd[H+0] := I shl 2; // shl 2 = *4
-    fAnimTilesInd[H+1] := (I shl 2) + 1;
-    fAnimTilesInd[H+2] := (I shl 2) + 2;
-    fAnimTilesInd[H+3] := (I shl 2);
-    fAnimTilesInd[H+4] := (I shl 2) + 3;
-    fAnimTilesInd[H+5] := (I shl 2) + 2;
+    Buf := I shl 2;
+    fAnimTilesInd[H+0] := Buf; // shl 2 = *4
+    fAnimTilesInd[H+1] := Buf + 1;
+    fAnimTilesInd[H+2] := Buf + 2;
+    fAnimTilesInd[H+3] := Buf;
+    fAnimTilesInd[H+4] := Buf + 3;
+    fAnimTilesInd[H+5] := Buf + 2;
     H := H + 6;
     Inc(I);
   end;
+
+  gPerfLogs.SectionLeave(psUpdateVBO);
 end;
 
 
-procedure RenderQuadTexture(var TexC: TUVRect; tX,tY: Word);
+procedure RenderQuadTexture(var TexC: TUVRect; tX,tY: Word); inline;
 begin
   with gTerrain do
     if RENDER_3D then
@@ -544,6 +557,7 @@ var
   SizeX, SizeY: Word;
   tX, tY: Word;
 begin
+  gPerfLogs.SectionEnter(psFrameTiles);
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
@@ -593,6 +607,7 @@ begin
           end;
         end;
   end;
+  gPerfLogs.SectionLeave(psFrameTiles);
 end;
 
 
@@ -604,6 +619,7 @@ var
   tX, tY: Word;
   TerInfo: TKMGenTerrainInfo;
 begin
+  gPerfLogs.SectionEnter(psFrameTilesLayers);
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
@@ -667,6 +683,7 @@ begin
         end;
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Just in case...
   end;
+  gPerfLogs.SectionLeave(psFrameTilesLayers);
 end;
 
 
@@ -677,6 +694,7 @@ var
   TexC: TUVRect;
   TexOffset: Word;
 begin
+  gPerfLogs.SectionEnter(psFrameWater);
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -728,6 +746,7 @@ begin
           end;
     end;
   end;
+  gPerfLogs.SectionLeave(psFrameWater);
 end;
 
 
@@ -742,7 +761,8 @@ const
     (248,0), (248,0), (250,0), (252,0),
     (248,1), (250,2), (248,1), (252,3),
     (250,1), (252,2), (252,1), (254,0));
-var Road, ID, Rot: Byte;
+var
+  Road, ID, Rot: Byte;
 begin
   if TileHasToBeRendered(False,pX,pY,aFow) then
   begin
@@ -777,12 +797,15 @@ procedure TRenderTerrain.DoOverlays(aFOW: TKMFogOfWarCommon);
 var
   I, K: Integer;
 begin
+  gPerfLogs.SectionEnter(psFrameOverlays);
   if gGame.IsMapEditor and not (mlOverlays in gGame.MapEditor.VisibleLayers) then
     Exit;
 
   for I := fClipRect.Top to fClipRect.Bottom do
     for K := fClipRect.Left to fClipRect.Right do
       RenderTileOverlay(aFOW, K, I);
+
+  gPerfLogs.SectionLeave(psFrameOverlays);
 end;
 
 
@@ -799,7 +822,7 @@ begin
       begin
         if TileHasToBeRendered(False,K,I,aFow) then
         begin
-          if Land[I,K].FenceSide and 1 = 1 then 
+          if Land[I,K].FenceSide and 1 = 1 then
             RenderFence(Land[I,K].Fence, dirN, K, I);
           if Land[I,K].FenceSide and 2 = 2 then 
             RenderFence(Land[I,K].Fence, dirE, K, I);
@@ -833,6 +856,7 @@ var
   SizeX, SizeY: Word;
   tX, tY: Word;
 begin
+  gPerfLogs.SectionEnter(psFrameLighting);
   glColor4f(1, 1, 1, 1);
   //Render highlights
   glBlendFunc(GL_DST_COLOR, GL_ONE);
@@ -886,6 +910,7 @@ begin
           end;
         end;
   end;
+  gPerfLogs.SectionLeave(psFrameLighting);
 end;
 
 
@@ -896,6 +921,7 @@ var
   SizeX, SizeY: Word;
   tX, tY: Word;
 begin
+  gPerfLogs.SectionEnter(psFrameShadows);
   glColor4f(1, 1, 1, 1);
   glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
   TRender.BindTexture(fTextG);
@@ -951,6 +977,8 @@ begin
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   TRender.BindTexture(0);
+
+  gPerfLogs.SectionLeave(psFrameShadows);
 end;
 
 
@@ -960,6 +988,7 @@ var
   I,K: Integer;
   Fog: PKMByte2Array;
 begin
+  gPerfLogs.SectionEnter(psFrameFOW);
   if aFOW is TKMFogOfWarOpen then Exit;
 
   glColor4f(1, 1, 1, 1);
@@ -1074,6 +1103,7 @@ begin
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   TRender.BindTexture(0);
+  gPerfLogs.SectionLeave(psFrameFOW);
 end;
 
 
@@ -1130,6 +1160,8 @@ begin
 
   UpdateVBO(aAnimStep, aFOW);
 
+  gPerfLogs.SectionEnter(psFrameTerrainBase);
+
   DoTiles(aFOW);
   //It was 'unlit water goes above lit sand'
   //But there is no big difference there, that is why, to make possible transitions with water,
@@ -1140,6 +1172,8 @@ begin
   DoOverlays(aFOW);
   DoLighting(aFOW);
   DoShadows(aFOW);
+
+  gPerfLogs.SectionLeave(psFrameTerrainBase);
 end;
 
 

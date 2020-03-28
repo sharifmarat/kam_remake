@@ -67,7 +67,7 @@ uses
   KM_Houses, KM_HouseSchool,
   KM_Units, KM_UnitsCollection, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitTaskDelivery,
   KM_Resource, KM_ResWares,
-  KM_NavMesh, KM_CommonUtils;
+  KM_NavMesh, KM_CommonUtils, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const //Sample list made by AntonP
@@ -979,26 +979,31 @@ end;
 
 procedure TKMayor.UpdateState(aTick: Cardinal);
 begin
-  //Checking mod result against MAX_HANDS causes first update to happen ASAP
-  if (aTick + Byte(fOwner)) mod (MAX_HANDS * 10) <> MAX_HANDS then Exit;
+  gPerfLogs.SectionEnter(psAICityCls, aTick);
+  try
+    //Checking mod result against MAX_HANDS causes first update to happen ASAP
+    if (aTick + Byte(fOwner)) mod (MAX_HANDS * 10) <> MAX_HANDS then Exit;
 
-  CheckAutoRepair;
+    CheckAutoRepair;
 
-  //Train new units (citizens, serfs, workers and recruits) if needed
-  CheckUnitCount;
+    //Train new units (citizens, serfs, workers and recruits) if needed
+    CheckUnitCount;
 
-  CheckArmyDemand;
-  CheckWeaponOrderCount;
+    CheckArmyDemand;
+    CheckWeaponOrderCount;
 
-  if fSetup.AutoBuild then
-  begin
-    CheckHouseCount;
+    if fSetup.AutoBuild then
+    begin
+      CheckHouseCount;
 
-    //Manage wares ratios and block stone to Store
-    CheckWareFlow;
+      //Manage wares ratios and block stone to Store
+      CheckWareFlow;
 
-    //Build more roads if necessary
-    CheckRoadsCount;
+      //Build more roads if necessary
+      CheckRoadsCount;
+    end;
+  finally
+    gPerfLogs.SectionLeave(psAICityCls);
   end;
 end;
 

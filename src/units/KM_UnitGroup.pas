@@ -251,7 +251,7 @@ uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_CommonUtils, KM_ResTexts, KM_RenderPool,
   KM_Hungarian, KM_UnitActionWalkTo, KM_PerfLog, KM_AI, KM_ResUnits, KM_ScriptingEvents,
   KM_UnitActionStormAttack,
-  KM_GameTypes, KM_Log;
+  KM_GameTypes, KM_Log, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
@@ -1880,36 +1880,39 @@ var
   NewOrder: TKMCardinalArray;
   NewMembers: TList;
 begin
-  if DO_PERF_LOGGING then gGame.PerfLog.EnterSection(psHungarian);
-  if not HUNGARIAN_GROUP_ORDER then Exit;
-  if fMembers.Count <= 1 then Exit; //If it's just the leader we can't rearrange
-  Agents := TKMPointList.Create;
-  Tasks := TKMPointList.Create;
+  gPerfLogs.SectionEnter(psHungarian, gGame.GameTick);
+  try
+    if not HUNGARIAN_GROUP_ORDER then Exit;
+    if fMembers.Count <= 1 then Exit; //If it's just the leader we can't rearrange
+    Agents := TKMPointList.Create;
+    Tasks := TKMPointList.Create;
 
-  //todo: Process each unit type seperately in mixed groups so their order is maintained
+    //todo: Process each unit type seperately in mixed groups so their order is maintained
 
-  //Skip leader, he can't be reordered because he holds the flag
-  //(tossing flag around is quite complicated and looks unnatural in KaM)
-  for I := 1 to fMembers.Count - 1 do
-  begin
-    Agents.Add(Members[I].CurrPosition);
-    Tasks.Add(GetMemberLoc(I).Loc);
+    //Skip leader, he can't be reordered because he holds the flag
+    //(tossing flag around is quite complicated and looks unnatural in KaM)
+    for I := 1 to fMembers.Count - 1 do
+    begin
+      Agents.Add(Members[I].CurrPosition);
+      Tasks.Add(GetMemberLoc(I).Loc);
+    end;
+
+    //huIndividual as we'd prefer 20 members to take 1 step than 1 member to take 10 steps (minimize individual work rather than total work)
+    NewOrder := HungarianMatchPoints(Tasks, Agents, huIndividual);
+    NewMembers := TList.Create;
+    NewMembers.Add(Members[0]);
+
+    for I := 1 to fMembers.Count - 1 do
+      NewMembers.Add(fMembers[NewOrder[I - 1] + 1]);
+
+    fMembers.Free;
+    fMembers := NewMembers;
+
+    Agents.Free;
+    Tasks.Free;
+  finally
+    gPerfLogs.SectionLeave(psHungarian);
   end;
-
-  //huIndividual as we'd prefer 20 members to take 1 step than 1 member to take 10 steps (minimize individual work rather than total work)
-  NewOrder := HungarianMatchPoints(Tasks, Agents, huIndividual);
-  NewMembers := TList.Create;
-  NewMembers.Add(Members[0]);
-
-  for I := 1 to fMembers.Count - 1 do
-    NewMembers.Add(fMembers[NewOrder[I - 1] + 1]);
-
-  fMembers.Free;
-  fMembers := NewMembers;
-
-  Agents.Free;
-  Tasks.Free;
-  if DO_PERF_LOGGING then gGame.PerfLog.LeaveSection(psHungarian);
 end;
 
 

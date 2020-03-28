@@ -54,6 +54,7 @@ type
   // Collect everything that need to be rendered and put it in a list
   TRenderPool = class
   private
+    fCounter: Cardinal;
     fRXData: array [TRXType] of TRXData; // Shortcuts
     fViewport: TKMViewport;
     fRender: TRender;
@@ -151,7 +152,7 @@ uses
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor,
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_FogOfWar, KM_Hand, KM_UnitGroup, KM_UnitWarrior, KM_CommonUtils,
-  KM_GameTypes, KM_Utils, KM_ResTileset;
+  KM_GameTypes, KM_Utils, KM_ResTileset, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
@@ -163,6 +164,8 @@ var
   RT: TRXType;
 begin
   inherited Create;
+
+  fCounter := 0;
 
   for RT := Low(TRXType) to High(TRXType) do
     fRXData[RT] := gRes.Sprites[RT].RXData;
@@ -254,6 +257,8 @@ var
 begin
   if fRender.Blind then Exit;
 
+  Inc(fCounter);
+
   ApplyTransform;
 
   glPushAttrib(GL_LINE_BIT or GL_POINT_BIT);
@@ -271,6 +276,7 @@ begin
     glEnable(GL_DEPTH_TEST);
 
     // Everything flat of terrain
+    gPerfLogs.SectionEnter(psFrameTerrain);
     fRenderTerrain.ClipRect := ClipRect;
     fRenderTerrain.RenderBase(gTerrain.AnimStep, gMySpectator.FogOfWar);
 
@@ -279,8 +285,9 @@ begin
     glDisable(GL_DEPTH_TEST);
 
     fRenderTerrain.RenderFences(gMySpectator.FogOfWar);
-
     fRenderTerrain.RenderPlayerPlans(fFieldsList, fHousePlansList);
+
+    gPerfLogs.SectionLeave(psFrameTerrain);
 
     RenderMapEdLayers(ClipRect);
 
@@ -290,6 +297,7 @@ begin
     // Sprites are added by Terrain/Players/Projectiles, then sorted by position
     fRenderList.Clear;
     CollectTerrainObjects(ClipRect, gTerrain.AnimStep);
+
     PaintFlagPoints(True);
 
     gHands.Paint(ClipRect); // Units and houses
@@ -1995,6 +2003,7 @@ procedure TRenderList.Render;
 var
   I, K, ObjectsCount: Integer;
 begin
+  gPerfLogs.SectionEnter(psFrameRenderList);
   fStat_Sprites := fCount;
   fStat_Sprites2 := 0;
   ObjectsCount := Length(RenderOrder);
@@ -2021,6 +2030,7 @@ begin
       until ((K = fCount) or RenderList[K].NewInst);
     glPopMatrix;
   end;
+  gPerfLogs.SectionLeave(psFrameRenderList);
 end;
 
 

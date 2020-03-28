@@ -75,7 +75,7 @@ uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_HouseBarracks,
   KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_RenderAux,
-  KM_AIParameters;
+  KM_AIParameters, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMArmyManagement }
@@ -736,17 +736,22 @@ end;
 
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
 begin
-  if (aTick mod MAX_HANDS = fOwner) then
-  begin
-    CheckThreats();
-    if not gGame.IsPeaceTime then
+  gPerfLogs.SectionEnter(psAIArmyAdv, aTick);
+  try
+    if (aTick mod MAX_HANDS = fOwner) then
     begin
-      CheckAttack();
-      RecruitSoldiers();
+      CheckThreats();
+      if not gGame.IsPeaceTime then
+      begin
+        CheckAttack();
+        RecruitSoldiers();
+      end;
+      CheckGroupsState();
+      fAttack.UpdateState(aTick);
+      fDefence.UpdateState(aTick);
     end;
-    CheckGroupsState();
-    fAttack.UpdateState(aTick);
-    fDefence.UpdateState(aTick);
+  finally
+    gPerfLogs.SectionLeave(psAIArmyAdv);
   end;
 end;
 

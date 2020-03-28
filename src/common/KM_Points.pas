@@ -13,6 +13,7 @@ type
     class operator Equal(const A, B: TKMPoint): Boolean;
     class operator NotEqual(const A, B: TKMPoint): Boolean;
     function ToString: String;
+    constructor New(aX, aY: Integer);
   end;
 
   TKMPointF = record
@@ -20,6 +21,7 @@ type
     class operator Equal(const A, B: TKMPointF): Boolean;
     class operator NotEqual(A: TKMPointF; B: TKMPointF): Boolean;
     function ToString: String;
+    constructor New(aX, aY: Single);
   end;
 
   TKMPointDir = packed record
@@ -38,6 +40,8 @@ type
   TKMPointArray = array of TKMPoint;
   TKMPoint2Array = array of array of TKMPoint;
   TKMTrisArray = array of array [0..2] of Integer;
+
+  TKMPointFArray = array of TKMPointF;
 
   TKMTriMesh = record
     Vertices: TKMPointArray;
@@ -210,6 +214,12 @@ uses
   SysUtils, TypInfo, Math, KM_CommonUtils;
 
 
+constructor TKMPoint.New(aX, aY: Integer);
+begin
+  X := aX;
+  Y := aY;
+end;
+
 class operator TKMPoint.Equal(const A, B: TKMPoint): Boolean;
 begin
   Result := KMSamePoint(A,B);
@@ -224,6 +234,13 @@ end;
 function TKMPoint.ToString: String;
 begin
   Result := TypeToString(Self);
+end;
+
+
+constructor TKMPointF.New(aX, aY: Single);
+begin
+  X := aX;
+  Y := aY;
 end;
 
 

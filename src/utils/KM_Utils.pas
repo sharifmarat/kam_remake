@@ -211,7 +211,7 @@ begin
       end;
 
       // Iterate through around area.
-      // We assume, that iterating order is not important, so we do not caer,
+      // We assume, that iterating order is not important, so we do not care,
       // that first were iterated Central cells, then around area
       for I := 0 to AroundArea.Count - 1 do
       begin

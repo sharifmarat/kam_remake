@@ -127,7 +127,7 @@ uses
   TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResTexts, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_MethodParser,
-  KM_UnitsCollection, KM_PathFindingRoad;
+  KM_UnitsCollection, KM_PathFindingRoad, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 type
@@ -385,8 +385,13 @@ procedure TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; cons
 var
   I: Integer;
 begin
-  for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
+  gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
+  try
+    for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
     CallEventProc(fEventHandlers[aEventType][I], aParams, aFloatParam);
+  finally
+    gPerfLogs.SectionLeave(psScripting);
+  end;
 end;
 
 
