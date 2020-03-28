@@ -363,8 +363,12 @@ begin
   CheckBox_Options_ShuffleOn.Enabled       := not CheckBox_Options_MusicOff.Checked;
   CheckBox_Options_VideoEnable.Checked     := fGameSettings.VideoOn;
   CheckBox_Options_VideoStretch.Checked    := fGameSettings.VideoStretch;
+  CheckBox_Options_VideoStretch.Enabled    := fGameSettings.VideoOn;
   CheckBox_Options_VideoStartup.Checked    := fGameSettings.VideoStartup;
+  CheckBox_Options_VideoStartup.Enabled    := fGameSettings.VideoOn;
   TrackBar_Options_VideoVolume.Position    := Round(fGameSettings.VideoVolume * TrackBar_Options_VideoVolume.MaxValue);
+  TrackBar_Options_VideoVolume.Enabled     := fGameSettings.VideoOn;
+  Button_Options_VideoTest.Enabled         := fGameSettings.VideoOn;
   CheckBox_Options_SnowHouses.Checked      := fGameSettings.AllowSnowHouses;
 
   Radio_Options_Lang.ItemIndex := gResLocales.IndexByCode(fGameSettings.Locale);
