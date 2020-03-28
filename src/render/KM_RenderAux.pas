@@ -3,9 +3,11 @@ unit KM_RenderAux;
 interface
 uses
   dglOpenGL, SysUtils, KromOGLUtils, KromUtils, Math,
-  KM_Defaults, KM_CommonClasses, KM_Points;
+  KM_Defaults, KM_CommonClasses, KM_CommonTypes, KM_Points;
 
 type
+  TKMLineMode = (lmStrip, lmPairs);
+
   //Debug symbols render
   TRenderAux = class
   private
@@ -24,6 +26,7 @@ type
     procedure Line(const A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF); overload;
     procedure Line(const A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF); overload;
     procedure Line(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF); overload;
+    procedure Line(aPoints: TKMPointFArray; aColor: TKMColor4f; aThickness: Integer = -1; aLineMode: TKMLineMode = lmStrip; aPattern: Word = $FFFF); overload;
     procedure Triangle(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
     procedure TriangleOnTerrain(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
     procedure TileTerrainIDs(const aRect: TKMRect);
@@ -257,6 +260,38 @@ begin
 end;
 
 
+procedure TRenderAux.Line(aPoints: TKMPointFArray; aColor: TKMColor4f; aThickness: Integer = -1; aLineMode: TKMLineMode = lmStrip;
+                          aPattern: Word = $FFFF);
+var
+  I, LineWidth: Integer;
+begin
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
+
+  if aThickness <> -1 then
+  begin
+    glGetIntegerv(GL_LINE_WIDTH, @LineWidth);
+    glLineWidth(aThickness);
+  end;
+
+  glColor4f(aColor.R, aColor.G, aColor.B, aColor.A);
+
+  case aLineMode of
+    lmStrip:  glBegin(GL_LINE_STRIP);
+    lmPairs:  glBegin(GL_LINES);
+    else      raise Exception.Create('Wrong LineMode');
+  end;
+
+  for I := 0 to High(aPoints) do
+    glVertex2f(aPoints[I].X, aPoints[I].Y);
+
+  glEnd;
+
+  // Restore previous value for line width
+  if aThickness <> -1 then
+    glLineWidth(LineWidth);
+end;
+
+
 procedure TRenderAux.Triangle(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
@@ -272,6 +307,7 @@ end;
 
 procedure TRenderAux.TriangleOnTerrain(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
 begin
+  TRender.BindTexture(0);
   glColor4ubv(@aCol);
 
   glBegin(GL_TRIANGLES);

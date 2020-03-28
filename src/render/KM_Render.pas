@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF WDC} Windows, Graphics, JPEG, {$ENDIF} //Lazarus doesn't have JPEG library yet -> FPReadJPEG?
   {$IFDEF Unix} LCLIntf, LCLType, OpenGLContext, {$ENDIF}
-  Math, dglOpenGL, KromOGLUtils, KromUtils, KM_RenderControl;
+  Math, dglOpenGL, KromOGLUtils, KromUtils, KM_RenderControl, KM_RenderQuery;
 
 
 type
@@ -26,6 +26,7 @@ type
     fOpenGL_Vendor, fOpenGL_Renderer, fOpenGL_Version: UnicodeString;
     fScreenX, fScreenY: Word;
     fBlind: Boolean;
+    fQuery: TKMRenderQuery;
     class var
       fLastBindedTextureId: Cardinal;
   public
@@ -51,10 +52,15 @@ type
     property ScreenY: Word read fScreenY;
     property Blind: Boolean read fBlind;
 
+    property Query: TKMRenderQuery read fQuery;
+
     procedure BeginFrame;
     procedure RenderBrightness(aValue: Byte);
     procedure EndFrame;
   end;
+
+var
+  gRender: TRender;
 
 
 implementation
@@ -74,6 +80,8 @@ begin
 
   if not fBlind then
   begin
+    fQuery := TKMRenderQuery.Create;
+
     fRenderControl.CreateRenderContext;
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, @MaxTextureSize); //Get max supported texture size by video adapter
@@ -109,7 +117,11 @@ end;
 destructor TRender.Destroy;
 begin
   if not fBlind then
+  begin
     fRenderControl.DestroyRenderContext;
+    fQuery.Free;
+  end;
+
   inherited;
 end;
 
@@ -295,7 +307,7 @@ begin
   //There will be no change to image anyway
   if aValue = 0 then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
+  BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glLoadIdentity;
   glBlendFunc(GL_DST_COLOR, GL_ONE);
@@ -321,7 +333,7 @@ end;
 class procedure TRender.FakeRender(aID: Cardinal);
 begin
   glColor4ub(0, 0, 0, 0);
-  TRender.BindTexture(aID);
+  BindTexture(aID);
 
   glBegin(GL_TRIANGLES);
     glVertex2f(0, 0);

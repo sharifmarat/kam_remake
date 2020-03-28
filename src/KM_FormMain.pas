@@ -127,6 +127,7 @@ type
     cpGraphicTweaks: TCategoryPanel;
     cpLogs: TCategoryPanel;
     cpGameAdv: TCategoryPanel;
+    cpPerfLogs: TCategoryPanel;
     chkSnowHouses: TCheckBox;
     chkLoadUnsupSaves: TCheckBox;
     chkJamMeter: TCheckBox;
@@ -261,7 +262,7 @@ uses
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
   KM_RandomChecks,
-  KM_Log, KM_CommonClasses;
+  KM_Log, KM_CommonClasses, KM_DevPerfLog;
 
 
 //Remove VCL panel and use flicker-free TMyPanel instead

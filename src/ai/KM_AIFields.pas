@@ -40,7 +40,10 @@ var
 implementation
 uses
   SysUtils,
-  KM_Defaults;
+  KM_Defaults,
+  KM_Game,
+  KM_PerfLog,
+  KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMAIFields }
@@ -97,10 +100,15 @@ end;
 
 procedure TKMAIFields.UpdateState(aTick: Cardinal);
 begin
-  fNavMesh.UpdateState(aTick);
-  fInfluences.UpdateState(aTick);
-  fEye.UpdateState(aTick);
-  fSupervisor.UpdateState(aTick);
+  gPerfLogs.SectionEnter(psAIFields, gGame.GameTick);
+  try
+    fNavMesh.UpdateState(aTick);
+    fInfluences.UpdateState(aTick);
+    fEye.UpdateState(aTick);
+    fSupervisor.UpdateState(aTick);
+  finally
+    gPerfLogs.SectionLeave(psAIFields);
+  end;
 end;
 
 

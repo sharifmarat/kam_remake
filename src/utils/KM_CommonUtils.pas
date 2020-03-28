@@ -76,6 +76,7 @@ uses
   function TimeGet: Cardinal;
   function TimeGetUsec: Int64;
   function GetTimeSince(aTime: Cardinal): Cardinal;
+  function GetTimeUsecSince(aTime: Int64): Int64;
   function UTCNow: TDateTime;
   function UTCToLocal(Input: TDateTime): TDateTime;
 
@@ -412,6 +413,12 @@ function GetTimeSince(aTime: Cardinal): Cardinal;
 begin
   //TimeGet will loop back to zero after ~49 days since system start
   Result := (Int64(TimeGet) - Int64(aTime) + Int64(High(Cardinal))) mod Int64(High(Cardinal));
+end;
+
+
+function GetTimeUsecSince(aTime: Int64): Int64;
+begin
+  Result := TimeGetUsec - aTime;
 end;
 
 

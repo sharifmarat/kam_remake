@@ -36,7 +36,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
-    procedure UpdateState;
+    procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
   end;
 
@@ -45,7 +45,8 @@ implementation
 uses
   SysUtils,
   KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_UnitWarrior,
-  KM_UnitActionWalkTo, KM_GameTypes;
+  KM_UnitActionWalkTo, KM_GameTypes,
+  KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMUnitsCollection }
@@ -289,34 +290,38 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.UpdateState;
+procedure TKMUnitsCollection.UpdateState(aTick: Cardinal);
 var
   I: Integer;
 begin
-  for I := Count - 1 downto 0 do
-    if not Units[I].IsDead then
-      Units[I].UpdateState
-    else
-      if FREE_POINTERS and (Units[I].GetPointerCount = 0) then
-        fUnits.Delete(I);
+  gPerfLogs.SectionEnter(psUnits, aTick);
+  try
+    for I := Count - 1 downto 0 do
+      if not Units[I].IsDead then
+        Units[I].UpdateState
+      else
+        if FREE_POINTERS and (Units[I].GetPointerCount = 0) then
+          fUnits.Delete(I);
+  finally
+    gPerfLogs.SectionLeave(psUnits);
+  end;
+    //   --     POINTER FREEING SYSTEM - DESCRIPTION     --   //
+    //  This system was implemented because unit and house objects cannot be freed until all pointers
+    //  to them (in tasks, delivery queue, etc.) have been freed, otherwise we have pointer integrity
+    //  issues.
 
-  //   --     POINTER FREEING SYSTEM - DESCRIPTION     --   //
-  //  This system was implemented because unit and house objects cannot be freed until all pointers
-  //  to them (in tasks, delivery queue, etc.) have been freed, otherwise we have pointer integrity
-  //  issues.
-
-  //   --     ROUGH OUTLINE     --   //
-  // - Units and houses have fPointerCount, which is the number of pointers to them. (e.g. tasks,
-  //   deliveries) This is kept up to date by the thing that is using the pointer. On create it uses
-  //   GetUnitPointer to get the pointer and increase the pointer count and on destroy it decreases
-  //   it with ReleaseUnitPointer.
-  // - When a unit dies, the object is not destroyed. Instead a flag (boolean) is set to say that we
-  //   want to destroy but can't because there still might be pointers to the unit. From then on
-  //   every update state it checks to see if the pointer count is 0 yet. If it is then the unit is
-  //   destroyed.
-  // - For each place that contains a pointer, it should check everytime the pointer is used to see
-  //   if it has been destroy. If it has then we free the pointer and reduce the count.
-  //   (and do any other action nececary due to the unit/house dying)
+    //   --     ROUGH OUTLINE     --   //
+    // - Units and houses have fPointerCount, which is the number of pointers to them. (e.g. tasks,
+    //   deliveries) This is kept up to date by the thing that is using the pointer. On create it uses
+    //   GetUnitPointer to get the pointer and increase the pointer count and on destroy it decreases
+    //   it with ReleaseUnitPointer.
+    // - When a unit dies, the object is not destroyed. Instead a flag (boolean) is set to say that we
+    //   want to destroy but can't because there still might be pointers to the unit. From then on
+    //   every update state it checks to see if the pointer count is 0 yet. If it is then the unit is
+    //   destroyed.
+    // - For each place that contains a pointer, it should check everytime the pointer is used to see
+    //   if it has been destroy. If it has then we free the pointer and reduce the count.
+    //   (and do any other action nececary due to the unit/house dying)
 end;
 
 

@@ -209,7 +209,7 @@ uses
   KM_FormLogistics, KM_UnitTaskDelivery,
   KM_Main, KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks, KM_HouseTownHall,
   KM_Resource, KM_ResUnits,
-  KM_Log, KM_Utils, KM_CommonUtils;
+  KM_Log, KM_Utils, KM_CommonUtils, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
@@ -349,20 +349,22 @@ var
   AvailableDeliveries, AvailableSerfs: Integer;
   Serf: TKMUnitSerf;
 begin
-  fQueue.UpdateState(aTick);
-  RemoveExtraSerfs;
+  gPerfLogs.SectionEnter(psDelivery, aTick);
+  try
+    fQueue.UpdateState(aTick);
+    RemoveExtraSerfs;
 
-  AvailableDeliveries := fQueue.GetAvailableDeliveriesCount;
-  AvailableSerfs := GetIdleSerfCount;
-  if AvailableSerfs * AvailableDeliveries = 0 then Exit;
+    AvailableDeliveries := fQueue.GetAvailableDeliveriesCount;
+    AvailableSerfs := GetIdleSerfCount;
+    if AvailableSerfs * AvailableDeliveries = 0 then Exit;
 
-  if AvailableDeliveries > AvailableSerfs then
-  begin
-    for I := 0 to fSerfCount - 1 do
-      if fSerfs[I].Serf.IsIdle then
-        fQueue.AskForDelivery(fSerfs[I].Serf);
-  end
-  else
+    if AvailableDeliveries > AvailableSerfs then
+    begin
+      for I := 0 to fSerfCount - 1 do
+        if fSerfs[I].Serf.IsIdle then
+          fQueue.AskForDelivery(fSerfs[I].Serf);
+    end
+    else
     //I is not used anywhere, but we must loop through once for each delivery available so each one is taken
     for I := 1 to AvailableDeliveries do
     begin
@@ -411,6 +413,9 @@ begin
           fQueue.AssignDelivery(FoundO, FoundD, Serf);
       end;
     end;
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
+  end;
 end;
 
 
@@ -1055,33 +1060,38 @@ var
   OffersTaken: Cardinal;
   DemandTaken: array of Boolean; //Each demand can only be taken once in our measurements
 begin
-  SetLength(DemandTaken,fDemandCount+1);
-  FillChar(DemandTaken[0], SizeOf(Boolean)*(fDemandCount+1), #0);
+  gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  try
+    SetLength(DemandTaken,fDemandCount+1);
+    FillChar(DemandTaken[0], SizeOf(Boolean)*(fDemandCount+1), #0);
 
-  Result := 0;
-  for iO := 1 to fOfferCount do
-    if (fOffer[iO].Ware <> wtNone) then
-    begin
-      OffersTaken := 0;
-      for iD := 1 to fDemandCount do
-        if (fDemand[iD].Ware <> wtNone) and not DemandTaken[iD] and ValidDelivery(iO,iD) then
-        begin
-          if fDemand[iD].DemandType = dtOnce then
+    Result := 0;
+    for iO := 1 to fOfferCount do
+      if (fOffer[iO].Ware <> wtNone) then
+      begin
+        OffersTaken := 0;
+        for iD := 1 to fDemandCount do
+          if (fDemand[iD].Ware <> wtNone) and not DemandTaken[iD] and ValidDelivery(iO,iD) then
           begin
-            DemandTaken[iD] := True;
-            Inc(Result);
-            Inc(OffersTaken);
-            if fOffer[iO].Count - OffersTaken = 0 then
-              Break; //Finished with this offer
-          end
-          else
-          begin
-            //This demand will take all the offers, so increase result by that many
-            Inc(Result, fOffer[iO].Count - OffersTaken);
-            Break; //This offer is finished (because this demand took it all)
+            if fDemand[iD].DemandType = dtOnce then
+            begin
+              DemandTaken[iD] := True;
+              Inc(Result);
+              Inc(OffersTaken);
+              if fOffer[iO].Count - OffersTaken = 0 then
+                Break; //Finished with this offer
+            end
+            else
+            begin
+              //This demand will take all the offers, so increase result by that many
+              Inc(Result, fOffer[iO].Count - OffersTaken);
+              Break; //This offer is finished (because this demand took it all)
+            end;
           end;
-        end;
-    end;
+      end;
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
+  end;
 end;
 
 
@@ -1302,45 +1312,50 @@ end;
 
 function TKMDeliveries.TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 begin
-  Result := TryCalculateBidBasic(iO, iD, aBidValue, aSerf);
+  gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  try
+    Result := TryCalculateBidBasic(iO, iD, aBidValue, aSerf);
 
-  if not Result then
-    Exit;
+    if not Result then
+      Exit;
 
-  //Modifications for bidding system
-  if (fDemand[iD].Loc_House <> nil) //Prefer delivering to houses with fewer supply
-    and (fDemand[iD].Ware <> wtAll)
-    and (fDemand[iD].Ware <> wtWarfare) //Except Barracks and Store, where supply doesn't matter or matter less
-    and (fDemand[iD].Loc_House.HouseType <> htTownHall) then //Except TownHall as well, where supply doesn't matter or matter less
-    aBidValue := aBidValue + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
+    //Modifications for bidding system
+    if (fDemand[iD].Loc_House <> nil) //Prefer delivering to houses with fewer supply
+      and (fDemand[iD].Ware <> wtAll)
+      and (fDemand[iD].Ware <> wtWarfare) //Except Barracks and Store, where supply doesn't matter or matter less
+      and (fDemand[iD].Loc_House.HouseType <> htTownHall) then //Except TownHall as well, where supply doesn't matter or matter less
+      aBidValue := aBidValue + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
 
-  if (fDemand[iD].Loc_House <> nil)
-    and (fDemand[iD].Loc_House.HouseType = htTownHall) then
-  begin
-    //Delivering gold to TH - if there are already more then 500 gold, then make this delivery very low priority
-    if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 500) then
-      aBidValue := aBidValue + 5000
-    else
-      aBidValue := aBidValue + 2; //Add small value, so it will not have so big advantage above other houses
-  end;
+    if (fDemand[iD].Loc_House <> nil)
+      and (fDemand[iD].Loc_House.HouseType = htTownHall) then
+    begin
+      //Delivering gold to TH - if there are already more then 500 gold, then make this delivery very low priority
+      if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 500) then
+        aBidValue := aBidValue + 5000
+      else
+        aBidValue := aBidValue + 2; //Add small value, so it will not have so big advantage above other houses
+    end;
 
-  //Delivering weapons from store to barracks, make it lowest priority when there are >50 of that weapon in the barracks.
-  //In some missions the storehouse has vast amounts of weapons, and we don't want the serfs to spend the whole game moving these.
-  //In KaM, if the barracks has >200 weapons the serfs will stop delivering from the storehouse. I think our solution is better.
-  if (fDemand[iD].Loc_House <> nil)
-    and (fDemand[iD].Loc_House.HouseType = htBarracks)
-    and (fOffer[iO].Loc_House.HouseType = htStore)
-    and (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 50) then
-    aBidValue := aBidValue + 10000;
+    //Delivering weapons from store to barracks, make it lowest priority when there are >50 of that weapon in the barracks.
+    //In some missions the storehouse has vast amounts of weapons, and we don't want the serfs to spend the whole game moving these.
+    //In KaM, if the barracks has >200 weapons the serfs will stop delivering from the storehouse. I think our solution is better.
+    if (fDemand[iD].Loc_House <> nil)
+      and (fDemand[iD].Loc_House.HouseType = htBarracks)
+      and (fOffer[iO].Loc_House.HouseType = htStore)
+      and (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 50) then
+      aBidValue := aBidValue + 10000;
 
-  //When delivering food to warriors, add a random amount to bid to ensure that a variety of food is taken. Also prefer food which is more abundant.
-  if (fDemand[iD].Loc_Unit <> nil) and (fDemand[iD].Ware = wtFood) then
-  begin
-    //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
-    if fOffer[iO].Count = 0 then
-      aBidValue := aBidValue + KaMRandom(5 + 150, 'TKMDeliveries.TryCalculateBidBasic 4')
-    else
-      aBidValue := aBidValue + KaMRandom(5 + (100 div fOffer[iO].Count), 'TKMDeliveries.TryCalculateBidBasic 5');
+    //When delivering food to warriors, add a random amount to bid to ensure that a variety of food is taken. Also prefer food which is more abundant.
+    if (fDemand[iD].Loc_Unit <> nil) and (fDemand[iD].Ware = wtFood) then
+    begin
+      //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
+      if fOffer[iO].Count = 0 then
+        aBidValue := aBidValue + KaMRandom(5 + 150, 'TKMDeliveries.TryCalculateBidBasic 4')
+      else
+        aBidValue := aBidValue + KaMRandom(5 + (100 div fOffer[iO].Count), 'TKMDeliveries.TryCalculateBidBasic 5');
+    end;
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
   end;
 end;
 
@@ -1351,74 +1366,79 @@ var
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
 begin
-  iO := fQueue[aDeliveryID].OfferID;
-  OldD := fQueue[aDeliveryID].DemandID;
+  gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  try
+    iO := fQueue[aDeliveryID].OfferID;
+    OldD := fQueue[aDeliveryID].DemandID;
 
-  //Special rule to prevent an annoying situation: If we were delivering to a unit
-  //do not look for a better demand. Deliveries to units are closely watched/controlled
-  //by the player. For example if player orders food for group A, then after serfs start
-  //walking to storehouse orders food for closer group B. Player expects A to be fed first
-  //even though B is closer.
-  //Another example: School is nearly finished digging at start of game. Serf is getting
-  //stone for a labourer making a road. School digging finishes and the stone goes to the
-  //school (which is closer). Now the road labourer is waiting even though the player saw
-  //the serf fetching the stone for him before the school digging was finished.
-  //This "CheckForBetterDemand" feature is mostly intended to optimise house->house
-  //deliveries within village and reduce delay in serf decision making.
-  if fDemand[OldD].Loc_Unit <> nil then
-  begin
-    aToHouse := fDemand[OldD].Loc_House;
-    aToUnit := fDemand[OldD].Loc_Unit;
-    Exit;
-  end;
-
-  //By default we keep the old demand, so that's our starting bid
-  BestD := OldD;
-  if not fDemand[OldD].IsDeleted then
-  begin
-    TryCalculateBid(iO, OldD, BestBid, aSerf);
-    BestImportance := fDemand[OldD].Importance;
-  end
-  else
-  begin
-    //Our old demand is no longer valid (e.g. house destroyed), so give it minimum weight
-    //If no other demands are found we can still return this invalid one, TaskDelivery handles that
-    BestBid := MaxSingle;
-    BestImportance := Low(TKMDemandImportance);
-  end;
-
-  for iD := 1 to fDemandCount do
-    if (fDemand[iD].Ware <> wtNone)
-    and (OldD <> Id)
-    and (fDemand[iD].Importance >= BestImportance) //Skip any less important than the best we found
-    and ValidDelivery(iO, iD, True)
-    and TryCalculateBid(iO, iD, Bid, aSerf)
-    and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
+    //Special rule to prevent an annoying situation: If we were delivering to a unit
+    //do not look for a better demand. Deliveries to units are closely watched/controlled
+    //by the player. For example if player orders food for group A, then after serfs start
+    //walking to storehouse orders food for closer group B. Player expects A to be fed first
+    //even though B is closer.
+    //Another example: School is nearly finished digging at start of game. Serf is getting
+    //stone for a labourer making a road. School digging finishes and the stone goes to the
+    //school (which is closer). Now the road labourer is waiting even though the player saw
+    //the serf fetching the stone for him before the school digging was finished.
+    //This "CheckForBetterDemand" feature is mostly intended to optimise house->house
+    //deliveries within village and reduce delay in serf decision making.
+    if fDemand[OldD].Loc_Unit <> nil then
     begin
-      BestD := iD;
-      BestBid := Bid;
-      BestImportance := fDemand[iD].Importance;
+      aToHouse := fDemand[OldD].Loc_House;
+      aToUnit := fDemand[OldD].Loc_Unit;
+      Exit;
     end;
 
-  //Did we switch jobs?
-  if BestD <> OldD then
-  begin
-    //Remove old demand
-    Dec(fDemand[OldD].BeingPerformed);
-    if (fDemand[OldD].BeingPerformed = 0) and fDemand[OldD].IsDeleted then
-      CloseDemand(OldD);
+    //By default we keep the old demand, so that's our starting bid
+    BestD := OldD;
+    if not fDemand[OldD].IsDeleted then
+    begin
+      TryCalculateBid(iO, OldD, BestBid, aSerf);
+      BestImportance := fDemand[OldD].Importance;
+    end
+    else
+    begin
+      //Our old demand is no longer valid (e.g. house destroyed), so give it minimum weight
+      //If no other demands are found we can still return this invalid one, TaskDelivery handles that
+      BestBid := MaxSingle;
+      BestImportance := Low(TKMDemandImportance);
+    end;
 
-    UpdateDemandItem(OldD);
+    for iD := 1 to fDemandCount do
+      if (fDemand[iD].Ware <> wtNone)
+      and (OldD <> Id)
+      and (fDemand[iD].Importance >= BestImportance) //Skip any less important than the best we found
+      and ValidDelivery(iO, iD, True)
+      and TryCalculateBid(iO, iD, Bid, aSerf)
+      and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
+      begin
+        BestD := iD;
+        BestBid := Bid;
+        BestImportance := fDemand[iD].Importance;
+      end;
 
-    //Take new demand
-    fQueue[aDeliveryID].DemandID := BestD;
-    Inc(fDemand[BestD].BeingPerformed); //Places a virtual "Reserved" sign on Demand
+    //Did we switch jobs?
+    if BestD <> OldD then
+    begin
+      //Remove old demand
+      Dec(fDemand[OldD].BeingPerformed);
+      if (fDemand[OldD].BeingPerformed = 0) and fDemand[OldD].IsDeleted then
+        CloseDemand(OldD);
 
-    UpdateDemandItem(BestD);
+      UpdateDemandItem(OldD);
+
+      //Take new demand
+      fQueue[aDeliveryID].DemandID := BestD;
+      Inc(fDemand[BestD].BeingPerformed); //Places a virtual "Reserved" sign on Demand
+
+      UpdateDemandItem(BestD);
+    end;
+    //Return chosen unit and house
+    aToHouse := fDemand[BestD].Loc_House;
+    aToUnit := fDemand[BestD].Loc_Unit;
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
   end;
-  //Return chosen unit and house
-  aToHouse := fDemand[BestD].Loc_House;
-  aToUnit := fDemand[BestD].Loc_Unit;
 end;
 
 // Find best Demand for the given delivery. Could return same or nothing
@@ -1530,28 +1550,13 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
 var
   BestDemandId, OldDemandId: Integer; // Keep Int to assign to Delivery down below
 begin
-  OldDemandId := fQueue[aDeliveryId].DemandID;
-  BestDemandId := FindBestDemandId();
+  gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  try
+    OldDemandId := fQueue[aDeliveryId].DemandID;
+    BestDemandId := FindBestDemandId();
 
-  // Did we find anything?
-  if BestDemandId = -1 then
-  begin
-    // Remove old demand
-    Dec(fDemand[OldDemandId].BeingPerformed);
-    if (fDemand[OldDemandId].BeingPerformed = 0) and fDemand[OldDemandId].IsDeleted then
-      CloseDemand(OldDemandId);
-
-    UpdateDemandItem(OldDemandId);
-
-    // Delivery should be cancelled now
-    CloseDelivery(aDeliveryId);
-    aToHouse := nil;
-    aToUnit := nil;
-  end
-  else
-  begin
-    // Did we switch jobs?
-    if BestDemandId <> OldDemandId then
+    // Did we find anything?
+    if BestDemandId = -1 then
     begin
       // Remove old demand
       Dec(fDemand[OldDemandId].BeingPerformed);
@@ -1560,18 +1565,38 @@ begin
 
       UpdateDemandItem(OldDemandId);
 
-      // Take new demand
-      fQueue[aDeliveryId].DemandId := BestDemandId;
-      Inc(fDemand[BestDemandId].BeingPerformed); //Places a virtual "Reserved" sign on Demand
-      fQueue[aDeliveryId].IsFromUnit := True; //Now this delivery will always start from serfs hands
+      // Delivery should be cancelled now
+      CloseDelivery(aDeliveryId);
+      aToHouse := nil;
+      aToUnit := nil;
+    end
+    else
+    begin
+      // Did we switch jobs?
+      if BestDemandId <> OldDemandId then
+      begin
+        // Remove old demand
+        Dec(fDemand[OldDemandId].BeingPerformed);
+        if (fDemand[OldDemandId].BeingPerformed = 0) and fDemand[OldDemandId].IsDeleted then
+          CloseDemand(OldDemandId);
 
-      UpdateDemandItem(BestDemandId);
-      UpdateQueueItem(aDeliveryId);
+        UpdateDemandItem(OldDemandId);
+
+        // Take new demand
+        fQueue[aDeliveryId].DemandId := BestDemandId;
+        Inc(fDemand[BestDemandId].BeingPerformed); //Places a virtual "Reserved" sign on Demand
+        fQueue[aDeliveryId].IsFromUnit := True; //Now this delivery will always start from serfs hands
+
+        UpdateDemandItem(BestDemandId);
+        UpdateQueueItem(aDeliveryId);
+      end;
+
+      // Return chosen unit and house
+      aToHouse := fDemand[BestDemandId].Loc_House;
+      aToUnit := fDemand[BestDemandId].Loc_Unit;
     end;
-
-    // Return chosen unit and house
-    aToHouse := fDemand[BestDemandId].Loc_House;
-    aToUnit := fDemand[BestDemandId].Loc_Unit;
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
   end;
 end;
 
@@ -1583,60 +1608,65 @@ var
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
 begin
-  //Find Offer matching Demand
-  //TravelRoute Asker>Offer>Demand should be shortest
-  BestBid := MaxSingle;
-  BestO := -1;
-  BestD := -1;
-  BestImportance := Low(TKMDemandImportance);
-  Result := False;
+  gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  try
+    //Find Offer matching Demand
+    //TravelRoute Asker>Offer>Demand should be shortest
+    BestBid := MaxSingle;
+    BestO := -1;
+    BestD := -1;
+    BestImportance := Low(TKMDemandImportance);
+    Result := False;
 
-  for iD := 1 to fDemandCount do
-    if (fDemand[iD].Ware <> wtNone)
-      and (fDemand[iD].Importance >= BestImportance) then //Skip any less important than the best we found
-      for iO := 1 to fOfferCount do
-        if ((aHouse = nil) or (fOffer[iO].Loc_House = aHouse))  //Make sure from house is the one requested
-          and (fOffer[iO].Ware <> wtNone)
-          and PermitDelivery(iO, iD, aSerf)
-          and TryCalculateBid(iO, iD, Bid, aSerf)
-          and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
-        begin
-          BestO := iO;
-          BestD := iD;
-          BestBid := Bid;
-          BestImportance := fDemand[iD].Importance;
-        end;
+    for iD := 1 to fDemandCount do
+      if (fDemand[iD].Ware <> wtNone)
+        and (fDemand[iD].Importance >= BestImportance) then //Skip any less important than the best we found
+        for iO := 1 to fOfferCount do
+          if ((aHouse = nil) or (fOffer[iO].Loc_House = aHouse))  //Make sure from house is the one requested
+            and (fOffer[iO].Ware <> wtNone)
+            and PermitDelivery(iO, iD, aSerf)
+            and TryCalculateBid(iO, iD, Bid, aSerf)
+            and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
+          begin
+            BestO := iO;
+            BestD := iD;
+            BestBid := Bid;
+            BestImportance := fDemand[iD].Importance;
+          end;
 
-  if (BestO <> -1) and (BestD <> -1) then
-  begin
-    AssignDelivery(BestO, BestD, aSerf);
-    Result := True;
-  end else
-    //Try to find ongoing delivery task from specified house and took it from serf, which is on the way to that house
-    if aHouse <> nil then
+    if (BestO <> -1) and (BestD <> -1) then
     begin
-      BestBid := MaxSingle;
-      BestQ := -1;
-      BestImportance := Low(TKMDemandImportance);
-      for iQ := 1 to fQueueCount do
-        if (fQueue[iQ].JobStatus = jsTaken)
-          and (fOffer[fQueue[iQ].OfferID].Loc_House = aHouse)
-          and (fQueue[iQ].Serf <> nil)                                                //Should be always true
-          and (fQueue[iQ].Serf.Task is TKMTaskDeliver)                            //Should be always true
-          and (TKMTaskDeliver(fQueue[iQ].Serf.Task).DeliverStage = dsToFromHouse) //Should be always true
-          and TryCalculateBid(fQueue[iQ].OfferID, fQueue[iQ].DemandID, Bid, aSerf)
-          and ((Bid < BestBid) or (fDemand[fQueue[iQ].DemandID].Importance > BestImportance)) then
-        begin
-          BestQ := iQ;
-          BestBid := Bid;
-          BestImportance := fDemand[fQueue[iQ].DemandID].Importance;
-        end;
-      if (BestQ <> -1) then
+      AssignDelivery(BestO, BestD, aSerf);
+      Result := True;
+    end else
+      //Try to find ongoing delivery task from specified house and took it from serf, which is on the way to that house
+      if aHouse <> nil then
       begin
-        ReAssignDelivery(BestQ, aSerf);
-        Result := True;
+        BestBid := MaxSingle;
+        BestQ := -1;
+        BestImportance := Low(TKMDemandImportance);
+        for iQ := 1 to fQueueCount do
+          if (fQueue[iQ].JobStatus = jsTaken)
+            and (fOffer[fQueue[iQ].OfferID].Loc_House = aHouse)
+            and (fQueue[iQ].Serf <> nil)                                                //Should be always true
+            and (fQueue[iQ].Serf.Task is TKMTaskDeliver)                            //Should be always true
+            and (TKMTaskDeliver(fQueue[iQ].Serf.Task).DeliverStage = dsToFromHouse) //Should be always true
+            and TryCalculateBid(fQueue[iQ].OfferID, fQueue[iQ].DemandID, Bid, aSerf)
+            and ((Bid < BestBid) or (fDemand[fQueue[iQ].DemandID].Importance > BestImportance)) then
+          begin
+            BestQ := iQ;
+            BestBid := Bid;
+            BestImportance := fDemand[fQueue[iQ].DemandID].Importance;
+          end;
+        if (BestQ <> -1) then
+        begin
+          ReAssignDelivery(BestQ, aSerf);
+          Result := True;
+        end;
       end;
-    end;
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
+  end;
 end;
 
 
@@ -1743,27 +1773,32 @@ procedure TKMDeliveries.AbandonDelivery(aID: Integer);
 begin
   gLog.LogDelivery('Abandoned delivery ID ' + IntToStr(aID));
 
-  //Remove reservations without removing items from lists
-  if fQueue[aID].OfferID <> 0 then
-  begin
-    Dec(fOffer[fQueue[aID].OfferID].BeingPerformed);
-    //Now see if we need to delete the Offer as we are the last remaining pointer
-    if fOffer[fQueue[aID].OfferID].IsDeleted and (fOffer[fQueue[aID].OfferID].BeingPerformed = 0) then
-      CloseOffer(fQueue[aID].OfferID);
+  gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  try
+    //Remove reservations without removing items from lists
+    if fQueue[aID].OfferID <> 0 then
+    begin
+      Dec(fOffer[fQueue[aID].OfferID].BeingPerformed);
+      //Now see if we need to delete the Offer as we are the last remaining pointer
+      if fOffer[fQueue[aID].OfferID].IsDeleted and (fOffer[fQueue[aID].OfferID].BeingPerformed = 0) then
+        CloseOffer(fQueue[aID].OfferID);
 
-    UpdateOfferItem(fQueue[aID].OfferID);
+      UpdateOfferItem(fQueue[aID].OfferID);
+    end;
+
+    if fQueue[aID].DemandID <> 0 then
+    begin
+      Dec(fDemand[fQueue[aID].DemandID].BeingPerformed);
+      if fDemand[fQueue[aID].DemandID].IsDeleted and (fDemand[fQueue[aID].DemandID].BeingPerformed = 0) then
+        CloseDemand(fQueue[aID].DemandID);
+
+      UpdateDemandItem(fQueue[aID].DemandID);
+    end;
+
+    CloseDelivery(aID);
+  finally
+    gPerfLogs.SectionLeave(psDelivery);
   end;
-
-  if fQueue[aID].DemandID <> 0 then
-  begin
-    Dec(fDemand[fQueue[aID].DemandID].BeingPerformed);
-    if fDemand[fQueue[aID].DemandID].IsDeleted and (fDemand[fQueue[aID].DemandID].BeingPerformed = 0) then
-      CloseDemand(fQueue[aID].DemandID);
-
-    UpdateDemandItem(fQueue[aID].DemandID);
-  end;
-
-  CloseDelivery(aID);
 end;
 
 

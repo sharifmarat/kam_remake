@@ -83,7 +83,7 @@ type
 
 implementation
 uses
-  KM_Units;
+  KM_Units, KM_PerfLog, KM_Game, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TPathFinding }
@@ -120,44 +120,49 @@ end;
 function TPathFinding.Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
                                  aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: TKMPathAvoidLocked = palNoAvoid): Boolean;
 begin
-  Result := False;
+  gPerfLogs.SectionEnter(psPathfinding, gGame.GameTick);
+  try
+    Result := False;
 
-  fLocA := aLocA;
-  fLocB := aLocB;
-  fPass := aPass;
-  fTargetNetwork := 0;
-  fTargetWalkConnect := wcWalk;
-  fDistance := aDistance;
-  fAvoidLocked := aAvoidLocked;
-  fTargetHouse := aTargetHouse;
+    fLocA := aLocA;
+    fLocB := aLocB;
+    fPass := aPass;
+    fTargetNetwork := 0;
+    fTargetWalkConnect := wcWalk;
+    fDistance := aDistance;
+    fAvoidLocked := aAvoidLocked;
+    fTargetHouse := aTargetHouse;
 
-  if fTargetHouse = nil then
-    fDestination := pdLocation
-  else
-    fDestination := pdHouse;
+    if fTargetHouse = nil then
+      fDestination := pdLocation
+    else
+      fDestination := pdHouse;
 
-  //Check
-  if CACHE_PATHFINDING_AVOID_LOCKED
-    and (aAvoidLocked = palAvoidAsUnwalkable)
-    and CacheHasNoRouteAvoidLocked then
-  begin
-    NodeList.Clear; //No route available
-    Exit;
-  end;
-
-  //Try to find similar route in cache and reuse it
-  if CACHE_PATHFINDING and TryRouteFromCache(NodeList) then
-    Result := True
-  else
-  if MakeRoute then
-  begin
-    ReturnRoute(NodeList);
-    Result := True;
-  end else begin
-    NodeList.Clear;
+    //Check
     if CACHE_PATHFINDING_AVOID_LOCKED
-      and (aAvoidLocked = palAvoidAsUnwalkable) then
-      AddNoRouteAvoidLockedToCache;
+      and (aAvoidLocked = palAvoidAsUnwalkable)
+      and CacheHasNoRouteAvoidLocked then
+    begin
+      NodeList.Clear; //No route available
+      Exit;
+    end;
+
+    //Try to find similar route in cache and reuse it
+    if CACHE_PATHFINDING and TryRouteFromCache(NodeList) then
+      Result := True
+    else
+    if MakeRoute then
+    begin
+      ReturnRoute(NodeList);
+      Result := True;
+    end else begin
+      NodeList.Clear;
+      if CACHE_PATHFINDING_AVOID_LOCKED
+        and (aAvoidLocked = palAvoidAsUnwalkable) then
+        AddNoRouteAvoidLockedToCache;
+    end;
+  finally
+    gPerfLogs.SectionLeave(psPathfinding);
   end;
 end;
 
@@ -165,25 +170,30 @@ end;
 //We are using Interaction Avoid mode (go around busy units)
 function TPathFinding.Route_MakeAvoid(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
 begin
-  Result := False;
+  gPerfLogs.SectionEnter(psPathfinding, gGame.GameTick);
+  try
+    Result := False;
 
-  fLocA := aLocA;
-  fLocB := aLocB;
-  fPass := aPass;
-  fTargetNetwork := 0;
-  fTargetWalkConnect := wcWalk;
-  fDistance := aDistance;
-  fAvoidLocked := palAvoidByMovementCost;
-  fTargetHouse := aTargetHouse;
-  if fTargetHouse = nil then
-    fDestination := pdLocation
-  else
-    fDestination := pdHouse;
+    fLocA := aLocA;
+    fLocB := aLocB;
+    fPass := aPass;
+    fTargetNetwork := 0;
+    fTargetWalkConnect := wcWalk;
+    fDistance := aDistance;
+    fAvoidLocked := palAvoidByMovementCost;
+    fTargetHouse := aTargetHouse;
+    if fTargetHouse = nil then
+      fDestination := pdLocation
+    else
+      fDestination := pdHouse;
 
-  if MakeRoute then
-  begin
-    ReturnRoute(NodeList);
-    Result := True;
+    if MakeRoute then
+    begin
+      ReturnRoute(NodeList);
+      Result := True;
+    end;
+  finally
+    gPerfLogs.SectionLeave(psPathfinding);
   end;
 end;
 
@@ -192,24 +202,29 @@ end;
 function TPathFinding.Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect;
                                              aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 begin
-  Result := False;
+  gPerfLogs.SectionEnter(psPathfinding, gGame.GameTick);
+  try
+    Result := False;
 
-  fLocA := aLocA;
-  fLocB := aLocB;
-  fPass := aPass; //Should be unused here
-  fTargetNetwork := aTargetNetwork;
-  fTargetWalkConnect := aTargetWalkConnect;
-  fDistance := 0;
-  fAvoidLocked := palNoAvoid;
-  fTargetHouse := nil;
-  fDestination := pdPassability;
+    fLocA := aLocA;
+    fLocB := aLocB;
+    fPass := aPass; //Should be unused here
+    fTargetNetwork := aTargetNetwork;
+    fTargetWalkConnect := aTargetWalkConnect;
+    fDistance := 0;
+    fAvoidLocked := palNoAvoid;
+    fTargetHouse := nil;
+    fDestination := pdPassability;
 
-  if MakeRoute then
-  begin
-    ReturnRoute(NodeList);
-    Result := True;
-  end else
-    NodeList.Clear;
+    if MakeRoute then
+    begin
+      ReturnRoute(NodeList);
+      Result := True;
+    end else
+      NodeList.Clear;
+  finally
+    gPerfLogs.SectionLeave(psPathfinding);
+  end;
 end;
 
 
@@ -229,7 +244,9 @@ end;
 
 //How much it costs to move From -> To
 function TPathFinding.MovementCost(aFromX, aFromY, aToX, aToY: Word): Word;
-var DX, DY: Word; U: TKMUnit;
+var
+  DX, DY: Word;
+  U: TKMUnit;
 begin
   DX := Abs(aFromX - aToX);
   DY := Abs(aFromY - aToY);
@@ -310,7 +327,6 @@ begin
   fCacheAvoidLocked[Best].Pass := fPass;
   fCacheAvoidLocked[Best].LocA := fLocA;
   fCacheAvoidLocked[Best].LocB := fLocB;
-
 end;
 
 
@@ -495,13 +511,18 @@ procedure TPathFinding.UpdateState;
 var
   I: Integer;
 begin
-  if CACHE_PATHFINDING then
-    for I := 0 to PATH_CACHE_MAX - 1 do
-      fCache[I].Weight := Max(fCache[I].Weight - 1, 0);
+  gPerfLogs.SectionEnter(psPathfinding, gGame.GameTick);
+  try
+    if CACHE_PATHFINDING then
+      for I := 0 to PATH_CACHE_MAX - 1 do
+        fCache[I].Weight := Max(fCache[I].Weight - 1, 0);
 
-  if CACHE_PATHFINDING_AVOID_LOCKED then
-    for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
-      fCacheAvoidLocked[I].TimeToLive := Max(fCacheAvoidLocked[I].TimeToLive - 1, 0);
+    if CACHE_PATHFINDING_AVOID_LOCKED then
+      for I := 0 to PATH_CACHE_NO_ROUTES_AVOID_LOCKED_MAX - 1 do
+        fCacheAvoidLocked[I].TimeToLive := Max(fCacheAvoidLocked[I].TimeToLive - 1, 0);
+  finally
+    gPerfLogs.SectionLeave(psPathfinding);
+  end;
 end;
 
 

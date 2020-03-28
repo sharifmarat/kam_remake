@@ -372,9 +372,9 @@ var
 
 implementation
 uses
-  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
+  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units, KM_PerfLog, KM_DevPerfLog,
   KM_ResSound, KM_Sound, KM_UnitActionStay, KM_UnitWarrior, KM_TerrainPainter, KM_Houses,
-  KM_ResUnits, KM_ResSprites, KM_Hand, KM_Game, KM_GameTypes, KM_ScriptingEvents, KM_Utils;
+  KM_ResUnits, KM_ResSprites, KM_Hand, KM_Game, KM_GameTypes, KM_ScriptingEvents, KM_Utils, KM_DevPerfLogTypes;
 
 
 { TKMTerrainLayer }
@@ -4729,68 +4729,72 @@ var
   T: Integer;
 begin
   if not DYNAMIC_TERRAIN then Exit;
+  gPerfLogs.SectionEnter(psTerrain, gGame.GameTick);
+  try
+    inc(fAnimStep);
 
-  inc(fAnimStep);
+    //Update falling trees animation
+    for T := FallingTrees.Count - 1 downto 0 do
+    if fAnimStep >= FallingTrees.Tag2[T] + Cardinal(gMapElements[FallingTrees.Tag[T]].Anim.Count - 1) then
+      ChopTree(FallingTrees[T]); //Make the tree turn into a stump
 
-  //Update falling trees animation
-  for T := FallingTrees.Count - 1 downto 0 do
-  if fAnimStep >= FallingTrees.Tag2[T] + Cardinal(gMapElements[FallingTrees.Tag[T]].Anim.Count - 1) then
-    ChopTree(FallingTrees[T]); //Make the tree turn into a stump
-
-  //Process every 200th (TERRAIN_PACE) tile, offset by fAnimStep
-  A := fAnimStep mod TERRAIN_PACE;
-  while A < fMapX * fMapY do
-  begin
-    K := (A mod fMapX) + 1;
-    I := (A div fMapX) + 1;
-
-    //Reduce JamMeter over time
-    Land[I,K].JamMeter := Max(0, Land[I,K].JamMeter - 1);
-
-    if InRange(Land[I,K].FieldAge, 1, CORN_AGE_MAX-1) then
+    //Process every 200th (TERRAIN_PACE) tile, offset by fAnimStep
+    A := fAnimStep mod TERRAIN_PACE;
+    while A < fMapX * fMapY do
     begin
-      Inc(Land[I,K].FieldAge);
-      if TileIsCornField(KMPoint(K,I)) then
-        case Land[I,K].FieldAge of
-          CORN_AGE_1:     SetLand(59,K,I,OBJ_NONE);
-          CORN_AGE_2:     SetLand(60,K,I,OBJ_NONE);
-          CORN_AGE_3:     SetLand(60,K,I,58);
-          CORN_AGE_FULL:  begin
-                            //Skip to the end
-                            SetLand(60,K,I,59);
-                            Land[I,K].FieldAge := CORN_AGE_MAX;
-                          end;
-        end
-      else
-      if TileIsWineField(KMPoint(K,I)) then
-        case Land[I,K].FieldAge of
-          WINE_AGE_1:     SetLand(55,K,I,55);
-          WINE_AGE_2:     SetLand(55,K,I,56);
-          WINE_AGE_FULL:  begin
-                            //Skip to the end
-                            SetLand(55,K,I,57);
-                            Land[I,K].FieldAge := CORN_AGE_MAX;
-                          end;
-        end;
-    end;
+      K := (A mod fMapX) + 1;
+      I := (A div fMapX) + 1;
 
-    if InRange(Land[I,K].TreeAge, 1, TREE_AGE_FULL) then
-    begin
-      Inc(Land[I,K].TreeAge);
-      if (Land[I,K].TreeAge = TREE_AGE_1)
-      or (Land[I,K].TreeAge = TREE_AGE_2)
-      or (Land[I,K].TreeAge = TREE_AGE_FULL) then //Speedup
-        for H := Low(ChopableTrees) to High(ChopableTrees) do
-          for J := caAge1 to caAge3 do
-            if Land[I,K].Obj = ChopableTrees[H,J] then
-              case Land[I,K].TreeAge of
-                TREE_AGE_1:    Land[I,K].Obj := ChopableTrees[H, caAge2];
-                TREE_AGE_2:    Land[I,K].Obj := ChopableTrees[H, caAge3];
-                TREE_AGE_FULL: Land[I,K].Obj := ChopableTrees[H, caAgeFull];
-              end;
-    end;
+      //Reduce JamMeter over time
+      Land[I,K].JamMeter := Max(0, Land[I,K].JamMeter - 1);
 
-    Inc(A, TERRAIN_PACE);
+      if InRange(Land[I,K].FieldAge, 1, CORN_AGE_MAX-1) then
+      begin
+        Inc(Land[I,K].FieldAge);
+        if TileIsCornField(KMPoint(K,I)) then
+          case Land[I,K].FieldAge of
+            CORN_AGE_1:     SetLand(59,K,I,OBJ_NONE);
+            CORN_AGE_2:     SetLand(60,K,I,OBJ_NONE);
+            CORN_AGE_3:     SetLand(60,K,I,58);
+            CORN_AGE_FULL:  begin
+                              //Skip to the end
+                              SetLand(60,K,I,59);
+                              Land[I,K].FieldAge := CORN_AGE_MAX;
+                            end;
+          end
+        else
+        if TileIsWineField(KMPoint(K,I)) then
+          case Land[I,K].FieldAge of
+            WINE_AGE_1:     SetLand(55,K,I,55);
+            WINE_AGE_2:     SetLand(55,K,I,56);
+            WINE_AGE_FULL:  begin
+                              //Skip to the end
+                              SetLand(55,K,I,57);
+                              Land[I,K].FieldAge := CORN_AGE_MAX;
+                            end;
+          end;
+      end;
+
+      if InRange(Land[I,K].TreeAge, 1, TREE_AGE_FULL) then
+      begin
+        Inc(Land[I,K].TreeAge);
+        if (Land[I,K].TreeAge = TREE_AGE_1)
+        or (Land[I,K].TreeAge = TREE_AGE_2)
+        or (Land[I,K].TreeAge = TREE_AGE_FULL) then //Speedup
+          for H := Low(ChopableTrees) to High(ChopableTrees) do
+            for J := caAge1 to caAge3 do
+              if Land[I,K].Obj = ChopableTrees[H,J] then
+                case Land[I,K].TreeAge of
+                  TREE_AGE_1:    Land[I,K].Obj := ChopableTrees[H, caAge2];
+                  TREE_AGE_2:    Land[I,K].Obj := ChopableTrees[H, caAge3];
+                  TREE_AGE_FULL: Land[I,K].Obj := ChopableTrees[H, caAgeFull];
+                end;
+      end;
+
+      Inc(A, TERRAIN_PACE);
+    end;
+  finally
+    gPerfLogs.SectionLeave(psTerrain);
   end;
 end;
 

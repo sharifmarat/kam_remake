@@ -67,7 +67,7 @@ type
 implementation
 uses
   Classes, KM_Game, KM_Houses, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitsCollection, KM_NavMesh, KM_HouseMarket;
+  KM_AIFields, KM_Units, KM_UnitsCollection, KM_NavMesh, KM_HouseMarket, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMCityManagement }
@@ -152,35 +152,40 @@ procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
   LONG_UPDATE = MAX_HANDS * 2; // 30 sec
 begin
-  if fSetup.AutoBuild AND (aTick mod MAX_HANDS = fOwner) then
-  begin
-    fBuilder.UpdateState(aTick);
-    fPredictor.UpdateState(aTick);
-    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
+  gPerfLogs.SectionEnter(psAICityAdv, aTick);
+  try
+    if fSetup.AutoBuild AND (aTick mod MAX_HANDS = fOwner) then
     begin
-      fBalanceText := '';
-      fPredictor.LogStatus(fBalanceText);
-      fBalanceText := fBalanceText + Format('Management, unit count: %d',[fUnitReqCnt]);
+      fBuilder.UpdateState(aTick);
+      fPredictor.UpdateState(aTick);
+      if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
+      begin
+        fBalanceText := '';
+        fPredictor.LogStatus(fBalanceText);
+        fBalanceText := fBalanceText + Format('Management, unit count: %d',[fUnitReqCnt]);
+      end;
+      fBuilder.ChooseHousesToBuild(aTick);
+      if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
+      begin
+        fBuilder.LogStatus(fBalanceText);
+        LogStatus(fBalanceText);
+      end;
     end;
-    fBuilder.ChooseHousesToBuild(aTick);
-    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
-    begin
-      fBuilder.LogStatus(fBalanceText);
-      LogStatus(fBalanceText);
-    end;
-  end;
 
-  if (aTick mod LONG_UPDATE = fOwner) then
-  begin
-    CheckUnitCount(aTick);
-    CheckMarketplaces();
-    CheckStoreWares(aTick);
-    if fSetup.AutoRepair then
-      CheckAutoRepair();
-    CheckWareDistribution();
-    WeaponsBalance();
-    OrderWeapons();
-    CheckExhaustedHouses();
+    if (aTick mod LONG_UPDATE = fOwner) then
+    begin
+      CheckUnitCount(aTick);
+      CheckMarketplaces();
+      CheckStoreWares(aTick);
+      if fSetup.AutoRepair then
+        CheckAutoRepair();
+      CheckWareDistribution();
+      WeaponsBalance();
+      OrderWeapons();
+      CheckExhaustedHouses();
+    end;
+  finally
+    gPerfLogs.SectionLeave(psAICityAdv);
   end;
 end;
 

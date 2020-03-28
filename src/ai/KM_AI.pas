@@ -71,7 +71,7 @@ uses
   SysUtils, TypInfo, Math,
   KM_GameTypes, KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroup,
   KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts,
-  KM_AIFields, KM_Terrain, KM_ResMapElements;
+  KM_AIFields, KM_Terrain, KM_ResMapElements, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMHandAI }
@@ -476,31 +476,36 @@ end;
 
 procedure TKMHandAI.UpdateState(aTick: Cardinal; aCheckGoals: Boolean);
 begin
-  if (WonOrLost <> wolNone) then
-    Exit;
+  gPerfLogs.SectionEnter(psAI, aTick);
+  try
+    if (WonOrLost <> wolNone) then
+      Exit;
 
-  //Check goals for all players to maintain multiplayer consistency
-  //AI victory/defeat is used in scripts (e.g. OnPlayerDefeated in battle tutorial)
-  if aCheckGoals and (((aTick + Byte(fOwner)) mod MAX_HANDS) = 0) then
-    CheckGoals; //This procedure manages victory and loss
+    //Check goals for all players to maintain multiplayer consistency
+    //AI victory/defeat is used in scripts (e.g. OnPlayerDefeated in battle tutorial)
+    if aCheckGoals and (((aTick + Byte(fOwner)) mod MAX_HANDS) = 0) then
+      CheckGoals; //This procedure manages victory and loss
 
-  case gHands[fOwner].HandType of
-    hndHuman:     begin
-                    //Humans dont need AI management
-                  end;
-    hndComputer:  begin
-                    if fSetup.NewAI then
-                    begin
-                      gAIFields.Eye.OwnerUpdate(fOwner);
-                      fArmyManagement.UpdateState(aTick);
-                      fCityManagement.UpdateState(aTick);
-                    end
-                    else
-                    begin
-                      fMayor.UpdateState(aTick);
-                      fGeneral.UpdateState(aTick);
+    case gHands[fOwner].HandType of
+      hndHuman:     begin
+                      //Humans dont need AI management
                     end;
-                  end;
+      hndComputer:  begin
+                      if fSetup.NewAI then
+                      begin
+                        gAIFields.Eye.OwnerUpdate(fOwner);
+                        fArmyManagement.UpdateState(aTick);
+                        fCityManagement.UpdateState(aTick);
+                      end
+                      else
+                      begin
+                        fMayor.UpdateState(aTick);
+                        fGeneral.UpdateState(aTick);
+                      end;
+                    end;
+    end;
+  finally
+    gPerfLogs.SectionLeave(psAI);
   end;
 end;
 

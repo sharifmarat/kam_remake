@@ -106,7 +106,7 @@ uses
   KM_Game, KM_Terrain, KM_AIFields,
   KM_UnitsCollection,
   KM_Resource, KM_ResUnits,
-  KM_Log, KM_CommonUtils;
+  KM_Log, KM_CommonUtils, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMHandsCollection }
@@ -999,14 +999,20 @@ procedure TKMHandsCollection.UpdateState(aTick: Cardinal);
 var
   I: Integer;
 begin
-  for I := 0 to Count - 1 do
-  if (gGame <> nil) and not gGame.IsPaused and not gGame.IsExiting then
-    fHandsList[I].UpdateState(aTick)
-  else
-    //PlayerAI can stop the game and clear everything
-    Exit;
+  gPerfLogs.SectionEnter(psHands, gGame.GameTick);
+  try
+    for I := 0 to Count - 1 do
+    if (gGame <> nil) and not gGame.IsPaused and not gGame.IsExiting then
+      fHandsList[I].UpdateState(aTick)
+    else
+      //PlayerAI can stop the game and clear everything
+      Exit;
 
-  PlayerAnimals.UpdateState(aTick); //Animals don't have any AI yet
+    PlayerAnimals.UpdateState(aTick); //Animals don't have any AI yet
+  finally
+    gPerfLogs.SectionLeave(psHands);
+  end;
+
 end;
 
 
@@ -1109,10 +1115,12 @@ procedure TKMHandsCollection.Paint(const aRect: TKMRect);
 var
   I: Integer;
 begin
+  gPerfLogs.SectionEnter(psFrameHands);
   for I := 0 to fCount - 1 do
     fHandsList[I].Paint(aRect);
 
   PlayerAnimals.Paint(aRect);
+  gPerfLogs.SectionLeave(psFrameHands);
 end;
 
 

@@ -46,7 +46,7 @@ uses
   Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_Houses, KM_HouseBarracks,
-  KM_ResHouses, KM_NavMesh, KM_CommonUtils;
+  KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
@@ -666,27 +666,32 @@ end;
 
 procedure TKMGeneral.UpdateState(aTick: Cardinal);
 begin
-  //Update defence positions locations
-  if fSetup.AutoDefend then
-    //Checking mod result against MAX_HANDS causes first update to happen ASAP
-    if (aTick + Byte(fOwner)) mod (MAX_HANDS * 120) = MAX_HANDS then
-      CheckAutoDefend;
+  gPerfLogs.SectionEnter(psAIArmyCls, aTick);
+  try
+    //Update defence positions locations
+    if fSetup.AutoDefend then
+      //Checking mod result against MAX_HANDS causes first update to happen ASAP
+      if (aTick + Byte(fOwner)) mod (MAX_HANDS * 120) = MAX_HANDS then
+        CheckAutoDefend;
 
-  //See if we can launch an attack
-  if fSetup.AutoAttack then
-    if (aTick + Byte(fOwner)) mod (MAX_HANDS * 120) = 1 then
-      CheckAutoAttack;
+    //See if we can launch an attack
+    if fSetup.AutoAttack then
+      if (aTick + Byte(fOwner)) mod (MAX_HANDS * 120) = 1 then
+        CheckAutoAttack;
 
-  if (aTick + Byte(fOwner)) mod MAX_HANDS = 0 then
-  begin
-    fDefencePositions.UpdateState;
-    CheckArmy; //Feed army, position defence, arrange/organise groups
-    CheckAttacks;
-    CheckArmyCount; //Train new soldiers if needed
+    if (aTick + Byte(fOwner)) mod MAX_HANDS = 0 then
+    begin
+      fDefencePositions.UpdateState;
+      CheckArmy; //Feed army, position defence, arrange/organise groups
+      CheckAttacks;
+      CheckArmyCount; //Train new soldiers if needed
 
-    //CheckEnemyPresence; //Check enemy threat in close range and issue defensive attacks (or flee?)
-    //CheckAndIssueAttack; //Attack enemy
-    //Anything Else?
+      //CheckEnemyPresence; //Check enemy threat in close range and issue defensive attacks (or flee?)
+      //CheckAndIssueAttack; //Attack enemy
+      //Anything Else?
+    end;
+  finally
+    gPerfLogs.SectionLeave(psAIArmyCls);
   end;
 end;
 

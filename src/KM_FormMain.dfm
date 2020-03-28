@@ -6,7 +6,6 @@ object FormMain: TFormMain
   ClientHeight = 785
   ClientWidth = 521
   Color = clBtnFace
-  DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -67,11 +66,13 @@ object FormMain: TFormMain
       end>
   end
   object mainGroup: TCategoryPanelGroup
-    Left = 321
+    Left = 261
     Top = 0
+    Width = 260
     Height = 765
     VertScrollBar.Tracking = True
     Align = alRight
+    DoubleBuffered = False
     HeaderFont.Charset = DEFAULT_CHARSET
     HeaderFont.Color = clWindowText
     HeaderFont.Height = -11
@@ -79,14 +80,17 @@ object FormMain: TFormMain
     HeaderFont.Style = []
     HeaderHeight = 18
     HeaderStyle = hsThemed
+    ParentDoubleBuffered = False
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 360
-      Height = 179
+      Top = 1020
+      Height = 24
       Caption = 'Logs'
+      Collapsed = True
       TabOrder = 0
+      ExpandedHeight = 179
       object chkLogCommands: TCheckBox
-        Left = 100
+        Left = 120
         Top = 8
         Width = 73
         Height = 17
@@ -124,11 +128,11 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkLogRngChecks: TCheckBox
-        Left = 100
+        Left = 120
         Top = 24
-        Width = 73
+        Width = 97
         Height = 17
-        Caption = 'RngChecks'
+        Caption = 'Random Checks'
         TabOrder = 4
         OnClick = ControlsUpdate
       end
@@ -158,7 +162,7 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 336
+      Top = 996
       Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
@@ -260,7 +264,7 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 312
+      Top = 972
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
@@ -276,11 +280,11 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkUIControlsID: TCheckBox
-        Left = 110
+        Left = 120
         Top = 8
-        Width = 58
+        Width = 73
         Height = 17
-        Caption = 'Ctrls ID'
+        Caption = 'Controls IDs'
         TabOrder = 1
         OnClick = ControlsUpdate
       end
@@ -295,7 +299,7 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 288
+      Top = 948
       Height = 24
       Caption = 'AI'
       Collapsed = True
@@ -318,7 +322,7 @@ object FormMain: TFormMain
         Visible = False
       end
       object chkAIEye: TCheckBox
-        Left = 100
+        Left = 120
         Top = 24
         Width = 97
         Height = 17
@@ -327,7 +331,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkBevel: TCheckBox
-        Left = 100
+        Left = 120
         Top = 8
         Width = 88
         Height = 17
@@ -374,7 +378,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowDefences: TCheckBox
-        Left = 100
+        Left = 120
         Top = 88
         Width = 97
         Height = 17
@@ -383,7 +387,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowEyeRoutes: TCheckBox
-        Left = 100
+        Left = 120
         Top = 72
         Width = 88
         Height = 17
@@ -392,7 +396,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowFlatArea: TCheckBox
-        Left = 100
+        Left = 120
         Top = 56
         Width = 88
         Height = 17
@@ -419,7 +423,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowSoil: TCheckBox
-        Left = 100
+        Left = 120
         Top = 40
         Width = 88
         Height = 17
@@ -458,11 +462,19 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
     end
+    object cpPerfLogs: TCategoryPanel
+      Top = 288
+      Height = 660
+      Caption = 'Perf Logs'
+      TabOrder = 4
+    end
     object cpDebugRender: TCategoryPanel
       Top = 73
       Height = 215
       Caption = 'Debug Render'
-      TabOrder = 4
+      DoubleBuffered = True
+      ParentDoubleBuffered = False
+      TabOrder = 5
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -489,7 +501,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkSelectedObjInfo: TCheckBox
-        Left = 90
+        Left = 120
         Top = 133
         Width = 84
         Height = 17
@@ -507,7 +519,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowFPS: TCheckBox
-        Left = 114
+        Left = 120
         Top = 156
         Width = 76
         Height = 17
@@ -516,7 +528,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowGameTick: TCheckBox
-        Left = 114
+        Left = 120
         Top = 172
         Width = 76
         Height = 17
@@ -534,7 +546,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainIds: TCheckBox
-        Left = 90
+        Left = 120
         Top = 24
         Width = 79
         Height = 17
@@ -543,11 +555,11 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainKinds: TCheckBox
-        Left = 90
+        Left = 120
         Top = 40
         Width = 79
         Height = 17
-        Caption = 'Ter. Kinds'
+        Caption = 'Terrain Kinds'
         TabOrder = 8
         OnClick = ControlsUpdate
       end
@@ -579,7 +591,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkTilesGrid: TCheckBox
-        Left = 90
+        Left = 120
         Top = 72
         Width = 79
         Height = 17
@@ -588,7 +600,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkUIDs: TCheckBox
-        Left = 90
+        Left = 120
         Top = 117
         Width = 79
         Height = 17
@@ -610,7 +622,7 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
       object chkJamMeter: TCheckBox
-        Left = 90
+        Left = 120
         Top = 88
         Width = 79
         Height = 17
@@ -619,7 +631,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainOverlays: TCheckBox
-        Left = 90
+        Left = 120
         Top = 56
         Width = 95
         Height = 17
@@ -633,8 +645,8 @@ object FormMain: TFormMain
       Height = 24
       Caption = 'Game additional'
       Collapsed = True
-      TabOrder = 5
-      ExpandedHeight = 152
+      TabOrder = 6
+      ExpandedHeight = 136
       object chkLoadUnsupSaves: TCheckBox
         Left = 12
         Top = 8
@@ -647,11 +659,11 @@ object FormMain: TFormMain
       object RGPlayer: TRadioGroup
         Left = 8
         Top = 30
-        Width = 177
-        Height = 99
+        Width = 225
+        Height = 75
         BiDiMode = bdLeftToRight
         Caption = ' Select player '
-        Columns = 4
+        Columns = 6
         ItemIndex = 0
         Items.Strings = (
           '1'
@@ -681,7 +693,7 @@ object FormMain: TFormMain
       Top = 0
       Height = 49
       Caption = 'Game '
-      TabOrder = 6
+      TabOrder = 7
       object chkSuperSpeed: TCheckBox
         Left = 8
         Top = 5

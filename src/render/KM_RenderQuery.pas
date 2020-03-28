@@ -1,17 +1,19 @@
 ﻿unit KM_RenderQuery;
-{$I KM_CompilerDirectives.inc}
+{$I KaM_Remake.inc}
 interface
 uses
-  {$IFDEF ANDROID}
-    Androidapi.Gles2,
-  {$ENDIF}
-  {$IFDEF DESKTOP}
-    dglOpenGL,
-  {$ENDIF}
-  KM_RenderTypes;
+//  {$IFDEF ANDROID}
+//    Androidapi.Gles2,
+//  {$ENDIF}
+//  {$IFDEF DESKTOP}
+    dglOpenGL;//,
+//  {$ENDIF}
+  //KM_RenderTypes;
 
 
 type
+  TKMQueryBuffer = (qbFront, qbBack);
+
   TKMRenderQuery = class
   private
     // To avoid stalling, one frame we query A and read from B, next frame query B and read from A
@@ -118,7 +120,11 @@ var
 begin
   glGetQueryObjectui64v(fQueryID[aQueryId, fQueryBufferB].TimeStart, GL_QUERY_RESULT, @t1);
   glGetQueryObjectui64v(fQueryID[aQueryId, fQueryBufferB].TimeEnd, GL_QUERY_RESULT, @t2);
-  Result := t2 - t1;
+
+  if t2 > t1 then
+    Result := t2 - t1
+  else
+    Result := 0; //Sometimes we can get overflow....
 end;
 
 

@@ -77,7 +77,7 @@ uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_HouseBarracks,
   KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_RenderAux,
-  KM_AIParameters;
+  KM_AIParameters, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMArmyManagement }
@@ -748,23 +748,28 @@ end;
 
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
 begin
-  if (aTick mod MAX_HANDS = fOwner) then
-  begin
-    //SP_OLD_ATTACK_AI := fOwner <> 1;
-    SP_OLD_ATTACK_AI := (gGame.MissionMode <> mmTactic);
-    CheckThreats();
-    if not gGame.IsPeaceTime then
+  gPerfLogs.SectionEnter(psAIArmyAdv, aTick);
+  try
+    if (aTick mod MAX_HANDS = fOwner) then
     begin
-      CheckAttack();
-      RecruitSoldiers();
+      //SP_OLD_ATTACK_AI := fOwner <> 1;
+      SP_OLD_ATTACK_AI := (gGame.MissionMode <> mmTactic);
+      CheckThreats();
+      if not gGame.IsPeaceTime then
+      begin
+        CheckAttack();
+        RecruitSoldiers();
+      end;
+      CheckGroupsState();
+      if SP_OLD_ATTACK_AI then
+        fAttack.UpdateState(aTick)
+      else
+        fAttackNew.UpdateState(aTick);
+      fDefence.UpdateState(aTick);
+      SP_OLD_ATTACK_AI := False;
     end;
-    CheckGroupsState();
-    if SP_OLD_ATTACK_AI then
-      fAttack.UpdateState(aTick)
-    else
-      fAttackNew.UpdateState(aTick);
-    fDefence.UpdateState(aTick);
-    SP_OLD_ATTACK_AI := False;
+  finally
+    gPerfLogs.SectionLeave(psAIArmyAdv);
   end;
 end;
 

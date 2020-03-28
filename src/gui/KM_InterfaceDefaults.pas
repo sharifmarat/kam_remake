@@ -132,7 +132,7 @@ const
 
 implementation
 uses
-  SysUtils, KM_Resource, KM_ResKeys, KM_RenderUI, KM_Defaults;
+  SysUtils, KM_Resource, KM_ResKeys, KM_RenderUI, KM_Defaults, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TKMUserInterface }
@@ -259,7 +259,9 @@ end;
 
 procedure TKMUserInterfaceCommon.Paint;
 begin
+  gPerfLogs.SectionEnter(psFrameGui);
   fMyControls.Paint;
+  gPerfLogs.SectionLeave(psFrameGui);
 end;
 
 

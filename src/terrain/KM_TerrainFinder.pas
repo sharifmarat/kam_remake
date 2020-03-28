@@ -49,7 +49,7 @@ type
 
 implementation
 uses
-  KM_ResMapElements, KM_Terrain;
+  KM_ResMapElements, KM_Terrain, KM_Game, KM_DevPerfLog,  KM_DevPerfLogTypes;
 
 
 { TKMTerrainFinder }
@@ -267,6 +267,7 @@ const
 var
   I, K: Integer;
 begin
+  gPerfLogs.SectionEnter(psTerrainFinder, gGame.GameTick);
   if USE_WALKING_DISTANCE then
   begin
     //Because we use 10 for straight and 14 for diagonal in byte storage 24 is the maximum allowed
@@ -286,6 +287,7 @@ begin
         if (aPass in gTerrain.Land[I,K].Passability) and (KMLengthDiag(aStart, KMPoint(K,I)) <= aRadius) then
           aList.Add(KMPoint(K,I));
   end;
+  gPerfLogs.SectionLeave(psTerrainFinder);
 end;
 
 

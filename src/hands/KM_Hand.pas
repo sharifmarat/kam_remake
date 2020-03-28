@@ -315,7 +315,7 @@ end;
 
 procedure TKMHandCommon.UpdateState(aTick: Cardinal);
 begin
-  fUnits.UpdateState;
+  fUnits.UpdateState(aTick);
 end;
 
 
