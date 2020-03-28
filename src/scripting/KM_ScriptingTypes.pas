@@ -18,6 +18,7 @@ type
     evtGroupHungry,
     evtGroupOrderAttackHouse,
     evtGroupOrderAttackUnit,
+    evtGroupOrderBeforeSplit,
     evtGroupOrderMove,
     evtGroupOrderLink,
     evtGroupOrderSplit,

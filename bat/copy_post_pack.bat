@@ -22,6 +22,12 @@ xcopy ..\Tutorials "%kam_folder%"\Tutorials\ /y /r /s
 xcopy ..\Sounds "%kam_folder%"\Sounds\ /y /r /s
 xcopy ..\Music "%kam_folder%"\Music\ /y /r /s
 xcopy ..\Readme "%kam_folder%"\ /y /r /s
+REM xcopy ..\lib "%kam_folder%"\lib\ /y /r /s
+
+REM ============================================================
+REM Copy video files
+REM ============================================================
+REM xcopy "%KMRVideosDir%" "%kam_folder%" /y /r /s
 
 REM ============================================================
 REM Copy files from KMRPrevVersionDir

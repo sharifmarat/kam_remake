@@ -191,17 +191,18 @@ begin
     libvlc_release(FInstance);
     FInstance := nil;
   end;
-{$ENDIF}
 
   FCriticalSection.Free;
-
+{$ENDIF}
   inherited;
 end;
 
 
 procedure TKMVideoPlayer.AddCampaignVideo(aCampaignPath: string; aVideoName: String);
+{$IFDEF VIDEOS}
 var
   Path: string;
+{$ENDIF}
 begin
 {$IFDEF VIDEOS}
   if not gGameApp.GameSettings.VideoOn then
@@ -214,9 +215,11 @@ begin
 end;
 
 procedure TKMVideoPlayer.AddMissionVideo(aMissionFile: string; aVideoName: String);
+{$IFDEF VIDEOS}
 var
   MissionPath, FileName: string;
   Path: string;
+{$ENDIF}
 begin
 {$IFDEF VIDEOS}
   if not gGameApp.GameSettings.VideoOn then
@@ -232,8 +235,10 @@ begin
 end;
 
 procedure TKMVideoPlayer.AddVideo(aVideoName: String);
+{$IFDEF VIDEOS}
 var
   Path: string;
+{$ENDIF}
 begin
 {$IFDEF VIDEOS}
   if not gGameApp.GameSettings.VideoOn then
@@ -288,9 +293,11 @@ begin
 end;
 
 procedure TKMVideoPlayer.Paint;
+{$IFDEF VIDEOS}
 var
   AspectRatio: Single;
   Width, Height: Integer;
+{$ENDIF}
 begin
 {$IFDEF VIDEOS}
   if FNext then

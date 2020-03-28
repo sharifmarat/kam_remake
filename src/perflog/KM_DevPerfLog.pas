@@ -217,6 +217,8 @@ procedure TKMPerfLogs.Clear;
 var
   PS: TPerfSectionDev;
 begin
+  if Self = nil then Exit;
+
   fStackCPU.Clear;
   fStackGFX.Clear;
   for PS := LOW_PERF_SECTION to High(TPerfSectionDev) do
@@ -250,6 +252,8 @@ var
   x, y: Single;
   lbl: string;
 begin
+  if Self = nil then Exit;
+
   lastTick := 0;
   cCount := 0;
 
@@ -315,6 +319,8 @@ var
   I: TPerfSectionDev;
   S: TStringList;
 begin
+  if Self = nil then Exit;
+
   ForceDirectories(ExtractFilePath(aFilename));
 
   S := TStringList.Create;
@@ -343,6 +349,8 @@ procedure TKMPerfLogs.ShowForm(aContainer: TWinControl);
 var
   form: TFormPerfLogs;
 begin
+  if Self = nil then Exit;
+
   form := TFormPerfLogs.Create(aContainer);
 
   form.Parent := aContainer;

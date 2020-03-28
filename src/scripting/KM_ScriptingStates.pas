@@ -47,6 +47,7 @@ type
     function GroupDead(aGroupID: Integer): Boolean;
     function GroupIdle(aGroupID: Integer): Boolean;
     function GroupInFight(aGroupID: Integer; aCountCitizens: Boolean): Boolean;
+    function GroupManualFormation(aGroupID: Integer): Boolean;
     function GroupMember(aGroupID, aMemberIndex: Integer): Integer;
     function GroupMemberCount(aGroupID: Integer): Integer;
     function GroupOrder(aGroupID: Integer): TKMGroupOrder;
@@ -4151,6 +4152,30 @@ begin
     end
     else
       LogParamWarning('States.GroupType', [aGroupID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11200
+//* Returns the manual formation parameter of the specified group (false for new group, true if player changed formation manually at least once)
+//* Result: manual formation
+function TKMScriptStates.GroupManualFormation(aGroupID: Integer): Boolean;
+var
+  G: TKMUnitGroup;
+begin
+  try
+    Result := False;
+    if aGroupID > 0 then
+    begin
+      G := fIDCache.GetGroup(aGroupID);
+      if G <> nil then
+        Result := G.ManualFormation;
+    end
+    else
+      LogParamWarning('States.GroupManualFormation', [aGroupID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
