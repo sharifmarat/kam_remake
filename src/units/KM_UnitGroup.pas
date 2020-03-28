@@ -1530,6 +1530,9 @@ begin
   if Count < 2 then Exit;
   //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
   if Members[0].Action is TKMUnitActionStormAttack then Exit;
+
+  gScriptEvents.ProcGroupOrderBeforeSplit(Self);
+
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   //If there are different unit types in the group, split should just split them first

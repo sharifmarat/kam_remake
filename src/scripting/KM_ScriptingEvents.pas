@@ -78,6 +78,7 @@ type
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderAttackHouse(aGroup: TKMUnitGroup; aHouse: TKMHouse);
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
+    procedure ProcGroupOrderBeforeSplit(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderMove(aGroup: TKMUnitGroup; aX, aY: Word);
     procedure ProcGroupOrderLink(aGroup1, aGroup2: TKMUnitGroup);
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
@@ -196,6 +197,7 @@ begin
   AddEventHandlerName(evtGroupHungry,           'OnGroupHungry');
   AddEventHandlerName(evtGroupOrderAttackHouse, 'OnGroupOrderAttackHouse');
   AddEventHandlerName(evtGroupOrderAttackUnit,  'OnGroupOrderAttackUnit');
+  AddEventHandlerName(evtGroupOrderBeforeSplit, 'OnGroupOrderBeforeSplit');
   AddEventHandlerName(evtGroupOrderMove,        'OnGroupOrderMove');
   AddEventHandlerName(evtGroupOrderLink,        'OnGroupOrderLink');
   AddEventHandlerName(evtGroupOrderSplit,       'OnGroupOrderSplit');
@@ -765,6 +767,20 @@ begin
     fIDCache.CacheGroup(aGroup, aGroup.UID); //Improves cache efficiency since aGroup will probably be accessed soon
     fIDCache.CacheUnit(aUnit, aUnit.UID);    //Improves cache efficiency since aUnit will probably be accessed soon
     CallEventHandlers(evtGroupOrderAttackUnit, [aGroup.UID, aUnit.UID]);
+  end;
+end;
+
+
+//* Version: 11200
+//* Occurs when the group gets order to split
+//* aGroup: group ID
+//* aNewGroup: splitted group ID
+procedure TKMScriptEvents.ProcGroupOrderBeforeSplit(aGroup: TKMUnitGroup);
+begin
+  if MethodAssigned(evtGroupOrderBeforeSplit) then
+  begin
+    fIDCache.CacheGroup(aGroup, aGroup.UID);       //Improves cache efficiency since aGroup will probably be accessed soon
+    CallEventHandlers(evtGroupOrderBeforeSplit, [aGroup.UID]);
   end;
 end;
 
