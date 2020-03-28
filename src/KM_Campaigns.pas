@@ -291,17 +291,12 @@ end;
 procedure TKMCampaignsCollection.SaveProgress;
 var
   M: TKMemoryStreamBinary;
-  I,J, CampaignCount: Integer;
+  I,J: Integer;
   FilePath: UnicodeString;
 begin
   FilePath := ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat';
   //Makes the folder incase it is missing
   ForceDirectories(ExtractFilePath(FilePath));
-
-  CampaignCount := 0;
-  for I := 0 to Count - 1 do
-    if Campaigns[I].Viewed then
-      Inc(CampaignCount);
 
   M := TKMemoryStreamBinary.Create;
   try

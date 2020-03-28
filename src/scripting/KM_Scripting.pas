@@ -2370,7 +2370,7 @@ begin
 
   S := ExtractFilePath(aCallingFileName);
   if S = '' then S := ExtractFilePath(ParamStr(0));
-  aFileName := AnsiString(S) + Trim(aFileName);
+  aFileName := AnsiString(S) + AnsiString(Trim(aFileName));
 
   FileExt := ExtractFileExt(aFileName);
   // Check included file extension

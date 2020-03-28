@@ -590,7 +590,7 @@ end;
 initialization
 begin
   {$IFDEF WDC}
-  CF_MAPDATA := RegisterClipboardFormat(PWideChar('KaM Remake ' + GAME_REVISION + ' Map Data'));
+  CF_MAPDATA := RegisterClipboardFormat(PWideChar('KaM Remake ' + string(GAME_REVISION) + ' Map Data'));
   {$ENDIF}
 end;
 

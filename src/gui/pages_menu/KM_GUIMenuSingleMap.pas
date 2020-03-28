@@ -141,7 +141,7 @@ end;
 
 procedure TKMMenuSingleMap.Create_SingleMap(aParent: TKMPanel);
 var
-  I, Left: Integer;
+  I: Integer;
   Half, ButtonW: Word; //Half width for panes
   L: TKMLabel;
   B: TKMBevel;
@@ -272,8 +272,6 @@ begin
       L := TKMLabel.Create(Panel_Desc, 4, 614, 190, 20, gResTexts[TX_MENU_ENEMIES], fntMetal, taLeft);
       L.Anchors := [anLeft, anBottom];
 
-
-      Left := Min(200, Half - 1 - MAX_HANDS*FLAG_W);
       for I := 0 to MAX_HANDS - 1 do
       begin
         Image_Allies[I] := TKMImage.Create(Panel_Desc, 200 + I*FLAG_W, 593, 50, 20, 81, rxGuiMain);

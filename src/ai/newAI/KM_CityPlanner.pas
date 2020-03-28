@@ -1194,7 +1194,7 @@ procedure TKMCityPlanner.PlanFields(aCnt: Word; aLoc: TKMPoint; aFieldType: TKMF
 var
   Check: Boolean;
   X,Y, X2,Y2: Integer;
-  BelowLoc, P, P2: TKMPoint;
+  BelowLoc, P: TKMPoint;
   Build: array[-FARM_RADIUS..FARM_RADIUS,-FARM_RADIUS..FARM_RADIUS] of Boolean;
   Price: TFieldPrice;
   TagList: TKMPointTagList;

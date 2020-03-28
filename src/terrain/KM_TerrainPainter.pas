@@ -831,7 +831,7 @@ end;
 
 function GetMaskType(aCornerTerKinds: TKMTerrainKindsArray; var aLayerOrder: array of TKMTileMaskInfo): TKMTileMaskType;
 var
-  A,B,C,D,TK: TKMTerrainKind;
+  A,B,C,D: TKMTerrainKind;
   I, J, Tmp: Integer;
   CornerI: array[0..3] of Integer;
 begin

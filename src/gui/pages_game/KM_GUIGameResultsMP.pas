@@ -812,7 +812,7 @@ var
   Bests: array [0..9] of Cardinal;
   Totals: array [0..9] of Cardinal;
   StatValue: Cardinal;
-  ListToShow, HandsInOne: TStringList;
+  ListToShow: TStringList;
   StatsValues: TKMStatsValues;
 begin
   ListToShow := fListToShow[aStatType];
