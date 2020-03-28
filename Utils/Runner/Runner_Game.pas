@@ -111,6 +111,15 @@ type
     procedure Execute(aRun: Integer); override;
   end;
 
+  TKMRunnerCombatAITest = class(TKMRunnerCommon)
+  private
+    fBestScore, fWorstScore, fAverageScore: Double;
+  protected
+    procedure SetUp(); override;
+    procedure TearDown(); override;
+    procedure Execute(aRun: Integer); override;
+  end;
+
   TKMRunnerPushModes = class(TKMRunnerCommon)
   private
     fBestScore, fWorstScore, fAverageScore: Double;
@@ -684,6 +693,92 @@ begin
 end;
 
 
+
+
+{ TKMRunnerCombatAITest }
+procedure TKMRunnerCombatAITest.SetUp();
+begin
+  inherited;
+  // Deactivate KaM log
+  if (gLog = nil) then
+    gLog := TKMLog.Create(Format('%s\Utils\Runner\Runner_Log.log',[ExeDir]));
+  gLog.MessageTypes := [];
+end;
+
+
+procedure TKMRunnerCombatAITest.TearDown();
+begin
+  inherited;
+end;
+
+
+procedure TKMRunnerCombatAITest.Execute(aRun: Integer);
+  function EvalGame(): Double;
+  const
+    PL = 1;
+  var
+    K: Integer;
+    UT: TKMUnitType;
+  begin
+    Result := 0;
+    with gHands[PL].Stats do
+      for UT := WARRIOR_MIN to WARRIOR_MAX do
+        Result := Result + GetUnitQty(UT);
+  end;
+const
+  // Maps for simulation (I dont use for loop in this array)
+  //MAPS: array [1..27] of String = ('GA_S1_001','GA_S1_002','GA_S1_003','GA_S1_004','GA_S1_005','GA_S1_006','GA_S1_007','GA_S1_008','GA_S1_009','GA_S1_010','GA_S1_011','GA_S1_012','GA_S1_013','GA_S1_014','GA_S1_015','GA_S1_016','GA_S1_017','GA_S1_018','GA_S1_019','GA_S1_020','GA_S1_021','GA_S1_022','GA_S1_023','GA_S1_024','GA_S1_025','GA_S1_026','GA_S1_027');
+  //MAPS: array [1..12] of String = ('GA_S1_002','GA_S1_003','GA_S1_007','GA_S1_008','GA_S1_010','GA_S1_014','GA_S1_015','GA_S1_019','GA_S1_023','GA_S1_024','GA_S1_026','GA_S1_027');
+  MAPS: array [1..1] of String = ('IV_1v1');
+  //MAPS: array [1..1] of String = ('IV_1v1_AdvOldC');
+  cnt_MAP_SIMULATIONS = 100;
+  CRASH_DETECTION_MODE = True;
+var
+  K,L,Wins: Integer;
+  Score: Double;
+  MapName: String;
+begin
+  for K := Low(MAPS) to High(MAPS) do
+  begin
+    fBestScore := -1e30;
+    fAverageScore := 0;
+    fWorstScore := 1e30;
+    Wins := 0;
+    MapName := MAPS[K];
+    for L := 1 to cnt_MAP_SIMULATIONS do
+    begin
+      OnProgress2(MapName + ' Run ' + IntToStr(L));
+      gGameApp.NewSingleMap(Format('%s..\..\Maps\%s\%s.dat',[ExtractFilePath(ParamStr(0)),MapName,MapName]), MapName);
+
+      //SetKaMSeed(L + 1000);
+
+      if CRASH_DETECTION_MODE then
+        gGameApp.Game.Save('CrashDetection', Now);
+
+      //SetKaMSeed(Max(1,Seed));
+      SimulateGame();
+      Score := Max(0,EvalGame());
+      Wins := Wins + Byte(Score > 0);
+      fAverageScore := fAverageScore + Score;
+      //gGameApp.Game.Save(Format('%s__No_%.3d__Score_%.6d',[MapName, K, Round(Score)]), Now);
+      if (Score <= fWorstScore) AND (cnt_MAP_SIMULATIONS > 1) then
+      begin
+        fWorstScore := Score;
+        gGameApp.Game.Save(Format('W__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
+      end;
+
+    end;
+    fAverageScore := fAverageScore / cnt_MAP_SIMULATIONS;
+    gGameApp.Game.Save(Format('AVRG_%s__%.6d',[MapName, Round(Wins)]), Now);
+  end;
+
+  gGameApp.StopGame(grSilent);
+end;
+
+
+
+
+{ TKMRunnerPushModes }
 procedure TKMRunnerPushModes.SetUp();
 begin
   inherited;
@@ -1171,6 +1266,7 @@ initialization
   RegisterRunner(TKMRunnerGA_CityPlanner);
   RegisterRunner(TKMRunnerGA_ArmyAttack);
   RegisterRunner(TKMRunnerFindBugs);
+  RegisterRunner(TKMRunnerCombatAITest);
   RegisterRunner(TKMRunnerStone);
   RegisterRunner(TKMRunnerFight95);
   RegisterRunner(TKMRunnerAIBuild);
