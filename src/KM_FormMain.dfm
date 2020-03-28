@@ -90,7 +90,7 @@ object FormMain: TFormMain
       TabOrder = 0
       ExpandedHeight = 179
       object chkLogCommands: TCheckBox
-        Left = 100
+        Left = 120
         Top = 8
         Width = 73
         Height = 17
@@ -128,11 +128,11 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkLogRngChecks: TCheckBox
-        Left = 100
+        Left = 120
         Top = 24
-        Width = 73
+        Width = 97
         Height = 17
-        Caption = 'RngChecks'
+        Caption = 'Random Checks'
         TabOrder = 4
         OnClick = ControlsUpdate
       end
@@ -280,11 +280,11 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkUIControlsID: TCheckBox
-        Left = 110
+        Left = 120
         Top = 8
-        Width = 58
+        Width = 73
         Height = 17
-        Caption = 'Ctrls ID'
+        Caption = 'Controls IDs'
         TabOrder = 1
         OnClick = ControlsUpdate
       end
@@ -322,7 +322,7 @@ object FormMain: TFormMain
         Visible = False
       end
       object chkAIEye: TCheckBox
-        Left = 100
+        Left = 120
         Top = 24
         Width = 97
         Height = 17
@@ -331,7 +331,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkBevel: TCheckBox
-        Left = 100
+        Left = 120
         Top = 8
         Width = 88
         Height = 17
@@ -378,7 +378,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowDefences: TCheckBox
-        Left = 100
+        Left = 120
         Top = 88
         Width = 97
         Height = 17
@@ -387,7 +387,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowEyeRoutes: TCheckBox
-        Left = 100
+        Left = 120
         Top = 72
         Width = 88
         Height = 17
@@ -396,7 +396,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowFlatArea: TCheckBox
-        Left = 100
+        Left = 120
         Top = 56
         Width = 88
         Height = 17
@@ -423,7 +423,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowSoil: TCheckBox
-        Left = 100
+        Left = 120
         Top = 40
         Width = 88
         Height = 17
@@ -501,7 +501,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkSelectedObjInfo: TCheckBox
-        Left = 90
+        Left = 120
         Top = 133
         Width = 84
         Height = 17
@@ -519,7 +519,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowFPS: TCheckBox
-        Left = 114
+        Left = 120
         Top = 156
         Width = 76
         Height = 17
@@ -528,7 +528,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowGameTick: TCheckBox
-        Left = 114
+        Left = 120
         Top = 172
         Width = 76
         Height = 17
@@ -546,7 +546,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainIds: TCheckBox
-        Left = 90
+        Left = 120
         Top = 24
         Width = 79
         Height = 17
@@ -555,11 +555,11 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainKinds: TCheckBox
-        Left = 90
+        Left = 120
         Top = 40
         Width = 79
         Height = 17
-        Caption = 'Ter. Kinds'
+        Caption = 'Terrain Kinds'
         TabOrder = 8
         OnClick = ControlsUpdate
       end
@@ -591,7 +591,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkTilesGrid: TCheckBox
-        Left = 90
+        Left = 120
         Top = 72
         Width = 79
         Height = 17
@@ -600,7 +600,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkUIDs: TCheckBox
-        Left = 90
+        Left = 120
         Top = 117
         Width = 79
         Height = 17
@@ -622,7 +622,7 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
       object chkJamMeter: TCheckBox
-        Left = 90
+        Left = 120
         Top = 88
         Width = 79
         Height = 17
@@ -631,7 +631,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainOverlays: TCheckBox
-        Left = 90
+        Left = 120
         Top = 56
         Width = 95
         Height = 17
@@ -646,7 +646,7 @@ object FormMain: TFormMain
       Caption = 'Game additional'
       Collapsed = True
       TabOrder = 6
-      ExpandedHeight = 152
+      ExpandedHeight = 136
       object chkLoadUnsupSaves: TCheckBox
         Left = 12
         Top = 8
@@ -659,11 +659,11 @@ object FormMain: TFormMain
       object RGPlayer: TRadioGroup
         Left = 8
         Top = 30
-        Width = 177
-        Height = 99
+        Width = 225
+        Height = 75
         BiDiMode = bdLeftToRight
         Caption = ' Select player '
-        Columns = 4
+        Columns = 6
         ItemIndex = 0
         Items.Strings = (
           '1'
