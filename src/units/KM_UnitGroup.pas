@@ -1531,7 +1531,8 @@ begin
   //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
   if Members[0].Action is TKMUnitActionStormAttack then Exit;
 
-  gScriptEvents.ProcGroupOrderBeforeSplit(Self);
+  if gScriptEvents.FuncGroupAllowOrderSplit(Self) = brFalse then
+    Exit;
 
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 

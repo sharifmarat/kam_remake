@@ -39,10 +39,11 @@ type
     fConsoleCommands: TDictionary<AnsiString, TKMConsoleCommand>;
 
     procedure AddDefaultEventHandlersNames;
-    procedure CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer; aFloatParam: Single = FLOAT_PARAM_NONE);
+    function CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer; aFloatParam: Single = FLOAT_PARAM_NONE): TKMThreeResult;
     function GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
 
     procedure HandleScriptProcCallError(aMethod: String);
+    function CallEventFunc(const aFunc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single): TKMThreeResult;
     procedure CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
     function MethodAssigned(aProc: TMethod): Boolean; overload; inline;
     function MethodAssigned(aEventType: TKMScriptEventType): Boolean; overload; inline;
@@ -78,7 +79,7 @@ type
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderAttackHouse(aGroup: TKMUnitGroup; aHouse: TKMHouse);
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
-    procedure ProcGroupOrderBeforeSplit(aGroup: TKMUnitGroup);
+    function FuncGroupAllowOrderSplit(aGroup: TKMUnitGroup): TKMThreeResult;
     procedure ProcGroupOrderMove(aGroup: TKMUnitGroup; aX, aY: Word);
     procedure ProcGroupOrderLink(aGroup1, aGroup2: TKMUnitGroup);
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
@@ -109,6 +110,8 @@ type
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
+
+    class function GetIsProcedureByType(aEventType: TKMScriptEventType): Boolean;
   end;
 
 
@@ -132,12 +135,19 @@ uses
 
 
 type
-  TKMScriptEvent = procedure of object;
-  TKMScriptEvent1I = procedure (aIndex: Integer) of object;
-  TKMScriptEvent2I = procedure (aIndex, aParam: Integer) of object;
-  TKMScriptEvent3I = procedure (aIndex, aParam1, aParam2: Integer) of object;
-  TKMScriptEvent4I = procedure (aIndex, aParam1, aParam2, aParam3: Integer) of object;
-  TKMScriptEvent1S = procedure (aParam: Single) of object;
+  TKMScriptEventProc = procedure of object;
+  TKMScriptEventProc1I = procedure (aIndex: Integer) of object;
+  TKMScriptEventProc2I = procedure (aIndex, aParam: Integer) of object;
+  TKMScriptEventProc3I = procedure (aIndex, aParam1, aParam2: Integer) of object;
+  TKMScriptEventProc4I = procedure (aIndex, aParam1, aParam2, aParam3: Integer) of object;
+  TKMScriptEventProc1S = procedure (aParam: Single) of object;
+
+  TKMScriptEventFunc = function: Boolean of object;
+  TKMScriptEventFunc1I = function (aIndex: Integer): Boolean of object;
+  TKMScriptEventFunc2I = function (aIndex, aParam: Integer): Boolean of object;
+  TKMScriptEventFunc3I = function (aIndex, aParam1, aParam2: Integer): Boolean of object;
+  TKMScriptEventFunc4I = function (aIndex, aParam1, aParam2, aParam3: Integer): Boolean of object;
+  TKMScriptEventFunc1S = function (aParam: Single): Boolean of object;
 
 
   //We need to check all input parameters as could be wildly off range due to
@@ -197,7 +207,7 @@ begin
   AddEventHandlerName(evtGroupHungry,           'OnGroupHungry');
   AddEventHandlerName(evtGroupOrderAttackHouse, 'OnGroupOrderAttackHouse');
   AddEventHandlerName(evtGroupOrderAttackUnit,  'OnGroupOrderAttackUnit');
-  AddEventHandlerName(evtGroupOrderBeforeSplit, 'OnGroupOrderBeforeSplit');
+  AddEventHandlerName(evtGroupAllowOrderSplit,  'OnGroupAllowOrderSplit');
   AddEventHandlerName(evtGroupOrderMove,        'OnGroupOrderMove');
   AddEventHandlerName(evtGroupOrderLink,        'OnGroupOrderLink');
   AddEventHandlerName(evtGroupOrderSplit,       'OnGroupOrderSplit');
@@ -382,15 +392,19 @@ end;
 
 
 
-procedure TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer;
-                                            aFloatParam: Single = FLOAT_PARAM_NONE);
+function TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer;
+                                            aFloatParam: Single = FLOAT_PARAM_NONE): TKMThreeResult;
 var
   I: Integer;
 begin
+  Result := brUnknown;
   gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
   try
     for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-    CallEventProc(fEventHandlers[aEventType][I], aParams, aFloatParam);
+      if GetIsProcedureByType(aEventType) then
+        CallEventProc(fEventHandlers[aEventType][I], aParams, aFloatParam)
+      else
+        Result := CallEventFunc(fEventHandlers[aEventType][I], aParams, aFloatParam)
   finally
     gPerfLogs.SectionLeave(psScripting);
   end;
@@ -525,20 +539,53 @@ begin
 end;
 
 
+function TKMScriptEvents.CallEventFunc(const aFunc: TKMCustomEventHandler; const aIntParams: array of Integer;
+                                        aFloatParam: Single): TKMThreeResult;
+var
+  Res: Boolean;
+begin
+  if not MethodAssigned(aFunc.Handler) then Exit(brUnknown);
+
+  try
+    if aFloatParam <> FLOAT_PARAM_NONE then
+    begin
+      Res := TKMScriptEventFunc1S(aFunc.Handler)(aFloatParam);
+    end
+    else
+    begin
+      case Length(aIntParams) of
+        0: Res := TKMScriptEventFunc(aFunc.Handler);
+        1: Res := TKMScriptEventFunc1I(aFunc.Handler)(aIntParams[0]);
+        2: Res := TKMScriptEventFunc2I(aFunc.Handler)(aIntParams[0], aIntParams[1]);
+        3: Res := TKMScriptEventFunc3I(aFunc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2]);
+        4: Res := TKMScriptEventFunc4I(aFunc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
+        else raise Exception.Create('Unexpected Length(aParams)');
+      end;
+    end;
+  except
+    HandleScriptProcCallError('game code called by script event handler ''' + aFunc.ProcName + '''');
+  end;
+  if Res then
+    Result := brTrue
+  else if not Res then
+    Result := brFalse;
+end;
+
+
 procedure TKMScriptEvents.CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
 begin
   if not MethodAssigned(aProc.Handler) then Exit;
 
   try
     if aFloatParam <> FLOAT_PARAM_NONE then
-      TKMScriptEvent1S(aProc.Handler)(aFloatParam)
+      TKMScriptEventProc1S(aProc.Handler)(aFloatParam)
     else
     case Length(aIntParams) of
-      0: TKMScriptEvent(aProc.Handler);
-      1: TKMScriptEvent1I(aProc.Handler)(aIntParams[0]);
-      2: TKMScriptEvent2I(aProc.Handler)(aIntParams[0], aIntParams[1]);
-      3: TKMScriptEvent3I(aProc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2]);
-      4: TKMScriptEvent4I(aProc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
+      0: TKMScriptEventProc(aProc.Handler);
+      1: TKMScriptEventProc1I(aProc.Handler)(aIntParams[0]);
+      2: TKMScriptEventProc2I(aProc.Handler)(aIntParams[0], aIntParams[1]);
+      3: TKMScriptEventProc3I(aProc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2]);
+      4: TKMScriptEventProc4I(aProc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
       else raise Exception.Create('Unexpected Length(aParams)');
     end;
   except
@@ -557,6 +604,12 @@ begin
     except
       HandleScriptProcCallError('game code called by console command handler ''' + aCmdName + '''');
     end;
+end;
+
+
+class function TKMScriptEvents.GetIsProcedureByType(aEventType: TKMScriptEventType): Boolean;
+begin
+  Result := aEventType <> evtGroupAllowOrderSplit;
 end;
 
 
@@ -772,14 +825,17 @@ end;
 
 
 //* Version: 11200
+//* Event with return result (function)
 //* Occurs right before the group gets order to split, so you can get INITIAL group parameters and use them later. F.e. initial group formation.
-//* aGroup: group ID
-procedure TKMScriptEvents.ProcGroupOrderBeforeSplit(aGroup: TKMUnitGroup);
+//* aGroup: group ID, which got split order
+//* Result: True - group will be splitted, False - group split will be blocked
+function TKMScriptEvents.FuncGroupAllowOrderSplit(aGroup: TKMUnitGroup): TKMThreeResult;
 begin
-  if MethodAssigned(evtGroupOrderBeforeSplit) then
+  Result := brUnknown;
+  if MethodAssigned(evtGroupAllowOrderSplit) then
   begin
     fIDCache.CacheGroup(aGroup, aGroup.UID);       //Improves cache efficiency since aGroup will probably be accessed soon
-    CallEventHandlers(evtGroupOrderBeforeSplit, [aGroup.UID]);
+    Result := CallEventHandlers(evtGroupAllowOrderSplit, [aGroup.UID]);
   end;
 end;
 
