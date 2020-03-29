@@ -128,7 +128,7 @@ constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuC
   begin
     Panel_MPCreateServer := TKMPanel.Create(aParent, 362, 250, 320, 300);
     Panel_MPCreateServer.AnchorsCenter;
-      TKMBevel.Create(Panel_MPCreateServer, -1000,  -1000, 4000, 4000);
+      TKMBevel.Create(Panel_MPCreateServer, -2000,  -2000, 5000, 5000);
       TKMImage.Create(Panel_MPCreateServer, -20, -75, 340, 310, 15, rxGuiMain);
       TKMBevel.Create(Panel_MPCreateServer,   0,  0, 320, 300);
       TKMLabel.Create(Panel_MPCreateServer, 20, 10, 280, 20, gResTexts[TX_MP_MENU_CREATE_SERVER_HEADER], fntOutline, taCenter);
@@ -149,7 +149,7 @@ constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuC
   begin
     Panel_MPFindServer := TKMPanel.Create(aParent, 362, 250, 320, 300);
     Panel_MPFindServer.AnchorsCenter;
-      TKMBevel.Create(Panel_MPFindServer, -1000,  -1000, 4000, 4000);
+      TKMBevel.Create(Panel_MPFindServer, -2000,  -2000, 5000, 5000);
       TKMImage.Create(Panel_MPFindServer, -20, -75, 340, 310, 15, rxGuiMain);
       TKMBevel.Create(Panel_MPFindServer,   0,  0, 320, 300);
       TKMLabel.Create(Panel_MPFindServer,  20, 10, 280, 20, gResTexts[TX_MP_MENU_FIND_SERVER_HEADER], fntOutline, taCenter);
@@ -172,7 +172,7 @@ constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuC
   begin
     Panel_MPPassword := TKMPanel.Create(aParent, 362, 250, 320, 300);
     Panel_MPPassword.AnchorsCenter;
-      TKMBevel.Create(Panel_MPPassword, -1000,  -1000, 4000, 4000);
+      TKMBevel.Create(Panel_MPPassword, -2000,  -2000, 5000, 5000);
       TKMImage.Create(Panel_MPPassword, -20, -75, 340, 310, 15, rxGuiMain);
       TKMBevel.Create(Panel_MPPassword,   0,  0, 320, 300);
       TKMLabel.Create(Panel_MPPassword,  20, 10, 280, 20, gResTexts[TX_MP_MENU_PASSWORD_HEADER], fntOutline, taCenter);

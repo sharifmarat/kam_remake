@@ -204,6 +204,7 @@ type
       Button_Back: TKMButton;
 
     Panel_Stats: TKMPanel;
+      Panel_Stats_Background: TKMImage;
 
     Panel_ReplayBar: TKMPanel;
       ReplayBar_Replay: TKMReplayBar;
@@ -857,10 +858,11 @@ begin
   Panel_Stats.AnchorsCenter;
 
   // Background image
-  TKMImage.Create(Panel_Stats,-448,-216, 960, 600, 17, rxGuiMain).AnchorsCenter;
-  TKMImage.Create(Panel_Stats, 512,-216, 960, 600, 18, rxGuiMain).AnchorsCenter;
-  TKMImage.Create(Panel_Stats,-448, 384, 960, 600, 19, rxGuiMain).AnchorsCenter;
-  TKMImage.Create(Panel_Stats, 512, 384, 960, 600, 20, rxGuiMain).AnchorsCenter;
+
+  Panel_Stats_Background := TKMImage.Create(Panel_Stats, 0, 0, 700, 800, 17, rxGuiMain);
+  Panel_Stats_Background.Tiled := True;
+  TKMImage.Create(Panel_Stats, -18, -18, 1071, 822, 18, rxGuiMain).AnchorsCenter;
+
   Panel_Stats.Hide;
 
   fGuiGameResultsSP := TKMGameResultsSP.Create(Panel_Stats, StopGame, ShowMPStats);
@@ -916,6 +918,11 @@ begin
 
   Panel_Stats.Top := (Panel_Main.Height - Panel_Stats.Height) div 2;
   Panel_Stats.Height := Min(Panel_Main.Height, MENU_DESIGN_Y);
+
+  Panel_Stats_Background.Left := -Panel_Stats.Left;
+  Panel_Stats_Background.Top := -Panel_Stats.Top;
+  Panel_Stats_Background.Width := X;
+  Panel_Stats_Background.Height := Y;
 
   // Needs to be -10 when the swords are hidden so it fits 1024x576
   Panel_Controls.Top := Sidebar_Top.Height - 10 + (10+Sidebar_Middle.Height) * Byte(showSwords);

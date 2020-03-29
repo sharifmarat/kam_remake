@@ -61,11 +61,11 @@ begin
   PopUp_Alliances.Left := (aParent.MasterParent.Width div 2) - (PopUp_Alliances.Width div 2);
   PopUp_Alliances.Top := (aParent.MasterParent.Height div 2) - (PopUp_Alliances.Height div 2);
 
-    Bevel_Alliances := TKMBevel.Create(PopUp_Alliances, -1000,  -1000, 4000, 4000);
+    Bevel_Alliances := TKMBevel.Create(PopUp_Alliances, -2000,  -2000, 5000, 5000);
     Bevel_Alliances.BackAlpha := 0.7;
     Bevel_Alliances.EdgeAlpha := 0.9;
 
-    Image_Alliances := TKMImage.Create(PopUp_Alliances, 0, 0, PopUp_Alliances.Width, PopUp_Alliances.Height, 3, rxGuiMain);
+    Image_Alliances := TKMImage.Create(PopUp_Alliances, -25, -25, PopUp_Alliances.Width+50, PopUp_Alliances.Height+50, 18, rxGuiMain);
     Image_Alliances.ImageStretch;
 
   Panel_Alliances := TKMPanel.Create(PopUp_Alliances, TB_PANEL_A_L, TB_PANEL_A_T, PopUp_Alliances.Width - (TB_PANEL_A_L * 2), PopUp_Alliances.Height - (TB_PANEL_A_T * 2));

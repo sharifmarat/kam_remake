@@ -192,7 +192,7 @@ begin
 
   if aMP then
   begin
-    TKMBevel.Create(Panel_RMG, -1000,  -1000, 4000, 4000);
+    TKMBevel.Create(Panel_RMG, -2000,  -2000, 5000, 5000);
     Img := TKMImage.Create(Panel_RMG, -20, -50, SIZE_X+40, SIZE_Y+60, 15, rxGuiMain);
     Img.ImageStretch;
   end

@@ -128,7 +128,7 @@ begin
   PopUp_Confirm_PlayerDelete.Left := (aParent.MasterParent.Width div 2) - (PopUp_Confirm_PlayerDelete.Width div 2);
   PopUp_Confirm_PlayerDelete.Top := (aParent.MasterParent.Height div 2) - 90;
 
-    TKMBevel.Create(PopUp_Confirm_PlayerDelete, -1000,  -1000, 4000, 4000);
+    TKMBevel.Create(PopUp_Confirm_PlayerDelete, -2000,  -2000, 5000, 5000);
 
     Image_Confirm_PlayerDelete := TKMImage.Create(PopUp_Confirm_PlayerDelete, 0, 0, PopUp_Confirm_PlayerDelete.Width, PopUp_Confirm_PlayerDelete.Height, 15, rxGuiMain);
     Image_Confirm_PlayerDelete.ImageStretch;
