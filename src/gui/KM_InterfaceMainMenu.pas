@@ -44,6 +44,7 @@ type
     fMenuPage: TKMMenuPageCommon;
   protected
     Panel_Menu: TKMPanel;
+    Panel_Background: TKMImage;
     Label_Version: TKMLabel;
     function GetHintPositionBase: TKMPoint; override;
     function GetHintFont: TKMFont; override;
@@ -88,10 +89,9 @@ begin
   Panel_Menu.AnchorsCenter;
 
   // Background is the same for all pages, except Results/Campaign, which will render ontop
-  TKMImage.Create(Panel_Menu,-448,-216, 960, 600, 17, rxGuiMain).AnchorsCenter;
-  TKMImage.Create(Panel_Menu, 512,-216, 960, 600, 18, rxGuiMain).AnchorsCenter;
-  TKMImage.Create(Panel_Menu,-448, 384, 960, 600, 19, rxGuiMain).AnchorsCenter;
-  TKMImage.Create(Panel_Menu, 512, 384, 960, 600, 20, rxGuiMain).AnchorsCenter;
+  Panel_Background := TKMImage.Create(Panel_Menu, 0, 0, 1000, 1000, 17, rxGuiMain);
+  Panel_Background.Tiled := True;
+  TKMImage.Create(Panel_Menu, -18, -18, 1071, 822, 18, rxGuiMain).AnchorsCenter;
 
   fMenuMain          := TKMMenuMain.Create(Panel_Menu, PageChange);
   fMenuSinglePlayer  := TKMMenuSinglePlayer.Create(Panel_Menu, PageChange);
@@ -177,6 +177,11 @@ begin
   inherited;
   Panel_Menu.Height := Min(Panel_Main.Height, MENU_DESIGN_Y);
   Panel_Menu.Top := (Panel_Main.Height - Panel_Menu.Height) div 2;
+
+  Panel_Background.Left := -Panel_Menu.Left;
+  Panel_Background.Top := -Panel_Menu.Top;
+  Panel_Background.Width := X;
+  Panel_Background.Height := Y;
 
   //Needs to resize the map and move flag positions accordingly
   fMenuCampaign.Resize(X, Y);

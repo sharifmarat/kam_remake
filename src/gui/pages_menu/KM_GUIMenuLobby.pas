@@ -701,7 +701,7 @@ const
 begin
   Panel_Settings := TKMPanel.Create(aParent, 362, 250, SET_W, 350);
   Panel_Settings.AnchorsCenter;
-    TKMBevel.Create(Panel_Settings, -1000,  -1000, 4000, 4000);
+    TKMBevel.Create(Panel_Settings, -2000,  -2000, 5000, 5000);
     with TKMImage.Create(Panel_Settings, -20, -75, SET_W + 40, 440, 15, rxGuiMain) do ImageStretch;
     TKMBevel.Create(Panel_Settings,   0,  0, SET_W, 343);
     TKMLabel.Create(Panel_Settings,  20, 10, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOMSETTINGS], fntOutline, taCenter);

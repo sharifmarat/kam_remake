@@ -298,7 +298,7 @@ begin
       PopUp_Delete.Left := (Panel_MapEd.Width div 2) - (PopUp_Delete.Width div 2);
       PopUp_Delete.Top := (Panel_MapEd.Height div 2) - 90;
 
-        TKMBevel.Create(PopUp_Delete, -1000,  -1000, 4000, 4000);
+        TKMBevel.Create(PopUp_Delete, -2000,  -2000, 5000, 5000);
 
         Image_Delete := TKMImage.Create(PopUp_Delete, 0, 0, PopUp_Delete.Width, PopUp_Delete.Height, 15, rxGuiMain);
         Image_Delete.ImageStretch;
@@ -324,7 +324,7 @@ begin
       PopUp_Rename.Left := (Panel_MapEd.Width div 2) - (PopUp_Rename.Width div 2);
       PopUp_Rename.Top := (Panel_MapEd.Height div 2) - 90;
 
-        TKMBevel.Create(PopUp_Rename, -1000,  -1000, 4000, 4000);
+        TKMBevel.Create(PopUp_Rename, -2000,  -2000, 5000, 5000);
 
         Image_Rename := TKMImage.Create(PopUp_Rename, 0, 0, PopUp_Rename.Width, PopUp_Rename.Height, 15, rxGuiMain);
         Image_Rename.ImageStretch;
@@ -356,7 +356,7 @@ begin
       PopUp_Move.Left := (Panel_MapEd.Width div 2) - (PopUp_Move.Width div 2);
       PopUp_Move.Top := (Panel_MapEd.Height div 2) - 90;
 
-        TKMBevel.Create(PopUp_Move, -1000,  -1000, 4000, 4000);
+        TKMBevel.Create(PopUp_Move, -2000,  -2000, 5000, 5000);
 
         Image_Move := TKMImage.Create(PopUp_Move, 0, 0, PopUp_Move.Width, PopUp_Move.Height, 15, rxGuiMain);
         Image_Move.ImageStretch;

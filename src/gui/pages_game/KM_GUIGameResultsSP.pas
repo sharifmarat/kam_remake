@@ -391,7 +391,7 @@ begin
     Panel_Stats.Anchors := [anLeft];
 
       //Backplate for column results
-      with TKMImage.Create(Panel_Stats, 0, 0, 360, 354, 3, rxGuiMain) do
+      with TKMImage.Create(Panel_Stats, -10, -10, 385, 374, 18, rxGuiMain) do
       begin
         ImageStretch;
         AnchorsCenter;

@@ -827,7 +827,7 @@ begin
   if SKIP_RENDER then Exit;
   if fRXData.Count = 0 then Exit;
 
-  if aAlphaShadows and (fRT in [rxTrees,rxHouses,rxUnits,rxGui]) then
+  if aAlphaShadows and (fRT in [rxTrees,rxHouses,rxUnits,rxGui]) or not aAlphaShadows and (fRT = rxGuiMain) then
     TexType := tfRGBA8
   else
     TexType := tfRGB5A1;

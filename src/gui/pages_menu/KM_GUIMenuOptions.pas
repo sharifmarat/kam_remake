@@ -300,7 +300,7 @@ begin
     PopUp_OptionsKeys.Left := (aParent.Width - PopUp_OptionsKeys.Width) div 2;
     PopUp_OptionsKeys.Top := (aParent.Height - PopUp_OptionsKeys.Height) div 2;
 
-      TKMBevel.Create(PopUp_OptionsKeys, -1000, -1000, 4000, 4000);
+      TKMBevel.Create(PopUp_OptionsKeys, -2000, -2000, 5000, 5000);
 
       TKMImage.Create(PopUp_OptionsKeys, 0, 0, PopUp_OptionsKeys.Width, PopUp_OptionsKeys.Height, 15, rxGuiMain).ImageStretch;
 
