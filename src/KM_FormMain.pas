@@ -324,7 +324,7 @@ begin
 
   Application.ProcessMessages;
 
-  if gGameApp.GameSettings.VideoStartup then
+  if (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
   begin
     gVideoPlayer.AddVideo('KaM');
     gVideoPlayer.Play;

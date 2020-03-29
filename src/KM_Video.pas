@@ -204,6 +204,7 @@ var
   Path: string;
 {$ENDIF}
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if not gGameApp.GameSettings.VideoOn then
     Exit;
@@ -221,6 +222,7 @@ var
   Path: string;
 {$ENDIF}
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if not gGameApp.GameSettings.VideoOn then
     Exit;
@@ -240,6 +242,7 @@ var
   Path: string;
 {$ENDIF}
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if not gGameApp.GameSettings.VideoOn then
     Exit;
@@ -251,6 +254,7 @@ end;
 
 procedure TKMVideoPlayer.Play;
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   FIndex := 0;
   DoStop;
@@ -261,6 +265,7 @@ end;
 
 procedure TKMVideoPlayer.Stop;
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   DoStop;
   FVideoList.Clear;
@@ -270,6 +275,7 @@ end;
 
 procedure TKMVideoPlayer.Pause;
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if (FMediaPlayer <> nil) and (State = plvPlayer_Playing) then
     libvlc_media_player_pause(FMediaPlayer);
@@ -278,6 +284,7 @@ end;
 
 procedure TKMVideoPlayer.Resume;
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if (FMediaPlayer <> nil) and (State = plvPlayer_Paused) then
     libvlc_media_player_play(FMediaPlayer);
@@ -286,6 +293,7 @@ end;
 
 procedure TKMVideoPlayer.Resize(aWidth, aHeight: Integer);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   FScreenWidth := aWidth;
   FScreenHeight := aHeight;
@@ -299,6 +307,7 @@ var
   Width, Height: Integer;
 {$ENDIF}
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if FNext then
   begin
@@ -361,6 +370,7 @@ end;
 
 procedure TKMVideoPlayer.KeyDown(Key: Word; Shift: TShiftState);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if not IsPlay then
     Exit;
@@ -383,18 +393,21 @@ end;
 
 procedure TKMVideoPlayer.KeyPress(Key: Char);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
 
 {$ENDIF}
 end;
 procedure TKMVideoPlayer.KeyUp(Key: Word; Shift: TShiftState);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
 
 {$ENDIF}
 end;
 procedure TKMVideoPlayer.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
   if not IsPlay then
     Exit;
@@ -410,12 +423,14 @@ begin
 end;
 procedure TKMVideoPlayer.MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
 
 {$ENDIF}
 end;
 procedure TKMVideoPlayer.MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer);
 begin
+  if Self = nil then Exit;
 {$IFDEF VIDEOS}
 
 {$ENDIF}
@@ -423,6 +438,7 @@ end;
 
 function TKMVideoPlayer.IsActive: Boolean;
 begin
+  if Self = nil then Exit(False);
 {$IFDEF VIDEOS}
   Result := IsPlay or (FVideoList.Count > 0);
 {$else}
@@ -432,6 +448,7 @@ end;
 
 function TKMVideoPlayer.IsPlay: Boolean;
 begin
+  if Self = nil then Exit(False);
 {$IFDEF VIDEOS}
   Result := State = plvPlayer_Playing;
 {$else}
@@ -441,6 +458,7 @@ end;
 
 function TKMVideoPlayer.IsPause: Boolean;
 begin
+  if Self = nil then Exit(False);
 {$IFDEF VIDEOS}
   Result := State = plvPlayer_Paused;
 {$else}

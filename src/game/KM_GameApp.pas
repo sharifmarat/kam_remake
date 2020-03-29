@@ -48,6 +48,7 @@ type
     procedure GameEnded(aGameMode: TKMGameMode);
     procedure GameDestroyed;
     procedure GameFinished;
+    function GetGameSettings: TKMGameSettings;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -93,7 +94,7 @@ type
 
     property Campaigns: TKMCampaignsCollection read fCampaigns;
     function Game: TKMGame;
-    property GameSettings: TKMGameSettings read fGameSettings;
+    property GameSettings: TKMGameSettings read GetGameSettings;
     property MainMenuInterface: TKMMainMenuInterface read fMainMenuInterface;
     property MusicLib: TKMMusicLib read fMusicLib;
     property Networking: TKMNetworking read fNetworking;
@@ -1001,6 +1002,14 @@ begin
     gMain.FormMain.SetExportGameStats(aGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]);
     gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
   end;
+end;
+
+
+function TKMGameApp.GetGameSettings: TKMGameSettings;
+begin
+  if Self = nil then Exit;
+
+  Result := fGameSettings;
 end;
 
 
