@@ -14,6 +14,7 @@ type
     cbStackedCPU: TCheckBox;
     cbSmoothLines: TCheckBox;
     procedure DoChange(Sender: TObject);
+    procedure seFrameBudgetKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     fPerfLogs: TKMPerfLogs;
     fControlsCreated: Boolean;
@@ -33,9 +34,23 @@ type
 
 implementation
 {$R *.dfm}
+uses
+  {$IFDEF MSWindows} Windows, {$ENDIF}
+  {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
+  Math;
 
 
 { TFormPerfLogs }
+procedure TFormPerfLogs.seFrameBudgetKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_PRIOR then
+    seFrameBudget.Value := seFrameBudget.Value + 10
+  else
+  if Key = VK_NEXT then
+    seFrameBudget.Value := seFrameBudget.Value - 10
+end;
+
+
 procedure TFormPerfLogs.Show(aPerfLogs: TKMPerfLogs);
 const
   TY = 56;
