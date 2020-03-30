@@ -2595,8 +2595,7 @@ end;
 //* aTerKind: terrain kind
 //* aRandomTiles: use random tiles
 //* aOverrideCustomTiles: override tiles, that were manually set from tiles table
-procedure TKMScriptActions.MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
-                                    aRandomTiles, aOverrideCustomTiles: Boolean);
+procedure TKMScriptActions.MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
@@ -2727,9 +2726,7 @@ end;
 //* aBrushMask: brush mask type
 //* aBlendingLvl: blending level for masks. Allowed values are from 0 to 100
 //* aUseMagicBrush: enable/disable magic brush to change/remove brush mask from the area
-procedure TKMScriptActions.MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;
-                                            aRandomTiles, aOverrideCustomTiles: Boolean;
-                                            aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
+procedure TKMScriptActions.MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean; aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean);
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then

@@ -440,7 +440,7 @@ begin
     Allocate(aIndex);
 
   LoadFromPng(aFolder + aFilename, pngWidth, pngHeight, pngData);
-  Assert((pngWidth <= 1024) and (pngHeight <= 1024), 'Image size should be less than 1024x1024 pixels');
+  Assert((pngWidth <= 2048) and (pngHeight <= 2048), 'Image size should be less than 1024x1024 pixels');
 
   fRXData.Flag[aIndex] := Byte(pngWidth * pngHeight <> 0); //Mark as used (required for saving RXX)
   fRXData.Size[aIndex].X := pngWidth;
@@ -827,7 +827,7 @@ begin
   if SKIP_RENDER then Exit;
   if fRXData.Count = 0 then Exit;
 
-  if aAlphaShadows and (fRT in [rxTrees,rxHouses,rxUnits,rxGui]) then
+  if aAlphaShadows and (fRT in [rxTrees,rxHouses,rxUnits,rxGui]) or not aAlphaShadows and (fRT = rxGuiMain) then
     TexType := tfRGBA8
   else
     TexType := tfRGB5A1;

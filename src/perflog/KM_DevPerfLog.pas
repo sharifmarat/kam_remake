@@ -72,7 +72,6 @@ const
     (Name: '   Terrain';              ClassName: TKMPerfLogSingleCPU; Color: (R:0.5;G:0.5;B:0.5);),
     (Name: '   TerrainFinder';        ClassName: TKMPerfLogSingleCPU; Color: (R:0;G:1;B:1);),
     (Name: '   Scripting';            ClassName: TKMPerfLogSingleCPU; Color: (R:1;G:0.25;B:0.75);),
-    (Name: '   UpdateVBO';            ClassName: TKMPerfLogSingleCPU; Color: (R:0.5;G:0.5;B:1);),
     (Name: 'Render.CPU';              ClassName: TKMPerfLogSingleCPU; Color: (R:1.0;G:0;B:0);),
     (Name: 'Render.GFX';              ClassName: TKMPerfLogSingleGFX; Color: (R:1.0;G:1;B:0);),
     (Name: '   Game';                 ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:0.75;B:0);),
@@ -87,6 +86,7 @@ const
     (Name: '      Hands';             ClassName: TKMPerfLogSingleGFX; Color: (R:1;G:1;B:0.5);),
     (Name: '      RenderList';        ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:1;B:0.75);),
     (Name: '      FOW';               ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:1;B:0.75);),
+    (Name: '   UpdateVBO';            ClassName: TKMPerfLogSingleCPU; Color: (R:0.5;G:0.5;B:1);),
     (Name: '   GUI';                  ClassName: TKMPerfLogSingleGFX; Color: (R:1.0;G:0.25;B:0);)
   );
 

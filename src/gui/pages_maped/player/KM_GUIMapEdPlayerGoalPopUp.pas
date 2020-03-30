@@ -54,7 +54,7 @@ begin
   Panel_Goal.AnchorsCenter;
   Panel_Goal.Hide;
 
-  TKMBevel.Create(Panel_Goal, -1000,  -1000, 4000, 4000);
+  TKMBevel.Create(Panel_Goal, -2000,  -2000, 5000, 5000);
   Img := TKMImage.Create(Panel_Goal, -20, -50, SIZE_X+40, SIZE_Y+60, 15, rxGuiMain);
   Img.ImageStretch;
   TKMBevel.Create(Panel_Goal,   0,  0, SIZE_X, SIZE_Y);

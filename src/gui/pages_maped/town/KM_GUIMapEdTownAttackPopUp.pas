@@ -70,7 +70,7 @@ begin
   Panel_Attack.AnchorsCenter;
   Panel_Attack.Hide;
 
-    TKMBevel.Create(Panel_Attack, -1000,  -1000, 4000, 4000);
+    TKMBevel.Create(Panel_Attack, -2000,  -2000, 5000, 5000);
     with TKMImage.Create(Panel_Attack, -20, -50, SIZE_X+40, SIZE_Y+60, 15, rxGuiMain) do ImageStretch;
     TKMBevel.Create(Panel_Attack,   0,  0, SIZE_X, SIZE_Y);
     Label_AttackHeader := TKMLabel.Create(Panel_Attack, SIZE_X div 2, 10, gResTexts[TX_MAPED_AI_ATTACK_INFO], fntOutline, taCenter);

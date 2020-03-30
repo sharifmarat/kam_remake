@@ -43,11 +43,12 @@ object FormPerfLogs: TFormPerfLogs
     Top = 27
     Width = 49
     Height = 22
-    MaxValue = 100
+    MaxValue = 1000
     MinValue = 1
     TabOrder = 1
     Value = 20
     OnChange = DoChange
+    OnKeyDown = seFrameBudgetKeyDown
   end
   object cbStackedCPU: TCheckBox
     Left = 8

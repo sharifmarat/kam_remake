@@ -152,11 +152,11 @@ begin
   PopUp_ObjectsPalette.Left := 25;
   PopUp_ObjectsPalette.Top := 25;
 
-    Bevel_ObjectsPalette := TKMBevel.Create(PopUp_ObjectsPalette, -1000,  -1000, 4000, 4000);
+    Bevel_ObjectsPalette := TKMBevel.Create(PopUp_ObjectsPalette, -2000,  -2000, 5000, 5000);
     Bevel_ObjectsPalette.BackAlpha := 0.7;
     Bevel_ObjectsPalette.EdgeAlpha := 0.9;
 
-    Image_ObjectsPalette := TKMImage.Create(PopUp_ObjectsPalette, 0, 0, PopUp_ObjectsPalette.Width, PopUp_ObjectsPalette.Height, 3, rxGuiMain);
+    Image_ObjectsPalette := TKMImage.Create(PopUp_ObjectsPalette, 0, 0, PopUp_ObjectsPalette.Width, PopUp_ObjectsPalette.Height, 18, rxGuiMain);
     Image_ObjectsPalette.ImageStretch;
 
     Scroll_ObjectsPalette := TKMScrollBar.Create(PopUp_ObjectsPalette, PopUp_ObjectsPalette.Width - 20, 25, 20, PopUp_ObjectsPalette.Height - 75, saVertical, bsGame);
@@ -335,7 +335,7 @@ var
   I, J, K, LeftAdj, TopAdj: Integer;
 begin
   LeftAdj := (PopUp_ObjectsPalette.Width - fObjPaletteTableSize.X*(OBJ_CELL_W + 1) - 25*Byte(Scroll_ObjectsPalette.Visible)) div 2;
-  TopAdj := Image_ObjectsPalette.Top + 25;
+  TopAdj := Image_ObjectsPalette.Top + 60;
 
   K := 0;
 
@@ -399,22 +399,22 @@ begin
 
   fObjPaletteTableSize := KMPoint(ColsCnt, RowsCnt);
 
-  Image_ObjectsPalette.Width := GetObjPaletteTableWidth + 100;
-  Image_ObjectsPalette.Height := GetObjPaletteTableHeight + 150;
+  Image_ObjectsPalette.Width := GetObjPaletteTableWidth + 150;
+  Image_ObjectsPalette.Height := GetObjPaletteTableHeight + 220;
   Image_ObjectsPalette.Left := (PopUp_ObjectsPalette.Width - Image_ObjectsPalette.Width) div 2;
-  Image_ObjectsPalette.Top := ((PopUp_ObjectsPalette.Height - Image_ObjectsPalette.Height) div 2);
+  Image_ObjectsPalette.Top := ((PopUp_ObjectsPalette.Height - Image_ObjectsPalette.Height) div 2) - 25;
 
-  Label_ObjectsPalette.Left := PopUp_ObjectsPalette.Center.X;
-  Label_ObjectsPalette.Top := Image_ObjectsPalette.Top + 25;
+  Label_ObjectsPalette.Left := PopUp_ObjectsPalette.Center.X - 30;
+  Label_ObjectsPalette.Top := Image_ObjectsPalette.Top + 60;
 
-  Button_ClosePalette.Left := PopUp_ObjectsPalette.Center.X - 100;
-  Button_ClosePalette.Top := Image_ObjectsPalette.Bottom - 70;
+  Button_ClosePalette.Left := PopUp_ObjectsPalette.Center.X - 125;
+  Button_ClosePalette.Top := Image_ObjectsPalette.Bottom - 110;
 
-  Button_ObjPaletteErase.Top := Image_ObjectsPalette.Bottom - 70;
-  Button_ObjPaletteBlock.Top := Image_ObjectsPalette.Bottom - 70;
+  Button_ObjPaletteErase.Top := Image_ObjectsPalette.Bottom - 110;
+  Button_ObjPaletteBlock.Top := Image_ObjectsPalette.Bottom - 110;
 
   Scroll_ObjectsPalette.Left := Image_ObjectsPalette.Right - 50;
-  Scroll_ObjectsPalette.Top := Image_ObjectsPalette.Top + 50;
+  Scroll_ObjectsPalette.Top := Image_ObjectsPalette.Top + 80;
   Scroll_ObjectsPalette.Height := Image_ObjectsPalette.Height - 150;
 
   Scroll_ObjectsPalette.MaxValue := ((fCountCompact - 1) div ColsCnt) + 1 - RowsCnt;

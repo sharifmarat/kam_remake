@@ -1319,7 +1319,7 @@ end;
 
 procedure TKMGame.Render(aRender: TRender);
 begin
-  gPerfLogs.SectionEnter(psFrameFullC, fGameTick);
+  gPerfLogs.SectionEnter(psFrameFullC);
   gPerfLogs.SectionEnter(psFrameGame);
   try
     gRenderPool.Render;
@@ -2055,7 +2055,12 @@ begin
 
   LoadStream.Read(fDynamicFOW);
   LoadStream.Read(fGameSpeedGIP);
-  SetGameSpeedActualValue(fGameSpeedGIP);
+
+  // Set game actual speed, so we will have same speed after game load as it was when game was saved
+  if not IsReplay then
+    SetGameSpeedActualValue(fGameSpeedGIP)
+  else
+    UpdateClockUI; //To show actual game speed in the replay
 
   LoadStream.Read(fGameSpeedChangeAllowed);
 

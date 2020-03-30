@@ -22,7 +22,6 @@ type
       psTerrain,
       psTerrainFinder,
       psScripting,
-      psUpdateVBO,
     psFrameFullC,                 // Full render frame as seen by gMain
     psFrameFullG,                 // Full render frame on GPU (doublecheck TKMPerfLogGFXStack)
       psFrameGame,                // Frame of the Gameplay without GUI
@@ -37,6 +36,7 @@ type
         psFrameHands,
         psFrameRenderList,
         psFrameFOW,
+      psFrameUpdateVBO,
       psFrameGui                  // Frame of the Gameplay GUI
   );
   TPerfSectionSet = set of TPerfSectionDev;

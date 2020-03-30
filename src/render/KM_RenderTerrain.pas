@@ -328,7 +328,7 @@ var
   TexOffsetWater, TexOffsetFalls, TexOffsetSwamp: Word;
 begin
   if not fUseVBO then Exit;
-  gPerfLogs.SectionEnter(psUpdateVBO, gGame.GameTick);
+  gPerfLogs.SectionEnter(psFrameUpdateVBO);
 
   fLastBindVBOArrayType := vatNone;
 
@@ -487,7 +487,7 @@ begin
     Inc(I);
   end;
 
-  gPerfLogs.SectionLeave(psUpdateVBO);
+  gPerfLogs.SectionLeave(psFrameUpdateVBO);
 end;
 
 

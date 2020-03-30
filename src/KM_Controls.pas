@@ -430,6 +430,7 @@ type
     HighlightCoef: Single;
     Lightness: Single;
     ClipToBounds: Boolean;
+    Tiled: Boolean;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui;
                        aPaintLayer: Integer = 0; aImageAnchors: TKMAnchorsSet = [anLeft, anTop]);
     property RX: TRXType read fRX write fRX;
@@ -3312,7 +3313,11 @@ end;
 {If image area is bigger than image - do center image in it}
 procedure TKMImage.Paint;
 var
+  x, y: Integer;
+  col, row: Integer;
   PaintLightness: Single;
+  DrawLeft, DrawTop: Integer;
+  DrawWidth, DrawHeight: Integer;
 begin
   inherited;
   if fTexID = 0 then Exit; //No picture to draw
@@ -3325,8 +3330,21 @@ begin
 
   PaintLightness := Lightness + HighlightCoef * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
 
-  TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness,
-                           PaintingBaseLayer);
+  if Tiled then
+  begin
+    DrawWidth := gGFXData[fRX, fTexID].PxWidth;
+    DrawHeight := gGFXData[fRX, fTexID].PxHeight;
+    DrawLeft := AbsLeft + fWidth div 2 - DrawWidth div 2;
+    DrawTop := AbsTop + fHeight div 2 - DrawHeight div 2;
+
+    col := fWidth div DrawWidth + 1;
+    row := fHeight div DrawHeight + 1;
+    for x := -col div 2 to col div 2 do
+      for y := -row div 2 to row div 2 do
+        TKMRenderUI.WritePicture(DrawLeft + x * DrawWidth, DrawTop + y * DrawHeight, DrawWidth, DrawHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness, PaintingBaseLayer);
+ end
+  else
+    TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness, PaintingBaseLayer);
 
   if ClipToBounds then
   begin
@@ -8185,8 +8203,6 @@ end;
 { TKMPopUpPanel }
 constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '';
                                  aImageType: TKMPopUpBGImageType = pubgitYellowish; aShowBevel: Boolean = True);
-var
-  BGImageID: Integer;
 begin
   inherited Create(aParent, (aParent.Width div 2) - (aWidth div 2), (aParent.Height div 2) - (aHeight div 2), aWidth, aHeight);
 
@@ -8196,15 +8212,13 @@ begin
   FontColor := icWhite;
   Caption := aCaption;
 
-  TKMBevel.Create(Self, -1000,  -1000, 4000, 4000);
+  TKMBevel.Create(Self, -2000,  -2000, 5000, 5000);
 
-  BGImageID := 0;
   case fBGImageType of
-    pubgitGray:      BGImageID := 15;
-    pubgitYellowish: BGImageID := 3;
+    pubgitGray: ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70, 15, rxGuiMain);
+    pubgitYellowish: ImageBG := TKMImage.Create(Self, -25, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
   end;
 
-  ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70, BGImageID, rxGuiMain);
   ImageBG.ImageStretch;
 
   BevelBG := nil;
@@ -8240,8 +8254,18 @@ end;
 
 procedure TKMPopUpPanel.UpdateSizes;
 begin
-  ImageBG.Width := Width + 40;
-  ImageBG.Height := Height + 60;
+  case fBGImageType of
+    pubgitGray:
+    begin
+      ImageBG.Width := Width + 40;
+      ImageBG.Height := Height + 70;
+    end;
+    pubgitYellowish:
+    begin
+      ImageBG.Width := Width + 50;
+      ImageBG.Height := Height + 140;
+    end;
+  end;
   if BevelBG <> nil then
   begin
     BevelBG.Width := Width;

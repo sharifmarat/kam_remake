@@ -93,6 +93,7 @@ var
   GroupRandomType: array[0..RANDOM_FACTOR - 1] of Integer;
   Q: Integer;
   SortedPlayers, ActivePlayers: array of Integer;
+  ErrorX, ErrorY: Integer;
 
 
 function DifficultyFactor: Single;
@@ -737,6 +738,9 @@ begin
   WaveTime := 1200;
   General := States.UnitAt(75, 77);
   AIBarracks := States.HouseAt(75, 76);
+
+  ErrorX := 0;
+  ErrorY := 0;
 
   Barracks[0] := States.HouseAt(63, 71);
   Barracks[1] := States.HouseAt(63, 80);
@@ -1460,7 +1464,7 @@ begin
 end;
 
 
-procedure CheckSplittedGroups(aPlayer: Integer);
+procedure CheckSplittedGroups(aPlayer: Integer; aOnOrderSplit: Boolean);
 var
   G1, G2, Count1, Count2, GT, X1, Y1, X2, Y2, J, UT: Integer;
   Groups: array of Integer;
@@ -1508,21 +1512,39 @@ begin
   if G2 <= 0 then
     Exit;
 
-  if (Count1 < Round(MIN_UNITS_COUNT / DifficultyFactor))
-  or (Count2 < Round(MIN_UNITS_COUNT / DifficultyFactor))
+  if (Count1 < Round(MIN_UNITS_COUNT * DifficultyFactor))
+  or (Count2 < Round(MIN_UNITS_COUNT * DifficultyFactor))
   and (G1 > 0)
   and (G2 > 0) then
   begin
     Actions.GroupOrderLink(G1, G2);
-    Actions.GroupSetFormation(G2, 1 + Round(sqrt(States.GroupMemberCount(G2))));        
+    if not States.GroupManualFormation(G2) then
+      Actions.GroupSetFormation(G2, 1 + Round(sqrt(States.GroupMemberCount(G2))));
+    if aOnOrderSplit then
+      Actions.ShowMsgFormatted(aPlayer, '<$106>', [Count1, Count2, Round(MIN_UNITS_COUNT * DifficultyFactor)]);
   end;
 
 end;
 
 
+function OnGroupAllowOrderSplit(G: Integer): Boolean;
+begin
+  Result := States.GroupMemberCount(G) > Round(MIN_UNITS_COUNT * DifficultyFactor);
+  if not Result then
+    Actions.ShowMsgFormatted(States.GroupOwner(G), '<$107>', [States.GroupMemberCount(G), Round(MIN_UNITS_COUNT * DifficultyFactor)]);
+end;
+
+
+procedure OnGroupOrderSplit(G1, G2: Integer);
+begin
+  if not ALLOW_SPLITTING then
+    CheckSplittedGroups(States.GroupOwner(G1), True);
+end;
+
+
 procedure OnUnitDied(aUnitID, aKillerIndex: Integer);
 var
-  Addition, GroupToLink, I, Owner, Owner1, GT, UT: Integer;
+  Addition, GroupToLink, I, Owner, Owner1, GT, UT, F: Integer;
   Groups: array of Integer;
 begin
   if (aKillerIndex = -1)
@@ -1565,8 +1587,9 @@ begin
               GroupToLink := Groups[I];
               if GroupToLink > 0 then
                 begin
+                  F := States.GroupColumnCount(GroupToLink);
                   Actions.GroupOrderLink(Addition, GroupToLink);
-                  Actions.GroupSetFormation(GroupToLink, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink))));
+                  Actions.GroupSetFormation(GroupToLink, Utils.IfThenI(States.GroupManualFormation(GroupToLink), F, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink)))));
                 end;
             end;
         end;
@@ -1593,8 +1616,9 @@ begin
               GroupToLink := Groups[I];
               if GroupToLink > 0 then
                 begin
+                  F := States.GroupColumnCount(GroupToLink);
                   Actions.GroupOrderLink(Addition, GroupToLink);
-                  Actions.GroupSetFormation(GroupToLink, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink))));
+                  Actions.GroupSetFormation(GroupToLink, Utils.IfThenI(States.GroupManualFormation(GroupToLink), F, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink)))));
                 end;
             end;
         end;
@@ -1647,7 +1671,7 @@ end;
 
 procedure OnWarriorEquipped(aUnitID, aGroupID: Integer);
 var
-  Rogue, Barb, Owner, Addition, GroupToLink: Integer;
+  Rogue, Barb, Owner, Addition, GroupToLink, F: Integer;
   Groups, Groups1: array of Integer;
   R: Integer;
 begin
@@ -1664,9 +1688,10 @@ begin
         GroupToLink := aGroupID;
         if GroupToLink > 0 then
         begin
+          F := States.GroupColumnCount(GroupToLink);
           Actions.GroupHungerSet(Addition, States.UnitMaxHunger);
           Actions.GroupOrderLink(Addition, GroupToLink);
-          Actions.GroupSetFormation(GroupToLink, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink))));
+          Actions.GroupSetFormation(GroupToLink, Utils.IfThenI(States.GroupManualFormation(GroupToLink), F, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink)))));
         end;
       end
       else
@@ -1677,9 +1702,10 @@ begin
         GroupToLink := aGroupID;
         if GroupToLink > 0 then
         begin
+          F := States.GroupColumnCount(GroupToLink);
           Actions.GroupHungerSet(Addition, States.UnitMaxHunger);
           Actions.GroupOrderLink(Addition, GroupToLink);
-          Actions.GroupSetFormation(GroupToLink, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink))));
+          Actions.GroupSetFormation(GroupToLink, Utils.IfThenI(States.GroupManualFormation(GroupToLink), F, 1 + Round(sqrt(States.GroupMemberCount(GroupToLink)))));
         end;
       end;
     end;
@@ -1700,8 +1726,9 @@ begin
           and (Abs(States.UnitPositionY(States.GroupMember(Groups[I], States.KaMRandomI(States.GroupMemberCount(Groups[I])))) - States.UnitPositionY(States.GroupMember(Addition, 0))) <= AUTOLINK_RADIUS)
           and (Abs(States.UnitPositionX(States.GroupMember(Groups[I], States.KaMRandomI(States.GroupMemberCount(Groups[I])))) - States.UnitPositionX(States.GroupMember(Addition, 0))) <= AUTOLINK_RADIUS) then
           begin
+            F := States.GroupColumnCount(Groups[I]);
             Actions.GroupOrderLink(Addition, Groups[I]);
-            Actions.GroupSetFormation(Groups[I], 1 + Round(sqrt(States.GroupMemberCount(Groups[I]))));
+            Actions.GroupSetFormation(Groups[I], Utils.IfThenI(States.GroupManualFormation(Groups[I]), F, 1 + Round(sqrt(States.GroupMemberCount(Groups[I])))));
           end;
       end;
     end;
@@ -1739,8 +1766,9 @@ begin
     end;
     Actions.HouseTakeWaresFrom(Barracks[Owner], 20, 3);
     Actions.GroupHungerSet(Barb, States.UnitMaxHunger);
+    F := States.GroupColumnCount(aGroupID);
     Actions.GroupOrderLink(Barb, aGroupID);
-    Actions.GroupSetFormation(aGroupID, 1 + Round(sqrt(States.GroupMemberCount(aGroupID))));
+    Actions.GroupSetFormation(aGroupID, Utils.IfThenI(States.GroupManualFormation(aGroupID), F, 1 + Round(sqrt(States.GroupMemberCount(aGroupID)))));
     Actions.UnitKill(aUnitID, True);
 
   end;
@@ -1755,8 +1783,9 @@ begin
       for I := 0 to Length(Groups1) - 1 do
         if States.GroupType(Groups1[I]) = 2 then
         begin
+          F := States.GroupColumnCount(Groups1[I]);
           Actions.GroupOrderLink(Rogue, Groups1[I]);
-          Actions.GroupSetFormation(Groups1[I], 1 + Round(sqrt(States.GroupMemberCount(Groups1[I]))));
+          Actions.GroupSetFormation(Groups1[I], Utils.IfThenI(States.GroupManualFormation(Groups1[I]), F, 1 + Round(sqrt(States.GroupMemberCount(Groups1[I])))));
         end;
     end;
 end;
@@ -4781,6 +4810,8 @@ begin
       if not States.MapTilePassability(aX, aY, 4) then
       begin
         Result := False;
+        ErrorX := aX;
+        ErrorY := aY;
         Exit;
       end;
 end;
@@ -4815,6 +4846,23 @@ begin
   Actions.HouseTakeWaresFrom(Storehouse[P], 7, Utils.RoundToUp(TOWER_COST * DifficultyFactor, 5));
   ShowStatusStart[P] := States.GameTime;
   StatusString[P] := '[$35FF57]<--- <$97>[]';
+
+end;
+
+
+function GetTowerError(P, X, Y: Integer): ANSIString;
+begin
+  Result := '';
+
+  if ((not CanBuildRoads(X - 2, Y + 1, X, Y + 1))
+  and (not CanBuildRoads(X - 1, Y + 1, X + 1, Y + 1)))
+  or ((not CanBuildRoads(X - 2, Y - 1, X - 2, Y + 1))
+  and (not CanBuildRoads(X + 1, Y - 1, X + 1, Y + 1))) then
+    Result := '<$102>: <$105> (' + IntToStr(ErrorX) + ', ' + IntToStr(ErrorY) + ')';
+
+  if not (Utils.InRangeI(X, 46, 105)
+  and (Utils.InRangeI(Y, 46, 105))) then
+    Result := '<$102>: <$103> (' + IntToStr(X) + ', ' + IntToStr(Y) + ') <$104>';
 
 end;
 
@@ -4854,6 +4902,9 @@ begin
 
   if not Utils.InRangeI(P, 0, 3) then
     Exit;
+
+  if GetTowerError(P, X, Y) <> '' then
+    Actions.ShowMsg(P, GetTowerError(P, X, Y));
 
   if not CanPlaceTower(X, Y) then
     Exit;
@@ -5215,6 +5266,6 @@ begin
   if (States.GameTime mod (1 + SPLIT_CHECK_FACTOR) = 0)
   and (not ALLOW_SPLITTING) then
     for I := 0 to 3 do
-      CheckSplittedGroups(I);
+      CheckSplittedGroups(I, False);
 
 end;
