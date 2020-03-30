@@ -1036,6 +1036,7 @@ var
   ClassImp: TPSRuntimeClassImporter;
   I: Integer;
   V: PIFVariant;
+  errStr: string;
 begin
   //Create an instance of the runtime class importer
   ClassImp := TPSRuntimeClassImporter.Create;
@@ -1508,8 +1509,10 @@ begin
       or SameText(UnicodeString(V.FType.ExportName), 'TKMScriptUtils') then
         Continue;
 
-      fErrorHandler.AppendErrorStr(ValidateVarType(V.FType));
-      fValidationIssues.AddError(0, 0, '', ValidateVarType(V.FType));
+      errStr := ValidateVarType(V.FType);
+      fErrorHandler.AppendErrorStr(errStr);
+      if errStr <> '' then
+        fValidationIssues.AddError(0, 0, '', ValidateVarType(V.FType));
       if fErrorHandler.HasErrors then
       begin
         //Don't allow the script to run
