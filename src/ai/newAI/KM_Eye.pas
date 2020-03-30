@@ -906,19 +906,23 @@ begin
     htIronMine: Mines := fIronLocs;
   end;
 
-  if (Mines <> nil) then
+  if (Mines <> nil) AND (Mines.Count > 0) then
+  begin
+    BuildFF.UpdateState();
     for I := Mines.Count - 1 downto 0 do
     begin
       X := Mines.Items[I].X;
       Y := Mines.Items[I].Y;
       Ownership := gAIFields.Influences.Ownership[fOwner, Y, X];
       if ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[Y+1,X].Passability <> [])
+        AND (BuildFF.VisitIdx = BuildFF.Visited[Y+1,X])
         AND (Ownership > 0) AND gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, X,Y) then
         if CanAddHousePlan(Mines.Items[I], aHT, True, False) AND CheckResourcesNearMine(Mines.Items[I], aHT) then
           Output.Add(Mines.Items[I], Ownership)
         else
           Mines.Delete(I);
     end;
+  end;
   Result := Output;
 end;
 
@@ -1967,4 +1971,3 @@ end;
 
 
 end.
-
