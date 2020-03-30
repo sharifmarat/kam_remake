@@ -65,6 +65,8 @@ type
 
     property ConsoleCommand[const aName: AnsiString]: TKMConsoleCommand read GetConsoleCommand;
 
+    procedure Clear;
+
     procedure ProcBeacon(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcFieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandID; aX, aY: Word);
@@ -591,6 +593,19 @@ begin
   except
     HandleScriptProcCallError('game code called by script event handler ''' + aProc.ProcName + '''');
   end;
+end;
+
+
+procedure TKMScriptEvents.Clear;
+var
+  ET: TKMScriptEventType;
+begin
+  //Clear custom event handlers
+  for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
+    SetLength(fEventHandlers[ET], 0);
+
+  // Clear console commands
+  fConsoleCommands.Clear;
 end;
 
 

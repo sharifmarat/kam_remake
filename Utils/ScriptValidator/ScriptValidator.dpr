@@ -21,6 +21,7 @@ function IsConsoleMode: Boolean;
 var
   SI: TStartupInfo;
 begin
+//  Result := True;
   ZeroMemory(@SI, SizeOf(SI));
   SI.cb := SizeOf(StartUpInfo);
   GetStartupInfo(SI);
