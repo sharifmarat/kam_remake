@@ -1157,7 +1157,7 @@ var
         if (K <> High(HTArr)) OR (Length(HTArr) = 1) OR (fPlanner.PlannedHouses[ HTArr[K] ].Count = 0) then
         begin
           HouseReservation := MaterialShortage OR (K <> High(HTArr));
-          IgnoreExistingPlans := (Length(HTArr) = 1) AND MaterialShortage AND not (aHT in [htWoodcutters, htGoldMine, htIronMine, htCoalMine]);
+          IgnoreExistingPlans := (Length(HTArr) = 1) AND MaterialShortage AND not (aHT in [htWoodcutters, htGoldMine, htIronMine, htCoalMine, htBarracks, htTownHall]);
           if (K <> High(HTArr)) then
             NodePrio := NODE_PRIO_RoadsReservation // House is blocked, prio is low
           else if (Length(HTArr) = 1) then
