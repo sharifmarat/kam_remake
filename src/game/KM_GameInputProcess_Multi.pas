@@ -118,7 +118,8 @@ end;
 
 //Return CRC of the pack
 function TKMCommandsPack.CRC: Cardinal;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
@@ -127,7 +128,8 @@ end;
 
 
 procedure TKMCommandsPack.Save(SaveStream: TKMemoryStream);
-var I: Integer;
+var
+  I: Integer;
 begin
   SaveStream.Write(fCount);
   for I := 1 to fCount do
@@ -139,7 +141,8 @@ end;
 
 
 procedure TKMCommandsPack.Load(LoadStream: TKMemoryStream);
-var I: Integer;
+var
+  I: Integer;
 begin
   LoadStream.Read(fCount);
   SetLength(fItems, fCount + 1);
@@ -151,19 +154,22 @@ end;
 
 { TGameInputProcess_Multi }
 constructor TKMGameInputProcess_Multi.Create(aReplayState: TKMGIPReplayState; aNetworking: TKMNetworking);
-var i:integer; k: ShortInt;
+var
+  I: Integer;
+  k: ShortInt;
 begin
   inherited Create(aReplayState);
+
   fNetworking := aNetworking;
   fNetworking.OnCommands := RecieveCommands;
   fNetworking.OnResyncFromTick := ResyncFromTick;
   AdjustDelay(1); //Initialise the delay
 
   //Allocate memory for all commands packs
-  for i:=0 to MAX_SCHEDULE-1 do for k:=1 to MAX_LOBBY_SLOTS do
+  for I:=0 to MAX_SCHEDULE-1 do for k:=1 to MAX_LOBBY_SLOTS do
   begin
-    fSchedule[i,k] := TKMCommandsPack.Create;
-    fRandomCheck[i].PlayerCheckPending[k] := false; //We don't have anything to be checked yet
+    fSchedule[I,k] := TKMCommandsPack.Create;
+    fRandomCheck[I].PlayerCheckPending[k] := false; //We don't have anything to be checked yet
   end;
 end;
 
@@ -199,8 +205,9 @@ begin
     Exit;
   end;
 
-  if (gGame.GameMode <> gmMultiSpectate) and gMySpectator.Hand.AI.HasLost
-    and not (aCommand.CommandType in AllowedAfterDefeat) then
+  if (gGame.GameMode <> gmMultiSpectate)
+  and gMySpectator.Hand.AI.HasLost
+  and not (aCommand.CommandType in AllowedAfterDefeat) then
   begin
     gSoundPlayer.Play(sfxCantPlace);
     Exit;
