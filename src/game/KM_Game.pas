@@ -2468,7 +2468,7 @@ begin
                           gPerfLogs.StackCPU.TickBegin;
                           gPerfLogs.SectionEnter(psGameTick, fGameTick + 1);
                           try
-                            //As soon as next command arrives we are longer in a waiting state
+                            // As soon as next command arrives we are no longer in a waiting state
                             if fWaitingForNetwork then
                               WaitingPlayersDisplay(False);
 
