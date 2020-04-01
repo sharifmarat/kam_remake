@@ -596,10 +596,12 @@ end;
 
 
 procedure TKMNetworking.MatchPlayersToSave(aPlayerID: Integer = -1);
-var I,K: Integer;
+var
+  I,K: Integer;
 begin
   Assert(IsHost, 'Only host can match players');
   Assert(fSelectGameKind = ngkSave, 'Not a save');
+
   if aPlayerID = -1 then
   begin
     //If we are matching all then reset them all first so we don't get clashes
@@ -760,7 +762,8 @@ end;
 //Tell other players which start position we would like to use
 //Each players choice should be unique
 procedure TKMNetworking.SelectLoc(aIndex:integer; aPlayerIndex:integer);
-var NetPlayerIndex: Integer;
+var
+  NetPlayerIndex: Integer;
 begin
   //Check if position can be taken before doing anything
   if not CanTakeLocation(aPlayerIndex, aIndex, IsHost and fNetPlayers.HostDoesSetup) then
@@ -1510,7 +1513,7 @@ begin
   //CRC checks are done on the data we already loaded, not the files on HDD which can change.
   Result := gRes.GetDATCRC;
 
-  //For debugging/testing it's useful to skip this check sometimes (but defines .dat files should always be checked)
+  //For debugging/testing it's useful to skip EXE check sometimes (but data files should always be checked)
   if not SKIP_EXE_CRC then
     Result := Result xor Adler32CRC(ParamStr(0));
 end;
