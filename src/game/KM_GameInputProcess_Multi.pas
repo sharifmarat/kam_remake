@@ -45,19 +45,19 @@ type
     fNumberConsecutiveWaits: Word; //Number of consecutive times we have been waiting for network
 
     //Each player can have any number of commands scheduled for execution in one tick
-    fSchedule: array[0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of TKMCommandsPack; //Ring buffer
+    fSchedule: array [0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of TKMCommandsPack; //Ring buffer
 
     //All players must send us data every tick
-    fRecievedData: array[0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of Boolean; //Ring buffer
+    fRecievedData: array [0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of Boolean; //Ring buffer
 
     //Mark commands we've already sent to other players
-    fSent: array[0..MAX_SCHEDULE-1] of Boolean; //Ring buffer
+    fSent: array [0..MAX_SCHEDULE-1] of Boolean; //Ring buffer
 
     //Did the player issue a command for this tick? If not it must be cleared from last time (we can't clear it earlier as it might be needed for resync)
-    fCommandIssued: array[0..MAX_SCHEDULE-1] of Boolean;
+    fCommandIssued: array [0..MAX_SCHEDULE-1] of Boolean;
 
     //Store random seeds at each tick then confirm with other players
-    fRandomCheck: array[0..MAX_SCHEDULE-1] of TKMRandomCheck; //Ring buffer
+    fRandomCheck: array [0..MAX_SCHEDULE-1] of TKMRandomCheck; //Ring buffer
 
     procedure SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
     procedure SendRandomCheck(aTick: Cardinal);
@@ -93,7 +93,7 @@ uses
   KM_GameTypes;
 
 
-{ TCommandsPack }
+{ TKMCommandsPack }
 procedure TKMCommandsPack.Clear;
 begin
   fCount := 0;
