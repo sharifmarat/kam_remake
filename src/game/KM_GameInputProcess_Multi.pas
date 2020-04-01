@@ -116,14 +116,14 @@ begin
 end;
 
 
-//Return CRC of the pack
+// Return CRC of the pack
 function TKMCommandsPack.CRC: Cardinal;
 var
   I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
-    Result := Result xor Adler32CRC(@fItems[I], SizeOf(fItems[I]))
+    Result := Result xor Adler32CRC(@fItems[I], SizeOf(fItems[I]));
 end;
 
 
@@ -152,7 +152,7 @@ begin
 end;
 
 
-{ TGameInputProcess_Multi }
+{ TKMGameInputProcess_Multi }
 constructor TKMGameInputProcess_Multi.Create(aReplayState: TKMGIPReplayState; aNetworking: TKMNetworking);
 var
   I: Integer;
@@ -186,9 +186,10 @@ begin
 end;
 
 
-//Stack the command into schedule
+// Stack the command into schedule
 procedure TKMGameInputProcess_Multi.TakeCommand(const aCommand: TKMGameInputCommand);
-var I,Tick: Cardinal;
+var
+  I,Tick: Cardinal;
 begin
   Assert(fDelay < MAX_SCHEDULE, 'Error, fDelay >= MAX_SCHEDULE');
   if ((gGame.GameMode = gmMultiSpectate) and not (aCommand.CommandType in AllowedBySpectators)) // Do not allow spectators to command smth
@@ -257,9 +258,9 @@ end;
 
 procedure TKMGameInputProcess_Multi.AdjustDelay(aGameSpeed: Single);
 begin
-  //Half of the maximum round trip is a good guess for delay. +1.2 is our safety net to account
-  //for processing the packet and random variations in ping. It's always better for commands to
-  //be slightly delayed than for the game to freeze/lag regularly.
+  // Half of the maximum round trip is a good guess for delay. +1.2 is our safety net to account
+  // for processing the packet and random variations in ping. It's always better for commands to
+  // be slightly delayed than for the game to freeze/lag regularly.
   if gGame.IsMPGameSpeedChangeAllowed then
     SetDelay(MIN_DELAY) //We can set the lowest delay if we are the only MP player
   else
