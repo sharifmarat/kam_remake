@@ -2520,7 +2520,6 @@ begin
 
                             if DoSaveRandomChecks then
                               gRandomCheckLogger.UpdateState(fGameTick);
-
                           finally
                             gPerfLogs.SectionLeave(psGameTick);
                             gPerfLogs.StackCPU.TickEnd;
