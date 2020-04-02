@@ -43,7 +43,6 @@ type
     function GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
 
     procedure HandleScriptProcCallError(aMethod: String);
-//    function CallEventFunc(const aFunc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single): TKMThreeResult;
     procedure CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
     function MethodAssigned(aProc: TMethod): Boolean; overload; inline;
     function MethodAssigned(aEventType: TKMScriptEventType): Boolean; overload; inline;
@@ -112,8 +111,6 @@ type
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
-
-//    class function GetIsProcedureByType(aEventType: TKMScriptEventType): Boolean;
   end;
 
 
@@ -539,41 +536,6 @@ begin
 end;
 
 
-//function TKMScriptEvents.CallEventFunc(const aFunc: TKMCustomEventHandler; const aIntParams: array of Integer;
-//                                        aFloatParam: Single): TKMThreeResult;
-//var
-//  Res: Boolean;
-//begin
-//  Result := brUnknown;
-//  if not MethodAssigned(aFunc.Handler) then Exit(brUnknown);
-//  Res := False;
-//  Result := brUnknown;
-//  try
-//    if aFloatParam <> FLOAT_PARAM_NONE then
-//    begin
-//      Res := TKMScriptEventFunc1S(aFunc.Handler)(aFloatParam);
-//    end
-//    else
-//    begin
-//      case Length(aIntParams) of
-//        0: Res := TKMScriptEventFunc(aFunc.Handler);
-//        1: Res := TKMScriptEventFunc1I(aFunc.Handler)(aIntParams[0]);
-//        2: Res := TKMScriptEventFunc2I(aFunc.Handler)(aIntParams[0], aIntParams[1]);
-//        3: Res := TKMScriptEventFunc3I(aFunc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2]);
-//        4: Res := TKMScriptEventFunc4I(aFunc.Handler)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
-//        else raise Exception.Create('Unexpected Length(aParams)');
-//      end;
-//    end;
-//  except
-//    HandleScriptProcCallError('game code called by script event handler ''' + aFunc.ProcName + '''');
-//  end;
-//  if Res then
-//    Result := brTrue
-//  else if not Res then
-//    Result := brFalse;
-//end;
-
-
 procedure TKMScriptEvents.CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
 begin
   if not MethodAssigned(aProc.Handler) then Exit;
@@ -620,12 +582,6 @@ begin
       HandleScriptProcCallError('game code called by console command handler ''' + aCmdName + '''');
     end;
 end;
-
-
-//class function TKMScriptEvents.GetIsProcedureByType(aEventType: TKMScriptEventType): Boolean;
-//begin
-//  Result := False;
-//end;
 
 
 //* Version: 6570

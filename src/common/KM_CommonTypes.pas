@@ -61,8 +61,6 @@ type
   TBoolIntFuncSimple = function (aValue: Integer): Boolean of object;
   TObjectIntBoolEvent = procedure (Sender: TObject; aIntValue: Integer; aBoolValue: Boolean) of object;
 
-//  TKMThreeResult = (brFalse, brTrue, brUnknown);
-
   TKMAnimLoop = packed record
                   Step: array [1 .. 30] of SmallInt;
                   Count: SmallInt;
