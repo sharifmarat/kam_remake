@@ -1049,7 +1049,7 @@ begin
     begin
       Memo_MapDesc.AbsTop := MinimapView_MapEd.AbsBottom + 15;
       Memo_MapDesc.Height := Panel_MapInfo.Height - 209 - (Button_ViewReadme.Height + 5) * Byte(Button_ViewReadme.Visible);
-      Button_ViewReadme.Top := Memo_MapDesc.AbsBottom + 5;
+      Button_ViewReadme.AbsTop := Memo_MapDesc.AbsBottom + 5;
       Label_MapType.Hide;
     end else
     begin
