@@ -149,6 +149,7 @@ var
   SHOW_UIDs               :Boolean = False;  //Show units/groups/houses UIDs
   SHOW_WALK_CONNECT       :Boolean = False; //Show floodfill areas of interconnected areas
   SHOW_DEFENCE_POSITIONS  :Boolean = False;
+  SHOW_GROUP_MEMBERS_POS  :Boolean = False; //Show group members position
   TEST_VIEW_CLIP_INSET    :Boolean = False; //Renders smaller area to see if everything gets clipped well
   OUTLINE_ALL_SPRITES     :Boolean = False; //Render outline around every sprite
   SHOW_ATTACK_RADIUS      :Boolean = False; //Render towers/archers attack radius

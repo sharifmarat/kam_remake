@@ -406,6 +406,19 @@ begin
 
     Sender.AddTypeS('TKMTileMaskKind', '(mkNone, mkSoft1, mkSoft2, mkSoft3, mkStraight)');
 
+    Sender.AddTypeS('TKMUnitType', '(utNone, utAny,'
+      + 'utSerf,          utWoodcutter,    utMiner,         utAnimalBreeder,'
+      + 'utFarmer,        utLamberjack,    utBaker,         utButcher,'
+      + 'utFisher,        utWorker,        utStoneCutter,   utSmith,'
+      + 'utMetallurgist,  utRecruit,'
+      + 'utMilitia,      utAxeFighter,   utSwordsman,     utBowman,'
+      + 'utArbaletman,   utPikeman,      utHallebardman,  utHorseScout,'
+      + 'utCavalry,      utBarbarian,'
+      + 'utPeasant,      utSlingshot,    utMetalBarbarian,utHorseman,'
+      //utCatapult,   utBallista,
+      + 'utWolf,         utFish,         utWatersnake,   utSeastar,'
+      + 'utCrab,         utWaterflower,  utWaterleaf,    utDuck)');
+
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));

@@ -2,7 +2,7 @@ unit KM_CommonClassesExt;
 {$I KaM_Remake.inc}
 interface
 uses
-  SysUtils, TypInfo;
+  SysUtils, TypInfo, Generics.Collections;
 
 type
   ERuntimeTypeError = class(Exception);
@@ -15,6 +15,12 @@ type
     class function IsSet: Boolean; static;
     class function Cardinality(const Value: T): Integer; static;
     class function SetToString(const Value: T): String; static;
+  end;
+
+  // List with unique elements
+  TKMListUnique<T> = class(TList<T>)
+  public
+    function Add(const Value: T): Integer; reintroduce;
   end;
 
   function GetCardinality(const PSet: PByteArray; const SizeOfSet(*in bytes*): Integer): Integer; inline;
@@ -101,6 +107,15 @@ begin
   Result := GetSetToString(PByteArray(@Value), SizeOf(Value));
 end;
 
+
+
+{ TKMListUnique<T> }
+function TKMListUnique<T>.Add(const Value: T): Integer;
+begin
+  if Contains(Value) then Exit;
+
+  inherited Add(Value);
+end;
 
 
 end.

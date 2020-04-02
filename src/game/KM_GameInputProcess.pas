@@ -727,8 +727,8 @@ begin
 
     case CommandType of
       gicArmyFeed:         SrcGroup.OrderFood(True);
-      gicArmySplit:        SrcGroup.OrderSplit(True);
-      gicArmySplitSingle:  SrcGroup.OrderSplit(True, True);
+      gicArmySplit:        SrcGroup.OrderSplit;
+      gicArmySplitSingle:  SrcGroup.OrderSplit(True);
       gicArmyStorm:        SrcGroup.OrderStorm(True);
       gicArmyLink:         SrcGroup.OrderLinkTo(TgtGroup, True);
       gicArmyAttackUnit:   SrcGroup.OrderAttackUnit(TgtUnit, True);
