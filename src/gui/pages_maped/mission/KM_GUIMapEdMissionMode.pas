@@ -32,7 +32,8 @@ type
           NumEdit_SmallDesc: TKMNumericEdit;
           Panel_CheckBoxes: TKMPanel;
             CheckBox_Coop, CheckBox_Special, CheckBox_RMG, CheckBox_PlayableAsSP,
-            CheckBox_BlockTeamSelection, CheckBox_BlockPeacetime, CheckBox_BlockFullMapPreview: TKMCheckBox;
+            CheckBox_BlockTeamSelection, CheckBox_BlockPeacetime,
+            CheckBox_BlockFullMapPreview, CheckBox_BlockColorSelection: TKMCheckBox;
 
           CheckBox_Difficulty: array [MISSION_DIFFICULTY_MIN..MISSION_DIFFICULTY_MAX] of TKMCheckBox;
 
@@ -133,11 +134,16 @@ begin
       CheckBox_BlockTeamSelection := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 0, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_TEAM_SEL],  fntMetal);
       CheckBox_BlockTeamSelection.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_TEAM_SEL_HINT];
 
-      CheckBox_BlockPeacetime := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 20, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_PT], fntMetal);
+      CheckBox_BlockColorSelection := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 20, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_COLOR_SEL], fntMetal);
+      CheckBox_BlockColorSelection.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_COLOR_SEL_HINT];
+
+      CheckBox_BlockPeacetime := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 40, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_PT], fntMetal);
       CheckBox_BlockPeacetime.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_PT_HINT];
 
-      CheckBox_BlockFullMapPreview := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 40, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW], fntMetal);
+      CheckBox_BlockFullMapPreview := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 60, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW], fntMetal);
       CheckBox_BlockFullMapPreview.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW_HINT];
+
+
 
     Inc(Top, 90);
     with TKMLabel.Create(Panel_MissionParams, 0, Top, Panel_MissionParams.Width, 20, gResTexts[TX_MAPED_MISSION_DIFFICULTY_LEVELS], fntOutline, taLeft) do
@@ -191,6 +197,7 @@ begin
     CheckBox_RMG.OnClick                 := UpdateMapTxtInfo;
     CheckBox_PlayableAsSP.OnClick        := UpdateMapTxtInfo;
     CheckBox_BlockTeamSelection.OnClick  := UpdateMapTxtInfo;
+    CheckBox_BlockColorSelection.OnClick := UpdateMapTxtInfo;
     CheckBox_BlockPeacetime.OnClick      := UpdateMapTxtInfo;
     CheckBox_BlockFullMapPreview.OnClick := UpdateMapTxtInfo;
 
@@ -377,6 +384,7 @@ begin
   gGame.MapTxtInfo.IsPlayableAsSP := CheckBox_PlayableAsSP.Checked;
 
   gGame.MapTxtInfo.BlockTeamSelection  := CheckBox_BlockTeamSelection.Checked;
+  gGame.MapTxtInfo.BlockColorSelection := CheckBox_BlockColorSelection.Checked;
   gGame.MapTxtInfo.BlockPeacetime      := CheckBox_BlockPeacetime.Checked;
   gGame.MapTxtInfo.BlockFullMapPreview := CheckBox_BlockFullMapPreview.Checked;
 
@@ -416,6 +424,7 @@ begin
   CheckBox_PlayableAsSP.Checked := gGame.MapTxtInfo.IsPlayableAsSP;
 
   CheckBox_BlockTeamSelection.Checked   := gGame.MapTxtInfo.BlockTeamSelection;
+  CheckBox_BlockColorSelection.Checked  := gGame.MapTxtInfo.BlockColorSelection;
   CheckBox_BlockPeacetime.Checked       := gGame.MapTxtInfo.BlockPeacetime;
   CheckBox_BlockFullMapPreview.Checked  := gGame.MapTxtInfo.BlockFullMapPreview;
 

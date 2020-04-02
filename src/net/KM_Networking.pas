@@ -175,6 +175,7 @@ type
     function GetPacketsSent(aKind: TKMessageKind): Cardinal;
 
     procedure WriteInfoToJoinRoom(aM: TKMemoryStream);
+    function GetMapInfo: TKMapInfo;
   public
     constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval, aServerUDPScanPort: Word;
                        aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
@@ -214,12 +215,12 @@ type
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
     procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder; aSendPlayerSetup: Boolean = False);
     procedure SelectSave(const aName: UnicodeString);
-    procedure SelectLoc(aIndex:integer; aPlayerIndex:integer);
-    procedure SelectTeam(aIndex:integer; aPlayerIndex:integer);
-    procedure SelectColor(aIndex:integer; aPlayerIndex:integer);
-    procedure KickPlayer(aPlayerIndex:integer);
-    procedure BanPlayer(aPlayerIndex:integer);
-    procedure SetToHost(aPlayerIndex:integer);
+    procedure SelectLoc(aIndex: Integer; aPlayerIndex: Integer);
+    procedure SelectTeam(aIndex: Integer; aPlayerIndex: Integer);
+    procedure SelectColor(aColor: Cardinal; aPlayerIndex: Integer);
+    procedure KickPlayer(aPlayerIndex: Integer);
+    procedure BanPlayer(aPlayerIndex: Integer);
+    procedure SetToHost(aPlayerIndex: Integer);
     procedure ResetBans;
     procedure SendPassword(const aPassword: AnsiString);
     procedure SetPassword(const aPassword: AnsiString);
@@ -246,7 +247,7 @@ type
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 
     //Gameplay
-    property MapInfo: TKMapInfo read fMapInfo;
+    property MapInfo: TKMapInfo read GetMapInfo;
     property SaveInfo: TKMSaveInfo read fSaveInfo;
     property NetGameOptions: TKMGameOptions read fNetGameOptions;
     property SelectGameKind: TKMNetGameKind read fSelectGameKind;
@@ -761,7 +762,7 @@ end;
 
 //Tell other players which start position we would like to use
 //Each players choice should be unique
-procedure TKMNetworking.SelectLoc(aIndex:integer; aPlayerIndex:integer);
+procedure TKMNetworking.SelectLoc(aIndex: Integer; aPlayerIndex: Integer);
 var
   NetPlayerIndex: Integer;
 begin
@@ -833,20 +834,20 @@ end;
 
 //Tell other players which color we will be using
 //For now players colors are not unique, many players may have one color
-procedure TKMNetworking.SelectColor(aIndex:integer; aPlayerIndex:integer);
+procedure TKMNetworking.SelectColor(aColor: Cardinal; aPlayerIndex: Integer);
 begin
-  if not fNetPlayers.ColorAvailable(aIndex) then Exit;
+  if not fNetPlayers.ColorAvailable(aColor) then Exit;
   if (fSelectGameKind = ngkSave)
     and SaveInfo.IsValid
-    and SaveInfo.GameInfo.ColorUsed(aIndex) then Exit;
+    and SaveInfo.GameInfo.ColorUsed(aColor) then Exit;
 
   //Host makes rules, Joiner will get confirmation from Host
-  fNetPlayers[aPlayerIndex].FlagColorID := aIndex; //Use aPlayerIndex not fMyIndex because it could be an AI
+  fNetPlayers[aPlayerIndex].FlagColor := aColor; //Use aPlayerIndex not fMyIndex because it could be an AI
 
   case fNetPlayerKind of
     lpkHost:   SendPlayerListAndRefreshPlayersSetup;
     lpkJoiner: begin
-                  PacketSend(NET_ADDRESS_HOST, mkFlagColorQuery, aIndex);
+                  PacketSend(NET_ADDRESS_HOST, mkFlagColorQuery, aColor);
                   if Assigned(fOnPlayersSetup) then fOnPlayersSetup(Self);
                 end;
   end;
@@ -1011,10 +1012,13 @@ var
   ErrorMessage: UnicodeString;
   M: TKMemoryStreamBinary;
   CheckMapInfo: TKMapInfo;
+  FixedLocsColors: TKMCardinalArray;
 begin
   Assert(IsHost, 'Only host can start the game');
   Assert(IsGameStartAllowed(CanStart), 'Can''t start the game now');
   Assert(fNetGameState = lgsLobby, 'Can only start from lobby');
+
+  SetLength(FixedLocsColors, 0);
 
   //Define random parameters (start locations and flag colors)
   //This will also remove odd players from the List, they will lose Host in few seconds
@@ -1023,6 +1027,7 @@ begin
                 HumanUsableLocs := fMapInfo.HumanUsableLocs;
                 AIUsableLocs := fMapInfo.AIUsableLocs;
                 AdvancedAIUsableLocs := fMapInfo.AdvancedAIUsableLocs;
+                FixedLocsColors := fMapInfo.FixedLocsColors;
                 //Check that map's hash hasn't changed
                 CheckMapInfo := TKMapInfo.Create(fMapInfo.FileName, True, fMapInfo.MapFolder);
                 try
@@ -1046,7 +1051,7 @@ begin
                 SetLength(AIUsableLocs, 0);
               end;
   end;
-  if not fNetPlayers.ValidateSetup(HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs, ErrorMessage) then
+  if not fNetPlayers.ValidateSetup(HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs, FixedLocsColors, ErrorMessage) then
   begin
     PostLocalMessage(Format(gResTexts[TX_LOBBY_CANNOT_START], [ErrorMessage]), csSystem);
     Exit;
@@ -1086,16 +1091,16 @@ begin
     for I := 1 to NetPlayers.Count do
       if (NetPlayers[I].StartLocation <> LOC_RANDOM) and (NetPlayers[I].StartLocation <> LOC_SPECTATE) then
       begin
-        NetPlayers[I].FlagColorID := fSaveInfo.GameInfo.ColorID[NetPlayers[I].HandIndex];
+        NetPlayers[I].FlagColor := fSaveInfo.GameInfo.Color[NetPlayers[I].HandIndex];
         NetPlayers[I].Team := fSaveInfo.GameInfo.Team[NetPlayers[I].HandIndex];
       end
       else
       begin
         NetPlayers[I].Team := 0;
         //Spectators may still change their color, but may not use one from the save
-        if (NetPlayers[I].FlagColorID <> 0)
-        and SaveInfo.GameInfo.ColorUsed(NetPlayers[I].FlagColorID) then
-          NetPlayers[I].FlagColorID := 0;
+        if NetPlayers[I].IsColorSet
+          and SaveInfo.GameInfo.ColorUsed(NetPlayers[I].FlagColor) then
+          NetPlayers[I].FlagColor := 0;
       end;
 
   fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname); //The host's index can change when players are removed
@@ -1633,7 +1638,7 @@ var
   tmpStringA: AnsiString;
   tmpStringW, replyStringW: UnicodeString;
   tmpChatMode: TKMChatMode;
-  I,LocID,TeamID,ColorID,PlayerIndex: Integer;
+  I,LocID,TeamID,Color,PlayerIndex: Integer;
   ChatSound: TKMChatSound;
 begin
   Assert(aLength >= 1, 'Unexpectedly short message'); //Kind, Message
@@ -2141,13 +2146,13 @@ begin
       mkFlagColorQuery:
               if IsHost then
               begin
-                M.Read(tmpInteger);
-                ColorID := tmpInteger;
+                M.Read(tmpCardinal);
+                Color := tmpCardinal;
                 //The player list could have changed since the joiner sent this request (over slow connection)
-                if fNetPlayers.ColorAvailable(ColorID)
-                and ((fSelectGameKind <> ngkSave) or not SaveInfo.IsValid or not SaveInfo.GameInfo.ColorUsed(ColorID)) then
+                if fNetPlayers.ColorAvailable(Color)
+                and ((fSelectGameKind <> ngkSave) or not SaveInfo.IsValid or not SaveInfo.GameInfo.ColorUsed(Color)) then
                 begin
-                  fNetPlayers[fNetPlayers.ServerToLocal(aSenderIndex)].FlagColorID := ColorID;
+                  fNetPlayers[fNetPlayers.ServerToLocal(aSenderIndex)].FlagColor := Color;
                   SendPlayerListAndRefreshPlayersSetup;
                 end
                 else //Quietly refuse
@@ -2327,7 +2332,7 @@ begin
                 begin
                   if not IsMuted(PlayerIndex) then
                   begin
-                    if NetPlayers[PlayerIndex].FlagColorID <> 0 then
+                    if NetPlayers[PlayerIndex].IsColorSet then
                       tmpStringW := WrapColor(NetPlayers[PlayerIndex].NiknameU, FlagColorToTextColor(NetPlayers[PlayerIndex].FlagColor)) + tmpStringW
                     else
                       tmpStringW := NetPlayers[PlayerIndex].NiknameU + tmpStringW;
@@ -2597,7 +2602,7 @@ begin
     for I := 1 to NetPlayers.Count do
     begin
       MPGameInfo.Players[I].Name        := NetPlayers[I].Nikname;
-      MPGameInfo.Players[I].Color       := NetPlayers[I].FlagColor($FFFFFFFF);
+      MPGameInfo.Players[I].Color       := NetPlayers[I].FlagColorDef;
       MPGameInfo.Players[I].Connected   := NetPlayers[I].Connected;
       MPGameInfo.Players[I].LangCode    := NetPlayers[I].LangCode;
       MPGameInfo.Players[I].Team        := NetPlayers[I].Team;
@@ -2699,6 +2704,14 @@ begin
     end;
   end;
   PostLocalMessage(Format(gResTexts[TX_LOBBY_ALERT_GET_READY_SENT], [IntToStr(K)]), csSystem);
+end;
+
+
+function TKMNetworking.GetMapInfo: TKMapInfo;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fMapInfo;
 end;
 
 

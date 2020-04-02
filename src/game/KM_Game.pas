@@ -1780,7 +1780,7 @@ begin
         GameInfo.CanBeHuman[I] := False;
         GameInfo.OwnerNikname[I] := '';
         GameInfo.HandTypes[I] := hndHuman;
-        GameInfo.ColorID[I] := 0;
+        GameInfo.Color[I] := 0;
         GameInfo.Team[I] := 0;
       end else
       begin
@@ -1791,7 +1791,7 @@ begin
           GameInfo.CanBeHuman[I] := fNetworking.NetPlayers[netIndex].IsHuman;
           GameInfo.OwnerNikname[I] := fNetworking.NetPlayers[netIndex].Nikname;
           GameInfo.HandTypes[I] := fNetworking.NetPlayers[netIndex].GetPlayerType;
-          GameInfo.ColorID[I] := fNetworking.NetPlayers[netIndex].FlagColorID;
+          GameInfo.Color[I] := fNetworking.NetPlayers[netIndex].FlagColor;
           GameInfo.Team[I] := fNetworking.NetPlayers[netIndex].Team;
         end
         else
@@ -1800,7 +1800,7 @@ begin
           GameInfo.CanBeHuman[I] := gHands[I].HandType = hndHuman;
           GameInfo.OwnerNikname[I] := gHands[I].OwnerNikname; //MP nikname, not translated OwnerName
           GameInfo.HandTypes[I] := gHands[I].HandType;
-          GameInfo.ColorID[I] := FindMPColor(gHands[I].FlagColor);
+          GameInfo.Color[I] := gHands[I].FlagColor;
           GameInfo.Team[I] := 0;
         end;
       end;

@@ -1514,7 +1514,7 @@ type
     procedure Clear; override;
     function Count: Integer; override;
     property List: TKMColumnBox read fList;
-    property Item[aIndex: Integer]: TKMListRow read GetItem;
+    property Item[aIndex: Integer]: TKMListRow read GetItem; default;
     procedure SetColumns(aFont: TKMFont; aColumns: array of string; aColumnOffsets: array of Word); overload;
     procedure SetColumns(aFont: TKMFont; aColumns: array of string; aColumnOffsets: array of Word; aColumnsToShowWhenListHidden: array of Boolean); overload;
     property DefaultCaption: UnicodeString read fDefaultCaption write fDefaultCaption;
@@ -1907,7 +1907,8 @@ begin
 end;
 
 
-function MakeListRow(const aCaption: array of string; const aColor: array of TColor4; const aPic: array of TKMPic; aTag: Integer = 0): TKMListRow;
+function MakeListRow(const aCaption: array of string; const aColor: array of TColor4; const aPic: array of TKMPic;
+                     aTag: Integer = 0): TKMListRow;
 var I: Integer;
 begin
   Assert(Length(aCaption) = Length(aColor));

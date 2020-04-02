@@ -1007,7 +1007,7 @@ end;
 
 function TKMGameApp.GetGameSettings: TKMGameSettings;
 begin
-  if Self = nil then Exit;
+  if Self = nil then Exit(nil);
 
   Result := fGameSettings;
 end;

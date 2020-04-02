@@ -98,6 +98,7 @@ type
     procedure ChooseFirstStorehouse();
 
     function GetAI: TKMHandAI;
+    procedure SetFlagColor(const Value: Cardinal);
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -132,7 +133,7 @@ type
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
     property CanBeHuman: Boolean read fCanBeHuman write fCanBeHuman;
     property HandAITypes: TKMAITypeSet read fHandAITypes;
-    property FlagColor: Cardinal read fFlagColor write fFlagColor;
+    property FlagColor: Cardinal read fFlagColor write SetFlagColor;
     property TeamColor: Cardinal read fTeamColor write fTeamColor;
     property GameFlagColor: Cardinal read GetGameFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
@@ -1573,6 +1574,14 @@ begin
 
   if Assigned(fOnAllianceChange) then
     fOnAllianceChange;
+end;
+
+
+procedure TKMHand.SetFlagColor(const Value: Cardinal);
+begin
+  if Self = nil then Exit;
+  
+  fFlagColor := Value;
 end;
 
 

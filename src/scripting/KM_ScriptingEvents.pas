@@ -547,7 +547,8 @@ var
   Res: Boolean;
 begin
   if not MethodAssigned(aFunc.Handler) then Exit(brUnknown);
-
+  Res := False;
+  Result := brUnknown;
   try
     if aFloatParam <> FLOAT_PARAM_NONE then
     begin

@@ -500,6 +500,7 @@ begin
     RegisterMethodCheck(c, 'function IsMissionCoopType: Boolean');
     RegisterMethodCheck(c, 'function IsMissionSpecialType: Boolean');
     RegisterMethodCheck(c, 'function IsMissionPlayableAsSP: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockColorSelection: Boolean');
     RegisterMethodCheck(c, 'function IsMissionBlockTeamSelection: Boolean');
     RegisterMethodCheck(c, 'function IsMissionBlockPeacetime: Boolean');
     RegisterMethodCheck(c, 'function IsMissionBlockFullMapPreview: Boolean');
@@ -1136,6 +1137,7 @@ begin
       RegisterMethod(@TKMScriptStates.IsMissionCoopType,                        'IsMissionCoopType');
       RegisterMethod(@TKMScriptStates.IsMissionSpecialType,                     'IsMissionSpecialType');
       RegisterMethod(@TKMScriptStates.IsMissionPlayableAsSP,                    'IsMissionPlayableAsSP');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockColorSelection,             'IsMissionBlockColorSelection');
       RegisterMethod(@TKMScriptStates.IsMissionBlockTeamSelection,              'IsMissionBlockTeamSelection');
       RegisterMethod(@TKMScriptStates.IsMissionBlockPeacetime,                  'IsMissionBlockPeacetime');
       RegisterMethod(@TKMScriptStates.IsMissionBlockFullMapPreview,             'IsMissionBlockFullMapPreview');

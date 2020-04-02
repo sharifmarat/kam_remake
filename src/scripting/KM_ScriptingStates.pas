@@ -101,6 +101,7 @@ type
     function IsMissionCoopType: Boolean;
     function IsMissionSpecialType: Boolean;
     function IsMissionPlayableAsSP: Boolean;
+    function IsMissionBlockColorSelection: Boolean;
     function IsMissionBlockTeamSelection: Boolean;
     function IsMissionBlockPeacetime: Boolean;
     function IsMissionBlockFullMapPreview: Boolean;
@@ -2697,6 +2698,20 @@ begin
     raise;
   end;
 end;
+
+
+//* Version: 11230
+//* Returns if color selection is locked for current mission
+function TKMScriptStates.IsMissionBlockColorSelection: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockColorSelection;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
 
 
 //* Version: 7000+

@@ -3041,7 +3041,7 @@ begin
 
     if gGame.Networking.NetPlayers[NetI].IsSpectator then
     begin
-      Label_AlliesPlayer[I].FontColor := gGame.Networking.NetPlayers[NetI].FlagColor;
+      Label_AlliesPlayer[I].FontColor := gGame.Networking.NetPlayers[NetI].FlagColorDef;
       DropBox_AlliesTeam[I].ItemIndex := 0;
       Label_AlliesTeam[I].Caption := gResTexts[TX_LOBBY_SPECTATOR];
     end
