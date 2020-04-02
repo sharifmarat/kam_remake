@@ -1566,6 +1566,8 @@ end;
 
 procedure TKMHand.SetAlliances(aIndex: Integer; aValue: TKMAllianceType);
 begin
+  if Self = nil then Exit;
+
   fAlliances[aIndex] := aValue;
   gAIFields.Supervisor.UpdateAlliances();
 
@@ -1582,6 +1584,8 @@ end;
 
 procedure TKMHand.SetShareFOW(aIndex: Integer; aValue: Boolean);
 begin
+  if Self = nil then Exit;
+
   fShareFOW[aIndex] := aValue;
 end;
 
@@ -1594,6 +1598,8 @@ end;
 
 procedure TKMHand.SetShareBeacons(aIndex: Integer; aValue: Boolean);
 begin
+  if Self = nil then Exit;
+
   fShareBeacons[aIndex] := aValue;
 end;
 
