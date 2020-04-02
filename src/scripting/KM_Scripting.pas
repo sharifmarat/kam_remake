@@ -706,12 +706,12 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure MapBrush(X, Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
+    RegisterMethodCheck(c, 'procedure MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
     RegisterMethodCheck(c, 'procedure MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushMagicWater(X, Y: Integer)');
-    RegisterMethodCheck(c, 'procedure MapBrushWithMask(X, Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;'
+    RegisterMethodCheck(c, 'procedure MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;'
                                       + 'aRandomTiles, aOverrideCustomTiles: Boolean;'
                                       + 'aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean)');
 
