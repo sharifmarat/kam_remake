@@ -1121,7 +1121,11 @@ begin
                   gMySpectator.Selected := nil; //We might have had a unit/group/house selected
                 end
                 else
+                begin
                   UpdateSelection;
+                  if gMySpectator.Selected <> nil then
+                    gGame.MapEditor.ActiveMarker.MarkerType := mtNone;
+                end;
               end;
     mbRight:  begin
                 //Right click performs some special functions and shortcuts
