@@ -31,7 +31,6 @@ type
     procedure BackClick(Sender: TObject);
     procedure EscKeyDown(Sender: TObject);
     procedure FlagClick(Sender: TObject);
-    procedure Refresh;
     procedure RefreshResolutions;
     procedure KeysClick(Sender: TObject);
     procedure KeysRefreshList;
@@ -86,6 +85,8 @@ type
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
+    procedure Refresh;
+    function Visible: Boolean;
     procedure Show;
   end;
 
@@ -443,6 +444,9 @@ begin
     TrackBar_Options_VideoVolume.Enabled  := CheckBox_Options_VideoEnable.Checked;
     Button_Options_VideoTest.Enabled      := CheckBox_Options_VideoEnable.Checked;
   end;
+
+  if Assigned(gGameApp.OnOptionsChange) then
+    gGameApp.OnOptionsChange();
 end;
 
 
@@ -509,6 +513,12 @@ procedure TKMMenuOptions.TestVideo_Click(Sender: TObject);
 begin
   gVideoPlayer.AddVideo('_KaM');
   gVideoPlayer.Play;
+end;
+
+
+function TKMMenuOptions.Visible: Boolean;
+begin
+  Result := Panel_Options.Visible;
 end;
 
 

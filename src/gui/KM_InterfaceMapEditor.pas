@@ -122,6 +122,8 @@ type
     procedure Resize(X,Y: Word); override;
     procedure SetLoadMode(aMultiplayer: Boolean);
 
+    procedure DebugControlsUpdated; override;
+
     procedure SyncUI(aMoveViewport: Boolean = True); override;
     procedure UpdateState(aTickCount: Cardinal); override;
     procedure UpdateStateImmidiately;
@@ -287,6 +289,14 @@ begin
   SHOW_TERRAIN_WIRES := false; //Don't show it in-game if they left it on in MapEd
   SHOW_TERRAIN_PASS := 0; //Don't show it in-game if they left it on in MapEd
   inherited;
+end;
+
+
+procedure TKMapEdInterface.DebugControlsUpdated;
+begin
+  inherited;
+
+  fGuiExtras.Refresh;
 end;
 
 

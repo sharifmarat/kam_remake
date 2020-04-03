@@ -3,7 +3,7 @@ unit KM_FormMain;
 interface
 uses
   Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
-  KM_RenderControl, KM_Settings, KM_Video,
+  KM_RenderControl, KM_Settings, KM_Video, KM_CommonTypes,
   KM_GameTypes,
   {$IFDEF FPC} LResources, {$ENDIF}
   {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
@@ -188,8 +188,6 @@ type
     procedure ExportGameStatsClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure ResourceValues1Click(Sender: TObject);
-    procedure ControlsUpdate(Sender: TObject);
-
     procedure RenderAreaMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure RenderAreaMouseMove(Sender: TObject; Shift: TShiftState; X,Y: Integer);
     procedure RenderAreaMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -209,9 +207,12 @@ type
     procedure ReloadLibxClick(Sender: TObject);
     procedure Debug_UnlockCmpMissionsClick(Sender: TObject);
     procedure mnExportRngChecksClick(Sender: TObject);
+
+    procedure ControlsUpdate(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
+    fOnControlsUpdated: TEvent;
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     function ConfirmExport: Boolean;
@@ -235,7 +236,7 @@ type
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
     procedure SetExportGameStats(aEnabled: Boolean);
-    procedure UpdateSnowHouses;
+    property OnControlsUpdated: TEvent read fOnControlsUpdated write fOnControlsUpdated;
   end;
 
 
@@ -341,14 +342,6 @@ end;
 procedure TFormMain.SetExportGameStats(aEnabled: Boolean);
 begin
   ExportGameStats.Enabled := aEnabled;
-end;
-
-
-procedure TFormMain.UpdateSnowHouses;
-begin
-  {$IFDEF WDC}
-  chkSnowHouses.Checked := SNOW_HOUSES;
-  {$ENDIF}
 end;
 
 
@@ -781,7 +774,7 @@ procedure TFormMain.ControlsReset;
         if PanelSurface.Controls[I] is TCheckBox then
           TCheckBox(PanelSurface.Controls[I]).Checked :=    (PanelSurface.Controls[I] = chkBevel)
                                                          or (PanelSurface.Controls[I] = chkLogNetConnection)
-                                                         or ((PanelSurface.Controls[I] = chkSnowHouses) and SNOW_HOUSES)
+                                                         or ((PanelSurface.Controls[I] = chkSnowHouses) and gGameApp.GameSettings.AllowSnowHouses)
         else
         if PanelSurface.Controls[I] is TTrackBar then
           TTrackBar(PanelSurface.Controls[I]).Position := 0
@@ -849,6 +842,10 @@ end;
 
 procedure TFormMain.ControlsRefill;
 begin
+  {$IFDEF WDC}
+  chkSnowHouses.Checked := gGameApp.GameSettings.AllowSnowHouses; // Snow houses checkbox could be updated before game
+  {$ENDIF}
+
   if (gGame = nil) or not gGame.IsMapEditor then Exit;
 
   tbPassability.Max := Byte(High(TKMTerrainPassability));
@@ -963,8 +960,8 @@ begin
   SHOW_CONTROLS_ID := chkUIControlsID.Checked;
 
   {$IFDEF WDC} //one day update .lfm for lazarus...
-  SNOW_HOUSES := chkSnowHouses.Checked;
-  gGameApp.GameSettings.AllowSnowHouses := SNOW_HOUSES;
+//  ALLOW_SNOW_HOUSES := chkSnowHouses.Checked;
+  gGameApp.GameSettings.AllowSnowHouses := chkSnowHouses.Checked;
 
   ALLOW_LOAD_UNSUP_VERSION_SAVE := chkLoadUnsupSaves.Checked;
   {$ENDIF}
@@ -1038,6 +1035,9 @@ begin
   end;
 
   ActiveControl := nil; //Do not allow to focus on anything on debug panel
+
+  if Assigned (fOnControlsUpdated) then
+    fOnControlsUpdated;
 end;
 
 

@@ -32,6 +32,7 @@ type
     constructor Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
 
     procedure Show;
+    procedure Refresh;
     function Visible: Boolean;
     procedure Hide;
   end;
@@ -39,7 +40,7 @@ type
 
 implementation
 uses
-  KM_Main,
+  KM_GameApp,
   KM_HandsCollection, KM_Sound, KM_ResSound,
   KM_RenderUI, KM_ResFonts, KM_ResTexts;
 
@@ -135,7 +136,8 @@ begin
   else
     Label_Passability.Caption := gResTexts[TX_MAPED_PASSABILITY_OFF];
 
-  gMain.FormMain.ControlsRefill;
+  if Assigned(gGameApp.OnOptionsChange) then
+    gGameApp.OnOptionsChange;
 
   fOnChange(Self);
 end;
@@ -161,9 +163,17 @@ begin
 end;
 
 
+procedure TKMMapEdExtras.Refresh;
+begin
+  CheckBox_ShowTilesGrid.Checked := SHOW_TERRAIN_TILES_GRID;
+  TrackBar_Passability.Position := SHOW_TERRAIN_PASS;
+end;
+
+
 procedure TKMMapEdExtras.Show;
 begin
   gSoundPlayer.Play(sfxnMPChatOpen);
+  Refresh;
   Panel_Extra.Show;
 end;
 

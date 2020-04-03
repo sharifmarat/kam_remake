@@ -65,6 +65,7 @@ type
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
 
+    procedure DebugControlsUpdated; override;
     procedure RefreshCampaigns;
     procedure Resize(X,Y: Word); override;
     procedure UpdateState(aTickCount: Cardinal); override;
@@ -125,6 +126,13 @@ begin
 
   AfterCreateComplete;
   gLog.AddTime('Main menu init done');
+end;
+
+
+procedure TKMMainMenuInterface.DebugControlsUpdated;
+begin
+  if fMenuOptions.Visible then
+    fMenuOptions.Refresh;
 end;
 
 
