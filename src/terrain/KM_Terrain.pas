@@ -4969,7 +4969,6 @@ begin
       else
         aTileBasic.BlendingLvl := 50;
 
-      aTileBasic.BaseLayer.ClearCorners;
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
         if aGameRev <= 10745 then
@@ -4989,12 +4988,11 @@ begin
         aTileBasic.Layer[I].Terrain := gGenTerrainTransitions[GenInfo.TerKind, GenInfo.Mask.Kind,
                                                               GenInfo.Mask.MType, GenInfo.Mask.SubType];
         aStream.Read(aTileBasic.Layer[I].Rotation);
-        aTileBasic.Layer[I].ClearCorners;
       end;
 
       aTileBasic.BaseLayer.ClearCorners;
       for I := 0 to 2 do
-        aTileBasic.BaseLayer.ClearCorners;
+        aTileBasic.Layer[I].ClearCorners;
 
       for I := 0 to 3 do
       begin
