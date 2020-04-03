@@ -349,8 +349,8 @@ type
 
     procedure UpdateState;
 
-    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
-    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
+    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aGameSave: Boolean); overload;
+    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aGameSave: Boolean; var aMapDataSize: Cardinal); overload;
     class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
   end;
 
@@ -611,7 +611,7 @@ const
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
-    WriteTileToStream(S, TileBasic, MapDataSize);
+    WriteTileToStream(S, TileBasic, False, MapDataSize);
   end;
 
   procedure WriteFileHeader(S: TKMemoryStreamBinary);
@@ -4597,7 +4597,7 @@ begin
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
 
-      WriteTileToStream(SaveStream, TileBasic);
+      WriteTileToStream(SaveStream, TileBasic, True);
 
       SaveStream.Write(Land[I,K].TreeAge);
       SaveStream.Write(Land[I,K].FieldAge);
@@ -4799,15 +4799,16 @@ begin
 end;
 
 
-class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic);
+class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aGameSave: Boolean);
 var
   MapDataSize: Cardinal;
 begin
-  WriteTileToStream(S, aTileBasic, MapDataSize);
+  WriteTileToStream(S, aTileBasic, aGameSave, MapDataSize);
 end;
 
 
-class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal);
+class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic;
+                                             aGameSave: Boolean; var aMapDataSize: Cardinal);
 
   function PackLayersCorners(const aTileBasic: TKMTerrainTileBasic): Byte;
   var
@@ -4853,6 +4854,7 @@ class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic
 var
   L: Integer;
   GenInfo: TKMGenTerrainInfo;
+  overlay: TKMTileOverlay;
 begin
   S.Write(aTileBasic.BaseLayer.Terrain);  //1
   //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
@@ -4860,7 +4862,15 @@ begin
   S.Write(aTileBasic.Height);             //4
   S.Write(aTileBasic.Obj);                //5
   S.Write(aTileBasic.IsCustom);           //7
-  S.Write(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)); //8
+
+  overlay := toNone;
+  // Roads should not be saved as an overlay, when save .map file
+  // since roads are set for each player in the dat file
+  // but they should for a game save
+  if aGameSave or (aTileBasic.TileOverlay <> toRoad) then
+    overlay := aTileBasic.TileOverlay;
+
+  S.Write(overlay, SizeOf(overlay)); //8
   S.Write(aTileBasic.LayersCnt);          //9
   Inc(aMapDataSize, 9); // obligatory 9 bytes per tile
   if aTileBasic.LayersCnt > 0 then
