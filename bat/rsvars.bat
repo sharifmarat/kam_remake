@@ -17,7 +17,7 @@ call rsvars_local.bat
 @SET PATH=%FrameworkDir%;%FrameworkSDKDir%;%BDS%\bin;%BDS%\bin64;%PATH%
 @SET kam_version=Beta
 
-@SET IncludeScriptingEditor=False
+@SET IncludeScriptingEditor=True
 
 goto exit0
 
