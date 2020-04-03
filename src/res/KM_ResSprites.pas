@@ -1322,12 +1322,20 @@ end;
 
 function TKMResSprites.GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
 begin
+  Assert(aTerrain + 1 - fGenTexIdStartI < Length(fGenTerrainToTerKind),
+         Format('Try to get terrain info out of range: TileID = %d, GenStart = %d, GenTerrain arr length = %d',
+                [aTerrain, fGenTexIdStartI, Length(fGenTerrainToTerKind)]));
+
   Result := fGenTerrainToTerKind[aTerrain + 1 - fGenTexIdStartI]; //TexId is 1-based, but textures we use - 0 based
 end;
 
 
 function TKMResSprites.GetGenTerrainInfoLegacy(aTerrain: Integer): TKMGenTerrainInfo;
 begin
+  Assert(aTerrain + 1 - fGenTexIdStartILegacy < Length(fGenTerrainToTerKindLegacy),
+         Format('Try to get terrain info LEGACY out of range: TileID = %d, GenStart = %d, GenTerrain arr length = %d',
+                [aTerrain, fGenTexIdStartILegacy, Length(fGenTerrainToTerKindLegacy)]));
+
   Result := fGenTerrainToTerKindLegacy[aTerrain + 1 - fGenTexIdStartILegacy]; //TexId is 1-based, but textures we use - 0 based
 end;
 
