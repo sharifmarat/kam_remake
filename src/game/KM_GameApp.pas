@@ -1184,6 +1184,8 @@ begin
   if fNetworking <> nil then
     fNetworking.UpdateState(fGlobalTickCount);
 
+  gVideoPlayer.UpdateState;
+
   if gGame <> nil then
   begin
     gGame.UpdateState(fGlobalTickCount);

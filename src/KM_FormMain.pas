@@ -327,6 +327,7 @@ begin
 
   if (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
   begin
+    gVideoPlayer.AddVideo('Campaigns\The Shattered Kingdom\Logo');
     gVideoPlayer.AddVideo('KaM');
     gVideoPlayer.Play;
   end;

@@ -27,6 +27,7 @@ type
     procedure StartClick(Sender: TObject);
     procedure Difficulty_Change(Sender: TObject);
     procedure AnimNodes(aTickCount: Cardinal);
+    procedure PlayBrifingAudioTrack;
   protected
     Panel_Campaign: TKMPanel;
       Image_CampaignBG: TKMImage;
@@ -277,9 +278,13 @@ begin
   Panel_CampScroll.Show;
 
   gGameApp.MusicLib.StopPlayingOtherFile; //Stop playing the previous breifing even if this one doesn't exist
-  gGameApp.PauseMusicToPlayFile(fCampaign.GetBreifingAudioFile(fMapIndex));
+  PlayBrifingAudioTrack;
 end;
 
+procedure TKMMenuCampaign.PlayBrifingAudioTrack;
+begin
+  gGameApp.PauseMusicToPlayFile(fCampaign.GetBreifingAudioFile(fMapIndex));
+end;
 
 procedure TKMMenuCampaign.StartClick(Sender: TObject);
 begin
@@ -364,6 +369,7 @@ begin
 
     gVideoPlayer.AddCampaignVideo(fCampaign.Path, 'Logo');
     gVideoPlayer.AddCampaignVideo(fCampaign.Path, 'Intro');
+    gVideoPlayer.SerCallback(PlayBrifingAudioTrack);
     gVideoPlayer.Play;
   end;
 end;

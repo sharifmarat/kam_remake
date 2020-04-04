@@ -333,7 +333,8 @@ uses
 	
   KM_Viewport in 'src\KM_Viewport.pas',
   KM_WareDistribution in 'src\KM_WareDistribution.pas',
-  KM_Video in 'src\KM_Video.pas';
+  KM_Video in 'src\KM_Video.pas',
+  KM_VLC in 'src\utils\KM_VLC.pas';
 
 {$IFDEF WDC}
   {$R KaM_Remake_Icon.res} //Keeps the Icon
