@@ -1,0 +1,298 @@
+type
+  PlayerData = record
+    { reinforcements }
+    rX, rY, rF: integer;
+    { target of attack }
+    tX, tY: integer;
+    { attack spawn (middle) }
+    sX, sY, sF: integer;
+    { attack spawn (sides) }
+    aX, aY, aF: integer;
+
+    { attacks spawn? }
+    spawn: integer;
+
+    housesToDestroy: integer;
+    unitsToKill: integer;
+  end;
+
+const
+  AXE = 15;
+  SWORD = 16;
+  BOW = 17;
+  XBOW = 18;
+  LANCE = 19;
+  PIKE = 20;
+  SCOUT = 21;
+  KNIGHT = 22;
+  BARB = 23;
+  WAR = 26;
+  VAGA = 27;
+
+var
+  amount: integer;
+  players: array[0..3] of PlayerData;
+
+procedure OnMissionStart;
+begin
+  amount := 20;
+
+  players[0].rX := 87;
+  players[0].rY := 160;
+  players[0].rF := 4;
+  players[0].tX := 44;
+  players[0].tY := 168;
+  players[0].sX := 79;
+  players[0].sY := 130;
+  players[0].sF := 6;
+  players[0].aX := 27;
+  players[0].aY := 107;
+  players[0].aF := 4;
+  players[0].spawn := 1;
+  players[0].housesToDestroy := 4;
+  players[0].unitsToKill := 70;
+
+  players[1].rX := 89;
+  players[1].rY := 37;
+  players[1].rF := 0;
+  players[1].tX := 37;
+  players[1].tY := 18;
+  players[1].sX := 74;
+  players[1].sY := 64;
+  players[1].sF := 4;
+  players[1].aX := 36;
+  players[1].aY := 87;
+  players[1].aF := 0;
+  players[1].spawn := 1;
+  players[1].housesToDestroy := 4;
+  players[1].unitsToKill := 70;
+
+  players[2].rX := 100;
+  players[2].rY := 37;
+  players[2].rF := 0;
+  players[2].tX := 148;
+  players[2].tY := 18;
+  players[2].sX := 111;
+  players[2].sY := 59;
+  players[2].sF := 2;
+  players[2].aX := 157;
+  players[2].aY := 88;
+  players[2].aF := 0;
+  players[2].spawn := 1;
+  players[2].housesToDestroy := 4;
+  players[2].unitsToKill := 70;
+
+  players[3].rX := 112;
+  players[3].rY := 165;
+  players[3].rF := 4;
+  players[3].tX := 164;
+  players[3].tY := 177;
+  players[3].sX := 113;
+  players[3].sY := 133;
+  players[3].sF := 0;
+  players[3].aX := 160;
+  players[3].aY := 104;
+  players[3].aF := 0;
+  players[3].spawn := 1;
+  players[3].housesToDestroy := 4;
+  players[3].unitsToKill := 70;
+end;
+
+procedure spawnAttackSide(unitType: integer; amount: integer);
+var
+  I: integer;
+begin
+  for I := 0 to 3 do begin
+    if States.PlayerEnabled(I) then begin
+      Actions.GiveGroup(4, unitType, players[I].aX, players[I].aY, players[I].aF, amount, 5);
+    end;
+  end;
+end;
+
+procedure spawnAttackMiddle(unitType: integer; amount: integer; attackType: integer);
+var
+  I: integer;
+begin
+  for I := 0 to 3 do begin
+    if (States.PlayerEnabled(I)) and (players[I].spawn = attackType) then begin
+      Actions.GiveGroup(4, unitType, players[I].sX, players[I].sY, players[I].sF, amount, 5);
+    end;
+  end;
+end;
+
+procedure spawnReinforcements(unitType: integer; amount: integer; showMsg: boolean; I: integer);
+begin
+  Actions.GiveGroup(I, unitType, players[I].rX, players[I].rY, players[I].rF, amount, 5);
+  if showMsg = true then begin
+    Actions.ShowMsgGoto(I, players[I].rX, players[I].rY, '<$1>')
+  end;
+end;
+
+procedure checkReinforcements;
+var
+  I: integer;
+begin
+  for I := 0 to 3 do begin
+    if ((players[I].housesToDestroy = 0) and (players[I].unitsToKill = 0)) then begin
+      spawnReinforcements(AXE, 15, false, I);
+      spawnReinforcements(BOW, 15, false, I);
+      spawnReinforcements(LANCE, 15, false, I);
+      spawnReinforcements(SCOUT, 5, true, I);
+      players[I].housesToDestroy := -100;
+    end;
+  end;
+end;
+
+procedure OnUnitDied(aUnit: Integer; aKillerOwner: Integer);
+var
+  y: integer;
+  owner: integer;
+begin
+  owner := States.UnitOwner(aUnit);
+  if owner = 5 then begin
+    y := States.UnitPositionY(aUnit);
+    if y > 96 then begin
+      players[0].unitsToKill := players[0].unitsToKill - 1;
+      players[3].unitsToKill := players[3].unitsToKill - 1;
+    end;
+    if y < 96 then begin
+      players[1].unitsToKill := players[1].unitsToKill - 1;
+      players[2].unitsToKill := players[2].unitsToKill - 1;
+    end;
+    checkReinforcements();
+  end;
+end;
+
+procedure OnHouseDestroyed(aHouse: integer; aDestroyerIndex: integer);
+var
+  owner: integer;
+  I, y: integer;
+begin
+  owner := States.HouseOwner(aHouse);
+  y := States.HousePositionY(aHouse);
+  if (owner = 6) and (States.HouseType(aHouse) = 21) then begin
+    players[2].spawn := 2;
+    players[3].spawn := 2;
+    for I := 2 to 3 do begin
+      Actions.GiveGroup(4, WAR, players[I].sX, players[I].sY, players[I].sF, 25, 5); // 25 warrior
+      Actions.GiveGroup(4, XBOW, players[I].sX, players[I].sY, players[I].sF, 15, 5); // 15 xbow
+      Actions.ShowMsg(I, '<$2>');
+    end;
+  end;
+  if (owner = 7) and (States.HouseType(aHouse) = 21) then begin
+    players[0].spawn := 2;
+    players[1].spawn := 2;
+    for I := 0 to 1 do begin
+      Actions.GiveGroup(4, WAR, players[I].sX, players[I].sY, players[I].sF, 25, 5); // 25 warrior
+      Actions.GiveGroup(4, XBOW, players[I].sX, players[I].sY, players[I].sF, 15, 5); // 15 xbow
+      Actions.ShowMsg(I, '<$2>');
+    end;
+  end;
+
+  if owner = 5 then begin
+    if y > 96 then begin
+      players[0].housesToDestroy := players[0].housesToDestroy - 1;
+      players[3].housesToDestroy := players[3].housesToDestroy - 1;
+    end;
+    if y < 96 then begin
+      players[1].housesToDestroy := players[1].housesToDestroy - 1;
+      players[2].housesToDestroy := players[2].housesToDestroy - 1;
+    end;
+    checkReinforcements();
+  end;
+end;
+
+
+procedure OnTick;
+var
+  time: integer;
+  I, K: integer;
+  UnitsToFeed: array of integer;
+  houses: array of integer;
+begin
+  time := States.GameTime;
+  { autorock }
+  if time mod 100 = 0 then begin
+    houses := States.PlayerGetAllHouses(5);
+    for K := 0 to Length(houses) - 1 do begin
+      if States.HouseResourceAmount(houses[K], 1) = 0 then begin
+        Actions.HouseAddWaresTo(houses[K], 1, 5);
+      end;
+    end;
+  end;
+
+  { enemy autofeed }
+  if time mod 10000 = 0 then begin
+    for I := 4 to 11 do begin
+      UnitsToFeed := States.PlayerGetAllUnits(I);
+      for K := 0 to Length(UnitsToFeed) - 1 do begin
+        Actions.UnitHungerSet(UnitsToFeed[K], 45*60*10);
+      end;
+    end;
+  end;
+
+  { first message }
+  if time = 300 then begin
+    Actions.ShowMsg(0, '<$3>');
+    Actions.ShowMsg(1, '<$3>');
+    Actions.ShowMsg(2, '<$4>');
+    Actions.ShowMsg(3, '<$4>');
+  end;
+
+  { second message }
+  if time = 2000 then begin
+    Actions.ShowMsg(0, '<$5>');
+    Actions.ShowMsg(1, '<$6>');
+    Actions.ShowMsg(2, '<$6>');
+    Actions.ShowMsg(3, '<$5>');
+  end;
+
+  { first attack from sides }
+  if time = 2600 then begin
+    spawnAttackSide(LANCE, 30);
+  end;
+
+  if time = 2750 then begin
+    spawnAttackSide(BOW, 15);
+  end;
+
+  { third message }
+
+  if time = 3600 then begin
+    Actions.ShowMsg(0, '<$7>');
+    Actions.ShowMsg(1, '<$7>');
+    Actions.ShowMsg(2, '<$8>');
+    Actions.ShowMsg(3, '<$8>');
+  end;
+
+  { second attack from sides }
+  if time = 18000 then begin
+    spawnAttackSide(AXE, 25);
+  end;
+
+  if time = 18150 then begin
+    spawnAttackSide(BOW, 15);
+  end;
+
+  if ((time > 35400) and (time MOD 18000 = 0)) then begin
+    amount := amount + 5;
+  end;
+
+  if ((time > 35400) and (time MOD 18000 = 0)) then begin
+    spawnAttackMiddle(AXE, amount, 1);
+  end;
+  if ((time > 35400) and (time MOD 18000 = 150)) then begin
+    spawnAttackMiddle(BOW, amount / 5 * 2, 1);
+  end;
+
+
+  if ((time > 59400) and (time MOD 18000 = 9000)) then begin
+    spawnAttackMiddle(SWORD, amount / 5 * 3, 2);
+  end;
+  if ((time > 59400) and (time MOD 18000 = 9150)) then begin
+    spawnAttackMiddle(XBOW, amount / 5 * 2, 2);
+  end;
+  if ((time > 59400) and (time MOD 18000 = 9300)) then begin
+    spawnAttackMiddle(KNIGHT, amount / 5, 2);
+  end;
+end;
