@@ -923,7 +923,7 @@
 1021:Uniwersalna gumka
 1022:Twój drwal nie może znaleźć miejsca do zasadzenia drzewa.
 1024:%s zwyciężył!
-1025:% s nie jest już połączony z grą
+1025:%s nie jest już połączony z grą
 1026:Maksymalne złoto
 1027:Maksymalna ilość złota dostarczana do Ratusza
 1028:Tylko sadź
@@ -1071,7 +1071,7 @@
 1188:Kolory własny / sojusznika / wroga dla graczy zamiast kolorów początkowych
 1189:[$404040]Host jest gotowy do startu. proszę nacisnąć '[][$0707FF]%s[][$404040]'[]
 1190:Poproś o naciśniecie gotowy
-1191:Alert dotyczący przygotowania został wysłany do% s graczy
+1191:Alert dotyczący przygotowania został wysłany do %s graczy
 1192:Przełącz tryb kolorów graczy
 1193:Zwolnienie nie jest dostępne podczas bieżącej akcji jednostki
 1194:Ctrl + Kółko myszy
