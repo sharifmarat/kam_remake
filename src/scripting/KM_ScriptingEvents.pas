@@ -796,8 +796,8 @@ end;
 
 
 //* Version: 11200
-//* Event with return result (function)
-//* Occurs right before the group gets order to split, so you can get INITIAL group parameters and use them later. F.e. initial group formation.
+//* Occurs right before the group gets order to split.
+//* Split parameters could be altered by script and returned to the game to be used there
 //* aGroup: group ID, which got split order
 //* aNewType: new group leader unit type
 //* aNewCnt: new group members count
