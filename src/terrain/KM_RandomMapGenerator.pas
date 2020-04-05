@@ -534,6 +534,7 @@ begin
     gGame.MapTxtInfo.IsRMG := True;
 
     gGame.MapTxtInfo.BlockTeamSelection := False;
+    gGame.MapTxtInfo.BlockColorSelection := False;
     gGame.MapTxtInfo.BlockPeacetime := False;
     gGame.MapTxtInfo.BlockFullMapPreview := False;
   end;

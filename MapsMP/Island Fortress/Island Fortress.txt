@@ -1,0 +1,4 @@
+SetCoop
+
+BigDesc
+v1.0|- rebalanced all locations|- added more building space|- fixed tile transitions|- changed AI attacks to happen less often and be a bit weaker|- fixed bugs in scripts||Map is scripted, beware of surprise attacks.||Made by greeny.

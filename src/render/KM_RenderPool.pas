@@ -701,9 +701,9 @@ begin
   if (aWoodStep = 1) and (aStoneStep = 1) then
   begin
     // Snow only happens on fully built houses
-    if SNOW_HOUSES
-    and (aSnowStep > 0)
-    and (PicSnow <> 0) then
+    if gGameApp.GameSettings.AllowSnowHouses
+      and (aSnowStep > 0)
+      and (PicSnow <> 0) then
     begin
       // If snow is 100% we only need to render snow sprite
       if aSnowStep = 1 then

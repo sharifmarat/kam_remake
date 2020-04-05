@@ -486,7 +486,7 @@ begin
     //Block options if there's nothing to choose there
     DropBox_Loc.Enabled := DropBox_Loc.Count > 1;
     MinimapView.ShowLocs := DropBox_Loc.Count > 1;
-    DropBox_Color.Enabled := DropBox_Color.Count > 1;
+    DropBox_Color.Enabled := not fMaps[MapId].TxtInfo.BlockColorSelection and (DropBox_Color.Count > 1);
     Button_Start.Enabled := fMaps[MapId].IsValid;
 
     DoOptionsChange;

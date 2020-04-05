@@ -17,7 +17,7 @@ type
     procedure OverlayRefresh(Sender: TObject);
   protected
     Panel_Overlays: TKMPanel;
-    OverlaysTable: array [toNone..toDig4] of TKMButtonFlat;
+    OverlaysTable: array [toNone..toRoad] of TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 

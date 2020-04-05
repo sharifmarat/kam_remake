@@ -319,7 +319,7 @@ begin
               with gGame.Networking.NetPlayers[NetI] do
               begin
                 gGameApp.Chat.WhisperRecipient := aItemTag;
-                UpdateButtonCaption(NiknameU, IfThen(FlagColorID <> 0, FlagColorToTextColor(FlagColor), 0));
+                UpdateButtonCaption(NiknameU, IfThen(IsColorSet, FlagColorToTextColor(FlagColor), 0));
               end;
             end;
           end;

@@ -111,7 +111,7 @@ type
 
 implementation
 uses
-  KM_Main, KM_NetworkTypes, KM_ResTexts, KM_GameApp, KM_ResLocales, KM_GUIMenuLobby,
+  KM_Main, KM_NetworkTypes, KM_ResTexts, KM_GameApp, KM_ResLocales, KM_GUIMenuLobby, KM_MapTypes,
   KM_CommonUtils, KM_CommonTypes, KM_Sound, KM_ResSound, KM_RenderUI, KM_ResFonts, KM_Resource;
 
 
@@ -684,6 +684,11 @@ begin
                                ' x' + FormatFloat('#.#', fSelectedRoomInfo.GameInfo.GameOptions.SpeedAfterPT);
   Label_MP_GameTime.Caption := fSelectedRoomInfo.GameInfo.GetFormattedTime;
   Label_MP_MapName.Caption := fSelectedRoomInfo.GameInfo.Map;
+
+  if fSelectedRoomInfo.GameInfo.GameOptions.MissionDifficulty <> mdNone then
+    Label_MP_MapName.Caption := Format('%s [$%s]( %s )[]', [Label_MP_MapName.Caption,
+                                    IntToHex(DIFFICULTY_LEVELS_COLOR[fSelectedRoomInfo.GameInfo.GameOptions.MissionDifficulty] and $00FFFFFF, 6),
+                                    gResTexts[DIFFICULTY_LEVELS_TX[fSelectedRoomInfo.GameInfo.GameOptions.MissionDifficulty]]]);
 
   UpdateGameTimeLabel;
 

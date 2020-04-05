@@ -183,7 +183,8 @@ type
     procedure OrderHalt(aClearOffenders: Boolean; aForced: Boolean = True);
     procedure OrderLinkTo(aTargetGroup: TKMUnitGroup; aClearOffenders: Boolean);
     procedure OrderNone;
-    function OrderSplit(aClearOffenders: Boolean; aSplitSingle: Boolean = False): TKMUnitGroup;
+    function OrderSplit(aNewLeaderUnitType: TKMUnitType; aNewCnt: Integer; aMixed: Boolean): TKMUnitGroup; overload;
+    function OrderSplit(aSplitSingle: Boolean = False): TKMUnitGroup; overload;
     function OrderSplitUnit(aUnit: TKMUnit; aClearOffenders: Boolean): TKMUnitGroup;
     procedure OrderSplitLinkTo(aGroup: TKMUnitGroup; aCount: Word; aClearOffenders: Boolean);
     procedure OrderStorm(aClearOffenders: Boolean);
@@ -199,7 +200,7 @@ type
     function ObjToString(aSeparator: String = '|'): String;
 
     procedure UpdateState;
-    procedure PaintHighlighted(aHandColor: Cardinal; aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
+    procedure PaintHighlighted(aHandColor, aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
     procedure Paint;
 
     class function GetDefaultCondition: Integer;
@@ -250,7 +251,7 @@ uses
   TypInfo,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_CommonUtils, KM_ResTexts, KM_RenderPool,
   KM_Hungarian, KM_UnitActionWalkTo, KM_PerfLog, KM_AI, KM_ResUnits, KM_ScriptingEvents,
-  KM_UnitActionStormAttack,
+  KM_UnitActionStormAttack, KM_CommonClassesExt, KM_RenderAux,
   KM_GameTypes, KM_Log, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
@@ -1515,46 +1516,57 @@ begin
 end;
 
 
-//Split group in half
-//or split different unit types apart
-function TKMUnitGroup.OrderSplit(aClearOffenders: Boolean; aSplitSingle: Boolean = False): TKMUnitGroup;
+function TKMUnitGroup.OrderSplit(aNewLeaderUnitType: TKMUnitType; aNewCnt: Integer; aMixed: Boolean): TKMUnitGroup;
 var
-  I: Integer;
-  NewGroup: TKMUnitGroup;
+  I, NL, UPerRow: Integer;
   NewLeader: TKMUnitWarrior;
-  MultipleTypes, ChangeNewGroupOrderLoc: Boolean;
   U: TKMUnit;
+  NewGroup: TKMUnitGroup;
+  MemberUTypes: TKMListUnique<TKMUnitType>;
+  PlainSplit, ChangeNewGroupOrderLoc: Boolean;
 begin
   Result := nil;
   if IsDead then Exit;
   if Count < 2 then Exit;
+  if not InRange(aNewCnt, 1, Count - 1) then Exit;
+  if not (aNewLeaderUnitType in [WARRIOR_MIN..WARRIOR_MAX]) then Exit;
+
   //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
   if Members[0].Action is TKMUnitActionStormAttack then Exit;
 
-  if gScriptEvents.FuncGroupAllowOrderSplit(Self) = brFalse then
-    Exit;
+  if CanTakeOrders then
+    ClearOffenders;
 
-  if aClearOffenders and CanTakeOrders then ClearOffenders;
+  MemberUTypes := TKMListUnique<TKMUnitType>.Create;
+  try
+    for I := 0 to Count - 1 do
+      MemberUTypes.Add(Members[I].UnitType);
 
-  //If there are different unit types in the group, split should just split them first
-  MultipleTypes := False;
+    PlainSplit := not MemberUTypes.Contains(aNewLeaderUnitType) // no specified leader type
+                  or (MemberUTypes.Count = 1); // there is only 1 unit type in the group
 
-  //Choose the new leader
-  if aSplitSingle then
-    NewLeader := Members[Count - 1]
-  else
-  begin
-    NewLeader := Members[(Count div 2) + (Min(fUnitsPerRow, Count div 2) div 2)];
+    // Find new leader
+    NewLeader := nil;
 
-    for I := 1 to Count - 1 do
-      if Members[I].UnitType <> Members[0].UnitType then
-      begin
-        MultipleTypes := True;
-        //New commander is first unit of different type, for simplicity
-        NewLeader := Members[I];
-        Break;
-      end;
+    if PlainSplit then
+    begin
+      NL := EnsureRange(Count - aNewCnt + (Min(fUnitsPerRow, aNewCnt) div 2), 0, Count - 1);
+      NewLeader := Members[NL];
+    end
+    else
+    if MemberUTypes.Contains(aNewLeaderUnitType) then
+    begin
+      for I := 0 to Count - 1 do
+        if aNewLeaderUnitType = Members[I].UnitType then
+          NewLeader := Members[I];
+    end
+    else //We did't find leader unit type
+      Exit;
+  finally
+    MemberUTypes.Free;
   end;
+
+  UPerRow := fUnitsPerRow; //Save formation for later
   //Remove from the group
   NewLeader.ReleaseUnitPointer;
   fMembers.Remove(NewLeader);
@@ -1562,17 +1574,15 @@ begin
   NewGroup := gHands[Owner].UnitGroups.AddGroup(NewLeader);
   NewGroup.OnGroupDied := OnGroupDied;
 
-  if not aSplitSingle then
-    //Split by UnitTypes or by Count (make NewGroup half or smaller half)
-    for I := Count - 1 downto 0 do
-      if (MultipleTypes and (Members[I].UnitType = NewLeader.UnitType))
-         or (not MultipleTypes and (Count > NewGroup.Count + 1)) then
-      begin
-        U := Members[I];
-        gHands.CleanUpUnitPointer(U);
-        NewGroup.AddMember(Members[I], 1, False); // Join new group (insert next to commander)
-        fMembers.Delete(I); // Leave this group
-      end;
+  for I := Count - 1 downto 0 do
+    if (aNewCnt > NewGroup.Count)
+      and (PlainSplit or aMixed or (Members[I].UnitType = NewLeader.UnitType)) then
+    begin
+      U := Members[I];
+      gHands.CleanUpUnitPointer(U);
+      NewGroup.AddMember(Members[I], 1, False); // Join new group (insert next to commander)
+      fMembers.Delete(I); // Leave this group
+    end;
 
   //Update pushback limits when groups sizes are calculated
   UpdatePushbackLimit;
@@ -1585,16 +1595,9 @@ begin
     SelectNearestMember; // For current group set fSelected to nearest member to its old selected
   end;
 
-  //Select single splitted unit
-  if aSplitSingle
-    and (gGame.ControlledHandIndex = NewGroup.Owner) //Only select unit for player that issued order (group owner)
-    and (gGame.ControlledHandIndex <> -1)
-    and (gMySpectator.Selected = Self) then //Selection is still on that group (in MP game there could be a delay, when player could select other target already)
-    gMySpectator.Selected := NewGroup;
-
   //Make sure units per row is still valid for both groups
-  UnitsPerRow := fUnitsPerRow;
-  NewGroup.UnitsPerRow := fUnitsPerRow;
+  UnitsPerRow := UPerRow;
+  NewGroup.UnitsPerRow := UPerRow;
 
   //If we are hungry then don't repeat message each time we split, give new commander our counter
   NewGroup.fTimeSinceHungryReminder := fTimeSinceHungryReminder;
@@ -1616,6 +1619,78 @@ begin
 
   //Script may have additional event processors
   gScriptEvents.ProcGroupOrderSplit(Self, NewGroup);
+end;
+
+
+//Split group in half
+//or split different unit types apart
+function TKMUnitGroup.OrderSplit(aSplitSingle: Boolean = False): TKMUnitGroup;
+var
+  I: Integer;
+  NewLeader: TKMUnitWarrior;
+  MultipleTypes: Boolean;
+  aNewLeaderUnitType: TKMUnitType; aOldCnt, aNewCnt: Integer; aMixed: Boolean;
+begin
+  Result := nil;
+  if IsDead then Exit;
+  if Count < 2 then Exit;
+  //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
+  if Members[0].Action is TKMUnitActionStormAttack then Exit;
+
+  //If there are different unit types in the group, split should just split them first
+  MultipleTypes := False;
+
+
+  //First find default split parameters - NewLeader type and new group members count
+
+  //Choose the new leader
+  if aSplitSingle then
+    NewLeader := Members[Count - 1]
+  else
+  begin
+    NewLeader := Members[(Count div 2) + (Min(fUnitsPerRow, Count div 2) div 2)];
+
+    for I := 1 to Count - 1 do
+      if Members[I].UnitType <> Members[0].UnitType then
+      begin
+        MultipleTypes := True;
+        //New commander is first unit of different type, for simplicity
+        NewLeader := Members[I];
+        Break;
+      end;
+  end;
+
+  aNewLeaderUnitType := NewLeader.UnitType;
+  aNewCnt := 1;
+  aOldCnt := Count - 1;
+  // Determine new group members count
+  if not aSplitSingle then
+    //Split by UnitTypes or by Count (make NewGroup half or smaller half)
+    for I := Count - 1 downto 0 do
+    begin
+      if Members[I] = NewLeader then Continue;
+
+      if (MultipleTypes and (Members[I].UnitType = NewLeader.UnitType))
+         or (not MultipleTypes and (aOldCnt > aNewCnt + 1)) then
+      begin
+        Inc(aNewCnt);
+        Dec(aOldCnt);
+      end;
+    end;
+
+  aMixed := False; // We don't use mixed group by default
+  // Ask script if it ant to change some split parameters
+  gScriptEvents.ProcGroupBeforeOrderSplit(Self, aNewLeaderUnitType, aNewCnt, aMixed);
+  // Apply split with parameters, which came from Script
+  Result := OrderSplit(aNewLeaderUnitType, aNewCnt, aMixed);
+
+  // Select single splitted unit
+  if aSplitSingle
+    and (aNewCnt = 1) and (aNewLeaderUnitType = NewLeader.UnitType) //SplitSingle command was not changed by script
+    and (gGame.ControlledHandIndex = Result.Owner) //Only select unit for player that issued order (group owner)
+    and (gGame.ControlledHandIndex <> -1)
+    and (gMySpectator.Selected = Self) then //Selection is still on that group (in MP game there could be a delay, when player could select other target already)
+    gMySpectator.Selected := Result;
 end;
 
 
@@ -1645,6 +1720,7 @@ begin
   NewGroup.fSelected := NewLeader;
   NewGroup.fTimeSinceHungryReminder := fTimeSinceHungryReminder;
   NewGroup.fOrderLoc := KMPointDir(NewLeader.CurrPosition, fOrderLoc.Dir);
+  NewGroup.UpdatePushbackLimit;
 
   //Set units per row
   UnitsPerRow := fUnitsPerRow;
@@ -2081,7 +2157,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.PaintHighlighted(aHandColor: Cardinal; aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
+procedure TKMUnitGroup.PaintHighlighted(aHandColor, aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
 var
   UnitPos: TKMPointF;
   FlagStep: Cardinal;
@@ -2111,6 +2187,9 @@ begin
   gRenderPool.AddUnitFlag(FlagBearer.UnitType, FlagBearer.Action.ActionType,
     FlagBearer.Direction, FlagStep, FlagPositionF.X, FlagPositionF.Y, aFlagColor, aDoImmediateRender);
 
+  if SHOW_GROUP_MEMBERS_POS and not gGame.IsMapEditor then
+    for I := 0 to Count - 1 do
+      gRenderAux.Text(Members[I].PositionF.X + 0.2, Members[I].PositionF.Y + 0.2, IntToStr(I), icCyan);
 end;
 
 

@@ -248,6 +248,7 @@ type
     property GameOptions: TKMGameOptions read fGameOptions;
     property ActiveInterface: TKMUserInterfaceGame read fActiveInterface;
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
+    property MapEditorInterface: TKMapEdInterface read fMapEditorInterface;
     property MapEditor: TKMMapEditor read fMapEditor;
     property TerrainPainter: TKMTerrainPainter read fTerrainPainter;
     property TextMission: TKMTextLibraryMulti read fTextMission;
@@ -1780,7 +1781,7 @@ begin
         GameInfo.CanBeHuman[I] := False;
         GameInfo.OwnerNikname[I] := '';
         GameInfo.HandTypes[I] := hndHuman;
-        GameInfo.ColorID[I] := 0;
+        GameInfo.Color[I] := 0;
         GameInfo.Team[I] := 0;
       end else
       begin
@@ -1791,7 +1792,7 @@ begin
           GameInfo.CanBeHuman[I] := fNetworking.NetPlayers[netIndex].IsHuman;
           GameInfo.OwnerNikname[I] := fNetworking.NetPlayers[netIndex].Nikname;
           GameInfo.HandTypes[I] := fNetworking.NetPlayers[netIndex].GetPlayerType;
-          GameInfo.ColorID[I] := fNetworking.NetPlayers[netIndex].FlagColorID;
+          GameInfo.Color[I] := fNetworking.NetPlayers[netIndex].FlagColor;
           GameInfo.Team[I] := fNetworking.NetPlayers[netIndex].Team;
         end
         else
@@ -1800,7 +1801,7 @@ begin
           GameInfo.CanBeHuman[I] := gHands[I].HandType = hndHuman;
           GameInfo.OwnerNikname[I] := gHands[I].OwnerNikname; //MP nikname, not translated OwnerName
           GameInfo.HandTypes[I] := gHands[I].HandType;
-          GameInfo.ColorID[I] := FindMPColor(gHands[I].FlagColor);
+          GameInfo.Color[I] := gHands[I].FlagColor;
           GameInfo.Team[I] := 0;
         end;
       end;
@@ -2468,7 +2469,7 @@ begin
                           gPerfLogs.StackCPU.TickBegin;
                           gPerfLogs.SectionEnter(psGameTick, fGameTick + 1);
                           try
-                            //As soon as next command arrives we are longer in a waiting state
+                            // As soon as next command arrives we are no longer in a waiting state
                             if fWaitingForNetwork then
                               WaitingPlayersDisplay(False);
 
@@ -2520,7 +2521,6 @@ begin
 
                             if DoSaveRandomChecks then
                               gRandomCheckLogger.UpdateState(fGameTick);
-
                           finally
                             gPerfLogs.SectionLeave(psGameTick);
                             gPerfLogs.StackCPU.TickEnd;

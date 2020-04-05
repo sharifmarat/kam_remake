@@ -68,6 +68,7 @@ type
 
     property MyControls: TKMMasterControl read fMyControls;
     procedure ExportPages(const aPath: string); virtual; abstract;
+    procedure DebugControlsUpdated; virtual;
 
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean); virtual; abstract;
     procedure KeyPress(Key: Char); virtual;
@@ -171,6 +172,12 @@ begin
 
   // Controls without a hint will reset the Hint to ''
   fMyControls.OnHint := DisplayHint;
+end;
+
+
+procedure TKMUserInterfaceCommon.DebugControlsUpdated;
+begin
+  // Do nothing
 end;
 
 

@@ -98,6 +98,7 @@ type
     procedure ChooseFirstStorehouse();
 
     function GetAI: TKMHandAI;
+    procedure SetFlagColor(const Value: Cardinal);
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -132,7 +133,7 @@ type
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
     property CanBeHuman: Boolean read fCanBeHuman write fCanBeHuman;
     property HandAITypes: TKMAITypeSet read fHandAITypes;
-    property FlagColor: Cardinal read fFlagColor write fFlagColor;
+    property FlagColor: Cardinal read fFlagColor write SetFlagColor;
     property TeamColor: Cardinal read fTeamColor write fTeamColor;
     property GameFlagColor: Cardinal read GetGameFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
@@ -1566,11 +1567,21 @@ end;
 
 procedure TKMHand.SetAlliances(aIndex: Integer; aValue: TKMAllianceType);
 begin
+  if Self = nil then Exit;
+
   fAlliances[aIndex] := aValue;
   gAIFields.Supervisor.UpdateAlliances();
 
   if Assigned(fOnAllianceChange) then
     fOnAllianceChange;
+end;
+
+
+procedure TKMHand.SetFlagColor(const Value: Cardinal);
+begin
+  if Self = nil then Exit;
+  
+  fFlagColor := Value;
 end;
 
 
@@ -1582,6 +1593,8 @@ end;
 
 procedure TKMHand.SetShareFOW(aIndex: Integer; aValue: Boolean);
 begin
+  if Self = nil then Exit;
+
   fShareFOW[aIndex] := aValue;
 end;
 
@@ -1594,6 +1607,8 @@ end;
 
 procedure TKMHand.SetShareBeacons(aIndex: Integer; aValue: Boolean);
 begin
+  if Self = nil then Exit;
+
   fShareBeacons[aIndex] := aValue;
 end;
 

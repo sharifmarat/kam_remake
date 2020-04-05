@@ -349,8 +349,8 @@ type
 
     procedure UpdateState;
 
-    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
-    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
+    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aTileOwner: TKMHandID; aGameSave: Boolean); overload;
+    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aTileOwner: TKMHandID; aGameSave: Boolean; var aMapDataSize: Cardinal); overload;
     class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aGameRev: Integer = 0);
   end;
 
@@ -362,7 +362,7 @@ const
   DEFAULT_BLENDING_LVL = 50;
   //overlays, that considered as road: basically road and dig4, which looks almost like a finished road
   ROAD_LIKE_OVERLAYS: set of TKMTileOverlay = [toDig4, toRoad];
-  TILE_OVERLAY_IDS: array[toNone..toDig4] of Integer = (0, 249, 251, 253, 255);   //toNone, toDig1, toDig2, toDig3, toDig4
+  TILE_OVERLAY_IDS: array[toNone..toRoad] of Integer = (0, 249, 251, 253, 255, 254);   //toNone, toDig1, toDig2, toDig3, toDig4, toRoad
 
 var
   //Terrain is a globally accessible resource by so many objects
@@ -561,7 +561,9 @@ const
     TileBasic: TKMTerrainTileBasic;
     terKind: TKMTerrainKind;
     CornersTerKinds: TKMTerrainKindsArray;
+    tileOwner: TKMHandID;
   begin
+    tileOwner := PLAYER_NONE;
     // new appended terrain
     if aNewGenTile then
     begin
@@ -610,8 +612,10 @@ const
       TileBasic.TileOverlay := Land[aFromY,aFromX].TileOverlay;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
+
+      tileOwner := Land[aFromY,aFromX].TileOwner;
     end;
-    WriteTileToStream(S, TileBasic, MapDataSize);
+    WriteTileToStream(S, TileBasic, tileOwner, False, MapDataSize);
   end;
 
   procedure WriteFileHeader(S: TKMemoryStreamBinary);
@@ -2851,6 +2855,12 @@ var
 begin
   if not TileInMapCoords(Loc.X, Loc.Y) then Exit;
 
+  if aOverlay = toRoad then
+  begin
+    SetRoad(Loc, PLAYER_NONE);
+    Exit;
+  end;
+
   changed := False;
 
   if aOverwrite then
@@ -4597,7 +4607,7 @@ begin
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
 
-      WriteTileToStream(SaveStream, TileBasic);
+      WriteTileToStream(SaveStream, TileBasic, Land[I,K].TileOwner, True);
 
       SaveStream.Write(Land[I,K].TreeAge);
       SaveStream.Write(Land[I,K].FieldAge);
@@ -4799,15 +4809,16 @@ begin
 end;
 
 
-class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic);
+class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aTileOwner: TKMHandID; aGameSave: Boolean);
 var
   MapDataSize: Cardinal;
 begin
-  WriteTileToStream(S, aTileBasic, MapDataSize);
+  WriteTileToStream(S, aTileBasic, aTileOwner, aGameSave, MapDataSize);
 end;
 
 
-class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal);
+class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; aTileOwner: TKMHandID;
+                                             aGameSave: Boolean; var aMapDataSize: Cardinal);
 
   function PackLayersCorners(const aTileBasic: TKMTerrainTileBasic): Byte;
   var
@@ -4853,6 +4864,7 @@ class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic
 var
   L: Integer;
   GenInfo: TKMGenTerrainInfo;
+  overlay: TKMTileOverlay;
 begin
   S.Write(aTileBasic.BaseLayer.Terrain);  //1
   //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
@@ -4860,7 +4872,15 @@ begin
   S.Write(aTileBasic.Height);             //4
   S.Write(aTileBasic.Obj);                //5
   S.Write(aTileBasic.IsCustom);           //7
-  S.Write(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)); //8
+
+  overlay := toNone;
+  // Player roads (when tile owner is specified) should not be saved as an overlay, when save .map file
+  // since player roads are set for each player in the dat file
+  // but they should for a game save or if they are made as an neutral road (so just simple overlay in the map file)
+  if aGameSave or (aTileOwner = PLAYER_NONE) then
+    overlay := aTileBasic.TileOverlay;
+
+  S.Write(overlay, SizeOf(overlay)); //8
   S.Write(aTileBasic.LayersCnt);          //9
   Inc(aMapDataSize, 9); // obligatory 9 bytes per tile
   if aTileBasic.LayersCnt > 0 then
@@ -4959,7 +4979,6 @@ begin
       else
         aTileBasic.BlendingLvl := 50;
 
-      aTileBasic.BaseLayer.ClearCorners;
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
         if aGameRev <= 10745 then
@@ -4979,12 +4998,11 @@ begin
         aTileBasic.Layer[I].Terrain := gGenTerrainTransitions[GenInfo.TerKind, GenInfo.Mask.Kind,
                                                               GenInfo.Mask.MType, GenInfo.Mask.SubType];
         aStream.Read(aTileBasic.Layer[I].Rotation);
-        aTileBasic.Layer[I].ClearCorners;
       end;
 
       aTileBasic.BaseLayer.ClearCorners;
       for I := 0 to 2 do
-        aTileBasic.BaseLayer.ClearCorners;
+        aTileBasic.Layer[I].ClearCorners;
 
       for I := 0 to 3 do
       begin

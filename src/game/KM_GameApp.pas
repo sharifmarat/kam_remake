@@ -32,6 +32,8 @@ type
     fOnGameStart: TKMGameModeChangeEvent;
     fOnGameEnd: TKMGameModeChangeEvent;
 
+    fOnOptionsChange: TEvent;
+
     procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
@@ -113,10 +115,12 @@ type
     procedure UnlockAllCampaigns;
 
     function DynamicFOWEnabled: Boolean;
+    procedure DebugControlsUpdated;
 
     property OnGameSpeedActualChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
     property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
     property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
+    property OnOptionsChange: TEvent read fOnOptionsChange write fOnOptionsChange;
 
     procedure Render(aForPrintScreen: Boolean = False);
     procedure UpdateState(Sender: TObject);
@@ -160,8 +164,6 @@ begin
   if fGameSettings.DebugSaveRandomChecks
     and SAVE_RANDOM_CHECKS then
     gRandomCheckLogger := TKMRandomCheckLogger.Create;
-
-  SNOW_HOUSES := fGameSettings.AllowSnowHouses;
 
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);
@@ -243,6 +245,16 @@ begin
   FreeThenNil(gRender);
 
   inherited;
+end;
+
+
+procedure TKMGameApp.DebugControlsUpdated;
+begin
+  if gGame = nil then
+    fMainMenuInterface.DebugControlsUpdated
+  else
+  if gGame.IsMapEditor then
+    gGame.MapEditorInterface.DebugControlsUpdated;
 end;
 
 
@@ -1007,7 +1019,7 @@ end;
 
 function TKMGameApp.GetGameSettings: TKMGameSettings;
 begin
-  if Self = nil then Exit;
+  if Self = nil then Exit(nil);
 
   Result := fGameSettings;
 end;
@@ -1105,7 +1117,6 @@ begin
       fMainMenuInterface.Paint;
 
     gRender.RenderBrightness(GameSettings.Brightness);
-
   finally
     gPerfLogs.SectionLeave(psFrameFullG);
     gPerfLogs.StackGFX.FrameEnd;

@@ -406,6 +406,19 @@ begin
 
     Sender.AddTypeS('TKMTileMaskKind', '(mkNone, mkSoft1, mkSoft2, mkSoft3, mkStraight)');
 
+    Sender.AddTypeS('TKMUnitType', '(utNone, utAny,'
+      + 'utSerf,          utWoodcutter,    utMiner,         utAnimalBreeder,'
+      + 'utFarmer,        utLamberjack,    utBaker,         utButcher,'
+      + 'utFisher,        utWorker,        utStoneCutter,   utSmith,'
+      + 'utMetallurgist,  utRecruit,'
+      + 'utMilitia,      utAxeFighter,   utSwordsman,     utBowman,'
+      + 'utArbaletman,   utPikeman,      utHallebardman,  utHorseScout,'
+      + 'utCavalry,      utBarbarian,'
+      + 'utPeasant,      utSlingshot,    utMetalBarbarian,utHorseman,'
+      //utCatapult,   utBallista,
+      + 'utWolf,         utFish,         utWatersnake,   utSeastar,'
+      + 'utCrab,         utWaterflower,  utWaterleaf,    utDuck)');
+
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));
@@ -500,6 +513,7 @@ begin
     RegisterMethodCheck(c, 'function IsMissionCoopType: Boolean');
     RegisterMethodCheck(c, 'function IsMissionSpecialType: Boolean');
     RegisterMethodCheck(c, 'function IsMissionPlayableAsSP: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockColorSelection: Boolean');
     RegisterMethodCheck(c, 'function IsMissionBlockTeamSelection: Boolean');
     RegisterMethodCheck(c, 'function IsMissionBlockPeacetime: Boolean');
     RegisterMethodCheck(c, 'function IsMissionBlockFullMapPreview: Boolean');
@@ -705,12 +719,12 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure MapBrush(X, Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
+    RegisterMethodCheck(c, 'procedure MapBrush(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean)');
     RegisterMethodCheck(c, 'procedure MapBrushElevation(X, Y: Integer; aSquare, aRaise: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushEqualize(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushFlatten(X, Y: Integer; aSquare: Boolean; aSize, aSlope, aSpeed: Integer)');
     RegisterMethodCheck(c, 'procedure MapBrushMagicWater(X, Y: Integer)');
-    RegisterMethodCheck(c, 'procedure MapBrushWithMask(X, Y: Integer; aSize: Integer; aSquare: Boolean; aTerKind: TKMTerrainKind;'
+    RegisterMethodCheck(c, 'procedure MapBrushWithMask(X, Y: Integer; aSquare: Boolean; aSize: Integer; aTerKind: TKMTerrainKind;'
                                       + 'aRandomTiles, aOverrideCustomTiles: Boolean;'
                                       + 'aBrushMask: TKMTileMaskKind; aBlendingLvl: Integer; aUseMagicBrush: Boolean)');
 
@@ -1036,6 +1050,7 @@ var
   ClassImp: TPSRuntimeClassImporter;
   I: Integer;
   V: PIFVariant;
+  errStr: string;
 begin
   //Create an instance of the runtime class importer
   ClassImp := TPSRuntimeClassImporter.Create;
@@ -1135,6 +1150,7 @@ begin
       RegisterMethod(@TKMScriptStates.IsMissionCoopType,                        'IsMissionCoopType');
       RegisterMethod(@TKMScriptStates.IsMissionSpecialType,                     'IsMissionSpecialType');
       RegisterMethod(@TKMScriptStates.IsMissionPlayableAsSP,                    'IsMissionPlayableAsSP');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockColorSelection,             'IsMissionBlockColorSelection');
       RegisterMethod(@TKMScriptStates.IsMissionBlockTeamSelection,              'IsMissionBlockTeamSelection');
       RegisterMethod(@TKMScriptStates.IsMissionBlockPeacetime,                  'IsMissionBlockPeacetime');
       RegisterMethod(@TKMScriptStates.IsMissionBlockFullMapPreview,             'IsMissionBlockFullMapPreview');
@@ -1508,8 +1524,10 @@ begin
       or SameText(UnicodeString(V.FType.ExportName), 'TKMScriptUtils') then
         Continue;
 
-      fErrorHandler.AppendErrorStr(ValidateVarType(V.FType));
-      fValidationIssues.AddError(0, 0, '', ValidateVarType(V.FType));
+      errStr := ValidateVarType(V.FType);
+      fErrorHandler.AppendErrorStr(errStr);
+      if errStr <> '' then
+        fValidationIssues.AddError(0, 0, '', ValidateVarType(V.FType));
       if fErrorHandler.HasErrors then
       begin
         //Don't allow the script to run

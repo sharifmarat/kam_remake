@@ -1,4 +1,4 @@
-TX_HOUSES_NAMES__29 = 0; //Sawmill
+﻿TX_HOUSES_NAMES__29 = 0; //Sawmill
 TX_HOUSES_NAMES_IRONSMITHY = 1; //Iron smithy
 TX_HOUSES_NAMES_WEAPONSMITHY = 2; //Weapon smithy
 TX_HOUSES_NAMES_COALMINE = 3; //Coal mine
@@ -1196,6 +1196,8 @@ TX_MAPED_MISSION_BLOCK_PT = 1155; //Block peacetime
 TX_MAPED_MISSION_BLOCK_PT_HINT = 1156; //Blocks peacetime change in lobby
 TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW = 1157; //Block full map preview
 TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW_HINT = 1158; //Blocks full map preview in lobby
+TX_MAPED_MISSION_BLOCK_COLOR_SEL = 1406; //Block player color selection
+TX_MAPED_MISSION_BLOCK_COLOR_SEL_HINT = 1407; //Block player color selection in lobby
 
 TX_MAPED_PLAYER_COLOR_CODE = 1163; //Color code:
 TX_MAPED_PLAYER_COLOR_BGR_HINT = 1164; //Blue / Green / Red
@@ -1439,3 +1441,5 @@ TX_MENU_OPTIONS_VIDEOS_TEST = 1403;
 
 TX_MENU_OPTIONS_MODS = 1404; //Mods
 TX_MENU_OPTIONS_MODS_SNOW_HOUSES = 1405; //Snow houses
+
+

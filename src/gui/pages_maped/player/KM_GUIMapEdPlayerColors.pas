@@ -28,7 +28,7 @@ type
   public
     constructor Create(aParent: TKMPanel);
 
-    procedure UpdatePlayer;
+    procedure UpdatePlayer(aUpdateColorEdit: Boolean = False);
     procedure Show;
     function Visible: Boolean;
     procedure Hide;
@@ -191,7 +191,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerColors.UpdatePlayer;
+procedure TKMMapEdPlayerColors.UpdatePlayer(aUpdateColorEdit: Boolean = False);
 var
   ColorText: UnicodeString;
 begin
@@ -200,7 +200,7 @@ begin
   Shape_TextColor.FillColor := FlagColorToTextColor(Shape_Color.FillColor);
 
   ColorText := GetColorCodeText(gMySpectator.Hand.FlagColor, True);
-  if not AnsiEndsText(Edit_ColorCode.Text, ColorText) then
+  if aUpdateColorEdit or not AnsiEndsText(Edit_ColorCode.Text, ColorText) then
     Edit_ColorCode.UpdateText(ColorText);
 
   Edit_TextColorCode.UpdateText(GetColorCodeText(Shape_TextColor.FillColor, True));
@@ -210,7 +210,7 @@ end;
 
 procedure TKMMapEdPlayerColors.Show;
 begin
-  UpdatePlayer;
+  UpdatePlayer(True);
   Panel_Color.Show;
 end;
 

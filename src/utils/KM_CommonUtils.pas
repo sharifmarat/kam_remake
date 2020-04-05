@@ -42,7 +42,8 @@ uses
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
   function MultiplyBrightnessByFactor(aColor: Cardinal; aBrightnessFactor: Single; aMinBrightness: Single = 0; aMaxBrightness: Single = 1): Cardinal;
   function ReduceBrightness(aColor: Cardinal; aBrightness: Byte): Cardinal;
-  function GetColorDistance(aColor1,aColor2: Cardinal): Single;
+  function IsColorCloseToColors(aColor: Cardinal; aColors: TKMCardinalArray; aDist: Single): Boolean;
+  function GetColorDistance(aColor1, aColor2: Cardinal): Single;
   function GetPingColor(aPing: Word): Cardinal;
   function GetFPSColor(aFPS: Word): Cardinal;
   function FlagColorToTextColor(aColor: Cardinal): Cardinal;
@@ -899,7 +900,18 @@ begin
 end;
 
 
-function GetColorDistance(aColor1,aColor2: Cardinal): Single;
+function IsColorCloseToColors(aColor: Cardinal; aColors: TKMCardinalArray; aDist: Single): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aColors) to High(aColors) do
+    if GetColorDistance(aColor, aColors[I]) < aDist then
+      Exit(True);
+end;
+
+
+function GetColorDistance(aColor1, aColor2: Cardinal): Single;
 var
   R1,G1,B1,A1,R2,G2,B2,A2: Single;
 begin

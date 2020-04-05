@@ -46,7 +46,7 @@ var
   Form1: TForm1;
 implementation
 uses
-  KM_Maps, KM_CommonUtils;
+  KM_Maps, KM_CommonUtils, KM_ScriptingEvents;
 
 {$R *.dfm}
 
@@ -237,6 +237,7 @@ begin
   end;
 
   fScripting.ErrorHandler.Clear;
+  gScriptEvents.Clear;
 
   CampaignFile := ExtractFilePath(aPath) + '..\campaigndata.' + EXT_FILE_SCRIPT;
   fScripting.LoadFromFile(aPath, CampaignFile, nil);

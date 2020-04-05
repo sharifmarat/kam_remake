@@ -667,7 +667,7 @@ begin
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
     fSaveWareDistribution := F.ReadBool     ('Game', 'SaveWareDistribution', True); //Enabled by default
 
-    fGameTweaks_AllowSnowHouses := F.ReadBool('GameTweaks', 'AllowSnowHouses', False); //Disabled by default
+    AllowSnowHouses := F.ReadBool('GameTweaks', 'AllowSnowHouses', True); // With restriction by ALLOW_SNO_HOUSES
 
     fCampaignLastDifficulty := TKMMissionDifficulty(F.ReadInteger('Campaign', 'CampaignLastDifficulty', Byte(mdNormal))); //Normal as default
 
@@ -1161,6 +1161,8 @@ end;
 
 procedure TKMGameSettings.SetAllowSnowHouses(aValue: Boolean);
 begin
+  if not ALLOW_SNOW_HOUSES then Exit;
+  
   fGameTweaks_AllowSnowHouses := aValue;
   Changed;
 end;

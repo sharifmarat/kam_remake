@@ -3943,7 +3943,7 @@ begin
       G := fIDCache.GetGroup(aGroupID);
       if (G <> nil) then
       begin
-        G2 := G.OrderSplit(True);
+        G2 := G.OrderSplit;
         if G2 <> nil then
           Result := G2.UID;
       end;

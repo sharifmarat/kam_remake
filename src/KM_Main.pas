@@ -175,7 +175,7 @@ begin
 
   ReinitRender(False);
 
-  fFormMain.UpdateSnowHouses;
+  fFormMain.ControlsRefill; //Refill some of the debug controls from game settings
 
   Application.OnIdle := DoIdle;
   Application.OnActivate := DoActivate;
@@ -399,6 +399,8 @@ begin
   gGameApp.AfterConstruction(aReturnToOptions);
   //Preload game resources while in menu to make 1st game start faster
   gGameApp.PreloadGameResources;
+  gGameApp.OnOptionsChange := fFormMain.ControlsRefill;
+  fFormMain.OnControlsUpdated := gGameApp.DebugControlsUpdated;
 
   gLog.AddTime('ToggleFullscreen');
   gLog.AddTime('Form Width/Height: '+inttostr(fFormMain.Width)+':'+inttostr(fFormMain.Height));

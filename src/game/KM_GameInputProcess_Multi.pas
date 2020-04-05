@@ -45,19 +45,19 @@ type
     fNumberConsecutiveWaits: Word; //Number of consecutive times we have been waiting for network
 
     //Each player can have any number of commands scheduled for execution in one tick
-    fSchedule: array[0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of TKMCommandsPack; //Ring buffer
+    fSchedule: array [0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of TKMCommandsPack; //Ring buffer
 
     //All players must send us data every tick
-    fRecievedData: array[0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of Boolean; //Ring buffer
+    fRecievedData: array [0..MAX_SCHEDULE-1, 1..MAX_LOBBY_SLOTS] of Boolean; //Ring buffer
 
     //Mark commands we've already sent to other players
-    fSent: array[0..MAX_SCHEDULE-1] of Boolean; //Ring buffer
+    fSent: array [0..MAX_SCHEDULE-1] of Boolean; //Ring buffer
 
     //Did the player issue a command for this tick? If not it must be cleared from last time (we can't clear it earlier as it might be needed for resync)
-    fCommandIssued: array[0..MAX_SCHEDULE-1] of Boolean;
+    fCommandIssued: array [0..MAX_SCHEDULE-1] of Boolean;
 
     //Store random seeds at each tick then confirm with other players
-    fRandomCheck: array[0..MAX_SCHEDULE-1] of TKMRandomCheck; //Ring buffer
+    fRandomCheck: array [0..MAX_SCHEDULE-1] of TKMRandomCheck; //Ring buffer
 
     procedure SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
     procedure SendRandomCheck(aTick: Cardinal);
@@ -93,7 +93,7 @@ uses
   KM_GameTypes;
 
 
-{ TCommandsPack }
+{ TKMCommandsPack }
 procedure TKMCommandsPack.Clear;
 begin
   fCount := 0;
@@ -116,18 +116,20 @@ begin
 end;
 
 
-//Return CRC of the pack
+// Return CRC of the pack
 function TKMCommandsPack.CRC: Cardinal;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
-    Result := Result xor Adler32CRC(@fItems[I], SizeOf(fItems[I]))
+    Result := Result xor Adler32CRC(@fItems[I], SizeOf(fItems[I]));
 end;
 
 
 procedure TKMCommandsPack.Save(SaveStream: TKMemoryStream);
-var I: Integer;
+var
+  I: Integer;
 begin
   SaveStream.Write(fCount);
   for I := 1 to fCount do
@@ -139,7 +141,8 @@ end;
 
 
 procedure TKMCommandsPack.Load(LoadStream: TKMemoryStream);
-var I: Integer;
+var
+  I: Integer;
 begin
   LoadStream.Read(fCount);
   SetLength(fItems, fCount + 1);
@@ -149,21 +152,24 @@ begin
 end;
 
 
-{ TGameInputProcess_Multi }
+{ TKMGameInputProcess_Multi }
 constructor TKMGameInputProcess_Multi.Create(aReplayState: TKMGIPReplayState; aNetworking: TKMNetworking);
-var i:integer; k: ShortInt;
+var
+  I: Integer;
+  k: ShortInt;
 begin
   inherited Create(aReplayState);
+
   fNetworking := aNetworking;
   fNetworking.OnCommands := RecieveCommands;
   fNetworking.OnResyncFromTick := ResyncFromTick;
   AdjustDelay(1); //Initialise the delay
 
   //Allocate memory for all commands packs
-  for i:=0 to MAX_SCHEDULE-1 do for k:=1 to MAX_LOBBY_SLOTS do
+  for I:=0 to MAX_SCHEDULE-1 do for k:=1 to MAX_LOBBY_SLOTS do
   begin
-    fSchedule[i,k] := TKMCommandsPack.Create;
-    fRandomCheck[i].PlayerCheckPending[k] := false; //We don't have anything to be checked yet
+    fSchedule[I,k] := TKMCommandsPack.Create;
+    fRandomCheck[I].PlayerCheckPending[k] := false; //We don't have anything to be checked yet
   end;
 end;
 
@@ -180,9 +186,10 @@ begin
 end;
 
 
-//Stack the command into schedule
+// Stack the command into schedule
 procedure TKMGameInputProcess_Multi.TakeCommand(const aCommand: TKMGameInputCommand);
-var I,Tick: Cardinal;
+var
+  I,Tick: Cardinal;
 begin
   Assert(fDelay < MAX_SCHEDULE, 'Error, fDelay >= MAX_SCHEDULE');
   if ((gGame.GameMode = gmMultiSpectate) and not (aCommand.CommandType in AllowedBySpectators)) // Do not allow spectators to command smth
@@ -199,8 +206,9 @@ begin
     Exit;
   end;
 
-  if (gGame.GameMode <> gmMultiSpectate) and gMySpectator.Hand.AI.HasLost
-    and not (aCommand.CommandType in AllowedAfterDefeat) then
+  if (gGame.GameMode <> gmMultiSpectate)
+  and gMySpectator.Hand.AI.HasLost
+  and not (aCommand.CommandType in AllowedAfterDefeat) then
   begin
     gSoundPlayer.Play(sfxCantPlace);
     Exit;
@@ -250,9 +258,9 @@ end;
 
 procedure TKMGameInputProcess_Multi.AdjustDelay(aGameSpeed: Single);
 begin
-  //Half of the maximum round trip is a good guess for delay. +1.2 is our safety net to account
-  //for processing the packet and random variations in ping. It's always better for commands to
-  //be slightly delayed than for the game to freeze/lag regularly.
+  // Half of the maximum round trip is a good guess for delay. +1.2 is our safety net to account
+  // for processing the packet and random variations in ping. It's always better for commands to
+  // be slightly delayed than for the game to freeze/lag regularly.
   if gGame.IsMPGameSpeedChangeAllowed then
     SetDelay(MIN_DELAY) //We can set the lowest delay if we are the only MP player
   else
