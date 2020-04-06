@@ -65,6 +65,8 @@ type
     fTileUVLookup: array [0..TILES_CNT-1, 0..3] of TUVRect;
     fLastBindVBOArrayType: TVBOArrayType;
     fVBONeedsFlush: array [TVBOArrayType] of Boolean;
+    fVBOLastClipRect: TKMRect;
+    fVBOLastGameTick: Cardinal;
     function GetTileUV(Index: Word; Rot: Byte): TUVRect; inline;
     procedure BindVBOArray(aVBOArrayType: TVBOArrayType); inline;
     procedure UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
@@ -375,7 +377,15 @@ var
   V: TVBOArrayType;
 begin
   if not fUseVBO then Exit;
+
+  //Skip updating VBOs if GameTick and ClipRect haven't changed
+  if (fClipRect = fVBOLastClipRect) and (gGame.GameTick = fVBOLastGameTick) then
+    Exit;
+
   gPerfLogs.SectionEnter(psFrameUpdateVBO);
+
+  fVBOLastClipRect := fClipRect;
+  fVBOLastGameTick := gGame.GameTick;
 
   fLastBindVBOArrayType := vatNone;
 
