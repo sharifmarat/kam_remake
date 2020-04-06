@@ -1126,12 +1126,10 @@ procedure TKMHandsCollection.Paint(const aRect: TKMRect);
 var
   I: Integer;
 begin
-  gPerfLogs.SectionEnter(psFrameHands);
   for I := 0 to fCount - 1 do
     fHandsList[I].Paint(aRect);
 
   PlayerAnimals.Paint(aRect);
-  gPerfLogs.SectionLeave(psFrameHands);
 end;
 
 

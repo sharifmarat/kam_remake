@@ -84,9 +84,8 @@ const
     (Name: '         Overlays';       ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:0.5;B:0.25);),
     (Name: '         Light';          ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:0.25;B:0);),
     (Name: '         Shadows';        ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:0.5;B:0);),
-    (Name: '      Hands';             ClassName: TKMPerfLogSingleGFX; Color: (R:1;G:1;B:0.5);),
     (Name: '      RenderList';        ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:1;B:0.75);),
-    (Name: '      FOW';               ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:1;B:0.75);),
+    (Name: '      FOWRender';         ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:1;B:0.75);),
     (Name: '   UpdateVBO';            ClassName: TKMPerfLogSingleCPU; Color: (R:0.5;G:0.5;B:1);),
     (Name: '   GUI';                  ClassName: TKMPerfLogSingleGFX; Color: (R:1.0;G:0.25;B:0);)
   );

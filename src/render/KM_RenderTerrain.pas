@@ -1017,8 +1017,8 @@ var
   I,K: Integer;
   Fog: PKMByte2Array;
 begin
-  gPerfLogs.SectionEnter(psFrameFOW);
   if aFOW is TKMFogOfWarOpen then Exit;
+  gPerfLogs.SectionEnter(psFrameFOW);
 
   glColor4f(1, 1, 1, 1);
 

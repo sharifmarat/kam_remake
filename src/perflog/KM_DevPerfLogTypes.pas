@@ -34,7 +34,6 @@ type
             psFrameOverlays,
             psFrameLighting,
             psFrameShadows,
-        psFrameHands,
         psFrameRenderList,
         psFrameFOW,
       psFrameUpdateVBO,
