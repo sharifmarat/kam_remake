@@ -280,7 +280,6 @@ uses
 
   KM_ServerQuery in 'src\net\KM_ServerQuery.pas',
   KM_Settings in 'src\KM_Settings.pas',
-	KM_SoftShadows in 'src\KM_SoftShadows.pas',
   KM_Sound in 'src\KM_Sound.pas',
 
   KM_RandomMapGenerator in 'src\terrain\KM_RandomMapGenerator.pas',
@@ -325,6 +324,7 @@ uses
   KM_Hungarian in 'src\utils\KM_Hungarian.pas',
   KM_Pics in 'src\utils\KM_Pics.pas',
   KM_PNG in 'src\utils\KM_PNG.pas',
+  KM_SoftShadows in 'src\utils\KM_SoftShadows.pas',
   KM_Sort in 'src\utils\KM_Sort.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
   
