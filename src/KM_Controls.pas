@@ -5740,6 +5740,7 @@ begin
 
   fChildsPanel := TKMPanel.Create(Self, aLeft, aTop, aWidth, aHeight);
   fChildsPanel.AnchorsStretch;
+  fChildsPanel.fIsHitTestUseDrawRect := True; // We want DrawRect to be used on the ScrollPanel
 
   fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, saHorizontal, aStyle, aScrollStyle);
   fScrollBarH.Hide;
@@ -5750,6 +5751,8 @@ begin
   fScrollBarV.Hide;
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
+
+  fIsHitTestUseDrawRect := True; // We want DrawRect to be used on the ScrollPanel
 
 //  if aEnlargeParents then
 //  begin
@@ -5841,6 +5844,10 @@ end;
 
 procedure TKMScrollPanel.UpdateScrolls(Sender: TObject; aValue: Boolean);
 begin
+  // No need to update scrolls if panel is not visible
+  // In case we've just hide panel then DrawRect is RECT_ZERO and scrools will be set to 0 position
+  if not Visible then Exit;
+
   if (Sender <> fScrollBarH) and (Sender <> fScrollBarV) then
     UpdateScrolls(nil);
 end;
