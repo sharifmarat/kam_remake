@@ -32,7 +32,6 @@ type
     FScreenWidth: Integer;
     FScreenHeight: Integer;
 
-    FNext: Boolean;
     FTexture: TTexture;
 
     FIndex: Integer;
@@ -52,7 +51,6 @@ type
     function TryGetPathFile(aPath: string; var aFileName: string): Boolean;
     procedure SetTrackByLocale;
     function GetState: TVLCPlayerState;
-    property State: TVLCPlayerState read GetState;
 {$ENDIF}
   public
     constructor Create;
