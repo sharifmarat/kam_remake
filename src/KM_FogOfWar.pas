@@ -435,21 +435,15 @@ begin
 
   //Check all four corners and choose max
   Result := CheckVerticeRev(aRevArray,X-1,Y-1);
-
   if Result = 255 then Exit;
 
-  if X <= fMapX-1 then
-    Result := Max(Result, CheckVerticeRev(aRevArray,X,Y-1));
-
+  Result := Max(Result, CheckVerticeRev(aRevArray,X,Y-1));
   if Result = 255 then Exit;
 
-  if (X <= fMapX-1) and (Y <= fMapY-1) then
-    Result := Max(Result, CheckVerticeRev(aRevArray,X,Y));
-
+  Result := Max(Result, CheckVerticeRev(aRevArray,X,Y));
   if Result = 255 then Exit;
 
-  if Y <= fMapY-1 then
-    Result := Max(Result, CheckVerticeRev(aRevArray,X-1,Y));
+  Result := Max(Result, CheckVerticeRev(aRevArray,X-1,Y));
 end;
 
 
