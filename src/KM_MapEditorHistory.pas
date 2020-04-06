@@ -766,7 +766,7 @@ begin
   // Apply only requested area (e.g. if we are undoing single change made to Houses at step 87 since editing start)
   fCheckpoints[prev].Apply(fCheckpoints[fCheckpointPos].Area, aUpdateImmidiately);
 
-  if not aUpdateImmidiately and (fCheckpoints[fCheckpointPos].Area in [caTerrain{, caFields}]) then
+  if not aUpdateImmidiately and (fCheckpoints[fCheckpointPos].Area in [caTerrain, caAll]) then
     fUpdateTerrainNeeded := True;
 
   Dec(fCheckpointPos);
@@ -790,7 +790,7 @@ begin
 
   fCheckpoints[next].Apply(caAll, aUpdateImmidiately);
 
-  if not aUpdateImmidiately and (fCheckpoints[fCheckpointPos].Area in [caTerrain{, caFields}]) then
+  if not aUpdateImmidiately and (fCheckpoints[fCheckpointPos].Area in [caTerrain, caAll]) then
     fUpdateTerrainNeeded := True;
 
   fCheckpointPos := next;
