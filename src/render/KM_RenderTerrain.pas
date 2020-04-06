@@ -64,6 +64,9 @@ type
     fIndTilesFowShd: GLUint;
     fTileUVLookup: array [0..TILES_CNT-1, 0..3] of TUVRect;
     fLastBindVBOArrayType: TVBOArrayType;
+    fVBONeedsFlush: array [TVBOArrayType] of Boolean;
+    fVBOLastClipRect: TKMRect;
+    fVBOLastGameTick: Cardinal;
     function GetTileUV(Index: Word; Rot: Byte): TUVRect; inline;
     procedure BindVBOArray(aVBOArrayType: TVBOArrayType); inline;
     procedure UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
@@ -115,6 +118,7 @@ constructor TRenderTerrain.Create;
 var
   I, K: Integer;
   pData: array [0..255] of Cardinal;
+  V: TVBOArrayType;
 begin
   inherited;
   if SKIP_RENDER then Exit;
@@ -168,6 +172,9 @@ begin
     fAnimTilesVtxCount := 0;
     fAnimTilesIndCount := 0;
   end;
+
+  for V := Low(TVBOArrayType) to High(TVBOArrayType) do
+    fVBONeedsFlush[V] := True;
 end;
 
 
@@ -367,9 +374,18 @@ var
   TexTileC: TUVRect;
   AL: TAnimLayer;
   TexOffsetWater, TexOffsetFalls, TexOffsetSwamp: Word;
+  V: TVBOArrayType;
 begin
   if not fUseVBO then Exit;
+
+  //Skip updating VBOs if GameTick and ClipRect haven't changed
+  if (fClipRect = fVBOLastClipRect) and (gGame.GameTick = fVBOLastGameTick) then
+    Exit;
+
   gPerfLogs.SectionEnter(psFrameUpdateVBO);
+
+  fVBOLastClipRect := fClipRect;
+  fVBOLastGameTick := gGame.GameTick;
 
   fLastBindVBOArrayType := vatNone;
 
@@ -496,6 +512,9 @@ begin
 //  SetLength(fTilesLayersVtx, P);
 //  TilesLayersCnt := P div 4;
 //  SetLength(fTileslayersInd, TilesLayersCnt*6);
+
+  for V := Low(TVBOArrayType) to High(TVBOArrayType) do
+    fVBONeedsFlush[V] := True;
 
   gPerfLogs.SectionLeave(psFrameUpdateVBO);
 end;
@@ -1125,34 +1144,50 @@ begin
     vatTile:       if fTilesVtxCount > 0 then
                     begin
                       glBindBuffer(GL_ARRAY_BUFFER, fVtxTilesShd);
-                      glBufferData(GL_ARRAY_BUFFER, fTilesVtxCount * SizeOf(TTileVerticeExt), @fTilesVtx[0].X, GL_STREAM_DRAW);
-
                       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndTilesShd);
-                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, fTilesIndCount * SizeOf(fTilesInd[0]), @fTilesInd[0], GL_STREAM_DRAW);
+
+                      if fVBONeedsFlush[aVBOArrayType] then
+                      begin
+                        glBufferData(GL_ARRAY_BUFFER, fTilesVtxCount * SizeOf(TTileVerticeExt), @fTilesVtx[0].X, GL_STREAM_DRAW);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, fTilesIndCount * SizeOf(fTilesInd[0]), @fTilesInd[0], GL_STREAM_DRAW);
+                        fVBONeedsFlush[aVBOArrayType] := False;
+                      end;
                     end else Exit;
     vatTileLayer:  if Length(fTilesLayersVtx) > 0 then
                     begin
                       glBindBuffer(GL_ARRAY_BUFFER, fVtxTilesLayersShd);
-                      glBufferData(GL_ARRAY_BUFFER, Length(fTilesLayersVtx) * SizeOf(TTileVertice), @fTilesLayersVtx[0].X, GL_STREAM_DRAW);
-
                       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndTilesLayersShd);
-                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fTilesLayersInd) * SizeOf(fTilesLayersInd[0]), @fTilesLayersInd[0], GL_STREAM_DRAW);
+
+                      if fVBONeedsFlush[aVBOArrayType] then
+                      begin
+                        glBufferData(GL_ARRAY_BUFFER, Length(fTilesLayersVtx) * SizeOf(TTileVertice), @fTilesLayersVtx[0].X, GL_STREAM_DRAW);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fTilesLayersInd) * SizeOf(fTilesLayersInd[0]), @fTilesLayersInd[0], GL_STREAM_DRAW);
+                        fVBONeedsFlush[aVBOArrayType] := False;
+                      end;
                     end else Exit;
     vatAnimTile:   if fAnimTilesVtxCount > 0 then
                     begin
                       glBindBuffer(GL_ARRAY_BUFFER, fVtxAnimTilesShd);
-                      glBufferData(GL_ARRAY_BUFFER, fAnimTilesVtxCount * SizeOf(TTileVertice), @fAnimTilesVtx[0].X, GL_STREAM_DRAW);
-
                       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndAnimTilesShd);
-                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, fAnimTilesIndCount * SizeOf(fAnimTilesInd[0]), @fAnimTilesInd[0], GL_STREAM_DRAW);
+
+                      if fVBONeedsFlush[aVBOArrayType] then
+                      begin
+                        glBufferData(GL_ARRAY_BUFFER, fAnimTilesVtxCount * SizeOf(TTileVertice), @fAnimTilesVtx[0].X, GL_STREAM_DRAW);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, fAnimTilesIndCount * SizeOf(fAnimTilesInd[0]), @fAnimTilesInd[0], GL_STREAM_DRAW);
+                        fVBONeedsFlush[aVBOArrayType] := False;
+                      end;
                     end else Exit;
     vatFOW:        if fTilesFowVtxCount > 0 then
                     begin
                       glBindBuffer(GL_ARRAY_BUFFER, fVtxTilesFowShd);
-                      glBufferData(GL_ARRAY_BUFFER, fTilesFowVtxCount * SizeOf(TTileFowVertice), @fTilesFowVtx[0].X, GL_STREAM_DRAW);
-
                       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndTilesFowShd);
-                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, fTilesFowIndCount * SizeOf(fTilesFowInd[0]), @fTilesFowInd[0], GL_STREAM_DRAW);
+
+                      if fVBONeedsFlush[aVBOArrayType] then
+                      begin
+                        glBufferData(GL_ARRAY_BUFFER, fTilesFowVtxCount * SizeOf(TTileFowVertice), @fTilesFowVtx[0].X, GL_STREAM_DRAW);
+                        glBufferData(GL_ELEMENT_ARRAY_BUFFER, fTilesFowIndCount * SizeOf(fTilesFowInd[0]), @fTilesFowInd[0], GL_STREAM_DRAW);
+                        fVBONeedsFlush[aVBOArrayType] := False;
+                      end;
                     end else Exit;
   end;
   fLastBindVBOArrayType := aVBOArrayType;

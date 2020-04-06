@@ -26,6 +26,8 @@ type
     fMapX: Word;
     fMapY: Word;
 
+    fDynamicFOW: Boolean; //Local copy for faster access, updated in UpdateState
+
     //Initial revealers from static script
     fInitialRevealAll: Boolean;
     fInitialRevealers: TKMPointTagList;
@@ -126,6 +128,8 @@ begin
   fInitialRevealAll := False;
   fInitialRevealers := TKMPointTagList.Create;
   SetMapSize(X,Y);
+
+  fDynamicFOW := (gGameApp <> nil) and gGameApp.DynamicFOWEnabled;
 end;
 
 
@@ -199,7 +203,7 @@ begin
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
   try
     AroundRadius := Radius + RENDER_RADIUS_ADD;
-    if not fCoverHasBeenCalled and not gGameApp.DynamicFOWEnabled then
+    if not fCoverHasBeenCalled and not fDynamicFOW then
     begin
       if fRevealedRadius[Pos.Y, Pos.X] < Radius then
       begin
@@ -352,16 +356,19 @@ end;
 //0 unrevealed, 255 revealed completely
 //but false in cases where it will effect the gameplay (e.g. unit hit test)
 function TKMFogOfWar.CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;
+var
+  F: Byte;
 begin
   //I like how "alive" the fog looks with some tweaks
   //pulsating around units and slowly thickening when they leave :)
-  if gGameApp.DynamicFOWEnabled then
-    if (aRevArray^[Y,X] >= FOG_OF_WAR_ACT) then
+  F := aRevArray^[Y,X];
+  if fDynamicFOW then
+    if (F >= FOG_OF_WAR_ACT) then
       Result := 255
     else
-      Result := (aRevArray^[Y,X] shl 8) div FOG_OF_WAR_ACT
+      Result := (F shl 8) div FOG_OF_WAR_ACT
   else
-    if (aRevArray^[Y,X] >= FOG_OF_WAR_MIN) then
+    if (F >= FOG_OF_WAR_MIN) then
       Result := 255
     else
       Result := 0;
@@ -529,7 +536,8 @@ procedure TKMFogOfWar.UpdateState;
 var
   I, K: Word;
 begin
-  if not gGameApp.DynamicFOWEnabled then Exit;
+  fDynamicFOW := gGameApp.DynamicFOWEnabled;
+  if not fDynamicFOW then Exit;
 
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
   try
