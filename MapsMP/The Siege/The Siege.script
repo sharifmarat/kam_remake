@@ -5,6 +5,8 @@ var
 
 
 procedure OnMissionStart;
+var
+  ID: Integer;
 begin
   General := States.GroupAt(32, 117);
   Barracks[0] := States.HouseAt(25, 120);
@@ -12,6 +14,9 @@ begin
   Barracks[2] := States.HouseAt(46, 123);
   Msg := False;
   Scout := -1;
+  for ID := 0 to 7 do
+    if States.PlayerEnabled(ID) then
+      Actions.AIAutoBuild(ID, False);
 end;
 
 
@@ -142,14 +147,13 @@ begin
 
   if States.GameTime mod 600 = 0 then
     for ID := 0 to 2 do
-    begin
-      if States.PlayerIsAI(ID) then
-        for W := 16 to 26 do
-        begin
-          Actions.GiveWeapons(ID, W, 8);
-          Actions.HouseBarracksGiveRecruit(Barracks[ID]);
-        end;
-    end;
+      if States.PlayerEnabled(ID) then
+        if States.PlayerIsAI(ID) then
+          for W := 16 to 26 do
+          begin
+            Actions.GiveWeapons(ID, W, 8);
+            Actions.HouseBarracksGiveRecruit(Barracks[ID]);
+          end;
 
   if States.GroupDead(General) then
   begin

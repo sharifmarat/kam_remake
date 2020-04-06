@@ -26,14 +26,13 @@ const
   MAX_RANGED = 150;                    //Maximum ranged count per player
   DEBUG_MODE = False;                  //Debug option, to see how script works
   INDIVIDUAL_BONUSES = False;          //Untested, individual bonuses for 18th wave
-  ALLOW_SPLITTING = False;             //Allows making troops of one soldier - OP
+  ENABLE_SPLITTING = False;            //Allows making troops of one soldier - OP
   MIN_UNITS_COUNT = 5;                 //Minimum soldiers per group
   LINK_RADIUS = 4;                     //Link alone soldiers within 4 tiles
   AUTOLINK_RADIUS = 6;                 //Link doubled groups within 6 tiles
   STATUS_SHOW_TIME = 150;              //15 seconds
-  START_SERFS = 12;                    //12 serfs at start
+  START_SERFS = 16;                    //16 serfs at start
   RANDOM_FACTOR = 100;                 //Random
-  ENABLE_SPLITTING = False;            //Anti-cheat (disables cmowla style abuse)
   SPLIT_CHECK_FACTOR = 15;             //Once per 15 ticks
   MAX_TOWERS = 4;                      //4 towers per player
   START_TOWERS = 2;                    //2 towers per player
@@ -711,7 +710,7 @@ var
 begin
   for I := 0 to 8 do
     if States.PlayerEnabled(I) then
-      AutoFeed(I); 
+      AutoFeed(I);
 
   GetInitialAttack;
 
@@ -751,6 +750,11 @@ begin
   Storehouse[1] := States.HouseAt(63, 86);
   Storehouse[2] := States.HouseAt(88, 86);
   Storehouse[3] := States.HouseAt(82, 66);
+
+  for I := 0 to 3 do
+    if States.PlayerEnabled(I) then
+      while States.StatUnitTypeCount(I, 0) < START_SERFS do
+        Actions.GiveUnit(I, 0, States.HousePositionX(Storehouse[I]), States.HousePositionY(Storehouse[I]) + 1, 4);
 
   SpawnX[0] := 46;
   SpawnX[1] := 46;
@@ -1527,17 +1531,20 @@ begin
 end;
 
 
-function OnGroupAllowOrderSplit(G: Integer): Boolean;
+procedure OnGroupBeforeOrderSplit(G: Integer; var aNewType: Integer; var aNewCnt: Integer; var aMixed: Boolean);
 begin
-  Result := States.GroupMemberCount(G) > Round(MIN_UNITS_COUNT * DifficultyFactor);
-  if not Result then
+  if (not ENABLE_SPLITTING)
+  and (States.GroupMemberCount(G) <= Round(MIN_UNITS_COUNT * DifficultyFactor) * 2) then
+  begin
+    aNewCnt := 0;
     Actions.ShowMsgFormatted(States.GroupOwner(G), '<$107>', [States.GroupMemberCount(G), Round(MIN_UNITS_COUNT * DifficultyFactor)]);
+  end;
 end;
 
 
 procedure OnGroupOrderSplit(G1, G2: Integer);
 begin
-  if not ALLOW_SPLITTING then
+  if not ENABLE_SPLITTING then
     CheckSplittedGroups(States.GroupOwner(G1), True);
 end;
 
@@ -4856,8 +4863,8 @@ begin
 
   if ((not CanBuildRoads(X - 2, Y + 1, X, Y + 1))
   and (not CanBuildRoads(X - 1, Y + 1, X + 1, Y + 1)))
-  or ((not CanBuildRoads(X - 2, Y - 1, X - 2, Y + 1))
-  and (not CanBuildRoads(X + 1, Y - 1, X + 1, Y + 1))) then
+  or ((not CanBuildRoads(X - 2, Y - 2, X - 2, Y + 1))
+  and (not CanBuildRoads(X + 1, Y - 2, X + 1, Y + 1))) then
     Result := '<$102>: <$105> (' + IntToStr(ErrorX) + ', ' + IntToStr(ErrorY) + ')';
 
   if not (Utils.InRangeI(X, 46, 105)
@@ -4875,8 +4882,8 @@ begin
   and (Utils.InRangeI(Y, 80, 81)))
   and ((CanBuildRoads(X - 2, Y + 1, X, Y + 1))
   or (CanBuildRoads(X - 1, Y + 1, X + 1, Y + 1)))
-  and ((CanBuildRoads(X - 2, Y - 1, X - 2, Y + 1))
-  or (CanBuildRoads(X + 1, Y - 1, X + 1, Y + 1)));
+  and ((CanBuildRoads(X - 2, Y - 2, X - 2, Y + 1))
+  or (CanBuildRoads(X + 1, Y - 2, X + 1, Y + 1)));
 end;
 
 
@@ -5264,7 +5271,7 @@ begin
       StatusString[I] := '';
 
   if (States.GameTime mod (1 + SPLIT_CHECK_FACTOR) = 0)
-  and (not ALLOW_SPLITTING) then
+  and (not ENABLE_SPLITTING) then
     for I := 0 to 3 do
       CheckSplittedGroups(I, False);
 
