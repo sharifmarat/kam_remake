@@ -205,6 +205,8 @@ var
   Group: TKMUnitGroup;
   TileOwner: TKMHandID;
 begin
+  gPerfLogs.SectionEnter(psMinimap);
+
   //if OVERLAY_OWNERSHIP then
   //begin
   //  for I := 0 to fMapY - 1 do
@@ -293,6 +295,8 @@ begin
           fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 1, 2, 1, 1); // make red margins where current map is cut
       end;
 
+
+  gPerfLogs.SectionLeave(psMinimap);
 end;
 
 
