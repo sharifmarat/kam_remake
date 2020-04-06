@@ -127,6 +127,9 @@ type
     fNeedIssueOrderCompletedMsg: Boolean;
     fAllowAllyToView: Boolean;
 
+    // Not saved
+    fPlacedOverRoad: Boolean;
+
     procedure CheckOnSnow;
 
     function GetResourceInArray: TKMByteArray;
@@ -174,6 +177,7 @@ type
     procedure ReleaseHousePointer; //Decreases the pointer counter
     property PointerCount: Cardinal read fPointerCount;
 
+    procedure RemoveHouse;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); virtual;
     property BuildingProgress: Word read fBuildingProgress;
 
@@ -190,6 +194,7 @@ type
     function GetRandomCellWithin: TKMPoint;
     function HitTest(X, Y: Integer): Boolean;
     property BuildingRepair: Boolean read fBuildingRepair write SetBuildingRepair;
+    property PlacedOverRoad: Boolean read fPlacedOverRoad write fPlacedOverRoad;
 
     property DeliveryMode: TKMDeliveryMode read fDeliveryMode;
     property NewDeliveryMode: TKMDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
@@ -488,6 +493,8 @@ begin
   fBuildingProgress := 0;
   fDamage           := 0; //Undamaged yet
 
+  fPlacedOverRoad   := gTerrain.TileHasRoad(Entrance);
+
   fHasOwner         := False;
   //Initially repair is [off]. But for AI it's controlled by a command in DAT script
   fBuildingRepair   := False; //Don't set it yet because we don't always know who are AIs yet (in multiplayer) It is set in first UpdateState
@@ -708,6 +715,15 @@ begin
 end;
 
 
+procedure TKMHouse.RemoveHouse;
+begin
+  Assert(gGame.IsMapEditor, 'Operation allowed only in the MapEd');
+
+  DemolishHouse(fOwner, True);
+  gHands[fOwner].Houses.DeleteHouseFromList(Self);
+end;
+
+
 //IsSilent parameter is used by Editor and scripts
 procedure TKMHouse.DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False);
 var
@@ -751,7 +767,7 @@ begin
   BuildingRepair := False; //Otherwise labourers will take task to repair when the house is destroyed
   if (BuildingState in [hbsNoGlyph, hbsWood]) or IsSilent then
   begin
-    if gTerrain.Land[Entrance.Y, Entrance.X].TileOverlay = toRoad then
+    if gTerrain.TileHasRoad(Entrance) and not fPlacedOverRoad then
     begin
       gTerrain.RemRoad(Entrance);
       if not IsSilent then
@@ -1287,7 +1303,9 @@ end;
 procedure TKMHouse.SetIsClosedForWorker(aIsClosed: Boolean);
 begin
   fIsClosedForWorker := aIsClosed;
-  gHands[fOwner].Stats.HouseClosed(aIsClosed, fType);
+
+  if not gGame.IsMapEditor then
+    gHands[fOwner].Stats.HouseClosed(aIsClosed, fType);
 end;
 
 

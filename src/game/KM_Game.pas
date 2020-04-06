@@ -281,7 +281,7 @@ uses
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
   KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo, KM_GameClasses,
-  KM_Terrain, KM_HandsCollection, KM_HandSpectator,
+  KM_Terrain, KM_HandsCollection, KM_HandSpectator, KM_MapEditorHistory,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults, KM_Supervisor,
   KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_RandomChecks, KM_DevPerfLog, KM_DevPerfLogTypes;
@@ -526,7 +526,7 @@ begin
   if fGameMode = gmMapEd then
   begin
     //Mission loader needs to read the data into MapEd (e.g. FOW revealers)
-    fMapEditor := TKMMapEditor.Create(fTerrainPainter);
+    fMapEditor := TKMMapEditor.Create(fTerrainPainter, fMapEditorInterface.HistoryUpdate);
     fMapEditor.DetectAttachedFiles(aMissionFile);
   end;
 
@@ -662,6 +662,12 @@ begin
   //Basesave is sort of temp we save to HDD instead of keeping in RAM
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+
+  if IsMapEditor then
+  begin
+    fMapEditor.History.Clear;
+    fMapEditor.History.MakeCheckpoint(caAll, gResTexts[TX_MAPED_HISTORY_CHPOINT_INITIAL]);
+  end;
 
   //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
   gScriptEvents.ProcMissionStart;
@@ -1181,11 +1187,11 @@ begin
   fMissionFileSP := '';
   fSaveFile := '';
 
-  fMapEditor := TKMMapEditor.Create(fTerrainPainter);
+  fMapEditor := TKMMapEditor.Create(fTerrainPainter, fMapEditorInterface.HistoryUpdate);
   fMapEditor.MissionDefSavePath := fGameName + '.dat';
   gTerrain.MakeNewMap(aSizeX, aSizeY, True);
   fTerrainPainter.InitEmpty;
-  fTerrainPainter.MakeCheckpoint;
+  fMapEditor.History.MakeCheckpoint(caAll, gResTexts[TX_MAPED_HISTORY_CHPOINT_INITIAL]);
   fMapEditor.IsNewMap := True;
 
   gHands.AddPlayers(MAX_HANDS); //Create MAX players

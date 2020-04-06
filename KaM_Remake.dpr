@@ -181,6 +181,8 @@ uses
   KM_Maps in 'src\KM_Maps.pas',
   KM_MapTypes in 'src\KM_MapTypes.pas',
   KM_MapEditor in 'src\KM_MapEditor.pas',
+  KM_MapEditorHistory in 'src\KM_MapEditorHistory.pas',
+  KM_MapEdTypes in 'src\KM_MapEdTypes.pas',
   KM_MessageLog in 'src\KM_MessageLog.pas',
   KM_MessageStack in 'src\KM_MessageStack.pas',
   KM_Minimap in 'src\KM_Minimap.pas',

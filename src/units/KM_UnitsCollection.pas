@@ -20,7 +20,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+    function AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True;
+                     aRequiredWalkConnect: Byte = 0): TKMUnit;
     procedure AddUnitToList(aUnit: TKMUnit);
     property Count: Integer read GetCount;
     property Units[aIndex: Integer]: TKMUnit read GetUnit; default; //Use instead of Items[.]
@@ -33,6 +34,7 @@ type
     function GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetTotalPointers: Integer;
+    procedure Clear;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
@@ -62,7 +64,14 @@ destructor TKMUnitsCollection.Destroy;
 begin
   //No need to free units individually since they are Freed by TKMList.Clear command in destructor
   fUnits.Free;
+
   inherited;
+end;
+
+
+procedure TKMUnitsCollection.Clear;
+begin
+  fUnits.Clear;
 end;
 
 
@@ -79,7 +88,8 @@ end;
 
 
 //AutoPlace means we should try to find a spot for this unit instead of just placing it where we were told to
-function TKMUnitsCollection.AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+function TKMUnitsCollection.AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True;
+                                    aRequiredWalkConnect: Byte = 0): TKMUnit;
 var
   ID: Cardinal;
   PlaceTo: TKMPoint;

@@ -96,6 +96,8 @@ uses
   procedure KMSwapFloat(var A,B: Single); overload;
   procedure KMSwapFloat(var A,B: Double); overload;
 
+  function ToBoolean(aVal: Byte): Boolean;
+
   //Extended == Double, so already declared error
   //https://forum.lazarus.freepascal.org/index.php?topic=29678.0
   {$IFDEF WDC}
@@ -236,6 +238,16 @@ var S: Double;
 begin
   S:=A; A:=B; B:=S;
 end;
+
+
+function ToBoolean(aVal: Byte): Boolean;
+begin
+  if aVal = 0 then
+    Result := False
+  else
+    Result := True;
+end;
+
 
 {$IFDEF WDC}
 procedure KMSwapFloat(var A,B: Extended);
