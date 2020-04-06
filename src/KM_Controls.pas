@@ -1657,7 +1657,7 @@ type
   end;
 
 
-  TKMPopUpBGImageType = (pubgitGray, pubgitYellowish, pubgitScrollWCross);
+  TKMPopUpBGImageType = (pubgitGray, pubgitYellow, pubgitScrollWCross);
 
   TKMPopUpPanel = class(TKMPanel)
   private
@@ -1681,7 +1681,7 @@ type
     FontColor: TColor4;
     CapOffsetY: Integer;
     constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '';
-                       aImageType: TKMPopUpBGImageType = pubgitYellowish; aShowBevel: Boolean = True; aShowShadeBevel: Boolean = True);
+                       aImageType: TKMPopUpBGImageType = pubgitYellow; aShowBevel: Boolean = True; aShowShadeBevel: Boolean = True);
 
     procedure MouseDown (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove (X,Y: Integer; Shift: TShiftState); override;
@@ -8237,7 +8237,7 @@ end;
 
 { TKMPopUpPanel }
 constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '';
-                                 aImageType: TKMPopUpBGImageType = pubgitYellowish; aShowBevel: Boolean = True;
+                                 aImageType: TKMPopUpBGImageType = pubgitYellow; aShowBevel: Boolean = True;
                                  aShowShadeBevel: Boolean = True);
 begin
   inherited Create(aParent, (aParent.Width div 2) - (aWidth div 2), (aParent.Height div 2) - (aHeight div 2), aWidth, aHeight);
@@ -8254,7 +8254,7 @@ begin
 
   case fBGImageType of
     pubgitGray:    ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70,  15, rxGuiMain);
-    pubgitYellowish:  ImageBG := TKMImage.Create(Self, -25, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
+    pubgitYellow:  ImageBG := TKMImage.Create(Self, -25, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
     pubgitScrollWCross:
       begin
         ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70,  409);
@@ -8381,7 +8381,7 @@ begin
       ImageBG.Width := Width + 40;
       ImageBG.Height := Height + 70;
     end;
-    pubgitYellowish:
+    pubgitYellow:
     begin
       ImageBG.Width := Width + 50;
       ImageBG.Height := Height + 140;
