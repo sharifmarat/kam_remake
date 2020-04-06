@@ -1876,9 +1876,6 @@ begin
     gLog.AddNoTime('Regenerating missing MapEd data as best as we can');
     GenerateAddnData;
   end;
-
-  if gGame.IsMapEditor then
-    gGame.MapEditor.History.MakeCheckpoint(caTerrain, 'Initial');
 end;
 
 
