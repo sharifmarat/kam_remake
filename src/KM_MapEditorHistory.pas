@@ -636,6 +636,8 @@ procedure TKMMapEditorHistory.MakeCheckpoint(aArea: TKMCheckpointArea; const aCa
 var
   cp: TKMCheckpoint;
 begin
+  if Self = nil then Exit;
+
   // Delete all Redo checkpoints, as they've become invalid with this new change
   while fCheckpointPos < fCheckpoints.Count - 1 do
     fCheckpoints.Delete(fCheckpoints.Count - 1);

@@ -117,6 +117,7 @@ type
 
     procedure SetGameSpeedActualValue(aSpeed: Single);
     procedure UpdateClockUI;
+    function GetMapEditor: TKMMapEditor;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -249,7 +250,7 @@ type
     property ActiveInterface: TKMUserInterfaceGame read fActiveInterface;
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
     property MapEditorInterface: TKMapEdInterface read fMapEditorInterface;
-    property MapEditor: TKMMapEditor read fMapEditor;
+    property MapEditor: TKMMapEditor read GetMapEditor;
     property TerrainPainter: TKMTerrainPainter read fTerrainPainter;
     property TextMission: TKMTextLibraryMulti read fTextMission;
 
@@ -1344,6 +1345,14 @@ end;
 procedure TKMGame.RestartReplay;
 begin
   gGameApp.NewReplay(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT));
+end;
+
+
+function TKMGame.GetMapEditor: TKMMapEditor;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fMapEditor;
 end;
 
 
