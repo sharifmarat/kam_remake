@@ -1877,7 +1877,8 @@ begin
     GenerateAddnData;
   end;
 
-  gGame.MapEditor.History.MakeCheckpoint(caTerrain, 'Initial');
+  if gGame.MapEditor <> nil then
+    gGame.MapEditor.History.MakeCheckpoint(caTerrain, 'Initial');
 end;
 
 
