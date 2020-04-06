@@ -9,7 +9,7 @@ uses
   KM_GameInputProcess, KM_GameSavedReplays, KM_GameOptions, KM_Scripting, KM_MapEditor, KM_Campaigns, KM_Render, KM_Sound,
   KM_InterfaceGame, KM_InterfaceGamePlay, KM_InterfaceMapEditor,
   KM_ResTexts, KM_Maps, KM_MapTypes, KM_Hand,
-  KM_PerfLog, KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
+  KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
   KM_GameTypes, KM_TerrainPainter;
 
 type
@@ -23,7 +23,6 @@ type
     fGameInputProcess: TKMGameInputProcess;
     fTextMission: TKMTextLibraryMulti;
     fPathfinding: TPathFinding;
-    fPerfLog: TKMPerfLog;
     fActiveInterface: TKMUserInterfaceGame; //Shortcut for both of UI
     fGamePlayInterface: TKMGamePlayInterface;
     fMapEditorInterface: TKMapEdInterface;
@@ -241,8 +240,6 @@ type
 
     procedure UpdateMultiplayerTeams;
 
-    property PerfLog: TKMPerfLog read fPerfLog;
-
     property Networking: TKMNetworking read fNetworking;
     property Pathfinding: TPathFinding read fPathfinding;
     property GameInputProcess: TKMGameInputProcess read fGameInputProcess;
@@ -361,7 +358,6 @@ begin
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
 
-  if DO_PERF_LOGGING then fPerfLog := TKMPerfLog.Create;
   gPerfLogs.Clear;
   gLog.AddTime('<== Game creation is done ==>');
 
@@ -403,9 +399,6 @@ begin
   //if (fGameInputProcess <> nil) and (fGameInputProcess.ReplayState = gipRecording) then
   //  fGameInputProcess.SaveToFile(SaveName('basesave', EXT_SAVE_REPLAY, fGameMode in [gmMulti, gmMultiSpectate]));
 
-  if DO_PERF_LOGGING and (fPerfLog <> nil) then
-    fPerfLog.SaveToFile(ExeDir + 'Logs' + PathDelim + 'PerfLog.txt');
-
   FreeAndNil(fTimerGame);
 
   FreeThenNil(fTerrainPainter);
@@ -428,8 +421,6 @@ begin
   FreeAndNil(fGameInputProcess);
   FreeAndNil(fGameOptions);
   FreeAndNil(fTextMission);
-
-  if DO_PERF_LOGGING then fPerfLog.Free;
 
   //When leaving the game we should always reset the cursor in case the user had beacon or linking selected
   gRes.Cursors.Cursor := kmcDefault;

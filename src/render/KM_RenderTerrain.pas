@@ -102,7 +102,7 @@ type
 
 implementation
 uses
-  KM_Game, KM_Render, KM_Resource, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_Game, KM_Render, KM_Resource, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 type
   TAnimLayer = (alWater, alFalls, alSwamp);

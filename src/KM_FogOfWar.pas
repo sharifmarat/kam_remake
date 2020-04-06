@@ -112,7 +112,7 @@ const
 
 implementation
 uses
-  Math, SysUtils, KM_GameApp, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
+  Math, SysUtils, KM_GameApp, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 const
   //Addition to Revelation radius for Render revelation

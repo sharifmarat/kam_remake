@@ -152,7 +152,7 @@ uses
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor,
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_FogOfWar, KM_Hand, KM_UnitGroup, KM_UnitWarrior, KM_CommonUtils,
-  KM_GameTypes, KM_Utils, KM_ResTileset, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_GameTypes, KM_Utils, KM_ResTileset, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const

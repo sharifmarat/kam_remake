@@ -238,7 +238,6 @@ uses
   KM_PathFindingJPS in 'src\pathfinding\KM_PathFindingJPS.pas',
   KM_PathFindingRoad in 'src\pathfinding\KM_PathFindingRoad.pas',
 	
-  KM_PerfLog in 'src\KM_PerfLog.pas',
   KM_Projectiles in 'src\KM_Projectiles.pas',
   
   KM_RandomChecks in 'src\KM_RandomChecks.pas',
@@ -332,11 +331,12 @@ uses
   KM_MethodParser in 'src\utils\method_parser\KM_MethodParser.pas',
   KM_MethodParserParams in 'src\utils\method_parser\KM_MethodParserParams.pas',
 
-	
   KM_Viewport in 'src\KM_Viewport.pas',
   KM_WareDistribution in 'src\KM_WareDistribution.pas',
   KM_Video in 'src\KM_Video.pas',
   KM_VLC in 'src\utils\KM_VLC.pas';
+  
+  //KM_PerfLog in 'src\unused\KM_PerfLog.pas', //unused
 
 {$IFDEF WDC}
   {$R KaM_Remake_Icon.res} //Keeps the Icon

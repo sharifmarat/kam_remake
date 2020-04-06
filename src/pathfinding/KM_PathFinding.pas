@@ -83,7 +83,7 @@ type
 
 implementation
 uses
-  KM_Units, KM_PerfLog, KM_Game, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_Units, KM_Game, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 { TPathFinding }
