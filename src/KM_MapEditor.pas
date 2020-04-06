@@ -44,6 +44,7 @@ type
     procedure PaintMiningRadius(aLayer: TKMPaintLayer);
 
     function GetCheckpointObjectsStr: string;
+    function GetHistory: TKMMapEditorHistory;
   public
     MissionDefSavePath: UnicodeString;
 
@@ -65,7 +66,7 @@ type
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
     property VisibleLayers: TKMMapEdLayerSet read fVisibleLayers write fVisibleLayers;
-    property History: TKMMapEditorHistory read fHistory write fHistory;
+    property History: TKMMapEditorHistory read GetHistory write fHistory;
 
     function OnlyAdvancedAIHand(aHandId: TKMHandID): Boolean;
 
@@ -684,6 +685,14 @@ begin
     Result := Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_REMOVE_SMTH], [gResTexts[TX_WORD_OBJECT], gGameCursor.Cell.ToString])
   else
     Result := Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_ADD_SMTH] + ' %s', [gResTexts[TX_WORD_OBJECT], IntToStr(gGameCursor.Tag1), gGameCursor.Cell.ToString])
+end;
+
+
+function TKMMapEditor.GetHistory: TKMMapEditorHistory;
+begin
+  if Self = nil then Exit(nil);
+  
+  Result := fHistory;
 end;
 
 
