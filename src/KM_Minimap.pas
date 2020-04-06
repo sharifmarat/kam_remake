@@ -197,13 +197,14 @@ procedure TKMMinimap.UpdateMinimapFromGame;
 var
   FOW: Byte;
   ID: Word;
-  I,J,K: Integer;
+  I,J,K,MX,MY: Integer;
   U: TKMUnit;
   P: TKMPoint;
   DoesFit: Boolean;
   Light: Smallint;
   Group: TKMUnitGroup;
   TileOwner: TKMHandID;
+  LandPtr: ^TKMTerrainTile;
 begin
   gPerfLogs.SectionEnter(psMinimap);
 
@@ -224,29 +225,32 @@ begin
   for I := 0 to fMapY - 1 do
     for K := 0 to fMapX - 1 do
     begin
-      FOW := gMySpectator.FogOfWar.CheckTileRevelation(K+1,I+1);
+      MX := K+1;
+      MY := I+1;
+      FOW := gMySpectator.FogOfWar.CheckTileRevelation(MX,MY);
 
       if FOW = 0 then
         fBase[I*fMapX + K] := $FF000000
       else begin
+        LandPtr := @fMyTerrain.Land[MY,MX];
         TileOwner := -1;
-        if fMyTerrain.Land[I+1,K+1].TileOwner <> -1 then
+        if LandPtr.TileOwner <> -1 then
         begin
-          if fMyTerrain.TileHasRoad(K+1, I+1)
-            and (fMyTerrain.Land[I+1,K+1].IsUnit <> nil)
-            and InRange(TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner, 0, MAX_HANDS) then
-            TileOwner := TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner
+          if fMyTerrain.TileHasRoad(MX, MY)
+            and (LandPtr.IsUnit <> nil)
+            and InRange(TKMUnit(LandPtr.IsUnit).Owner, 0, MAX_HANDS) then
+            TileOwner := TKMUnit(LandPtr.IsUnit).Owner
           else
-            TileOwner := fMyTerrain.Land[I+1,K+1].TileOwner;
+            TileOwner := LandPtr.TileOwner;
         end;
 
         if (TileOwner <> -1)
-          and not fMyTerrain.TileIsCornField(KMPoint(K+1, I+1)) //Do not show corn and wine on minimap
-          and not fMyTerrain.TileIsWineField(KMPoint(K+1, I+1)) then
+          and not fMyTerrain.TileIsCornField(KMPoint(MX, MY)) //Do not show corn and wine on minimap
+          and not fMyTerrain.TileIsWineField(KMPoint(MX, MY)) then
           fBase[I*fMapX + K] := gHands[TileOwner].GameFlagColor
         else
         begin
-          U := fMyTerrain.Land[I+1,K+1].IsUnit;
+          U := LandPtr.IsUnit;
           if U <> nil then
             if U.Owner <> PLAYER_ANIMAL then
               fBase[I*fMapX + K] := gHands[U.Owner].GameFlagColor
@@ -254,13 +258,13 @@ begin
               fBase[I*fMapX + K] := gRes.Units[U.UnitType].MinimapColor
           else
           begin
-            ID := fMyTerrain.Land[I+1,K+1].BaseLayer.Terrain;
+            ID := LandPtr.BaseLayer.Terrain;
             // Do not use fMyTerrain.Land[].Light for borders of the map, because it is set to -1 for fading effect
             // So assume fMyTerrain.Land[].Light as 0 in this case
             if (I = 0) or (I = fMapY - 1) or (K = 0) or (K = fMapX - 1) then
               Light := 255-FOW
             else
-              Light := Round(fMyTerrain.Land[I+1,K+1].Light*64)-(255-FOW); //it's -255..255 range now
+              Light := Round(LandPtr.Light*64)-(255-FOW); //it's -255..255 range now
             fBase[I*fMapX + K] := Byte(EnsureRange(gRes.Tileset.TileColor[ID].R+Light,0,255)) +
                                   Byte(EnsureRange(gRes.Tileset.TileColor[ID].G+Light,0,255)) shl 8 +
                                   Byte(EnsureRange(gRes.Tileset.TileColor[ID].B+Light,0,255)) shl 16 or $FF000000;
