@@ -321,6 +321,7 @@ uses
   KM_CommonUtils in 'src\utils\KM_CommonUtils.pas',
   KM_FileIO in 'src\utils\KM_FileIO.pas',
   KM_FloodFill in 'src\utils\KM_FloodFill.pas',
+  KM_Helpers in 'src\utils\KM_Helpers.pas',
   KM_Hungarian in 'src\utils\KM_Hungarian.pas',
   KM_Pics in 'src\utils\KM_Pics.pas',
   KM_PNG in 'src\utils\KM_PNG.pas',

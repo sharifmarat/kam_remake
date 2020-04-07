@@ -84,7 +84,7 @@ uses
   {$IFDEF MSWindows} MMSystem, {$ENDIF}
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils,
-  KM_GameApp,
+  KM_GameApp, KM_Helpers,
   KM_Log, KM_CommonUtils, KM_Defaults, KM_Points, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
@@ -203,7 +203,8 @@ end;
 
 procedure TKMMain.GameSpeedChange(aSpeed: Single);
 begin
-  fFormMain.chkSuperSpeed.Checked := aSpeed = DEBUG_SPEEDUP_SPEED;
+  // Set check state without trigger OnClick event handler for the CheckBox
+  fFormMain.chkSuperSpeed.SetCheckedWithoutClick(aSpeed = DEBUG_SPEEDUP_SPEED);
 end;
 
 
