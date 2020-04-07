@@ -379,7 +379,9 @@ begin
   if not fUseVBO then Exit;
 
   //Skip updating VBOs if GameTick and ClipRect haven't changed
-  if (fClipRect = fVBOLastClipRect) and (gGame.GameTick = fVBOLastGameTick) then
+  if not gGame.IsMapEditor
+    and (fClipRect = fVBOLastClipRect)
+    and (gGame.GameTick = fVBOLastGameTick) then
     Exit;
 
   gPerfLogs.SectionEnter(psFrameUpdateVBO);
