@@ -13,6 +13,7 @@ type
   TNotifyEventShift = procedure(Sender: TObject; Shift: TShiftState) of object;
   TNotifyEventMB = procedure(Sender: TObject; AButton: TMouseButton) of object;
   TNotifyEventMW = procedure(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean) of object;
+  TKMMouseMoveEvent = procedure(Sender: TObject; X,Y: Integer; Shift: TShiftState) of object;
   TNotifyEventKey = procedure(Sender: TObject; Key: Word) of object;
   TNotifyEventKeyFunc = function(Sender: TObject; Key: Word): Boolean of object;
   TNotifyEventKeyShift = procedure(Key: Word; Shift: TShiftState) of object;
@@ -42,6 +43,8 @@ type
 
     fOnHint: TNotifyEvent; //Comes along with OnMouseOver
 
+    fMouseMoveSubsList: TList<TKMMouseMoveEvent>;
+
     function IsCtrlCovered(aCtrl: TKMControl): Boolean;
     procedure SetCtrlDown(aCtrl: TKMControl);
     procedure SetCtrlFocus(aCtrl: TKMControl);
@@ -50,6 +53,7 @@ type
     
     function GetNextCtrlID: Integer;
   public
+    constructor Create;
     destructor Destroy; override;
 
     property MasterPanel: TKMPanel read fMasterPanel;
@@ -61,6 +65,8 @@ type
     property CtrlFocus: TKMControl read fCtrlFocus write SetCtrlFocus;
     property CtrlOver: TKMControl read fCtrlOver write SetCtrlOver;
     property CtrlUp: TKMControl read fCtrlUp write SetCtrlUp;
+
+    procedure AddMouseMoveCtrlSub(const aMouseMoveEvent: TKMMouseMoveEvent);
 
     property OnHint: TNotifyEvent write fOnHint;
 
@@ -192,7 +198,6 @@ type
     function GetSelfWidth: Integer; virtual;
     procedure UpdateVisibility; virtual;
     procedure UpdateEnableStatus; virtual;
-    procedure ControlMouseMove(Sender: TObject; X,Y: Integer; Shift: TShiftState); virtual;
     procedure ControlMouseDown(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
     procedure ControlMouseUp(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
     procedure FocusChanged(aFocused: Boolean); virtual;
@@ -315,7 +320,6 @@ type
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
 
-    procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
     procedure ControlMouseDown(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure ControlMouseUp(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure UpdateVisibility; override;
@@ -830,7 +834,7 @@ type
     procedure SetPeacetime(aValue: Integer);
     procedure SetMaxValue(aValue: Integer);
   protected
-    procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
+    procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState);
     procedure PaintBar; override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini); overload;
@@ -1687,7 +1691,8 @@ type
     procedure MouseMove (X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
 
-    procedure ControlMouseMove(Sender: TObject; X,Y: Integer; Shift: TShiftState); override;
+    procedure ControlMouseMove(Sender: TObject; X,Y: Integer; Shift: TShiftState);
+
     procedure ControlMouseDown(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure ControlMouseUp(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
 
@@ -1847,7 +1852,7 @@ uses
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils, Clipbrd,
   KM_Resource, KM_ResSprites, KM_ResSound, KM_ResCursors, KM_ResTexts,
-  KM_Sound, KM_CommonUtils, KM_Utils;
+  KM_Sound, KM_CommonUtils, KM_Utils, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
@@ -2587,12 +2592,6 @@ begin
 end;
 
 
-procedure TKMControl.ControlMouseMove(Sender: TObject; X: Integer; Y: Integer; Shift: TShiftState);
-begin
-  //Let descendants override this method
-end;
-
-
 procedure TKMControl.ControlMouseDown(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
 begin
   //Let descendants override this method
@@ -2902,16 +2901,6 @@ begin
       Childs[I].SetLeftF(Childs[I].fLeft + (aValue - fWidth) / 2);
 
   inherited;
-end;
-
-
-procedure TKMPanel.ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState);
-var
-  I: Integer;
-begin
-  inherited;
-  for I := 0 to ChildCount - 1 do
-    Childs[I].ControlMouseMove(Sender, X, Y, Shift);
 end;
 
 
@@ -4667,6 +4656,9 @@ begin
   fHighlightMark := -1;
 
   fMarks := TList<Integer>.Create;
+
+  // Subscribe to get other controls mouse move events
+  aParent.fMasterControl.AddMouseMoveCtrlSub(ControlMouseMove);
 end;
 
 
@@ -8281,6 +8273,9 @@ begin
 
   AnchorsCenter;
   Hide;
+
+  // Subscribe to get other controls mouse move events
+  aParent.fMasterControl.AddMouseMoveCtrlSub(ControlMouseMove);
 end;
 
 
@@ -8298,12 +8293,14 @@ begin
     MouseDown(X, Y, Shift, Button);
 end;
 
+
 procedure TKMPopUpPanel.ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState);
 begin
   inherited;
 
   MouseMove(X, Y, Shift);
 end;
+
 
 procedure TKMPopUpPanel.ControlMouseUp(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
 begin
@@ -9765,12 +9762,28 @@ end;
 
 
 { TKMMasterControl }
+constructor TKMMasterControl.Create;
+begin
+  inherited;
+
+  fMouseMoveSubsList := TList<TKMMouseMoveEvent>.Create;
+end;
+
+
 destructor TKMMasterControl.Destroy;
 begin
+  fMouseMoveSubsList.Free;
   fMasterPanel.Free; //Will destroy all its childs as well
 
   inherited;
 end;
+
+
+procedure TKMMasterControl.AddMouseMoveCtrlSub(const aMouseMoveEvent: TKMMouseMoveEvent);
+begin
+  fMouseMoveSubsList.Add(aMouseMoveEvent)
+end;
+
 
 
 procedure TKMMasterControl.SetCtrlDown(aCtrl: TKMControl);
@@ -10017,10 +10030,16 @@ end;
 
 
 procedure TKMMasterControl.MouseMove(X,Y: Integer; Shift: TShiftState);
-var HintControl: TKMControl;
+var
+  I: Integer;
+  HintControl: TKMControl;
 begin
   CtrlOver := HitControl(X,Y);
-  fMasterPanel.ControlMouseMove(CtrlOver, X, Y, Shift);
+
+  // Notify all ControlMouseMove subscribers
+  for I := 0 to fMouseMoveSubsList.Count - 1 do
+    if Assigned(fMouseMoveSubsList[I]) then
+      fMouseMoveSubsList[I](CtrlOver, X, Y, Shift);
 
   //User is dragging some Ctrl (e.g. scrollbar) and went away from Ctrl bounds
   if (CtrlDown <> nil) and CtrlDown.Visible then
