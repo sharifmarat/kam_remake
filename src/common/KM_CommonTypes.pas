@@ -28,7 +28,8 @@ type
   TSingle2Array = array of array of Single;
   TKMStringArray = array of string;
   TKMCharArray = array of Char;
-  TRGBArray = array of record R,G,B: Byte end;
+  TRGB = record R,G,B: Byte end;
+  TRGBArray = array of TRGB;
   TKMStaticByteArray = array [0..MaxInt - 1] of Byte;
   PKMStaticByteArray = ^TKMStaticByteArray;
 

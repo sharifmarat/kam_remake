@@ -22,6 +22,7 @@ type
       psTerrain,
       psTerrainFinder,
       psScripting,
+      psMinimap,
     psFrameFullC,                 // Full render frame as seen by gMain
     psFrameFullG,                 // Full render frame on GPU (doublecheck TKMPerfLogGFXStack)
       psFrameGame,                // Frame of the Gameplay without GUI
@@ -33,7 +34,6 @@ type
             psFrameOverlays,
             psFrameLighting,
             psFrameShadows,
-        psFrameHands,
         psFrameRenderList,
         psFrameFOW,
       psFrameUpdateVBO,

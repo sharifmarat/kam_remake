@@ -70,7 +70,7 @@ begin
   PanelH := LINE_H * MAX_HANDS + 140;
 
   Panel_PlayerTypes := TKMPopUpPanel.Create(aParent.MasterParent, PANEL_W, PanelH + 20, gResTexts[TX_MAPED_PLAYERS_TYPE],
-                                            pubgitYellowish, False);
+                                            pubgitYellow, False);
   Panel_PlayerTypes.Height := PanelH;
 
   Top := 0;

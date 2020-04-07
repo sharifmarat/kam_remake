@@ -705,32 +705,37 @@ var
   SearchRec: TSearchRec;
   Save: TKMSaveInfo;
 begin
+  gLog.MultithreadLogging := True; // We could log smth while doing saves scan
   try
-    PathToSaves := ExeDir + TKMSavesCollection.GetSaveFolder(fMultiplayerPath) + PathDelim;
-
-    if not DirectoryExists(PathToSaves) then Exit;
-
-    FindFirst(PathToSaves + '*', faDirectory, SearchRec);
     try
-      repeat
-        if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-          and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_MAIN, fMultiplayerPath))
-          and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_REPLAY, fMultiplayerPath))
-          and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_BASE, fMultiplayerPath)) then
-        begin
-          Save := TKMSaveInfo.Create(SearchRec.Name, fMultiplayerPath);
-          if SLOW_SAVE_SCAN then
-            Sleep(50);
-          fOnSaveAdd(Save);
-          fOnSaveAddDone(Self);
-        end;
-      until (FindNext(SearchRec) <> 0) or Terminated;
+      PathToSaves := ExeDir + TKMSavesCollection.GetSaveFolder(fMultiplayerPath) + PathDelim;
+
+      if not DirectoryExists(PathToSaves) then Exit;
+
+      FindFirst(PathToSaves + '*', faDirectory, SearchRec);
+      try
+        repeat
+          if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+            and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_MAIN, fMultiplayerPath))
+            and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_REPLAY, fMultiplayerPath))
+            and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_BASE, fMultiplayerPath)) then
+          begin
+            Save := TKMSaveInfo.Create(SearchRec.Name, fMultiplayerPath);
+            if SLOW_SAVE_SCAN then
+              Sleep(50);
+            fOnSaveAdd(Save);
+            fOnSaveAddDone(Self);
+          end;
+        until (FindNext(SearchRec) <> 0) or Terminated;
+      finally
+        FindClose(SearchRec);
+      end;
     finally
-      FindClose(SearchRec);
+      if not Terminated and Assigned(fOnComplete) then
+        fOnComplete(Self);
     end;
   finally
-    if not Terminated and Assigned(fOnComplete) then
-      fOnComplete(Self);
+    gLog.MultithreadLogging := False;
   end;
 end;
 

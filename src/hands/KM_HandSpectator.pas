@@ -23,6 +23,7 @@ type
     fFogOfWar: TKMFogOfWarCommon; //Pointer to current FOW view, updated by UpdateFogOfWarIndex
     procedure SetHighlight(Value: TObject);
     procedure SetSelected(Value: TObject);
+    function GetSelected: TObject;
     procedure SetHandIndex(const Value: TKMHandID);
     procedure SetFOWIndex(const Value: TKMHandID);
     procedure UpdateFogOfWarIndex;
@@ -33,7 +34,7 @@ type
     constructor Create(aHandIndex: TKMHandID);
     destructor Destroy; override;
     property Highlight: TObject read fHighlight write SetHighlight;
-    property Selected: TObject read fSelected write SetSelected;
+    property Selected: TObject read GetSelected write SetSelected;
     property LastSelected: TObject read fLastSelected;
     property IsSelectedMyObj: Boolean read fIsSelectedMyObj write fIsSelectedMyObj;
     function Hand: TKMHand;
@@ -115,6 +116,14 @@ begin
     else
       fLastSpecSelectedObjUID[fHandIndex] := UID_NONE;  // Last selected object is not valid anymore, so reset UID
   end;
+end;
+
+
+function TKMSpectator.GetSelected: TObject;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fSelected;
 end;
 
 
@@ -340,6 +349,8 @@ end;
 
 procedure TKMSpectator.SetSelected(Value: TObject);
 begin
+  if Self  = nil then Exit;
+
   fLastSelected := fSelected;
 
   //We don't increase PointersCount of object because of savegames identicality over MP

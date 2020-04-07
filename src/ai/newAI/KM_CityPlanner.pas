@@ -9,7 +9,7 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils, Contnrs,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_CommonUtils,
-  KM_TerrainFinder, KM_PerfLog, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
+  KM_TerrainFinder, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
   KM_PathFindingRoad, KM_PathFindingAStarNew, KM_CityPredictor, KM_Eye, KM_AIParameters,
   KM_AIInfluences, KM_NavMeshDefences;
 

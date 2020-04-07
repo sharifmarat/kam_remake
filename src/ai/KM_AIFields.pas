@@ -42,7 +42,6 @@ uses
   SysUtils,
   KM_Defaults,
   KM_Game,
-  KM_PerfLog,
   KM_DevPerfLog, KM_DevPerfLogTypes;
 
 

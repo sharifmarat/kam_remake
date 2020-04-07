@@ -152,7 +152,7 @@ uses
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor,
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_FogOfWar, KM_Hand, KM_UnitGroup, KM_UnitWarrior, KM_CommonUtils,
-  KM_GameTypes, KM_Utils, KM_ResTileset, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_GameTypes, KM_Utils, KM_ResTileset, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
@@ -476,7 +476,7 @@ end;
 
 procedure TRenderPool.RenderMapElement(aIndex: Word; AnimStep,pX,pY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
 begin
-  if (gMySpectator.FogOfWar.CheckTileRenderRev(pX,pY) <= FOG_OF_WAR_MIN) then Exit;// Do not render tiles fully covered by FOW
+  if (gMySpectator.FogOfWar.CheckVerticeRenderRev(pX,pY) <= FOG_OF_WAR_MIN) then Exit;// Do not render tiles fully covered by FOW
   // Render either normal object or quad depending on what it is
   if gMapElements[aIndex].WineOrCorn then
     RenderMapElement4(aIndex,AnimStep,pX,pY,(aIndex in [54..57]),DoImmediateRender,Deleting) // 54..57 are grapes, all others are doubles
@@ -495,7 +495,7 @@ var
   FOW: Byte;
   A: TKMAnimLoop;
 begin
-  if (gMySpectator.FogOfWar.CheckTileRenderRev(LocX,LocY) <= FOG_OF_WAR_MIN) then Exit;
+  if (gMySpectator.FogOfWar.CheckVerticeRenderRev(LocX,LocY) <= FOG_OF_WAR_MIN) then Exit;
 
   if aIndex = OBJ_BLOCK then
   begin
@@ -1124,7 +1124,7 @@ begin
   X := EnsureRange(Round(pX),1,gTerrain.MapX);
   Y := EnsureRange(Round(pY),1,gTerrain.MapY);
   //Do not render if sprite is under FOW
-  if not aForced and (gMySpectator.FogOfWar.CheckTileRenderRev(X,Y) <= FOG_OF_WAR_MIN) then
+  if not aForced and (gMySpectator.FogOfWar.CheckVerticeRenderRev(X,Y) <= FOG_OF_WAR_MIN) then
     Exit;
 
   with gGFXData[aRX, aId] do
@@ -1171,7 +1171,7 @@ var
 begin
   X := EnsureRange(Round(pX),1,gTerrain.MapX);
   Y := EnsureRange(Round(pY),1,gTerrain.MapY);
-  if (gMySpectator.FogOfWar.CheckTileRenderRev(X,Y) <= FOG_OF_WAR_MIN) then Exit;
+  if (gMySpectator.FogOfWar.CheckVerticeRenderRev(X,Y) <= FOG_OF_WAR_MIN) then Exit;
   // Skip rendering if alphas are zero (occurs so non-started houses can still have child sprites)
   if (aWoodProgress = 0) and (aStoneProgress = 0) then Exit;
   
@@ -1351,7 +1351,7 @@ var
   pX, pY: Single;
 begin
   if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y)
-    or (gMySpectator.FogOfWar.CheckTileRenderRev(aLoc.X,aLoc.Y) <= FOG_OF_WAR_MIN) then Exit;
+    or (gMySpectator.FogOfWar.CheckVerticeRenderRev(aLoc.X,aLoc.Y) <= FOG_OF_WAR_MIN) then Exit;
 
   pX := aLoc.X - 0.5 + fRXData[rxGui].Pivot[aId].X / CELL_SIZE_PX;
   pY := gTerrain.FlatToHeight(aLoc.X - 0.5, aLoc.Y - 0.5) -

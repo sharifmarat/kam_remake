@@ -45,7 +45,7 @@ type
     fPrevSection: TStack<Integer>;
     fThisSection: Integer;
 
-    function GetTime(aID, aSectionI: Integer): Int64;
+    function GetTime(aID, aSectionI: Integer): Int64; inline;
     function GetSectionData(aSection: TPerfSectionDev): TKMSectionData; overload;
     function GetSectionData(aIndex: Integer): TKMSectionData; overload;
 

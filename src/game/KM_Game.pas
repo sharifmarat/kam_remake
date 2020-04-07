@@ -9,7 +9,7 @@ uses
   KM_GameInputProcess, KM_GameSavedReplays, KM_GameOptions, KM_Scripting, KM_MapEditor, KM_Campaigns, KM_Render, KM_Sound,
   KM_InterfaceGame, KM_InterfaceGamePlay, KM_InterfaceMapEditor,
   KM_ResTexts, KM_Maps, KM_MapTypes, KM_Hand,
-  KM_PerfLog, KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
+  KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
   KM_GameTypes, KM_TerrainPainter;
 
 type
@@ -23,7 +23,6 @@ type
     fGameInputProcess: TKMGameInputProcess;
     fTextMission: TKMTextLibraryMulti;
     fPathfinding: TPathFinding;
-    fPerfLog: TKMPerfLog;
     fActiveInterface: TKMUserInterfaceGame; //Shortcut for both of UI
     fGamePlayInterface: TKMGamePlayInterface;
     fMapEditorInterface: TKMapEdInterface;
@@ -117,6 +116,7 @@ type
 
     procedure SetGameSpeedActualValue(aSpeed: Single);
     procedure UpdateClockUI;
+    function GetMapEditor: TKMMapEditor;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -240,8 +240,6 @@ type
 
     procedure UpdateMultiplayerTeams;
 
-    property PerfLog: TKMPerfLog read fPerfLog;
-
     property Networking: TKMNetworking read fNetworking;
     property Pathfinding: TPathFinding read fPathfinding;
     property GameInputProcess: TKMGameInputProcess read fGameInputProcess;
@@ -249,7 +247,7 @@ type
     property ActiveInterface: TKMUserInterfaceGame read fActiveInterface;
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
     property MapEditorInterface: TKMapEdInterface read fMapEditorInterface;
-    property MapEditor: TKMMapEditor read fMapEditor;
+    property MapEditor: TKMMapEditor read GetMapEditor;
     property TerrainPainter: TKMTerrainPainter read fTerrainPainter;
     property TextMission: TKMTextLibraryMulti read fTextMission;
 
@@ -281,7 +279,7 @@ uses
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
   KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo, KM_GameClasses,
-  KM_Terrain, KM_HandsCollection, KM_HandSpectator,
+  KM_Terrain, KM_HandsCollection, KM_HandSpectator, KM_MapEditorHistory,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults, KM_Supervisor,
   KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_RandomChecks, KM_DevPerfLog, KM_DevPerfLogTypes;
@@ -360,7 +358,6 @@ begin
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
 
-  if DO_PERF_LOGGING then fPerfLog := TKMPerfLog.Create;
   gPerfLogs.Clear;
   gLog.AddTime('<== Game creation is done ==>');
 
@@ -402,9 +399,6 @@ begin
   //if (fGameInputProcess <> nil) and (fGameInputProcess.ReplayState = gipRecording) then
   //  fGameInputProcess.SaveToFile(SaveName('basesave', EXT_SAVE_REPLAY, fGameMode in [gmMulti, gmMultiSpectate]));
 
-  if DO_PERF_LOGGING and (fPerfLog <> nil) then
-    fPerfLog.SaveToFile(ExeDir + 'Logs' + PathDelim + 'PerfLog.txt');
-
   FreeAndNil(fTimerGame);
 
   FreeThenNil(fTerrainPainter);
@@ -427,8 +421,6 @@ begin
   FreeAndNil(fGameInputProcess);
   FreeAndNil(fGameOptions);
   FreeAndNil(fTextMission);
-
-  if DO_PERF_LOGGING then fPerfLog.Free;
 
   //When leaving the game we should always reset the cursor in case the user had beacon or linking selected
   gRes.Cursors.Cursor := kmcDefault;
@@ -526,7 +518,7 @@ begin
   if fGameMode = gmMapEd then
   begin
     //Mission loader needs to read the data into MapEd (e.g. FOW revealers)
-    fMapEditor := TKMMapEditor.Create(fTerrainPainter);
+    fMapEditor := TKMMapEditor.Create(fTerrainPainter, fMapEditorInterface.HistoryUpdate);
     fMapEditor.DetectAttachedFiles(aMissionFile);
   end;
 
@@ -662,6 +654,12 @@ begin
   //Basesave is sort of temp we save to HDD instead of keeping in RAM
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+
+  if IsMapEditor then
+  begin
+    fMapEditor.History.Clear;
+    fMapEditor.History.MakeCheckpoint(caAll, gResTexts[TX_MAPED_HISTORY_CHPOINT_INITIAL]);
+  end;
 
   //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
   gScriptEvents.ProcMissionStart;
@@ -1181,11 +1179,11 @@ begin
   fMissionFileSP := '';
   fSaveFile := '';
 
-  fMapEditor := TKMMapEditor.Create(fTerrainPainter);
+  fMapEditor := TKMMapEditor.Create(fTerrainPainter, fMapEditorInterface.HistoryUpdate);
   fMapEditor.MissionDefSavePath := fGameName + '.dat';
   gTerrain.MakeNewMap(aSizeX, aSizeY, True);
   fTerrainPainter.InitEmpty;
-  fTerrainPainter.MakeCheckpoint;
+  fMapEditor.History.MakeCheckpoint(caAll, gResTexts[TX_MAPED_HISTORY_CHPOINT_INITIAL]);
   fMapEditor.IsNewMap := True;
 
   gHands.AddPlayers(MAX_HANDS); //Create MAX players
@@ -1338,6 +1336,14 @@ end;
 procedure TKMGame.RestartReplay;
 begin
   gGameApp.NewReplay(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT));
+end;
+
+
+function TKMGame.GetMapEditor: TKMMapEditor;
+begin
+  if Self = nil then Exit(nil);
+
+  Result := fMapEditor;
 end;
 
 

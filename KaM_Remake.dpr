@@ -181,6 +181,8 @@ uses
   KM_Maps in 'src\KM_Maps.pas',
   KM_MapTypes in 'src\KM_MapTypes.pas',
   KM_MapEditor in 'src\KM_MapEditor.pas',
+  KM_MapEditorHistory in 'src\KM_MapEditorHistory.pas',
+  KM_MapEdTypes in 'src\KM_MapEdTypes.pas',
   KM_MessageLog in 'src\KM_MessageLog.pas',
   KM_MessageStack in 'src\KM_MessageStack.pas',
   KM_Minimap in 'src\KM_Minimap.pas',
@@ -236,7 +238,6 @@ uses
   KM_PathFindingJPS in 'src\pathfinding\KM_PathFindingJPS.pas',
   KM_PathFindingRoad in 'src\pathfinding\KM_PathFindingRoad.pas',
 	
-  KM_PerfLog in 'src\KM_PerfLog.pas',
   KM_Projectiles in 'src\KM_Projectiles.pas',
   
   KM_RandomChecks in 'src\KM_RandomChecks.pas',
@@ -279,7 +280,6 @@ uses
 
   KM_ServerQuery in 'src\net\KM_ServerQuery.pas',
   KM_Settings in 'src\KM_Settings.pas',
-	KM_SoftShadows in 'src\KM_SoftShadows.pas',
   KM_Sound in 'src\KM_Sound.pas',
 
   KM_RandomMapGenerator in 'src\terrain\KM_RandomMapGenerator.pas',
@@ -321,19 +321,23 @@ uses
   KM_CommonUtils in 'src\utils\KM_CommonUtils.pas',
   KM_FileIO in 'src\utils\KM_FileIO.pas',
   KM_FloodFill in 'src\utils\KM_FloodFill.pas',
+  KM_Helpers in 'src\utils\KM_Helpers.pas',
   KM_Hungarian in 'src\utils\KM_Hungarian.pas',
   KM_Pics in 'src\utils\KM_Pics.pas',
   KM_PNG in 'src\utils\KM_PNG.pas',
+  KM_SoftShadows in 'src\utils\KM_SoftShadows.pas',
   KM_Sort in 'src\utils\KM_Sort.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
   
   KM_MethodParser in 'src\utils\method_parser\KM_MethodParser.pas',
   KM_MethodParserParams in 'src\utils\method_parser\KM_MethodParserParams.pas',
 
-	
   KM_Viewport in 'src\KM_Viewport.pas',
   KM_WareDistribution in 'src\KM_WareDistribution.pas',
-  KM_Video in 'src\KM_Video.pas';
+  KM_Video in 'src\KM_Video.pas',
+  KM_VLC in 'src\utils\KM_VLC.pas';
+  
+  //KM_PerfLog in 'src\unused\KM_PerfLog.pas', //unused
 
 {$IFDEF WDC}
   {$R KaM_Remake_Icon.res} //Keeps the Icon

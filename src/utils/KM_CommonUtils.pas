@@ -50,8 +50,8 @@ uses
   function TimeToString(aTime: TDateTime): UnicodeString;
   function TickToTimeStr(aTick: Cardinal): String;
 
-  function StrToHex(S: String): String;
-  function HexToStr(H: String): String;
+  function StrToHex(const S: String): String;
+  function HexToStr(const H: String): String;
 
   function WrapColor(const aText: UnicodeString; aColor: Cardinal): UnicodeString;
   function WrapColorA(const aText: AnsiString; aColor: Cardinal): AnsiString;
@@ -64,11 +64,11 @@ uses
   function GetKaMSeed: Integer;
   function KaMRandomWSeed(var aSeed: Integer): Extended; overload;
   function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer; overload;
-  function KaMRandom(const aCaller: String; aLogRng: Boolean = True): Extended; overload;
-  function KaMRandom(aMax: Integer; const aCaller: String; aLogRng: Boolean = True): Integer; overload;
-  function KaMRandomS1(aMax: Single; const aCaller: String): Single;
-  function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: String): Integer; overload;
-  function KaMRandomS2(Range_Both_Directions: Single; const aCaller: String): Single; overload;
+  function KaMRandom(const aCaller: AnsiString; aLogRng: Boolean = True): Extended; overload;
+  function KaMRandom(aMax: Integer; const aCaller: AnsiString; aLogRng: Boolean = True): Integer; overload;
+  function KaMRandomS1(aMax: Single; const aCaller: AnsiString): Single;
+  function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer; overload;
+  function KaMRandomS2(Range_Both_Directions: Single; const aCaller: AnsiString): Single; overload;
 
   function IsGameStartAllowed(aGameStartMode: TKMGameStartMode): Boolean;
   function GetGameVersionNum(const aGameVersionStr: AnsiString): Integer; overload;
@@ -95,6 +95,8 @@ uses
 
   procedure KMSwapFloat(var A,B: Single); overload;
   procedure KMSwapFloat(var A,B: Double); overload;
+
+  function ToBoolean(aVal: Byte): Boolean;
 
   //Extended == Double, so already declared error
   //https://forum.lazarus.freepascal.org/index.php?topic=29678.0
@@ -236,6 +238,16 @@ var S: Double;
 begin
   S:=A; A:=B; B:=S;
 end;
+
+
+function ToBoolean(aVal: Byte): Boolean;
+begin
+  if aVal = 0 then
+    Result := False
+  else
+    Result := True;
+end;
+
 
 {$IFDEF WDC}
 procedure KMSwapFloat(var A,B: Extended);
@@ -995,7 +1007,7 @@ begin
 end;
 
 
-function StrToHex(S: String): string;
+function StrToHex(const S: String): string;
 var I: Integer;
 begin
   Result:= '';
@@ -1004,7 +1016,7 @@ begin
 end;
 
 
-function HexToStr(H: String): String;
+function HexToStr(const H: String): String;
 var I: Integer;
 begin
   Result:= '';
@@ -1106,42 +1118,42 @@ begin
 end;
 
 
-procedure DoLogKamRandom(aValue: Extended; aCaller: String; aKaMRandomFunc: String); overload;
+procedure DoLogKamRandom(aValue: Extended; const aCaller: AnsiString; const aKaMRandomFunc: AnsiString); overload;
 begin
   if ((gLog <> nil) and gLog.CanLogRandomChecks()) then
     gLog.LogRandomChecks(Format('%12s: %30s Caller: %s', [aKaMRandomFunc, FormatFloat('0.##############################', aValue), aCaller]));
 end;
 
 
-procedure LogKamRandom(aValue: Single; aCaller: String; aKaMRandomFunc: String); overload;
+procedure LogKamRandom(aValue: Single; const aCaller: AnsiString; const aKaMRandomFunc: AnsiString); overload;
 begin
   DoLogKamRandom(aValue, aCaller, aKaMRandomFunc);
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(AnsiString(aCaller), aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue);
   {$ENDIF}
 end;
 
 
-procedure LogKamRandom(aValue: Extended; aCaller: String; aKaMRandomFunc: String); overload;
+procedure LogKamRandom(aValue: Extended; const aCaller: AnsiString; const aKaMRandomFunc: AnsiString); overload;
 begin
   DoLogKamRandom(aValue, aCaller, aKaMRandomFunc);
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(AnsiString(aCaller), aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue);
   {$ENDIF}
 end;
 
 
-procedure LogKamRandom(aValue: Integer; aCaller: String; aKaMRandomFunc: String); overload;
+procedure LogKamRandom(aValue: Integer; const aCaller: AnsiString; const aKaMRandomFunc: AnsiString); overload;
 begin
   DoLogKamRandom(aValue, aCaller, aKaMRandomFunc);
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(AnsiString(aCaller), aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue);
   {$ENDIF}
 end;
 
@@ -1186,7 +1198,7 @@ begin
 end;
 
 
-function KaMRandom(const aCaller: String; aLogRng: Boolean = True): Extended;
+function KaMRandom(const aCaller: AnsiString; aLogRng: Boolean = True): Extended;
 begin
   Result := KaMRandomWSeed(fKamSeed);
 
@@ -1195,10 +1207,10 @@ begin
 end;
 
 
-function KaMRandom(aMax: Integer; const aCaller: String; aLogRng: Boolean = True): Integer;
+function KaMRandom(aMax: Integer; const aCaller: AnsiString; aLogRng: Boolean = True): Integer;
 begin
   if CUSTOM_RANDOM then
-    Result := Trunc(KaMRandom('I*' + aCaller, False)*aMax)
+    Result := Trunc(KaMRandom(aCaller, False)*aMax)
   else
     Result := Random(aMax);
 
@@ -1208,27 +1220,27 @@ end;
 
 
 //Returns random number from -Range_Both_Directions to +Range_Both_Directions
-function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: String): Integer;
+function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer;
 begin
-  Result := KaMRandom(Range_Both_Directions*2+1, 'S2I*' + aCaller, False) - Range_Both_Directions;
+  Result := KaMRandom(Range_Both_Directions*2+1, aCaller, False) - Range_Both_Directions;
 
   LogKamRandom(Result, aCaller, 'S2I*');
 end;
 
 
 //Returns random number from -Range_Both_Directions to +Range_Both_Directions
-function KaMRandomS2(Range_Both_Directions: Single; const aCaller: String): Single;
+function KaMRandomS2(Range_Both_Directions: Single; const aCaller: AnsiString): Single;
 begin
-  Result := KaMRandom(Round(Range_Both_Directions*20000)+1, 'S2S*' + aCaller, False)/10000-Range_Both_Directions;
+  Result := KaMRandom(Round(Range_Both_Directions*20000)+1, aCaller, False)/10000-Range_Both_Directions;
 
   LogKamRandom(Result, aCaller, 'S2S*');
 end;
 
 
 //Returns random number from 0 to +aMax
-function KaMRandomS1(aMax: Single; const aCaller: String): Single;
+function KaMRandomS1(aMax: Single; const aCaller: AnsiString): Single;
 begin
-  Result := KaMRandom(Round(aMax*10000), 'S1S*' + aCaller, False)/10000;
+  Result := KaMRandom(Round(aMax*10000), aCaller, False)/10000;
 
   LogKamRandom(Result, aCaller, 'S1S*');
 end;
