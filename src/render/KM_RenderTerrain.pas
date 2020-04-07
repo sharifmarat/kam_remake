@@ -278,7 +278,7 @@ function TileHasToBeRendered(IsFirst: Boolean; aTX,aTY: Word; aFOW: TKMFogOfWarC
 begin
   // We have to render at least 1 tile (otherwise smth wrong with gl contex and all UI and other sprites are not rendered at all
   // so lets take the 1st tile
-  Result := IsFirst or (aFOW.CheckTileRenderRev(aTX,aTY) > FOG_OF_WAR_MIN);
+  Result := IsFirst or (aFOW.CheckVerticeRenderRev(aTX,aTY) > FOG_OF_WAR_MIN);
 end;
 
 
@@ -493,7 +493,7 @@ begin
           Inc(FowCnt);
 
           //Fill tiles animation vertices array
-          if (aFOW.CheckTileRenderRev(tX,tY) > FOG_OF_WAR_ACT) then // Render animation only if tile is not covered by FOW
+          if (aFOW.CheckVerticeRenderRev(tX,tY) > FOG_OF_WAR_ACT) then // Render animation only if tile is not covered by FOW
             if not TryAddAnimTex(AnimCnt, tX, tY, TexOffsetWater) then  //every tile can have only 1 animation
               if not TryAddAnimTex(AnimCnt, tX, tY, TexOffsetFalls) then
                 TryAddAnimTex(AnimCnt, tX, tY, TexOffsetSwamp);
@@ -763,7 +763,7 @@ begin
         for I := fClipRect.Top to fClipRect.Bottom do
           for K := fClipRect.Left to fClipRect.Right do
           if IsWaterAnimTerId(TexOffset, Land[I,K].BaseLayer.Terrain)
-            and (aFOW.CheckTileRenderRev(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
+            and (aFOW.CheckVerticeRenderRev(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
           begin
             TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID);
             TexC := GetTileUV(TexOffset + Land[I,K].BaseLayer.Terrain, Land[I,K].BaseLayer.Rotation);
