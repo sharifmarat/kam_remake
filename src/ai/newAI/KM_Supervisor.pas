@@ -1000,7 +1000,7 @@ begin
     MineCnt := FindAndDivideMines(fAlli2PL[Alli], GoldMines);
     if (Length(MineCnt) > 0) then
       for IdxPL := 0 to Length(fAlli2PL[Alli]) - 1 do
-        gHands[ fAlli2PL[Alli,IdxPL] ].AI.CityManagement.Predictor.GoldMineCnt := MineCnt[IdxPL];
+        gHands[ fAlli2PL[Alli,IdxPL] ].AI.CityManagement.Predictor.MaxGoldMineCnt := MineCnt[IdxPL];
   end;
 end;
 
