@@ -2,7 +2,7 @@ unit KM_FogOfWar;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
+  Math, KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
 { FOW state for each player }
@@ -49,9 +49,9 @@ type
       LastHouse: TKMHouseType;}
     end;*)
     procedure SetMapSize(X,Y: Word);
-    function CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;
-    function CheckTileRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;
-    function CheckRev(aRevArray: PKMByte2Array; const aPoint: TKMPointF): Byte;
+    function CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte; inline;
+    function CheckTileRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte; inline;
+    function CheckRev(aRevArray: PKMByte2Array; const aPoint: TKMPointF): Byte; inline;
   public
     Revelation: TKMByte2Array; //Public for faster access from Render
     RenderRevelation: TKMByte2Array; //Revelation for render - we have to render sprites a bit around actual FOW revelation
@@ -112,7 +112,7 @@ const
 
 implementation
 uses
-  Math, SysUtils, KM_GameApp, KM_DevPerfLog, KM_DevPerfLogTypes;
+  SysUtils, KM_GameApp, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 const
   //Addition to Revelation radius for Render revelation
