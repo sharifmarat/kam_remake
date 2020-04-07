@@ -1635,30 +1635,35 @@ var
   PathToMaps: string;
   MF: TKMapFolder;
 begin
+  gLog.MultithreadLogging := True; // We could log smth while create map cache or scan maps
   try
-    for MF in fMapFolders do
-    begin
-      PathToMaps := ExeDir + MAP_FOLDER[MF] + PathDelim;
+    try
+      for MF in fMapFolders do
+      begin
+        PathToMaps := ExeDir + MAP_FOLDER[MF] + PathDelim;
 
-      if not DirectoryExists(PathToMaps) then Exit;
+        if not DirectoryExists(PathToMaps) then Exit;
 
-      FindFirst(PathToMaps + '*', faDirectory, SearchRec);
-      try
-        repeat
-          if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-            and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.dat', MF))
-            and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.map', MF)) then
-          begin
-            ProcessMap(SearchRec.Name, MF);
-          end;
-        until (FindNext(SearchRec) <> 0) or Terminated;
-      finally
-        FindClose(SearchRec);
+        FindFirst(PathToMaps + '*', faDirectory, SearchRec);
+        try
+          repeat
+            if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+              and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.dat', MF))
+              and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.map', MF)) then
+            begin
+              ProcessMap(SearchRec.Name, MF);
+            end;
+          until (FindNext(SearchRec) <> 0) or Terminated;
+        finally
+          FindClose(SearchRec);
+        end;
       end;
+    finally
+      if not Terminated and Assigned(fOnComplete) then
+        fOnComplete(Self);
     end;
   finally
-    if not Terminated and Assigned(fOnComplete) then
-      fOnComplete(Self);
+    gLog.MultithreadLogging := False;
   end;
 end;
 
