@@ -152,7 +152,9 @@ procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
   LONG_UPDATE = MAX_HANDS * 2; // 30 sec
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAICityAdv, aTick);
+  {$ENDIF}
   try
     if fSetup.AutoBuild AND (aTick mod MAX_HANDS = fOwner) then
     begin
@@ -185,7 +187,9 @@ begin
       CheckExhaustedHouses();
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAICityAdv);
+    {$ENDIF}
   end;
 end;
 

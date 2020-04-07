@@ -276,7 +276,9 @@ begin
     glEnable(GL_DEPTH_TEST);
 
     // Everything flat of terrain
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionEnter(psFrameTerrain);
+    {$ENDIF}
     fRenderTerrain.ClipRect := ClipRect;
     fRenderTerrain.RenderBase(gTerrain.AnimStep, gMySpectator.FogOfWar);
 
@@ -287,7 +289,9 @@ begin
     fRenderTerrain.RenderFences(gMySpectator.FogOfWar);
     fRenderTerrain.RenderPlayerPlans(fFieldsList, fHousePlansList);
 
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psFrameTerrain);
+    {$ENDIF}
 
     RenderMapEdLayers(ClipRect);
 
@@ -2003,7 +2007,9 @@ procedure TRenderList.Render;
 var
   I, K, ObjectsCount: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameRenderList);
+  {$ENDIF}
   fStat_Sprites := fCount;
   fStat_Sprites2 := 0;
   ObjectsCount := Length(RenderOrder);
@@ -2030,7 +2036,9 @@ begin
       until ((K = fCount) or RenderList[K].NewInst);
     glPopMatrix;
   end;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameRenderList);
+  {$ENDIF}
 end;
 
 

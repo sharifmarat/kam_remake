@@ -4817,7 +4817,9 @@ var
   T: Integer;
 begin
   if not DYNAMIC_TERRAIN then Exit;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psTerrain, gGame.GameTick);
+  {$ENDIF}
   try
     inc(fAnimStep);
 
@@ -4882,7 +4884,9 @@ begin
       Inc(A, TERRAIN_PACE);
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psTerrain);
+    {$ENDIF}
   end;
 end;
 

@@ -304,7 +304,9 @@ procedure TKMUnitsCollection.UpdateState(aTick: Cardinal);
 var
   I: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psUnits, aTick);
+  {$ENDIF}
   try
     for I := Count - 1 downto 0 do
       if not Units[I].IsDead then
@@ -313,7 +315,9 @@ begin
         if FREE_POINTERS and (Units[I].GetPointerCount = 0) then
           fUnits.Delete(I);
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psUnits);
+    {$ENDIF}
   end;
     //   --     POINTER FREEING SYSTEM - DESCRIPTION     --   //
     //  This system was implemented because unit and house objects cannot be freed until all pointers

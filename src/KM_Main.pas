@@ -103,14 +103,20 @@ begin
   Application.CreateForm(TFormMain, fFormMain);
   Application.CreateForm(TFormLoading, fFormLoading);
 
+  {$IFDEF PERFLOG}
   gPerfLogs := TKMPerfLogs.Create([], True);
   gPerfLogs.ShowForm( fFormMain.cpPerfLogs );
+  fFormMain.cpPerfLogs.Height := gPerfLogs.FormHeight;
+  {$ELSE}
+  fFormMain.cpPerfLogs.Hide;
+  {$ENDIF}
 end;
 
 
 destructor TKMMain.Destroy;
 begin
-  gPerfLogs.Free;
+  {$IFDEF PERFLOG}gPerfLogs.Free;{$ENDIF}
+
   {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
 
   inherited;

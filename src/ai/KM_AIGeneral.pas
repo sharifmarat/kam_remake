@@ -666,7 +666,9 @@ end;
 
 procedure TKMGeneral.UpdateState(aTick: Cardinal);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAIArmyCls, aTick);
+  {$ENDIF}
   try
     //Update defence positions locations
     if fSetup.AutoDefend then
@@ -691,7 +693,9 @@ begin
       //Anything Else?
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAIArmyCls);
+    {$ENDIF}
   end;
 end;
 
