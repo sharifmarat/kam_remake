@@ -116,7 +116,7 @@ uses
 
 const
   //Addition to Revelation radius for Render revelation
-  RENDER_RADIUS_ADD = 4; //3 is not enought sometimes, 4 is looking good
+  RENDER_RADIUS_ADD = 5; //4 is not enought sometimes (Barracks?), 5 looks good
 
 
 { TKMFogOfWar }
