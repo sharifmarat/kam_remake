@@ -134,10 +134,10 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
   const
     CHANCES: array[TKMGroupType] of array[TKMGroupType] of Single = (
     // gtMelee gtAntiHorse gtRanged gtMounted
-      (   5,          1,          1,        10   ), // gtMelee
-      (  10,          5,          1,         1   ), // gtAntiHorse
-      (  10,          5,          1,        20   ), // gtRanged
-      (   5,         15,          1,         5   )  // gtMounted
+      (   1.0,        0.7,     0.5,       2.0 ), // gtMelee
+      (   2.0,        1.0,     0.7,       0.5 ), // gtAntiHorse
+      (   3.0,        2.0,     1.0,       5.0 ), // gtRanged
+      (   2.0,        5.0,     0.1,       1.0 )  // gtMounted
     );
   var
     GT: TKMGroupType;

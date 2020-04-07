@@ -598,7 +598,8 @@ begin
     UGA := FindGroupsAroundLoc(MAX_GROUPS_PER_COMPANY, MIN_SOLDIERS * Byte(not aIgnoreFirstLine), aTargetPoint, aIgnoreFirstLine);
     if (Length(UGA) > 0) then
     begin
-      fAttack.CreateCompany(aTargetPoint, UGA, cmDefence);
+      if SP_OLD_ATTACK_AI then
+        fAttack.CreateCompany(aTargetPoint, UGA, cmDefence);
       Result := True;
     end;
   end;
