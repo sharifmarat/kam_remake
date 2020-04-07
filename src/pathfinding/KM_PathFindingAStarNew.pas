@@ -109,6 +109,9 @@ var
   X, Y: Word;
   NewCost: Word;
 begin
+  // Do not build the route in case destination is not walkable
+  if not IsWalkableTile(fLocA.X, fLocA.Y) then Exit(False);
+
   //Clear previous data
   Flush;
 
