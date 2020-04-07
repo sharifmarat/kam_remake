@@ -105,13 +105,14 @@ begin
 
   gPerfLogs := TKMPerfLogs.Create([], True);
   gPerfLogs.ShowForm( fFormMain.cpPerfLogs );
-
 end;
 
 
 destructor TKMMain.Destroy;
 begin
+  gPerfLogs.Free;
   {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
+
   inherited;
 end;
 
