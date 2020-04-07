@@ -1081,6 +1081,8 @@ end;
 
 procedure TKMapEdInterface.HistoryUpdate;
 begin
+  if Self = nil then Exit;
+
   Button_Undo.Enabled := gGame.MapEditor.History.CanUndo;
   Button_Redo.Enabled := gGame.MapEditor.History.CanRedo;
 
