@@ -308,8 +308,6 @@
 309:Übernehmen
 310:Sprache:
 311:Schatten Qualität:
-312:Niedrig
-313:Hoch
 314:Lade... Bitte warten
 315:Ein Fehler ist aufgetreten!
 316:Neue Lokalisierung laden
@@ -877,11 +875,12 @@
 924:Pfeiltaste oben
 925:Pfeiltaste rechts
 926:Pfeiltaste runter
+927:Select
 928:Drucken
 929:Ausführen
 930:Print Sc
-931:Insert
-932:Delete
+931:Einfügen
+932:Entfernen
 933:Hilfe
 934:Num Pad 0
 935:Num Pad 1
@@ -894,6 +893,7 @@
 942:Num Pad 8
 943:Num Pad 9
 944:Num Pad *
+945:Vertikaler Balken
 946:Num Pad -
 947:Num Pad .
 948:Num Pad /
@@ -905,10 +905,13 @@
 954:Strg rechts
 955:Alt links
 956:Alt Gr
+957:Spielen
+958:Zoom
 960:Num Pad +
 961:Allgemeine Tastenbelegung
 962:Spieltastenbelegung
 963:Map-Editor Tastenbelegung
+964:Warte auf Daten getrennter Spieler:
 965:Pipette - Wählen Sie die Art der Kachel unter dem Zeiger
 966:Diese Rüstungsschmiede ist nicht bewohnt
 967:Diese Rüstungswerkstatt ist nicht bewohnt
@@ -971,7 +974,7 @@
 1024:%s hat gewonnen!
 1025:%s ist nicht mehr mit dem Spiel verbunden
 1026:Max Goldtruhe
-1027:Maxmale Menge an Goldtruhen, die ins Rathaus geliefert werden
+1027:Maximale Menge an Goldtruhen, die ins Rathaus geliefert werden
 1028:Nur pflanzen
 1029:Öffne/Schliesse Haus für %s
 1030:Alle
@@ -985,6 +988,7 @@
 1038:Alle Soldaten
 1039:Diagrammtyp
 1040:Menge
+1041:GDP
 1042:Momentan
 1043:Insgesamt ausgerüstet
 1044:Besiegt
@@ -1004,19 +1008,20 @@
 1058:Vorwärts-Maustaste
 1059:Rückwärts-Maustaste
 1060:Alle
-1061:Universal radierer
-1062:Kachelnbesitzer anzeigen
+1061:Universal Radierer
+1062:Kachelbesitzer anzeigen
 1063:Kachelnetz anzeigen
 1064:Schnittpunkt
-1065:Schnittpunkt für des Holzfällers einstellen. Alternativ kann es via Shift + rechte Maustaste eingestellt werden.
+1065:Schnittpunkt des Holzfällers einstellen. Alternativ kann es via Shift + rechte Maustaste eingestellt werden.
 1066:Sammelpunkt
 1067:%s Sammelpunkt setzen. Alternativ kann es via Shift + rechte Maustaste eingestellt werden
-1068:Kartengrösse ändern
+1068:Kartengröße ändern
 1069:Grenzen verschieben:
-1070:Grösse ändern und speichern
-1071:Grösse der Karte ändern und dann speichern
-1073:Möchten Sie die Grösse der Karte wirklich ändern?||Die akutelle Karte wird dabei automatisch überschrieben.
-1074:Grössenänderung nicht möglich||Sie müssen die neue Karte erst abspeichern.
+1070:Größe ändern und speichern
+1071:Größe der Karte ändern und dann speichern
+1072:Kartengröße ändern
+1073:Möchten Sie die Größe der Karte wirklich ändern?||Die akutelle Karte wird dabei automatisch überschrieben.
+1074:Größenänderung nicht möglich||Sie müssen die neue Karte erst abspeichern.
 1075:Besitzer für Objekt ändern
 1076:Schnelles Spiel
 1077:Einzelspielerspiel auf der aktuellen Karte starten.
@@ -1052,9 +1057,9 @@
 1107:Spieler 10 zuschauen
 1108:Spieler 11 zuschauen
 1109:Spieler 12 zuschauen
-1110:Derzeitige Kartengrösse:
-1111:Neue Kartengrösse:
-1112:Kartengrösse ändern
+1110:Derzeitige Kartengröße:
+1111:Neue Kartengröße:
+1112:Kartengröße ändern
 1113:Besitzer: %s
 1114:Spieler %d löschen
 1115:Löschen von Spieler %d
@@ -1083,7 +1088,7 @@
 1138:KI-Angriff entfernen
 1139:Entlassen
 1140:Entlassen
-1141:Möchtet Ihr diese Einheit wirklich entlassen? | Er wird zur Schule gehen und Euer Dorf für immer verlassen
+1141:Möchtet Ihr diese Einheit wirklich entlassen?|Er wird zur Schule gehen und Euer Dorf für immer verlassen
 1142:Einheit entlassen
 1143:Einheit entlassen abbrechen
 1144:Entlassen steht nicht zur Verfügung, da es in Eurem Dorf keine Schulen gibt
@@ -1092,7 +1097,8 @@
 1147:Missionsparameter
 1148:Author
 1149:Kleine Beschreibung
-1150:Grosse Beschreibung
+1150:Große Beschreibung
+1151:Libx Text ID
 1152:Diese Karte ist immer in der Einzelspieler-Kartenliste sichtbar
 1153:Teamauswahl blockieren
 1154:Teamauswahl in Lobby blockieren
@@ -1154,6 +1160,7 @@
 1210:Versuche interne Geländeinformationen zu beheben, damit die Pinsel funktionieren
 1211:Geländepinsel beheben
 1212:Sind Sie sicher, dass Sie interne Informationen zu allen Geländepinsel | beheben möchten? | Damit können Sie Pinsel verwenden, die manuell über Kacheln aus der Kacheltabelle gesetzt werden
+1213:Std.
 1214:Menschlicher Spieler
 1215:Klassischer KI Spieler %d
 1216:Fortgeschrittener KI Spieler %d
@@ -1199,3 +1206,152 @@
 1256:Bürger (S/L/R)
 1257:Bürger (Andere)
 1258:Zuschauer-Statistik Öffnen/Schliessen
+1259:Ausliefern von %s ist verboten
+1260:Entfernen von '%s' ist nicht erlaubt während des 'Angebot'-Zustellungsmodus
+1261:Rekrut darf nicht in die Kaserne
+1262:Suche Kachel nach ID
+1263:Zufallskarten Generator - Einstellungen
+1264:Zufallskarten Generator Einstellungen
+1265:ZKG Einstellungen
+1266:Kartengröße:
+1267:Orte
+1268:Orte mit Ressourcen freischalten
+1269:Anzahl an Orten
+1270:Bestimme die Anzahl an Orten
+1271:Geschützter Radius
+1272:Bestimme die Größe der geschützten Fläche. Diese sichert die bebaubare Fläche rund um jeden Ort.
+1273:Verbinde Orte
+1274:Erstelle Wege zwischen den Orten
+1275:Layout
+1276:Das Layout der Orte
+1277:Rechteckig
+1278:Vertikal
+1279:Horizontal
+1280:Zufällig
+1281:Bildschirm zentrieren
+1282:Ressourcen
+1283:Aktiviere Ressourcen für jeden Ort (Kohle wird automatisch berechnet)
+1284:Minen Korrektur
+1285:Ressourcen sollen abbaubar sein (Goldmine und Eisenmine)
+1286:Ressourcen Anzahl: Steine
+1287:Ressourcen Anzahl: Gold
+1288:Ressourcen Anzahl: Eisen
+1289:Hindernisse
+1290:Aktiviere Hindernisse (Berge, Flüsse, Sümpfe, ...)
+1291:Größe
+1292:Die Durchschnittsgröße der generierten Hindernisse
+1293:Dichte
+1294:Die Dichte der generierten Hindernisse
+1295:Streuung
+1296:Die Streuung der generierten Hindernisse
+1297:Anteil
+1298:Typ und Anteil der generierten Hindernisse
+1299:Leeres Gold
+1300:Leeres Gold Anteil
+1301:Leeres Eisen
+1302:Leeres Eisen Anteil
+1303:Sumpf
+1304:Sumpf Anteil
+1305:Moor
+1306:Moor Anteil
+1307:Wasser
+1308:Wasser Anteil
+1309:Biom
+1310:Aktiviere Biome
+1311:Biom Typ
+1312:Wähle gewünschte Biome
+1313:Gras
+1314:Gras ist das Standard-Biom und kann nicht entfernt werden
+1315:Grund
+1316:Aktiviere Grund
+1317:Schnee
+1318:Aktiviere Schnee
+1319:Sand
+1320:Aktiviere Sand
+1321:Erste Schicht
+1322:Die erste Biom-Schicht (Eigenschaften der ersten Textur)
+1323:Zweite Schicht
+1324:Die zweite Biom-Schicht (Eigenschaften der zweiten Texture)
+1325:Stufe
+1326:Stufe der ersten Textur (höherer Wert = größeres Biom)
+1327:Stufe der zweiten Textur (höherer Wert = größeres Biom)
+1328:Limit
+1329:Limitierung der Biomgrenzen (höherer Wert = größeres Biom)
+1330:Höhe
+1331:Aktiviere Höhe
+1332:Verstecke gezackte Ecken
+1333:Passe die Terrainhöhe an, sodass grobe Texturübergänge versteckt werden
+1334:Unerreichbare Plätze
+1335:Behandlung von unerreichbaren Plätzen
+1336:Block Walking
+1337:Block Walking (verbessert die Wegfindung des Spiels und die Erstellung des Navigationsnetzes)
+1338:Textur ändern
+1339:Ersetze Terrain mit speziellen Biomen
+1340:Objekte
+1341:Aktiviere Objekte
+1342:Tiere
+1343:Aktiviere Tiere
+1344:Objekt Dichte
+1345:Wälder Dichte
+1346:Wälder Dichte
+1347:Bäume
+1348:Anzahl der Bäume im Wald
+1349:Seed
+1350:Eine eindeutige Zahl zur Generierung einer Karte mit einer spezifischen Konfiguration
+1351:Neuer zufälliger Seed
+1352:Erstelle Karte mit neuem Seed
+1353:Erstelle Karte
+1354:Erstelle Karte mit aktuellem Seed
+1355:Schließe Zufallskarten Generator
+1356:Kartengröße:
+1357:Spiele nächsten Tick in der Aufnahme
+1358:Einfacher
+1359:Sehr einfach
+1360:Schwieriger
+1361:Sehr schwierig
+1362:Spielversion des Host stimmt nicht mit deiner Spielversion überein
+1363:Alle
+1364:Erlaube '%s' für alle verfügbaren Orte
+1365:Verbiete '%s' für alle verfügbaren Orte
+1366:Stufe des Höhenalgorithmus (1 = klein, 10 = groß)
+1367:Neigung der Höhenberechnung (0 = Plateau, 15 = Gipfel)
+1368:Maximale Höhe der begehbaren Kacheln
+1369:Zufallskarte
+1370:Karte wurde vom Zufallskarten Generator erstellt
+1371:Anfangsressourcen
+1372:Anzahl der anfänglichen Ressourcen im Lagerhaus
+1373:Wenig
+1374:Mittel
+1375:Viel
+1376:Wähle die Größe der Karte
+1377:Versuche zu starten
+1378:Versuche gespeichertes Spiel zu laden
+1379:Versuche Aufnahme abzuspielen
+1380:Fehler beim Laden von Spielstand: nicht unterstützte Version %s des Spielstand %s
+1381:Fehler beim Abspielen von Aufnahme: nicht unterstützte Version %s der Aufnahme %s
+1382:Kartenname
+1383:Zeit
+1384:Version
+1385:Das Laden von nicht unterstützten Versionen kann zu Ladefehlern und Spielabstürzen führen
+1386:Nicht unterstützte Version
+1387:Bist du sicher, dass du alle Kampagnen freischalten willst?\nDies kann nicht rückgängig gemacht werden.\n\nWenn du deinen Kampagnenfortschritt speichern möchtest, erstelle eine Kopie der Datei 'Campaigns.dat' im Verzeichnis\n'%s'\n\nMöchtest du fortfahren?
+1388:Harte Maske - verwende automatisch erstellte Übergänge
+1389:Verzögerung in Sekunden bevor die KI Leder ausrüstet
+1390:Verzögerung in Sekunden bevor die KI Eisen ausrüstet
+1391:Setze die Anzahl von KI Arbeitern
+1392:Übergang Stufe
+1393:Stufe der Terrain Übergänge mittels Masken
+1394:Block Building
+1395:Block Walking und Building
+1396:Kachel Overlay
+1397:Setze Kachel Overlay.|Verwende LMB für sicheren Modus und LMB+Shift um Straßen zu überschreiben
+1398:Video Clips:
+1399:Aktivieren
+1400:Strecken
+1401:Zeige beim Starten
+1402:Lautstärke
+1403:Teste Video
+1404:Mods
+1405:Schneehäuser
+1406:Blockiere Spieler Farbauswahl
+1407:Blockiere Spieler Farbauswahl in der Lobby
