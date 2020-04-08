@@ -2316,7 +2316,7 @@ begin
     gGame.SavedReplays.FillTicks(TicksList);
 
     for Tick in TicksList do
-      ReplayBar_Replay.AddMark(Tick);
+      gGame.GamePlayInterface.ReplayBar_Replay.AddMark(Tick);
   finally
     FreeAndNil(TicksList);
   end;
