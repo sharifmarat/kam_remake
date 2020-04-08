@@ -4629,6 +4629,7 @@ procedure TKMTerrain.Save(SaveStream: TKMemoryStream);
 var
   I,K,L: Integer;
   TileBasic: TKMTerrainTileBasic;
+  IsTxtStream: Boolean;
 begin
   Assert(not fMapEditor, 'MapEd mode is not intended to be saved into savegame');
 
@@ -4639,10 +4640,14 @@ begin
   SaveStream.Write(fAnimStep);
 
   FallingTrees.SaveToStream(SaveStream);
+  IsTxtStream := SaveStream is TKMemoryStreamText;
 
   for I := 1 to fMapY do
     for K := 1 to fMapX do
     begin
+      if IsTxtStream then
+        SaveStream.PlaceMarker(KMPoint(K,I).ToString);
+
       //Only save fields that cannot be recalculated after loading
       TileBasic.BaseLayer   := Land[I,K].BaseLayer;
       TileBasic.Height      := Land[I,K].Height;
