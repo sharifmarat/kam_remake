@@ -138,6 +138,7 @@ end;
 
 procedure TAIDefencePosition.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('ClsDefencePos');
   SaveStream.Write(fPosition);
   SaveStream.Write(fGroupType, SizeOf(fGroupType));
   SaveStream.Write(fRadius);
@@ -152,6 +153,7 @@ end;
 constructor TAIDefencePosition.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
+  LoadStream.CheckMarker('ClsDefencePos');
   LoadStream.Read(fPosition);
   LoadStream.Read(fGroupType, SizeOf(fGroupType));
   LoadStream.Read(fRadius);
@@ -394,7 +396,7 @@ end;
 procedure TAIDefencePositions.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  SaveStream.PlaceMarker('DefencePositions');
+  SaveStream.PlaceMarker('ClsDefencePositions');
   SaveStream.Write(TroopFormations, SizeOf(TroopFormations));
   SaveStream.Write(Count);
 
@@ -406,7 +408,7 @@ end;
 procedure TAIDefencePositions.Load(LoadStream: TKMemoryStream);
 var I, NewCount: Integer;
 begin
-  LoadStream.CheckMarker('DefencePositions');
+  LoadStream.CheckMarker('ClsDefencePositions');
   LoadStream.Read(TroopFormations, SizeOf(TroopFormations));
   LoadStream.Read(NewCount);
 

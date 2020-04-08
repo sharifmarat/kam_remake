@@ -124,7 +124,7 @@ end;
 
 procedure TKMDefencePosition.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.PlaceMarker('DefencePosition');
+  SaveStream.PlaceMarker('AdvDefencePosition');
   SaveStream.Write(fWeight);
   SaveStream.Write(fLine);
   SaveStream.Write(fPosition);
@@ -138,7 +138,7 @@ end;
 constructor TKMDefencePosition.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
-  LoadStream.CheckMarker('DefencePosition');
+  LoadStream.CheckMarker('AdvDefencePosition');
   LoadStream.Read(fWeight);
   LoadStream.Read(fLine);
   LoadStream.Read(fPosition);
@@ -234,7 +234,7 @@ end;
 procedure TKMArmyDefence.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  SaveStream.PlaceMarker('DefencePositions');
+  SaveStream.PlaceMarker('AdvDefencePositions');
   SaveStream.Write(fOwner);
   SaveStream.Write(fCityUnderAttack);
   SaveStream.Write(fFirstLineCnt);
@@ -249,7 +249,7 @@ end;
 procedure TKMArmyDefence.Load(LoadStream: TKMemoryStream);
 var I, NewCount: Integer;
 begin
-  LoadStream.CheckMarker('DefencePositions');
+  LoadStream.CheckMarker('AdvDefencePositions');
   LoadStream.Read(fOwner);
   LoadStream.Read(fCityUnderAttack);
   LoadStream.Read(fFirstLineCnt);
