@@ -69,7 +69,7 @@ end;
 
 function TPathFindingAStarNew.GetNodeAt(X, Y: SmallInt): PANodeRec;
 begin
-  Result := @fOpenRef[fLocA.Y, fLocA.X];
+  Result := @fOpenRef[Y, X];
   if Result.RouteID <> fRouteID then
     Result := nil;
 end;
