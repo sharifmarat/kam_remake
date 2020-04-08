@@ -69,7 +69,6 @@ type
 
     //Saved to local data
     fLastReplayTick: Cardinal;
-    fPerfTickCounter: Cardinal;
 
     //DO not save
     fGameSpeedChangeTick: Single;
