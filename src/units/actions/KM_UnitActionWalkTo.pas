@@ -1219,7 +1219,8 @@ begin
     end;
 
     //Attempt to smooth out unnecessary side-steps in the route
-    SmoothDiagSideStep;
+    if not fDoExchange then
+      SmoothDiagSideStep;
 
     //If we were in Worker mode but have now reached the walk network of our destination switch to CanWalk mode to avoid walking on other building sites
     {if (fPass = CanWorker) and (fTerrain.GetWalkConnectID(fWalkTo) <> 0) and
