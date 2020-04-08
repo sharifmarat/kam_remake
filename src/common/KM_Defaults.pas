@@ -84,7 +84,7 @@ var
   SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
   CHECK_8087CW          :Boolean = False; //Check that 8087CW (FPU flags) are set correctly each frame, in case some lib/API changed them
   SCROLL_ACCEL          :Boolean = False; //Acceleration for viewport scrolling
-  PathFinderToUse       :Byte = 3;
+  PathFinderToUse       :Byte = 1;
 
   //Cache / delivery / pathfinding
   CACHE_PATHFINDING                       :Boolean = True; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)

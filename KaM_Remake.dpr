@@ -235,7 +235,6 @@ uses
   KM_PathFinding in 'src\pathfinding\KM_PathFinding.pas',
   KM_PathFindingAStarOld in 'src\pathfinding\KM_PathFindingAStarOld.pas',
   KM_PathFindingAStarNew in 'src\pathfinding\KM_PathFindingAStarNew.pas',
-  KM_PathFindingAStarNew2 in 'src\pathfinding\KM_PathFindingAStarNew2.pas',
   KM_PathFindingJPS in 'src\pathfinding\KM_PathFindingJPS.pas',
   KM_PathFindingRoad in 'src\pathfinding\KM_PathFindingRoad.pas',
 	

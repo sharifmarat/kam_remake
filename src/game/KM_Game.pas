@@ -69,6 +69,7 @@ type
 
     //Saved to local data
     fLastReplayTick: Cardinal;
+    fPerfTickCounter: Cardinal;
 
     //DO not save
     fGameSpeedChangeTick: Single;
@@ -276,7 +277,7 @@ implementation
 uses
   Classes, Controls, Dialogs, SysUtils, KromUtils, Math, TypInfo,
   {$IFDEF WDC} UITypes, {$ENDIF}
-  KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingAStarNew2, KM_PathFindingJPS,
+  KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
   KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo, KM_GameClasses,
   KM_Terrain, KM_HandsCollection, KM_HandSpectator, KM_MapEditorHistory,
@@ -372,7 +373,6 @@ begin
     0:    fPathfinding := TPathfindingAStarOld.Create;
     1:    fPathfinding := TPathfindingAStarNew.Create;
     2:    fPathfinding := TPathfindingJPS.Create;
-    3:    fPathfinding := TPathfindingAStarNew2.Create;
     else  fPathfinding := TPathfindingAStarOld.Create;
   end;
   gProjectiles := TKMProjectiles.Create;

@@ -3,14 +3,14 @@ unit KM_PathFindingRoad;
 interface
 uses
   SysUtils, KromUtils,
-  KM_CommonClasses, KM_Defaults, KM_PathFinding, KM_PathFindingAStarNew2, KM_Points;
+  KM_CommonClasses, KM_Defaults, KM_PathFinding, KM_PathFindingAStarNew, KM_Points;
 
 
 type
   //Pathfinding that finds a route for a road to be built
   //todo: Maybe it is worth trying to make Roadfinder a house-aware algo,
   //to prefer connecting to supply/demand houses
-  TPathFindingRoad = class(TPathFindingAStarNew2)
+  TPathFindingRoad = class(TPathFindingAStarNew)
   private
     fRoadConnectID: Byte;
   protected
