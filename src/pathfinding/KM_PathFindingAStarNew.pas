@@ -100,7 +100,9 @@ begin
   if fRouteID = High(fRouteID) then
   begin
     fRouteID := 0;
-    FillChar(fOpenRef, SizeOf(fOpenRef), 0);
+    for Y := 0 to MAX_MAP_SIZE do
+      for X := 0 to MAX_MAP_SIZE do
+        fOpenRef[Y, X].RouteID := 0;
   end;
   Inc(fRouteID);
 
