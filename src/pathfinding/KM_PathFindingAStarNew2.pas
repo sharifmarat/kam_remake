@@ -27,6 +27,7 @@ type
     fRouteID: Cardinal;
     function HeapCmp(A,B: Pointer): Boolean;
   protected
+    function GetNodeAt(X,Y: SmallInt): PANodeRec;
     function MakeRoute: Boolean; override;
     procedure ReturnRoute(NodeList: TKMPointList); override;
   public
@@ -63,6 +64,14 @@ begin
   fHeap.Free;
 
   inherited;
+end;
+
+
+function TPathFindingAStarNew2.GetNodeAt(X, Y: SmallInt): PANodeRec;
+begin
+  Result := @fOpenRef[fLocA.Y, fLocA.X];
+  if Result.RouteID <> fRouteID then
+    Result := nil;
 end;
 
 
