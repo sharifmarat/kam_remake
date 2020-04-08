@@ -59,6 +59,7 @@ type
 
     procedure ChangeStepTo(const aPos: TKMPoint);
     procedure PerformExchange(const ForcedExchangePos: TKMPoint);
+    procedure SmoothDiagSideStep;
     procedure IncVertex;
     procedure DecVertex;
     procedure SetInitValues;
@@ -399,6 +400,45 @@ begin
     NodeList.Insert(NodePos+1, aPos);
 
   fUnit.Direction := KMGetDirection(fUnit.CurrPosition, aPos); //Face the new tile
+end;
+
+
+procedure TKMUnitActionWalkTo.SmoothDiagSideStep;
+var
+  A, B, C, Candidate: TKMPoint;
+begin
+  //Attempt to smooth out unnecessary side-steps in the route
+  //Pathfinding will sometimes make a straight line route dodge diagonally
+  //around a unit that was occupying the tile. If that unit is no longer there
+  //we can smooth out the diagonal side step: (x is the tile unnecessarily dodged)
+  // .
+  //.x
+  // .
+
+  if (NodePos+2 <= NodeList.Count-1) then
+  begin
+    A := NodeList[NodePos];
+    B := NodeList[NodePos+1];
+    C := NodeList[NodePos+2];
+
+    if (A.X = C.X) and (Abs(A.Y - C.Y) = 2) //We are headed in straight line
+    and (A.X <> B.X) then //Next step is diagonal
+      Candidate := KMPoint(A.X, B.Y)
+    else
+      if (A.Y = C.Y) and (Abs(A.X - C.X) = 2) //We are headed in straight line
+      and (A.Y <> B.Y) then //Next step is diagonal
+        Candidate := KMPoint(B.X, A.Y)
+      else
+        Exit;
+
+    //Check if candidate is walkable and doesn't have a unit
+    if (fPass in gTerrain.Land[Candidate.Y, Candidate.X].Passability)
+    and not gTerrain.HasUnit(Candidate) then
+    begin
+      //Candidate is better, so update route
+      NodeList[NodePos+1] := Candidate;
+    end;
+  end;
 end;
 
 
@@ -1177,6 +1217,10 @@ begin
       Inc(NodePos); //Inc the node pos and exit so this step is simply skipped
       Exit; //Will take next step during next execute
     end;
+
+    //Attempt to smooth out unnecessary side-steps in the route
+    if not fDoExchange then
+      SmoothDiagSideStep;
 
     //If we were in Worker mode but have now reached the walk network of our destination switch to CanWalk mode to avoid walking on other building sites
     {if (fPass = CanWorker) and (fTerrain.GetWalkConnectID(fWalkTo) <> 0) and

@@ -315,21 +315,25 @@ procedure TAISquad.UpdateState(aTick: Cardinal);
     begin
       BestTgt := nil;
       G := TKMUnitWarrior(fTargetUnit).Group;
-      BestDist := 1E10;
-      for K := 0 to G.Count - 1 do
-        if not G.Members[K].IsDeadOrDying then
-        begin
-          Dist := KMDistanceSqr(fGroup.Position,G.Members[K].CurrPosition);
-          if (Dist < BestDist) then
-          begin
-            BestTgt := G.Members[K];
-            BestDist := Dist;
-          end;
-        end;
-      if (BestTgt <> nil) then
+      //Group will be nil if we target a warrior still walking out of barracks
+      if G <> nil then
       begin
-        gHands.CleanUpUnitPointer(fTargetUnit);
-        fTargetUnit := BestTgt.GetUnitPointer;
+        BestDist := 1E10;
+        for K := 0 to G.Count - 1 do
+          if not G.Members[K].IsDeadOrDying then
+          begin
+            Dist := KMDistanceSqr(fGroup.Position,G.Members[K].CurrPosition);
+            if (Dist < BestDist) then
+            begin
+              BestTgt := G.Members[K];
+              BestDist := Dist;
+            end;
+          end;
+        if (BestTgt <> nil) then
+        begin
+          gHands.CleanUpUnitPointer(fTargetUnit);
+          fTargetUnit := BestTgt.GetUnitPointer;
+        end;
       end;
     end;
   end;

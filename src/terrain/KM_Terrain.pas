@@ -590,7 +590,7 @@ const
             terKind := CornersTerKinds[(D div 2) mod 4]
           else
           begin
-            adj := KaMRandom(2, 'TKMTerrain.SaveToFile.SetNewLand'); //Choose randomly between 2 corners terkinds
+            adj := Random(2); //Choose randomly between 2 corners terkinds
             terKind  := CornersTerKinds[((D div 2) + adj) mod 4];
           end;
         end;
@@ -598,12 +598,12 @@ const
 
       //Apply some random tiles for artisticity
       TileBasic.BaseLayer.Terrain  := gGame.TerrainPainter.PickRandomTile(terKind, True);
-      TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand 2');
+      TileBasic.BaseLayer.Rotation := Random(4);
       TileBasic.BaseLayer.SetCorners([0,1,2,3]);
       //find height mid point to make random elevation even for close to 0 or 100 height
       hMid := Max(0, Land[aFromY,aFromX].Height - H_RND_HALF) + H_RND_HALF;
       hMid := Min(100, hMid + H_RND_HALF) - H_RND_HALF;
-      TileBasic.Height    := EnsureRange(hMid - H_RND_HALF + KaMRandom(HEIGHT_RAND_VALUE, 'TKMTerrain.SaveToFile.SetNewLand 3'), 0, 100);
+      TileBasic.Height    := EnsureRange(hMid - H_RND_HALF + Random(HEIGHT_RAND_VALUE), 0, 100);
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
       TileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
