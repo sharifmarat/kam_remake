@@ -143,6 +143,9 @@ uses
   SysUtils,
   KM_Hand, KM_HandsCollection,
   KM_AIFields, KM_AIInfluences, KM_NavMesh,
+  {$IFDEF DEBUG_BattleLines}
+  DateUtils,
+  {$ENDIF}
   KM_Game, KM_RenderAux;
 
 
@@ -492,7 +495,7 @@ begin
       begin
         Idx := BattleLines.Lines[L].Polygons[M];
         LinePoint := fPolyArr[ Idx ].CenterPoint;
-        Price := KMDistanceSqr(LinePoint, GroupPoint) - fDefInfo[Idx].Mark * 50;
+        Price := KMDistanceSqr(LinePoint, GroupPoint) + fDefInfo[Idx].Mark * 32;
         if (Price < BestPrice) then
         begin
           BestPrice := Price;
@@ -724,12 +727,12 @@ begin
     if not IsVisited(NearbyIdx) then
     begin
       MarkAsVisited(NearbyIdx);
+      fDefInfo[NearbyIdx].Mark := fDefInfo[aIdx].Mark + 1;
       if (fPolyArr[NearbyIdx].NearbyCount = 3) then // New combat lines are created only from polygons with 3 surrounding polygons
       begin
         ComputeWeightedDistance(NearbyIdx);
         //if (fDefInfo[aIdx].Distance + 3 > fDefInfo[NearbyIdx].Distance) then
         //begin
-          fDefInfo[NearbyIdx].Mark := fDefInfo[aIdx].Mark + 1;
           InsertAndSort(NearbyIdx);
           Inc(fBattleLines.Lines[LineIdx1].PolygonsCount);
           if (fBattleLines.Lines[LineIdx1].PolygonsCount > Length(fBattleLines.Lines[LineIdx1].Polygons)) then
@@ -958,7 +961,8 @@ var
   K,L,Idx: Integer;
 {$IFDEF DEBUG_BattleLines}
   //Opacity: Byte;
-  //Color, TickIdx: Cardinal;
+  Color, TickIdx: Cardinal;
+  today: TDateTime;
   //MinPrc, MaxPrc: Single;
   //P1,P2: TKMPoint;
 {$ENDIF}
@@ -978,19 +982,22 @@ begin
     end;
   //}
   //{
+  for K := 0 to Length(fQueueArray) - 1 do
+    DrawPolygon(K, 1, Color, IntToStr(fDefInfo[K].Mark));
+
   for K := 0 to fBestBattleLines.Count - 1 do
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
     begin
       Idx := fBestBattleLines.Lines[K].Polygons[L];
-      DrawPolygon(Idx, 30, COLOR_GREEN, IntToStr(fQueueArray[Idx].Distance));
+      DrawPolygon(Idx, 50, COLOR_GREEN, IntToStr(fDefInfo[Idx].Mark));
     end;
     //}
 
   {$IFDEF DEBUG_BattleLines}
-  {
+  //{
   if fDebugLines.Count > 0 then
   begin
-    TickIdx := Round(gGame.GameTick / 1.0) mod fDebugLines.Count;
+    TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;
     Color := COLOR_WHITE;
     if (fDebugLines.LineStartIdx >= TickIdx) then
       Color := COLOR_RED;
