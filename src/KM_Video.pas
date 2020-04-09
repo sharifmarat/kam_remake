@@ -51,6 +51,8 @@ type
     function TryGetPathFile(aPath: string; var aFileName: string): Boolean;
     procedure SetTrackByLocale;
     function GetState: TVLCPlayerState;
+
+    procedure StopVideo;
 {$ENDIF}
   public
     constructor Create;
@@ -126,7 +128,7 @@ end;
 destructor TKMVideoPlayer.Destroy;
 begin
 {$IFDEF VIDEOS}
-  Stop;
+  StopVideo;
   VLCUnloadLibrary;
   FVideoList.Free;
   FTrackList.Free;
@@ -459,7 +461,8 @@ begin
 {$ENDIF}
 end;
 
-procedure TKMVideoPlayer.Stop;
+
+procedure TKMVideoPlayer.StopVideo;
 begin
   if Self = nil then
     Exit;
@@ -486,6 +489,13 @@ begin
     FTexture.Tex := 0;
   end;
   SetLength(FBuffer, 0);
+{$ENDIF}
+end;
+
+procedure TKMVideoPlayer.Stop;
+begin
+{$IFDEF VIDEOS}
+  StopVideo;
 
   Inc(FIndex);
   if FIndex >= FVideoList.Count then
