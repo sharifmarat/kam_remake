@@ -117,6 +117,8 @@ type
     procedure SetGameSpeedActualValue(aSpeed: Single);
     procedure UpdateClockUI;
     function GetMapEditor: TKMMapEditor;
+
+    function DoRenderGame: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -1324,7 +1326,8 @@ begin
   gPerfLogs.SectionEnter(psFrameFullC);
   {$ENDIF}
   try
-    gRenderPool.Render;
+    if DoRenderGame then
+      gRenderPool.Render;
 
     aRender.SetRenderMode(rm2D);
     fActiveInterface.Paint;
@@ -2637,6 +2640,13 @@ begin
   Result := gGameApp.GameSettings.DebugSaveRandomChecks
             and SAVE_RANDOM_CHECKS
             and (gRandomCheckLogger <> nil);
+end;
+
+
+function TKMGame.DoRenderGame: Boolean;
+begin
+  // Do not render game under game stats page
+  Result := IsMapEditor or not fGamePlayInterface.StatsOpened;
 end;
 
 

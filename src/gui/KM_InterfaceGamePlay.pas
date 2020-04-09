@@ -329,6 +329,8 @@ type
     property GuiGameResultsMP: TKMGameResultsMP read fGuiGameResultsMP;
     property GuiGameSpectator: TKMGUIGameSpectator read fGuiGameSpectator;
 
+    function StatsOpened: Boolean;
+
     property Alerts: TKMAlerts read fAlerts;
 
     procedure ExportPages(const aPath: string); override;
@@ -4517,6 +4519,12 @@ begin
   Label_TeamName.Visible := False; // Only visible while we're using it, otherwise it shows up in other places
 
   inherited;
+end;
+
+
+function TKMGamePlayInterface.StatsOpened: Boolean;
+begin
+  Result := fGuiGameResultsSP.Visible or fGuiGameResultsMP.Visible;
 end;
 
 
