@@ -236,6 +236,7 @@ type
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
     procedure SetExportGameStats(aEnabled: Boolean);
+    procedure ShowFolderPermissionError;
     property OnControlsUpdated: TEvent read fOnControlsUpdated write fOnControlsUpdated;
   end;
 
@@ -892,6 +893,12 @@ begin
   RenderArea.Height := ClientHeight;
   RenderArea.Width  := ClientWidth;
   gMain.Resize(RenderArea.Width, RenderArea.Height, GetWindowParams);
+end;
+
+
+procedure TFormMain.ShowFolderPermissionError;
+begin
+  MessageDlg(Format(gResTexts[TX_GAME_FOLDER_PERMISSIONS_ERROR], [ExeDir]), mtError, [mbClose], 0);
 end;
 
 

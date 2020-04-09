@@ -170,6 +170,11 @@
         <DCCReference Include="src\common\KM_Defaults.pas"/>
         <DCCReference Include="src\common\KM_Points.pas"/>
         <DCCReference Include="src\KM_Controls.pas"/>
+        <DCCReference Include="src\perflog\KM_DevPerfLog.pas"/>
+        <DCCReference Include="src\perflog\KM_DevPerfLogForm.pas"/>
+        <DCCReference Include="src\perflog\KM_DevPerfLogSingle.pas"/>
+        <DCCReference Include="src\perflog\KM_DevPerfLogStack.pas"/>
+        <DCCReference Include="src\perflog\KM_DevPerfLogTypes.pas"/>
         <DCCReference Include="src\KM_Exceptions.pas"/>
         <DCCReference Include="src\KM_FogOfWar.pas"/>
         <DCCReference Include="src\game\KM_Game.pas"/>
@@ -272,6 +277,8 @@
         <DCCReference Include="src\KM_Maps.pas"/>
         <DCCReference Include="src\KM_MapTypes.pas"/>
         <DCCReference Include="src\KM_MapEditor.pas"/>
+        <DCCReference Include="src\KM_MapEditorHistory.pas"/>
+        <DCCReference Include="src\KM_MapEdTypes.pas"/>
         <DCCReference Include="src\KM_MessageLog.pas"/>
         <DCCReference Include="src\KM_MessageStack.pas"/>
         <DCCReference Include="src\KM_Minimap.pas"/>
@@ -316,7 +323,6 @@
         <DCCReference Include="src\pathfinding\KM_PathFindingAStarNew.pas"/>
         <DCCReference Include="src\pathfinding\KM_PathFindingJPS.pas"/>
         <DCCReference Include="src\pathfinding\KM_PathFindingRoad.pas"/>
-        <DCCReference Include="src\KM_PerfLog.pas"/>
         <DCCReference Include="src\KM_Projectiles.pas"/>
         <DCCReference Include="src\KM_RandomChecks.pas"/>
         <DCCReference Include="src\render\KM_Render.pas"/>
@@ -324,6 +330,7 @@
         <DCCReference Include="src\render\KM_RenderControl.pas"/>
         <DCCReference Include="src\render\KM_RenderPool.pas"/>
         <DCCReference Include="src\render\KM_RenderTerrain.pas"/>
+        <DCCReference Include="src\render\KM_RenderQuery.pas"/>
         <DCCReference Include="src\render\KM_RenderUI.pas"/>
         <DCCReference Include="src\KM_Resolutions.pas"/>
         <DCCReference Include="src\res\KM_Resource.pas"/>
@@ -351,7 +358,6 @@
         <DCCReference Include="src\scripting\KM_ScriptingUtils.pas"/>
         <DCCReference Include="src\net\KM_ServerQuery.pas"/>
         <DCCReference Include="src\KM_Settings.pas"/>
-        <DCCReference Include="src\KM_SoftShadows.pas"/>
         <DCCReference Include="src\KM_Sound.pas"/>
         <DCCReference Include="src\terrain\KM_RandomMapGenerator.pas"/>
         <DCCReference Include="src\terrain\KM_RMGUtils.pas"/>
@@ -388,9 +394,11 @@
         <DCCReference Include="src\utils\KM_CommonUtils.pas"/>
         <DCCReference Include="src\utils\KM_FileIO.pas"/>
         <DCCReference Include="src\utils\KM_FloodFill.pas"/>
+        <DCCReference Include="src\utils\KM_Helpers.pas"/>
         <DCCReference Include="src\utils\KM_Hungarian.pas"/>
         <DCCReference Include="src\utils\KM_Pics.pas"/>
         <DCCReference Include="src\utils\KM_PNG.pas"/>
+        <DCCReference Include="src\utils\KM_SoftShadows.pas"/>
         <DCCReference Include="src\utils\KM_Sort.pas"/>
         <DCCReference Include="src\utils\KM_Utils.pas"/>
         <DCCReference Include="src\utils\method_parser\KM_MethodParser.pas"/>
@@ -398,6 +406,7 @@
         <DCCReference Include="src\KM_Viewport.pas"/>
         <DCCReference Include="src\KM_WareDistribution.pas"/>
         <DCCReference Include="src\KM_Video.pas"/>
+        <DCCReference Include="src\utils\KM_VLC.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
@@ -455,6 +464,8 @@
             <ModelSupport>False</ModelSupport>
             <Deployment Version="3">
                 <DeployFile LocalName="KaM_Remake.rsm" Configuration="Release" Class="DebugSymbols"/>
+                <DeployFile LocalName="KaM_Remake.rsm" Configuration="Release" Class="DebugSymbols"/>
+                <DeployFile LocalName="KaM_Remake.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployFile LocalName="KaM_Remake.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">

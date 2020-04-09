@@ -355,9 +355,8 @@ begin
   Application.Title := 'KaM Remake';
 
   gMain := TKMMain.Create;
-  gMain.Start;
-
-  Application.Run;
+  if gMain.Start then
+    Application.Run;
 
   gMain.Free; //Prevents memory leak of TKMMain showing up in FastMM
 end.
