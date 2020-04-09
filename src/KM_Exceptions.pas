@@ -33,7 +33,7 @@ begin
   inherited;
   OnAssistantCreate := DoCreateAssistant;
   RegisterExceptionHandler(DoException, stTrySyncCallAlways);
-  MESettings.HttpServer := 'http://kam.hodgman.id.au/crashupload.php?rev='+GAME_REVISION;
+  MESettings.HttpServer := 'http://master.kamremake.com/crashupload.php?rev='+GAME_REVISION;
 end;
 
 
