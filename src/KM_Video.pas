@@ -62,7 +62,7 @@ type
     procedure Stop;
     procedure Pause;
     procedure Resume;
-    procedure SerCallback(aCallback: TKMVideoPlayerCallback);
+    procedure SetCallback(aCallback: TKMVideoPlayerCallback);
 
     procedure Resize(aWidth, aHeight: Integer);
     procedure UpdateState;
@@ -213,7 +213,7 @@ begin
 {$ENDIF}
 end;
 
-procedure TKMVideoPlayer.SerCallback(aCallback: TKMVideoPlayerCallback);
+procedure TKMVideoPlayer.SetCallback(aCallback: TKMVideoPlayerCallback);
 begin
   if Self = nil then
     Exit;
