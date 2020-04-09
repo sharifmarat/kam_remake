@@ -730,7 +730,7 @@ end;
 {Check if requested tile is soil suitable for fields and trees}
 function TKMResTileset.TileIsSoil(aTile: Word): Boolean;
 const
-  SOIL_TILES: array[0..79] of Word =
+  SOIL_TILES: array[0..78] of Word =
                 (0,1,2,3,5,6, 8,9,11,13,14, 16,17,18,19,20,21, 26,27,28, 34,35,36,37,38,39, 47, 49, 55,56,
                 57,58,64,65,66,67,68,69,72,73,74,75,76,77,78,79,80, 84,85,86,87,88,89, 93,94,95,96,97,98,
                 180,182,183,188,190,191,220,247,274,282,301,303, 312,313,314,315,316,317,318,337);
