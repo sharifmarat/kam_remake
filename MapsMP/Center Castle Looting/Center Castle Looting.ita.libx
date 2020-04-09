@@ -1,6 +1,3 @@
-
-MaxID:9
-
 1:Nessuno è nel castello
 2:[$%s]%s[] sta cercando nel castello da %.2d:%.2d
 3:[$%s]%s[] ha trovato %d %s nelle rovine del castello!
