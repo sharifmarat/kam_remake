@@ -34,6 +34,7 @@ type
     procedure MapCacheUpdate;
 
     procedure GameSpeedChange(aSpeed: Single);
+    function DoHaveGenericPermission: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -397,6 +398,22 @@ begin
 end;
 
 
+// Check game execution dir generic permissions
+function TKMMain.DoHaveGenericPermission: Boolean;
+const
+  GRANTED: array[Boolean] of string = ('blocked', 'granted');
+var
+  readAcc, writeAcc, execAcc: Boolean;
+begin
+  readAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_READ) = FILE_GENERIC_READ);
+  writeAcc  := (CheckFileAccess(ExeDir, FILE_GENERIC_WRITE) = FILE_GENERIC_WRITE);
+  execAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_EXECUTE) = FILE_GENERIC_EXECUTE);
+  gLog.AddTime(Format('Check game folder ''%s'' generic permissions: READ: %s; WRITE: %s; EXECUTE: %s',
+                      [ExeDir, GRANTED[readAcc], GRANTED[writeAcc], GRANTED[execAcc]]));
+  Result := readAcc and writeAcc and execAcc;
+end;
+
+
 function TKMMain.ReinitRender(aReturnToOptions: Boolean): Boolean;
 begin
   Result := True;
@@ -429,7 +446,7 @@ begin
   // TODO refactor. Separate folder permissions check and render initialization
   // Locale and texts could be loaded separetely to show proper translated error message
   if (gLog = nil)
-    or (not aReturnToOptions and (CheckFileAccess(ExeDir, FILE_ALL_ACCESS) <> FILE_ALL_ACCESS)) then
+    or (not aReturnToOptions and not DoHaveGenericPermission) then
     Exit(False);
 
   gGameApp.OnGameSpeedActualChange := GameSpeedChange;
