@@ -210,6 +210,7 @@ type
 
     procedure ControlsUpdate(Sender: TObject);
   private
+    fShowStartVideo: Boolean;
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
     fOnControlsUpdated: TEvent;
@@ -270,6 +271,7 @@ uses
 //Remove VCL panel and use flicker-free TMyPanel instead
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
+  fShowStartVideo := True;
   RenderArea := TKMRenderControl.Create(Self);
   RenderArea.Parent := Self;
   RenderArea.Align := alClient;
@@ -326,12 +328,13 @@ begin
 
   Application.ProcessMessages;
 
-  if (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
+  if fShowStartVideo and (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
   begin
     gVideoPlayer.AddVideo('Campaigns\The Shattered Kingdom\Logo');
     gVideoPlayer.AddVideo('KaM');
     gVideoPlayer.Play;
   end;
+  fShowStartVideo := False;
 end;
 
 
