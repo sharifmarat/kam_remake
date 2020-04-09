@@ -1,4 +1,4 @@
-﻿0:Sawmill
+0:Sawmill
 1:Iron smithy
 2:Weapon smithy
 3:Coal mine
@@ -1370,4 +1370,4 @@
 1420:wine field
 1421:overlay
 1422:object
-1423:You have not enough permissions on KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into other directory
+1423:You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory

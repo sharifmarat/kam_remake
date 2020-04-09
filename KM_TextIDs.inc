@@ -1,4 +1,4 @@
-﻿TX_HOUSES_NAMES__29 = 0; //Sawmill
+TX_HOUSES_NAMES__29 = 0; //Sawmill
 TX_HOUSES_NAMES_IRONSMITHY = 1; //Iron smithy
 TX_HOUSES_NAMES_WEAPONSMITHY = 2; //Weapon smithy
 TX_HOUSES_NAMES_COALMINE = 3; //Coal mine
@@ -1459,5 +1459,5 @@ TX_WORD_WINE_FIELD = 1420; //wine field
 TX_WORD_OVERLAY = 1421; //overlay
 TX_WORD_OBJECT = 1422; //object
 
-TX_GAME_FOLDER_PERMISSIONS_ERROR = 1423; //You have not enough permissions on KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into other directory
+TX_GAME_FOLDER_PERMISSIONS_ERROR = 1423; //You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
 
