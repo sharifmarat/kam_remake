@@ -1459,3 +1459,5 @@ TX_WORD_WINE_FIELD = 1420; //wine field
 TX_WORD_OVERLAY = 1421; //overlay
 TX_WORD_OBJECT = 1422; //object
 
+TX_GAME_FOLDER_PERMISSIONS_ERROR = 1423; //You have not enough permissions on KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into other directory
+

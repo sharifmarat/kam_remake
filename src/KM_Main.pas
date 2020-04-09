@@ -38,7 +38,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Start;
+    function Start: Boolean;
     procedure CloseQuery(var CanClose: Boolean);
     procedure Stop(Sender: TObject);
 
@@ -56,7 +56,7 @@ type
     function IsFormActive: Boolean;
     function ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
     function ClientToScreen(aPoint: TPoint): TPoint;
-    procedure ReinitRender(aReturnToOptions: Boolean);
+    function ReinitRender(aReturnToOptions: Boolean): Boolean;
     procedure FlashingStart;
     procedure FlashingStop;
 
@@ -83,7 +83,7 @@ uses
   Classes, Forms,
   {$IFDEF MSWindows} MMSystem, {$ENDIF}
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
-  SysUtils, StrUtils, Math, KromUtils,
+  SysUtils, StrUtils, Math, KromUtils, KM_FileIO,
   KM_GameApp, KM_Helpers,
   KM_Log, KM_CommonUtils, KM_Defaults, KM_Points, KM_DevPerfLog, KM_DevPerfLogTypes;
 
@@ -123,7 +123,8 @@ begin
 end;
 
 
-procedure TKMMain.Start;
+// Return False in case we had difficulties on the start
+function TKMMain.Start: Boolean;
   function GetScreenMonitorsInfo: TKMPointArray;
   var
     I: Integer;
@@ -135,7 +136,9 @@ procedure TKMMain.Start;
       Result[I].Y := Screen.Monitors[I].Height;
     end;
   end;
+
 begin
+  Result := True;
   //Random is only used for cases where order does not matter, e.g. shuffle tracks
   Randomize;
 
@@ -151,9 +154,14 @@ begin
 
   if not BLOCK_FILE_WRITE then
   begin
-    CreateDir(ExeDir + 'Logs' + PathDelim);
-    gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
-    gLog.DeleteOldLogs;
+    try
+      CreateDir(ExeDir + 'Logs' + PathDelim);
+      gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
+      gLog.DeleteOldLogs;
+    except
+      on E: Exception do
+        gLog := nil; // Ignore Log creation error. We will exit later with proper error message
+    end;
   end;
 
   //Resolutions are created first so that we could check Settings against them
@@ -180,7 +188,18 @@ begin
   if not fMainSettings.WindowParams.IsValid(GetScreenMonitorsInfo) then
      fMainSettings.WindowParams.NeedResetToDefaults := True;
 
-  ReinitRender(False);
+  // Stop app if we did not ReinitRender properly (didn't pass game folder permissions test)
+  // TODO refactor. Separate folder permissions check and render initialization
+  // Locale and texts could be loaded separetely to show proper translated error message
+  if not ReinitRender(False) then
+  begin
+    SKIP_RENDER := True; // Skip render, since gGameApp will show panels on FullScreen mode
+    fFormLoading.Hide; //Will close the form on Full Screen mode
+    fFormMain.Hide;
+    fFormMain.ShowFolderPermissionError; // Show localized error message
+    Stop(nil); // Stop the app
+    Exit(False);
+  end;
 
   fFormMain.ControlsRefill; //Refill some of the debug controls from game settings
 
@@ -378,8 +397,9 @@ begin
 end;
 
 
-procedure TKMMain.ReinitRender(aReturnToOptions: Boolean);
+function TKMMain.ReinitRender(aReturnToOptions: Boolean): Boolean;
 begin
+  Result := True;
   if fMainSettings.FullScreen then
   begin
     // Lock window params while we are in FullScreen mode
@@ -403,6 +423,15 @@ begin
                                 fFormLoading.LoadingStep,
                                 fFormLoading.LoadingText,
                                 StatusBarText);
+
+  // Check if player has all permissions on game folder. Close the app if not
+  // Check is done after gGameApp creating because we want to load texts first to shw traslated error message
+  // TODO refactor. Separate folder permissions check and render initialization
+  // Locale and texts could be loaded separetely to show proper translated error message
+  if (gLog = nil)
+    or (not aReturnToOptions and (CheckFileAccess(ExeDir, FILE_ALL_ACCESS) <> FILE_ALL_ACCESS)) then
+    Exit(False);
+
   gGameApp.OnGameSpeedActualChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
   //Preload game resources while in menu to make 1st game start faster
