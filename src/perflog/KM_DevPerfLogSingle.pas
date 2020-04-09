@@ -250,7 +250,7 @@ end;
 
 destructor TKMPerfLogSingleGFX.Destroy;
 begin
-  if fGPUQueryId <> -1 then
+  if (gRender <> nil) and (fGPUQueryId <> -1) then
     gRender.Query.QueriesDelete(fGPUQueryId);
 
   inherited;

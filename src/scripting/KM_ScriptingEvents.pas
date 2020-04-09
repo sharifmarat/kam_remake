@@ -398,12 +398,16 @@ procedure TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; cons
 var
   I: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
+  {$ENDIF}
   try
     for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
       CallEventProc(fEventHandlers[aEventType][I], aParams, aFloatParam)
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psScripting);
+    {$ENDIF}
   end;
 end;
 
@@ -807,7 +811,9 @@ var
   I: Integer;
   handler: TMethod;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
+  {$ENDIF}
   try
     if MethodAssigned(evtGroupBeforeOrderSplit) then
     begin
@@ -824,7 +830,9 @@ begin
       end;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psScripting);
+    {$ENDIF}
   end;
 end;
 

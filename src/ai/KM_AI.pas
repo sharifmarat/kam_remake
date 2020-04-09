@@ -476,7 +476,9 @@ end;
 
 procedure TKMHandAI.UpdateState(aTick: Cardinal; aCheckGoals: Boolean);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAI, aTick);
+  {$ENDIF}
   try
     if (WonOrLost <> wolNone) then
       Exit;
@@ -505,7 +507,9 @@ begin
                     end;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAI);
+    {$ENDIF}
   end;
 end;
 

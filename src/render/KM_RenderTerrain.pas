@@ -383,8 +383,9 @@ begin
     and (fClipRect = fVBOLastClipRect)
     and (gGame.GameTick = fVBOLastGameTick) then
     Exit;
-
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameUpdateVBO);
+  {$ENDIF}
 
   fVBOLastClipRect := fClipRect;
   fVBOLastGameTick := gGame.GameTick;
@@ -518,7 +519,9 @@ begin
   for V := Low(TVBOArrayType) to High(TVBOArrayType) do
     fVBONeedsFlush[V] := True;
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameUpdateVBO);
+  {$ENDIF}
 end;
 
 
@@ -588,7 +591,9 @@ var
   SizeX, SizeY: Word;
   tX, tY: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameTiles);
+  {$ENDIF}
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
@@ -638,7 +643,9 @@ begin
           end;
         end;
   end;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameTiles);
+  {$ENDIF}
 end;
 
 
@@ -650,7 +657,9 @@ var
   tX, tY: Word;
   TerInfo: TKMGenTerrainInfo;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameTilesLayers);
+  {$ENDIF}
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
@@ -714,7 +723,9 @@ begin
         end;
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Just in case...
   end;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameTilesLayers);
+  {$ENDIF}
 end;
 
 
@@ -725,7 +736,9 @@ var
   TexC: TUVRect;
   TexOffset: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameWater);
+  {$ENDIF}
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -777,7 +790,9 @@ begin
           end;
     end;
   end;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameWater);
+  {$ENDIF}
 end;
 
 
@@ -828,7 +843,9 @@ procedure TRenderTerrain.DoOverlays(aFOW: TKMFogOfWarCommon);
 var
   I, K: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameOverlays);
+  {$ENDIF}
   if gGame.IsMapEditor and not (mlOverlays in gGame.MapEditor.VisibleLayers) then
     Exit;
 
@@ -836,7 +853,9 @@ begin
     for K := fClipRect.Left to fClipRect.Right do
       RenderTileOverlay(aFOW, K, I);
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameOverlays);
+  {$ENDIF}
 end;
 
 
@@ -887,7 +906,9 @@ var
   SizeX, SizeY: Word;
   tX, tY: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameLighting);
+  {$ENDIF}
   glColor4f(1, 1, 1, 1);
   //Render highlights
   glBlendFunc(GL_DST_COLOR, GL_ONE);
@@ -941,7 +962,9 @@ begin
           end;
         end;
   end;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameLighting);
+  {$ENDIF}
 end;
 
 
@@ -952,7 +975,9 @@ var
   SizeX, SizeY: Word;
   tX, tY: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameShadows);
+  {$ENDIF}
   glColor4f(1, 1, 1, 1);
   glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
   TRender.BindTexture(fTextG);
@@ -1009,7 +1034,9 @@ begin
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   TRender.BindTexture(0);
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameShadows);
+  {$ENDIF}
 end;
 
 
@@ -1020,7 +1047,9 @@ var
   Fog: PKMByte2Array;
 begin
   if aFOW is TKMFogOfWarOpen then Exit;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameFOW);
+  {$ENDIF}
 
   glColor4f(1, 1, 1, 1);
 
@@ -1134,7 +1163,9 @@ begin
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   TRender.BindTexture(0);
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameFOW);
+  {$ENDIF}
 end;
 
 
@@ -1207,7 +1238,9 @@ begin
 
   UpdateVBO(aAnimStep, aFOW);
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameTerrainBase);
+  {$ENDIF}
 
   DoTiles(aFOW);
   //It was 'unlit water goes above lit sand'
@@ -1220,7 +1253,9 @@ begin
   DoLighting(aFOW);
   DoShadows(aFOW);
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameTerrainBase);
+  {$ENDIF}
 end;
 
 

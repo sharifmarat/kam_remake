@@ -1010,7 +1010,9 @@ procedure TKMHandsCollection.UpdateState(aTick: Cardinal);
 var
   I: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psHands, gGame.GameTick);
+  {$ENDIF}
   try
     for I := 0 to Count - 1 do
     if (gGame <> nil) and not gGame.IsPaused and not gGame.IsExiting then
@@ -1021,9 +1023,10 @@ begin
 
     PlayerAnimals.UpdateState(aTick); //Animals don't have any AI yet
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psHands);
+    {$ENDIF}
   end;
-
 end;
 
 

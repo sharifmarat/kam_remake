@@ -266,9 +266,13 @@ end;
 
 procedure TKMUserInterfaceCommon.Paint;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameGui);
+  {$ENDIF}
   fMyControls.Paint;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psFrameGui);
+  {$ENDIF}
 end;
 
 

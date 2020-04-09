@@ -369,7 +369,7 @@ begin
 
     gVideoPlayer.AddCampaignVideo(fCampaign.Path, 'Logo');
     gVideoPlayer.AddCampaignVideo(fCampaign.Path, 'Intro');
-    gVideoPlayer.SerCallback(PlayBrifingAudioTrack);
+    gVideoPlayer.SetCallback(PlayBrifingAudioTrack);
     gVideoPlayer.Play;
   end;
 end;

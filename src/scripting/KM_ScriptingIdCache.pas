@@ -212,7 +212,9 @@ procedure TKMScriptingIdCache.UpdateState;
 var
   I: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
+  {$ENDIF}
   try
     //Clear out dead IDs every now and again
     //Leave them in the cache as nils, because we still might need to lookup that UID
@@ -231,7 +233,9 @@ begin
           gHands.CleanUpGroupPointer(fGroupCache[I].G);
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psScripting);
+    {$ENDIF}
   end;
 end;
 

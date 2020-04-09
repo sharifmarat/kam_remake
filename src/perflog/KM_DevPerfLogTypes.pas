@@ -25,7 +25,6 @@ type
       psMinimap,
     psFrameFullC,                 // Full render frame as seen by gMain
     psFrameFullG,                 // Full render frame on GPU (doublecheck TKMPerfLogGFXStack)
-      psFrameGame,                // Frame of the Gameplay without GUI
         psFrameTerrain,
           psFrameTerrainBase,
             psFrameTiles,

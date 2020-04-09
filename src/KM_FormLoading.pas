@@ -36,8 +36,8 @@ begin
   //Put loading screen out of screen bounds, while hidden
   //This fixes bug, when on loading with fullscreen mode, user Alt-Tab into other window.
   //Then loading screen will be invisible, but prevents user interaction (block clicks etc)
-  Left := -1000;
-  Top := -1000;
+  Left := -4000;
+  Top := -4000;
 end;
 
 

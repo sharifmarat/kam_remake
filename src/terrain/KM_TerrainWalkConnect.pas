@@ -42,7 +42,9 @@ var
   Pass: TKMTerrainPassability;
   AllowDiag: Boolean;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psWalkConnect, gGame.GameTick);
+  {$ENDIF}
   try
     Pass := WC_PASS[aWC];
     AllowDiag := (aWC <> wcRoad); //Do not consider diagonals "connected" for roads
@@ -110,7 +112,9 @@ begin
     else
       GlobalUpdate(aWC, Pass, AllowDiag);
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psWalkConnect);
+    {$ENDIF}
   end;
 end;
 

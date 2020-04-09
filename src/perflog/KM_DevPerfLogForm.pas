@@ -24,6 +24,7 @@ type
     CheckBoxes: array [TPerfSectionDev, 0..2] of TCheckBox;
   public
     procedure Show(aPerfLogs: TKMPerfLogs); reintroduce;
+    function FormHeight: Integer;
   end;
 
 
@@ -43,6 +44,12 @@ begin
   else
   if Key = VK_NEXT then
     seFrameBudget.Value := seFrameBudget.Value - 10
+end;
+
+
+function TFormPerfLogs.FormHeight: Integer;
+begin
+  Result := CheckBoxes[High(TPerfSectionDev), 0].Top + CheckBoxes[High(TPerfSectionDev), 0].Height + 25;
 end;
 
 

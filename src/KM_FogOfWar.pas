@@ -200,7 +200,9 @@ procedure TKMFogOfWar.RevealCircle(const Pos: TKMPoint; Radius, Amount: Word);
 var
   AroundRadius: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     AroundRadius := Radius + RENDER_RADIUS_ADD;
     if not fCoverHasBeenCalled and not fDynamicFOW then
@@ -220,7 +222,9 @@ begin
       RevealFor(False, AroundRadius, FOG_OF_WAR_MAX);
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -254,14 +258,18 @@ procedure TKMFogOfWar.CoverCircle(const Pos: TKMPoint; Radius: Word);
   end;
 
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     CoverFor(True, Radius);
     CoverFor(False, Radius - RENDER_RADIUS_ADD);
 
     fCoverHasBeenCalled := True;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -270,7 +278,9 @@ procedure TKMFogOfWar.RevealRect(const TL, BR: TKMPoint; Amount: Word);
 var
   I, K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := TL.Y to BR.Y do
       for K := TL.X to BR.X do
@@ -285,7 +295,9 @@ begin
       for K := Max(0, TL.X - RENDER_RADIUS_ADD) to Min(fMapX - 1, BR.X + RENDER_RADIUS_ADD) do
         RenderRevelation[I,K] := FOG_OF_WAR_MAX;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -294,7 +306,9 @@ procedure TKMFogOfWar.CoverRect(const TL, BR: TKMPoint);
 var
   I, K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := TL.Y to BR.Y do
       for K := TL.X to BR.X do
@@ -307,7 +321,9 @@ begin
 
     fCoverHasBeenCalled := True;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -317,7 +333,9 @@ procedure TKMFogOfWar.RevealEverything;
 var
   I,K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := 0 to fMapY - 1 do
       for K := 0 to fMapX - 1 do
@@ -326,7 +344,9 @@ begin
         RenderRevelation[I, K] := FOG_OF_WAR_MAX;
       end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -335,7 +355,9 @@ procedure TKMFogOfWar.CoverEverything;
 var
   I,K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := 0 to fMapY - 1 do
       for K := 0 to fMapX - 1 do
@@ -346,7 +368,9 @@ begin
 
     fCoverHasBeenCalled := True;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -539,7 +563,9 @@ begin
   fDynamicFOW := gGameApp.DynamicFOWEnabled;
   if not fDynamicFOW then Exit;
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     Inc(fAnimStep);
 
@@ -566,7 +592,9 @@ begin
           end;}
         end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 

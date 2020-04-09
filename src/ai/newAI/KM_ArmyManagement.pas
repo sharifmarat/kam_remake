@@ -748,7 +748,9 @@ end;
 
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAIArmyAdv, aTick);
+  {$ENDIF}
   try
     if (aTick mod MAX_HANDS = fOwner) then
     begin
@@ -769,7 +771,9 @@ begin
       //SP_OLD_ATTACK_AI := False;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAIArmyAdv);
+    {$ENDIF}
   end;
 end;
 

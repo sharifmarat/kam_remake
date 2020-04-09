@@ -979,7 +979,9 @@ end;
 
 procedure TKMayor.UpdateState(aTick: Cardinal);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAICityCls, aTick);
+  {$ENDIF}
   try
     //Checking mod result against MAX_HANDS causes first update to happen ASAP
     if (aTick + Byte(fOwner)) mod (MAX_HANDS * 10) <> MAX_HANDS then Exit;
@@ -1003,7 +1005,9 @@ begin
       CheckRoadsCount;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAICityCls);
+    {$ENDIF}
   end;
 end;
 

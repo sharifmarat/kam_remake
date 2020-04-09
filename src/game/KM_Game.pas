@@ -117,6 +117,8 @@ type
     procedure SetGameSpeedActualValue(aSpeed: Single);
     procedure UpdateClockUI;
     function GetMapEditor: TKMMapEditor;
+
+    function DoRenderGame: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -358,7 +360,9 @@ begin
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
 
+  {$IFDEF PERFLOG}
   gPerfLogs.Clear;
+  {$ENDIF}
   gLog.AddTime('<== Game creation is done ==>');
 
   gScriptSounds := TKMScriptSoundsManager.Create; //Currently only used by scripting
@@ -1318,17 +1322,20 @@ end;
 
 procedure TKMGame.Render(aRender: TRender);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psFrameFullC);
-  gPerfLogs.SectionEnter(psFrameGame);
+  {$ENDIF}
   try
-    gRenderPool.Render;
+    if DoRenderGame then
+      gRenderPool.Render;
 
     aRender.SetRenderMode(rm2D);
     fActiveInterface.Paint;
 
   finally
-    gPerfLogs.SectionLeave(psFrameGame);
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psFrameFullC);
+    {$ENDIF}
   end;
 end;
 
@@ -2472,8 +2479,10 @@ begin
                       begin
                         if fGameInputProcess.CommandsConfirmed(fGameTick + 1) then
                         begin
+                          {$IFDEF PERFLOG}
                           gPerfLogs.StackCPU.TickBegin;
                           gPerfLogs.SectionEnter(psGameTick, fGameTick + 1);
+                          {$ENDIF}
                           try
                             // As soon as next command arrives we are no longer in a waiting state
                             if fWaitingForNetwork then
@@ -2528,8 +2537,10 @@ begin
                             if DoSaveRandomChecks then
                               gRandomCheckLogger.UpdateState(fGameTick);
                           finally
+                            {$IFDEF PERFLOG}
                             gPerfLogs.SectionLeave(psGameTick);
                             gPerfLogs.StackCPU.TickEnd;
+                            {$ENDIF}
                           end;
                         end
                         else
@@ -2543,9 +2554,10 @@ begin
         gmReplaySingle,gmReplayMulti:
                       begin
                         IncGameTick;
-
+                        {$IFDEF PERFLOG}
                         gPerfLogs.StackCPU.TickBegin;
                         gPerfLogs.SectionEnter(psGameTick, fGameTick);
+                        {$ENDIF}
 
                         try
                           fScripting.UpdateState;
@@ -2591,8 +2603,10 @@ begin
                           end;
 
                         finally
+                          {$IFDEF PERFLOG}
                           gPerfLogs.SectionLeave(psGameTick);
                           gPerfLogs.StackCPU.TickEnd;
+                          {$ENDIF}
                         end;
 
                         if DoGameHold then
@@ -2626,6 +2640,13 @@ begin
   Result := gGameApp.GameSettings.DebugSaveRandomChecks
             and SAVE_RANDOM_CHECKS
             and (gRandomCheckLogger <> nil);
+end;
+
+
+function TKMGame.DoRenderGame: Boolean;
+begin
+  // Do not render game under game stats page
+  Result := IsMapEditor or not fGamePlayInterface.StatsOpened;
 end;
 
 
