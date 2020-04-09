@@ -1,4 +1,4 @@
-0:Sawmill
+﻿0:Sawmill
 1:Iron smithy
 2:Weapon smithy
 3:Coal mine
@@ -1026,11 +1026,11 @@
 1076:Quick Play
 1077:Start singleplayer game on current map
 1078:Select player:
-1079:Select player to start map with
+1079:Select player to start map as
 1080:Start without save
-1081:Discard changes and start game for selected player
+1081:Discard changes and start game as selected player
 1082:Save and start
-1083:Save map and start game for selected player
+1083:Save map and start game as selected player
 1084:In Barracks:
 1085:In TownHall:
 1086:Rotate tile on map
@@ -1182,7 +1182,7 @@
 1232:Take any group type
 1233:Difficulty
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
-1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm this operation?
+1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you wish to proceed?
 1236:The procedure [ %s ] declared for the script console command /%s was not found
 1237:Wrong parameter type for script console command /%s: [%s]
 1238:Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ]
@@ -1192,7 +1192,7 @@
 1242:Command called: /%s(%s)
 1243:Error while calling script command /%s(%s)
 1244:Script console command /%s not found
-1245:Enable/Disable chat history and copy from chat window
+1245:Enable/disable chat history and copy from chat window
 1246:Save replay state to be able to load while watching this replay
 1247:Load replay at %s
 1248:Players colors:
@@ -1206,10 +1206,10 @@
 1256:Citizens (S/L/R)
 1257:Citizens (Others)
 1258:Open/Close spectator stats panel
-1259:Deliver %s is prohibited
-1260:Take out '%s' is prohibited while in the 'offer' delivery mode
-1261:Recruit is not allowed to get into Barracks
-1262:Search tile by ID 
+1259:Delivery of %s is prohibited
+1260:Supply of %s is prohibited
+1261:Recruit is not allowed to enter Barracks
+1262:Search tile by ID
 1263:Random Map Generator - Settings
 1264:Random map generator settings
 1265:RMG Settings
