@@ -1,5 +1,5 @@
-0:Mein General, der König hat Euch damit betraut Vorräte und Männer zu sammeln, damit wir die anderen Widerstandskämpfer überzeugen können sich zu verbünden und uns in unserem finalen Kampf zu unterstützen.
-1:General, unsere Späher sind mit schlechten Nachrichten zurückgekehrt. Feindliche Truppen marschieren auf unsere Stadt zu und werden schon bald hier sein!
+0:Mein General, der KÃ¶nig hat Euch damit betraut VorrÃ¤te und MÃ¤nner zu sammeln, damit wir die anderen WiderstandskÃ¤mpfer Ã¼berzeugen kÃ¶nnen sich zu verbÃ¼nden und uns in unserem finalen Kampf zu unterstÃ¼tzen.
+1:General, unsere SpÃ¤her sind mit schlechten Nachrichten zurÃ¼ckgekehrt. Feindliche Truppen marschieren auf unsere Stadt zu und werden schon bald hier sein!
 4:[$0000FC]Ziel[]: 
 5:[$8CE6F0] - []
 6:[$00FF7F]Sammle Ressourcen:[]
@@ -7,5 +7,5 @@
 8:[$D2FAFA]%s[] - %d/%d
 9:[$2FFFAD]%s[]
 10:[$00FF7F]Formiere Armee:[]
-11:[$00FF7F]Überlebe[]
-12:Seid vorsichtig, der Feind hat mehrere kleine Angriffstruppen auf Eure Stadt angesetzt. Sie könnten von überall kommen.
+11:[$00FF7F]Ãœberlebe[]
+12:Seid vorsichtig, der Feind hat mehrere kleine Angriffstruppen auf Eure Stadt angesetzt. Sie kÃ¶nnten von Ã¼berall kommen.

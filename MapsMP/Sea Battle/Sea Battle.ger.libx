@@ -1,8 +1,8 @@
 0:Platziere dein Schlachtschiff
 1:Platziere deine Kreuzer
-2:Platziere deine Zerstˆrer
+2:Platziere deine Zerst√∂rer
 3:Platziere deine U-Boote
-4:Du kannst deine Schiffe zuf‰llig platzieren. Platziere eine Markthalle
+4:Du kannst deine Schiffe zuf√§llig platzieren. Platziere eine Markthalle
 5:Du kannst deine Schiffe horizontal oder vertikal platzieren. Platziere ein Feld (horizontal) oder ein Weinfeld (vertikal).
 6:Bereit? Platziere eine Kaserne
 7: Zug
@@ -10,7 +10,7 @@
 9:Du verlierst.
 10:Warte auf Gegner...
 11:Um ein neues Spiel zu starten, platziere einen Wachturm
-12:Um ein gegnerisches Schiff anzugreifen, platziere eine Straﬂe
+12:Um ein gegnerisches Schiff anzugreifen, platziere eine Stra√üe
 13:Mach dich bereit
 14:Punktestand
 15:Deine Schiffe:
@@ -18,11 +18,11 @@
 17:Game Over! Der Gewinner ist
 18:Zeit verbleibend:
 19:Um alle Schiffplatzierungen abzubrechen, setzte ein Lagerhaus
-20:Um die letzte Schiffplatzierung r¸ckg‰ngig zu machen, platziere ein Schulhaus
-21:Klassisches Schiffe versenken. Jetzt auch in KaM :D||Gib den [$6BD0FA]/help[] Befehl in den Chat ein um mehr Infos zu erhalten||Du kannst deine Schiffe horizontal oder vertikal platzieren. Platziere ein Feld (horizontal) oder ein Weinfeld (vertikal).||Du kannst deine Schiffe zuf‰llig platzieren. Platziere eine Markthalle oder verwende den [$6BD0FA]/random[] Befehl.||Platziere eine Kaserne oder verwende den [$6BD0FA]/ready[] Befehl wenn du bereit bist.||Um ein gegnerisches Schiff anzugreifen, platziere eine Straﬂe.||Um ein neues Spiel zu starten, platziere einen Wachturm oder verwende den [$6BD0FA]/new[] Befehl.||Platziere ein Lagerhaus oder verwende den [$6BD0FA]/clear[] oder [$6BD0FA]/undo 10[] Befehl um Schiffplatzierungen r¸ckg‰ngig zu machen.
+20:Um die letzte Schiffplatzierung r√ºckg√§ngig zu machen, platziere ein Schulhaus
+21:Klassisches Schiffe versenken. Jetzt auch in KaM :D||Gib den [$6BD0FA]/help[] Befehl in den Chat ein um mehr Infos zu erhalten||Du kannst deine Schiffe horizontal oder vertikal platzieren. Platziere ein Feld (horizontal) oder ein Weinfeld (vertikal).||Du kannst deine Schiffe zuf√§llig platzieren. Platziere eine Markthalle oder verwende den [$6BD0FA]/random[] Befehl.||Platziere eine Kaserne oder verwende den [$6BD0FA]/ready[] Befehl wenn du bereit bist.||Um ein gegnerisches Schiff anzugreifen, platziere eine Stra√üe.||Um ein neues Spiel zu starten, platziere einen Wachturm oder verwende den [$6BD0FA]/new[] Befehl.||Platziere ein Lagerhaus oder verwende den [$6BD0FA]/clear[] oder [$6BD0FA]/undo 10[] Befehl um Schiffplatzierungen r√ºckg√§ngig zu machen.
 22:oder
 23:gib einen Konsolenbefehl in den Chat ein:
-24:‰ndere Schiffplatzierung in Zuf‰llig
+24:√§ndere Schiffplatzierung in Zuf√§llig
 25:Du kannst jeglichen Anzahl an Schritten abbrechen von 1 bis 10, zum Beispiel
 26:Befehl
 27:wird 5 Schritte abbrechen

@@ -1,17 +1,17 @@
-0:Willkommen! Um euren Bonus auszuwählen, plant ein Gebäude. Die verschiedenen Boni sind: Überlebenskünstler (Gasthof); Ingenieurswesen (Sägewerk); Reichtum (Schmelzer); Entdecker (Ställe); Meister Handwerker (Eisenschmelze); Knallhartes Volk (Kaserne); Scharfschützen (Wachturm); Vergeltung (Markthalle).
-1:Ihr habt euch für Meister Handwerker entschieden! Euer Volk ist sehr geschickt, ihre Handwerkskünste sind legendär. Deshalb können sie mehr Waffen und Rüstung herstellen.
-2:Ihr habt euch für Knallhartes Volk entschieden! Euer Volk ist knallhart, abgehärtet durch das raue Klima ihrer Heimatlande. Deshalb sind all eure Milizen kräftige Barbaren. Um ihre eigenen Waffen herzustellen, werden sie jedoch zwei Äxte kombinieren müssen.
-3:Ihr habt euch für Reichtum entschieden! Euer Volk besteht aus erfahrenen Kaufleuten. Dank ihnen, sind eure Goldreserven fast unbegrenzt und Ihr erhält die doppelte Menge Ressourcen beim Handeln in der Markthalle.
-4:Ihr habt euch für Scharfschützen entschieden! Euer Volk besteht aus erfahrenen Scharfschützen, stolz auf ihre Zielgenauigkeit. All eure Schützen sind tödlich und haben eine 15% Chance jegliches Ziel mit einem einzigen Kopfschuss zu töten.
-5:Ihr habt euch für Vergeltung entschieden! Euer Volk ist von mächtiger Abstammung. Jeder der es wagt Blut eures Volkes zu vergießen hat eine 5% Chance durch einen Fluch getötet zu werden.
-6:Ihr habt euch für Entdecker entschieden! Euer Volk besteht aus exzellenten Pferdezüchtern und erfahrenen Spähern, deren raues Leben in der Wildnis ihnen eine Menge über das Bauen und Instandhalten ihres Unterschlupfs gelernt hat. Sobald ihre Häuser beschädigt sind werden sie diese langsam wieder reparieren.
-7:Ihr habt euch für Überlebenskünstler entschieden! Die langen Jahre in der Wüste haben eurem Volk eine erstaunliche Widerstandskraft gegenüber Hunger verliehen. Sie können essen was immer sie in den Wäldern finden; deshalb wird euer Volk nie Hunger leiden.
-8:Ihr habt euch für Ingenieurswesen entschieden! Das Wissen und Verständnis eurer Arbeiter ist exzellent, und ihr Fähigkeiten bezeugen dies. Ihr könnt von Anfang an alles bauen und eure Arbeiter benötigen nur die Hälfte der Zeit als üblich.
-9:[$%s]%s[] hat sich für Meister Handwerker entschieden!
-10:[$%s]%s[] hat sich für Knallhartes Volk entschieden!
-11:[$%s]%s[] hat sich für Reichtum entschieden!
-12:[$%s]%s[] hat sich für Scharfschützen entschieden!
-13:[$%s]%s[] hat sich für Vergeltung entschieden!
-14:[$%s]%s[] hat sich für Entdecker entschieden!
-15:[$%s]%s[] hat sich für Überlebenskünstler entschieden!
-16:[$%s]%s[] hat sich für Ingenieurswesen entschieden!
+0:Willkommen! Um euren Bonus auszuwÃ¤hlen, plant ein GebÃ¤ude. Die verschiedenen Boni sind: ÃœberlebenskÃ¼nstler (Gasthof); Ingenieurswesen (SÃ¤gewerk); Reichtum (Schmelzer); Entdecker (StÃ¤lle); Meister Handwerker (Eisenschmelze); Knallhartes Volk (Kaserne); ScharfschÃ¼tzen (Wachturm); Vergeltung (Markthalle).
+1:Ihr habt euch fÃ¼r Meister Handwerker entschieden! Euer Volk ist sehr geschickt, ihre HandwerkskÃ¼nste sind legendÃ¤r. Deshalb kÃ¶nnen sie mehr Waffen und RÃ¼stung herstellen.
+2:Ihr habt euch fÃ¼r Knallhartes Volk entschieden! Euer Volk ist knallhart, abgehÃ¤rtet durch das raue Klima ihrer Heimatlande. Deshalb sind all eure Milizen krÃ¤ftige Barbaren. Um ihre eigenen Waffen herzustellen, werden sie jedoch zwei Ã„xte kombinieren mÃ¼ssen.
+3:Ihr habt euch fÃ¼r Reichtum entschieden! Euer Volk besteht aus erfahrenen Kaufleuten. Dank ihnen, sind eure Goldreserven fast unbegrenzt und Ihr erhÃ¤lt die doppelte Menge Ressourcen beim Handeln in der Markthalle.
+4:Ihr habt euch fÃ¼r ScharfschÃ¼tzen entschieden! Euer Volk besteht aus erfahrenen ScharfschÃ¼tzen, stolz auf ihre Zielgenauigkeit. All eure SchÃ¼tzen sind tÃ¶dlich und haben eine 15% Chance jegliches Ziel mit einem einzigen Kopfschuss zu tÃ¶ten.
+5:Ihr habt euch fÃ¼r Vergeltung entschieden! Euer Volk ist von mÃ¤chtiger Abstammung. Jeder der es wagt Blut eures Volkes zu vergieÃŸen hat eine 5% Chance durch einen Fluch getÃ¶tet zu werden.
+6:Ihr habt euch fÃ¼r Entdecker entschieden! Euer Volk besteht aus exzellenten PferdezÃ¼chtern und erfahrenen SpÃ¤hern, deren raues Leben in der Wildnis ihnen eine Menge Ã¼ber das Bauen und Instandhalten ihres Unterschlupfs gelernt hat. Sobald ihre HÃ¤user beschÃ¤digt sind werden sie diese langsam wieder reparieren.
+7:Ihr habt euch fÃ¼r ÃœberlebenskÃ¼nstler entschieden! Die langen Jahre in der WÃ¼ste haben eurem Volk eine erstaunliche Widerstandskraft gegenÃ¼ber Hunger verliehen. Sie kÃ¶nnen essen was immer sie in den WÃ¤ldern finden; deshalb wird euer Volk nie Hunger leiden.
+8:Ihr habt euch fÃ¼r Ingenieurswesen entschieden! Das Wissen und VerstÃ¤ndnis eurer Arbeiter ist exzellent, und ihr FÃ¤higkeiten bezeugen dies. Ihr kÃ¶nnt von Anfang an alles bauen und eure Arbeiter benÃ¶tigen nur die HÃ¤lfte der Zeit als Ã¼blich.
+9:[$%s]%s[] hat sich fÃ¼r Meister Handwerker entschieden!
+10:[$%s]%s[] hat sich fÃ¼r Knallhartes Volk entschieden!
+11:[$%s]%s[] hat sich fÃ¼r Reichtum entschieden!
+12:[$%s]%s[] hat sich fÃ¼r ScharfschÃ¼tzen entschieden!
+13:[$%s]%s[] hat sich fÃ¼r Vergeltung entschieden!
+14:[$%s]%s[] hat sich fÃ¼r Entdecker entschieden!
+15:[$%s]%s[] hat sich fÃ¼r ÃœberlebenskÃ¼nstler entschieden!
+16:[$%s]%s[] hat sich fÃ¼r Ingenieurswesen entschieden!
