@@ -38,7 +38,7 @@ type
     fCityStats: TCityStats;
     fCityUnderConstruction: Boolean;
     fWorkerCount: Word;
-    fGoldMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt: Integer;
+    fMaxGoldMineCnt, fDecCoalMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt: Integer;
     fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin, fPeaceFactor, fUpdatedPeaceFactor: Single;
     fWareBalance: TWareBalanceArray;
     fFarmBuildHistory: THouseBuildHistory; // Farms are another exception in production (production is delayed and depends on position of each farm)
@@ -53,7 +53,7 @@ type
     procedure UpdateWareBalance(aInitialization: Boolean = False);
 
     procedure UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
-    procedure UpdateFinalProduction(aIncPeaceFactor: Single = 0);
+    procedure UpdateFinalProduction(aIncPeaceFactor: Single = 0; aIncrementMines: Boolean = False);
     procedure UpdateCityStats();
 
     procedure FilterRequiredHouses(aTick: Cardinal);
@@ -68,7 +68,7 @@ type
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
     property WorkerCount: Word read fWorkerCount;
-    property GoldMineCnt: Integer read fGoldMineCnt write fGoldMineCnt;
+    property MaxGoldMineCnt: Integer read fMaxGoldMineCnt write fMaxGoldMineCnt;
     property IronMineCnt: Integer read fIronMineCnt write fIronMineCnt;
     property FieldCnt: Integer read fFieldCnt write fFieldCnt;
     property BuildCnt: Integer read fBuildCnt write fBuildCnt;
@@ -77,7 +77,7 @@ type
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure OwnerUpdate(aPlayer: TKMHandID);
-    procedure MarkExhaustedIronMine();
+    procedure MarkExhaustedMine(aMineType: TKMHouseType);
 
   end;
 
@@ -164,7 +164,8 @@ begin
   fSetup := aSetup;
   fWorkerCount := 0;
 
-  fGoldMineCnt := 0;
+  fMaxGoldMineCnt := 0;
+  fDecCoalMineCnt := 0;
   fIronMineCnt := 0;
   fFieldCnt := 0;
   fBuildCnt := 0;
@@ -200,7 +201,8 @@ begin
   SaveStream.Write(fWorkerCount);
   SaveStream.Write(fCityUnderConstruction);
 
-  SaveStream.Write(fGoldMineCnt);
+  SaveStream.Write(fMaxGoldMineCnt);
+  SaveStream.Write(fDecCoalMineCnt);
   SaveStream.Write(fIronMineCnt);
   SaveStream.Write(fFieldCnt);
   SaveStream.Write(fBuildCnt);
@@ -237,7 +239,8 @@ begin
   LoadStream.Read(fWorkerCount);
   LoadStream.Read(fCityUnderConstruction);
 
-  LoadStream.Read(fGoldMineCnt);
+  LoadStream.Read(fMaxGoldMineCnt);
+  LoadStream.Read(fDecCoalMineCnt);
   LoadStream.Read(fIronMineCnt);
   LoadStream.Read(fFieldCnt);
   LoadStream.Read(fBuildCnt);
@@ -273,9 +276,13 @@ begin
 end;
 
 
-procedure TKMCityPredictor.MarkExhaustedIronMine();
+procedure TKMCityPredictor.MarkExhaustedMine(aMineType: TKMHouseType);
 begin
-  fIronMineCnt := fIronMineCnt - 1;
+  case aMineType of
+    htIronMine: Dec(fIronMineCnt);
+    htGoldMine: Dec(fMaxGoldMineCnt);
+    htCoalMine: Inc(fDecCoalMineCnt);
+  end;
   UpdateFinalProduction();
 end;
 
@@ -489,7 +496,7 @@ begin
 end;
 
 
-procedure TKMCityPredictor.UpdateFinalProduction(aIncPeaceFactor: Single = 0);
+procedure TKMCityPredictor.UpdateFinalProduction(aIncPeaceFactor: Single = 0; aIncrementMines: Boolean = False);
 const
   IRON_WARFARE: set of TKMWareType = [wtMetalShield, wtMetalArmor, wtSword, wtHallebard, wtArbalet];
   WOOD_WARFARE: set of TKMWareType = [wtAxe, wtPike, wtBow];
@@ -560,6 +567,12 @@ begin
   fWorkerCount := Round( Min( 30 - 20 * fUpdatedPeaceFactor * Byte(not gGame.IsPeaceTime), // Decrease count of required workers after peace
                               10 + FreePlace*0.008 + fPeaceFactor*8 )
                        );
+  // Try to build mines even when perf. optimalization prohibits it (once in ~8 min)
+  if aIncrementMines then
+  begin
+    //Inc(fMaxGoldMineCnt);
+    fDecCoalMineCnt := Max(0,fDecCoalMineCnt - 1);
+  end;
 end;
 
 
@@ -732,7 +745,11 @@ begin
                                 + Stats.GetHouseTotal(htWeaponSmithy)
                                 + 1; // +1 works better for some reason
 
-  // Loghical house requirements (delay takes too long so it is not used)
+  // Consider exhausted city (save procesor time)
+  RequiredHouses[htCoalMine] := RequiredHouses[htCoalMine] - fDecCoalMineCnt;
+  RequiredHouses[htGoldMine] := Min(RequiredHouses[htGoldMine], fMaxGoldMineCnt);
+
+  // Logical house requirements (delay takes too long so it is not used)
   {
   RequiredHouses[htSwine] := RequiredHouses[htSwine] * Byte(Stats.GetWareBalance(wtCorn) > 0);
   RequiredHouses[htButchers] := RequiredHouses[htButchers] * Byte(Stats.GetWareBalance(wtPig) > 0);
@@ -756,7 +773,7 @@ const
 begin
   // Update final production (based on size of city, mines etc.)
   if (aTick mod UPDATE_PRODUCTION = fOwner) then
-    UpdateFinalProduction();
+    UpdateFinalProduction(0, True);
   // Clear required houses
   FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
   // Update city stats
@@ -834,7 +851,7 @@ begin
   AddWare(wtAxe, 'Weapon'#9#9);
   AddWare(wtMetalArmor, 'Iron Armor'#9);
   AddWare(wtSword, 'Iron Weapon'#9);
-  aBalanceText := Format('%sPeace factor = %1.2f (update = %1.2f); Max workers: %d; Gold mines = %d; Iron mines = %d; Field coef = %d; Build coef = %d; |', [aBalanceText, fPeaceFactor, fUpdatedPeaceFactor, fWorkerCount, fGoldMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt]);
+  aBalanceText := Format('%sPeace factor = %1.2f (update = %1.2f); Max workers: %d; Max gold = %d; Dec coal = %d; Iron = %d; Field coef = %d; Build coef = %d; |', [aBalanceText, fPeaceFactor, fUpdatedPeaceFactor, fWorkerCount, fMaxGoldMineCnt, fDecCoalMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt]);
 end;
 
 
