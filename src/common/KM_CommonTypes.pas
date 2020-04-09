@@ -76,6 +76,8 @@ type
     mkQuill //Utility message (warnings in script loading)
     );
 
+  TKMAudioFormat = (afWav, afOgg);
+
   TWonOrLost = (wolNone, wolWon, wolLost);
 
   //Menu load type - load / no load / load unsupported version
