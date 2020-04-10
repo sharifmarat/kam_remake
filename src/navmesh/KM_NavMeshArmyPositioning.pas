@@ -36,7 +36,7 @@ type
     Price: Single;
     Lines: array of TKMBattleLine;
   end;
-  {$IFDEF DEBUG_NavMeshDefences}
+  {$IFDEF DEBUG_BattleLines}
   TKMDebugBattleLines = record
     Count, LineStartIdx: Word;
     DBLs: array of TKMBattleLines;
@@ -83,6 +83,7 @@ type
   public
     fDefInfo: TDefInfoArray;
     Enemy: TKMAllianceInfo;
+    TargetEnemy: TKMAllianceInfo;
     Ally: TKMAllianceInfo;
     BattleLines: TKMBattleLines;
     TargetPositions: TKMPointDirArray;
@@ -91,7 +92,7 @@ type
     constructor Create(aSorted: Boolean = False); override;
     destructor Destroy; override;
 
-    function FindArmyPosition(var aOwners: TKMHandIDArray): Boolean;
+    function FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
     procedure Paint();
   end;
 
@@ -106,7 +107,7 @@ type
     fDefInfo: TDefInfoArray;
     fBattleLines: TKMBattleLines;
     fBestBattleLines: TKMBattleLines;
-    {$IFDEF DEBUG_NavMeshDefences}
+    {$IFDEF DEBUG_BattleLines}
     fDebugLines: TKMDebugBattleLines;
     procedure SaveDebugLine();
     {$ENDIF}
@@ -130,11 +131,11 @@ type
 
 const
   PREFILL_MAX_DISTANCE_GROUPS = 30;
-  PREFILL_MAX_DISTANCE_HOUSES = 10;
+  PREFILL_MAX_DISTANCE_HOUSES = 5;
   PREFILL_SHIFT = 3;
 
   POLYGON_CNT_PENALIZATION = 10;
-  SCAN_HOUSES: THouseTypeSet = [htWatchTower, htBarracks, htStore, htSchool, htTownhall];
+  SCAN_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool, htTownhall]; //htWatchTower,
 
 
 implementation
@@ -142,6 +143,9 @@ uses
   SysUtils,
   KM_Hand, KM_HandsCollection,
   KM_AIFields, KM_AIInfluences, KM_NavMesh,
+  {$IFDEF DEBUG_BattleLines}
+  DateUtils,
+  {$ENDIF}
   KM_Game, KM_RenderAux;
 
 
@@ -256,9 +260,19 @@ end;
 
 
 function TArmyForwardFF.GetInitPolygonsGroups(aAllianceType: TKMAllianceType; var aAlliance: TKMAllianceInfo): Boolean;
+  function CheckIdenticalPolygons(aStartIdx: Integer): Word;
+  var
+    K: Integer;
+  begin
+    with aAlliance do
+      for K := aStartIdx to GroupsCount - 1 do
+        if (GroupsPoly[K] = GroupsPoly[GroupsCount]) then
+          Exit(0);
+    Result := 1;
+  end;
 var
   PL: TKMHandID;
-  K, L: Integer;
+  K, L, StartIdx: Integer;
   G: TKMUnitGroup;
 begin
   with aAlliance do
@@ -275,6 +289,7 @@ begin
           if (G <> nil) AND not G.IsDead AND not KMSamePoint(KMPOINT_ZERO,G.Position) then
           begin
             L := 0;
+            StartIdx := GroupsCount;
             while (L < G.Count) do
             begin
               if (G.Members[L] <> nil) AND not G.Members[L].IsDeadOrDying then
@@ -286,7 +301,7 @@ begin
                 end;
                 GroupsPoly[GroupsCount] := gAIFields.NavMesh.KMPoint2Polygon[ G.Members[L].CurrPosition ];
                 Groups[GroupsCount] := G;
-                Inc(GroupsCount);
+                Inc(GroupsCount,CheckIdenticalPolygons(StartIdx));
                 L := L + 5;
               end
               else
@@ -306,7 +321,6 @@ function TArmyForwardFF.GetInitPolygonsHouses(aAllianceType: TKMAllianceType; va
 var
   PL: TKMHandID;
   K: Integer;
-  HT: TKMHouseType;
   H: TKMHouse;
 begin
   with aAlliance do
@@ -317,20 +331,16 @@ begin
         for K := 0 to gHands[PL].Houses.Count - 1 do
         begin
           H := gHands[PL].Houses[K];
-          if (H <> nil) AND not H.IsDestroyed then
+          if (H <> nil) AND not H.IsDestroyed AND (H.HouseType in SCAN_HOUSES) then
           begin
-            HT := H.HouseType;
-            if HT in SCAN_HOUSES then
+            if (Length(Houses) <= HousesCount) then
             begin
-              if (Length(Houses) <= HousesCount) then
-              begin
-                SetLength(HousesPoly, HousesCount + 10);
-                SetLength(Houses, Length(HousesPoly));
-              end;
-              HousesPoly[HousesCount] := gAIFields.NavMesh.KMPoint2Polygon[ H.Entrance ];
-              Houses[HousesCount] := H;
-              Inc(HousesCount);
+              SetLength(HousesPoly, HousesCount + 10);
+              SetLength(Houses, Length(HousesPoly));
             end;
+            HousesPoly[HousesCount] := gAIFields.NavMesh.KMPoint2Polygon[ H.Entrance ];
+            Houses[HousesCount] := H;
+            Inc(HousesCount);
           end;
         end;
     SetLength(HousesPoly, HousesCount);
@@ -361,16 +371,58 @@ begin
 end;
 
 
-function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray): Boolean;
+function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
+var
+  K,L: Integer;
+  //PL: TKMHandID;
+  //aTargetGroups: TKMUnitGroupArray;
+  //aTargetHouses: TKMHouseArray;
 begin
   Result := False;
   fOwner := aOwners[0];
+
+
+  //DEBUG
+  {
+  PL := 1;
+  SetLength(aTargetGroups, gHands[PL].UnitGroups.Count);
+  SetLength(aTargetHouses, gHands[PL].Houses.Count);
+  for K := 0 to gHands[PL].UnitGroups.Count - 1 do
+    aTargetGroups[K] := gHands[PL].UnitGroups[K];
+  for K := 0 to gHands[PL].Houses.Count - 1 do
+    aTargetHouses[K] := gHands[PL].Houses[K];
+  //}
+
   if ForwardFF() then
   begin
-    BattleLines := fBackwardFF.FindTeamDefences(Enemy, aOwners, fDefInfo, fQueueArray);
+    TargetEnemy.GroupsCount := 0;
+    TargetEnemy.HousesCount := 0;
+    SetLength(TargetEnemy.Groups, Enemy.GroupsCount);
+    SetLength(TargetEnemy.Houses, Enemy.HousesCount);
+    SetLength(TargetEnemy.GroupsPoly, Enemy.GroupsCount);
+    SetLength(TargetEnemy.HousesPoly, Enemy.HousesCount);
+    for K := 0 to Enemy.GroupsCount - 1 do
+      for L := Low(aTargetGroups) to High(aTargetGroups) do
+        if (aTargetGroups[L] = Enemy.Groups[K]) then
+        begin
+          TargetEnemy.Groups[TargetEnemy.GroupsCount] := Enemy.Groups[K];
+          TargetEnemy.GroupsPoly[TargetEnemy.GroupsCount] := Enemy.GroupsPoly[K];
+          Inc(TargetEnemy.GroupsCount);
+        end;
+    for K := 0 to Enemy.HousesCount - 1 do
+      for L := Low(aTargetHouses) to High(aTargetHouses) do
+        if (aTargetHouses[L] = Enemy.Houses[K]) then
+        begin
+          TargetEnemy.Houses[TargetEnemy.HousesCount] := Enemy.Houses[K];
+          TargetEnemy.HousesPoly[TargetEnemy.HousesCount] := Enemy.HousesPoly[K];
+          Inc(TargetEnemy.HousesCount);
+        end;
+    BattleLines := fBackwardFF.FindTeamDefences(TargetEnemy, aOwners, fDefInfo, fQueueArray);
     Result := BattleLines.Count > 0;
     if Result then
+    begin
       AssignDefencePositions();
+    end;
   end;
 end;
 
@@ -443,7 +495,7 @@ begin
       begin
         Idx := BattleLines.Lines[L].Polygons[M];
         LinePoint := fPolyArr[ Idx ].CenterPoint;
-        Price := KMDistanceSqr(LinePoint, GroupPoint) - fDefInfo[Idx].Mark * 50;
+        Price := KMDistanceSqr(LinePoint, GroupPoint) + fDefInfo[Idx].Mark * 32;
         if (Price < BestPrice) then
         begin
           BestPrice := Price;
@@ -592,7 +644,7 @@ procedure TArmyBackwardFF.InitQueue(var aEnemy: TKMAllianceInfo);
 var
   K, Idx: Integer;
 begin
-  {$IFDEF DEBUG_NavMeshDefences}
+  {$IFDEF DEBUG_BattleLines}
     fDebugLines.Count := 0;
   {$ENDIF}
   fPolyArr := gAIFields.NavMesh.Polygons;
@@ -675,12 +727,12 @@ begin
     if not IsVisited(NearbyIdx) then
     begin
       MarkAsVisited(NearbyIdx);
+      fDefInfo[NearbyIdx].Mark := fDefInfo[aIdx].Mark + 1;
       if (fPolyArr[NearbyIdx].NearbyCount = 3) then // New combat lines are created only from polygons with 3 surrounding polygons
       begin
         ComputeWeightedDistance(NearbyIdx);
         //if (fDefInfo[aIdx].Distance + 3 > fDefInfo[NearbyIdx].Distance) then
         //begin
-          fDefInfo[NearbyIdx].Mark := fDefInfo[aIdx].Mark + 1;
           InsertAndSort(NearbyIdx);
           Inc(fBattleLines.Lines[LineIdx1].PolygonsCount);
           if (fBattleLines.Lines[LineIdx1].PolygonsCount > Length(fBattleLines.Lines[LineIdx1].Polygons)) then
@@ -761,7 +813,7 @@ begin
         if (Idx = fEndQueue)   then fEndQueue := OldIdx;
         Dec(fQueueCnt);
         ExpandPolygon(Idx);
-        {$IFDEF DEBUG_NavMeshDefences}
+        {$IFDEF DEBUG_BattleLines}
         SaveDebugLine();
         {$ENDIF}
         InEnemyInfluence := True;
@@ -771,7 +823,7 @@ begin
       Idx := fQueueArray[Idx].Next;
     until (OldIdx <> fEndQueue) OR (Overflow2 < 1000) OR (fQueueCnt <= 0);
   end;
-  {$IFDEF DEBUG_NavMeshDefences}
+  {$IFDEF DEBUG_BattleLines}
   fDebugLines.LineStartIdx := fDebugLines.Count;
   {$ENDIF}
 
@@ -784,7 +836,7 @@ begin
     //  debug(Idx);
     if CanBeExpanded(Idx) then
       ExpandPolygon(Idx);
-    {$IFDEF DEBUG_NavMeshDefences}
+    {$IFDEF DEBUG_BattleLines}
     SaveDebugLine();
     {$ENDIF}
   end;
@@ -836,7 +888,7 @@ begin
 end;
 
 
-{$IFDEF DEBUG_NavMeshDefences}
+{$IFDEF DEBUG_BattleLines}
 procedure TArmyBackwardFF.SaveDebugLine();
 var
   K,L: Integer;
@@ -873,6 +925,7 @@ begin
   fOwner := aOwners[0];
   fDefInfo := aDefInfo;
   fQueueArray := aQueueArray;
+  fBestBattleLines.Count := 0;
   if (aEnemy.GroupsCount > 0) OR (aEnemy.HousesCount > 0) then
     BackwardFlood(aEnemy);
   Result := fBestBattleLines;
@@ -904,15 +957,17 @@ const
   COLOR_RED = $7700FF;
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
+{$IFDEF DEBUG_BattleLines}
 var
   K,L,Idx: Integer;
-{$IFDEF DEBUG_NavMeshDefences}
   //Opacity: Byte;
   Color, TickIdx: Cardinal;
+  today: TDateTime;
   //MinPrc, MaxPrc: Single;
   //P1,P2: TKMPoint;
 {$ENDIF}
 begin
+  {$IFDEF DEBUG_BattleLines}
   {
   for K := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
     if IsVisited(K) then
@@ -928,19 +983,22 @@ begin
     end;
   //}
   //{
+  for K := 0 to Length(fQueueArray) - 1 do
+    DrawPolygon(K, 1, Color, IntToStr(fDefInfo[K].Mark));
+
   for K := 0 to fBestBattleLines.Count - 1 do
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
     begin
       Idx := fBestBattleLines.Lines[K].Polygons[L];
-      DrawPolygon(Idx, 30, COLOR_GREEN, IntToStr(fQueueArray[Idx].Distance));
+      DrawPolygon(Idx, 50, COLOR_GREEN, IntToStr(fDefInfo[Idx].Mark));
     end;
     //}
-
-  {$IFDEF DEBUG_NavMeshDefences}
+  {$ENDIF}
+  {$IFDEF DEBUG_BattleLines}
   //{
   if fDebugLines.Count > 0 then
   begin
-    TickIdx := Round(gGame.GameTick / 1.0) mod fDebugLines.Count;
+    TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;
     Color := COLOR_WHITE;
     if (fDebugLines.LineStartIdx >= TickIdx) then
       Color := COLOR_RED;

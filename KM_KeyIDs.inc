@@ -111,4 +111,5 @@ SC_MAPEDIT_SUB_MENU_ACTION_7 = 95; // MapEdit Sub-menu Action 6
 SC_MAPEDIT_OBJ_PALETTE = 96; // MapEdit Objects palette
 SC_MAPEDIT_UNIV_ERASOR = 97; // MapEdit Universal erasor
 SC_MAPEDIT_PAINT_BUCKET = 98; // MapEdit Paint bucket
+SC_MAPEDIT_HISTORY = 99; // MapEdit History
 

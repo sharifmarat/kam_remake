@@ -349,7 +349,9 @@ var
   AvailableDeliveries, AvailableSerfs: Integer;
   Serf: TKMUnitSerf;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, aTick);
+  {$ENDIF}
   try
     fQueue.UpdateState(aTick);
     RemoveExtraSerfs;
@@ -414,7 +416,9 @@ begin
       end;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 
@@ -1060,7 +1064,9 @@ var
   OffersTaken: Cardinal;
   DemandTaken: array of Boolean; //Each demand can only be taken once in our measurements
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  {$ENDIF}
   try
     SetLength(DemandTaken,fDemandCount+1);
     FillChar(DemandTaken[0], SizeOf(Boolean)*(fDemandCount+1), #0);
@@ -1090,7 +1096,9 @@ begin
           end;
       end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 
@@ -1312,7 +1320,9 @@ end;
 
 function TKMDeliveries.TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  {$ENDIF}
   try
     Result := TryCalculateBidBasic(iO, iD, aBidValue, aSerf);
 
@@ -1355,7 +1365,9 @@ begin
         aBidValue := aBidValue + KaMRandom(5 + (100 div fOffer[iO].Count), 'TKMDeliveries.TryCalculateBidBasic 5');
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 
@@ -1366,7 +1378,9 @@ var
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  {$ENDIF}
   try
     iO := fQueue[aDeliveryID].OfferID;
     OldD := fQueue[aDeliveryID].DemandID;
@@ -1437,7 +1451,9 @@ begin
     aToHouse := fDemand[BestD].Loc_House;
     aToUnit := fDemand[BestD].Loc_Unit;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 
@@ -1550,7 +1566,9 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
 var
   BestDemandId, OldDemandId: Integer; // Keep Int to assign to Delivery down below
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  {$ENDIF}
   try
     OldDemandId := fQueue[aDeliveryId].DemandID;
     BestDemandId := FindBestDemandId();
@@ -1596,7 +1614,9 @@ begin
       aToUnit := fDemand[BestDemandId].Loc_Unit;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 
@@ -1608,7 +1628,9 @@ var
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  {$ENDIF}
   try
     //Find Offer matching Demand
     //TravelRoute Asker>Offer>Demand should be shortest
@@ -1665,7 +1687,9 @@ begin
         end;
       end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 
@@ -1772,8 +1796,9 @@ end;
 procedure TKMDeliveries.AbandonDelivery(aID: Integer);
 begin
   gLog.LogDelivery('Abandoned delivery ID ' + IntToStr(aID));
-
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psDelivery, gGame.GameTick);
+  {$ENDIF}
   try
     //Remove reservations without removing items from lists
     if fQueue[aID].OfferID <> 0 then
@@ -1797,7 +1822,9 @@ begin
 
     CloseDelivery(aID);
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psDelivery);
+    {$ENDIF}
   end;
 end;
 

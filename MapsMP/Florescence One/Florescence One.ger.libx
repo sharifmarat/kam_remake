@@ -1,9 +1,6 @@
-
-MaxID:33
-
 1:Holzbein
 2:Gastronomie
-3:Störmanöver
+3:StÃ¶rmanÃ¶ver
 4:Krieger
 5:Behaglichkeit
 6:Dekadenz
@@ -14,11 +11,11 @@ MaxID:33
 11:Eisenfetisch
 12:Abwechslung
 13:Schlachtplan
-14:Bevölkerung
+14:BevÃ¶lkerung
 15:Ritterschau
 16:auf
 17:FLAGGEN DER SPIELER
-18:nötig:
+18:nÃ¶tig:
 19:von
 20:zum Sieg
 21:Fakt-Flagge
@@ -31,6 +28,6 @@ MaxID:33
 28:jedem separat
 29:ab
 30:min
-31:liegt in Führung
+31:liegt in FÃ¼hrung
 32:Zeit bis zum Sieg
 33:Spielzeit

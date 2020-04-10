@@ -1237,8 +1237,8 @@ var
         end;
         csNoPlaceCanBeFound:
         begin
-          if (HT = htIronMine) then
-            fPredictor.MarkExhaustedIronMine();
+          if (HT in [htIronMine, htGoldMine, htCoalMine]) then
+            fPredictor.MarkExhaustedMine(HT);
         end
         //csCannotPlaceHouse:
         else
@@ -1255,22 +1255,33 @@ var
   var
     AllowStoneReservation: Boolean;
     WT: TKMWareType;
+    HT: TKMHouseType;
   begin
     // Find the most required house to be build - use specific order
     for WT in BUILD_ORDER_WARE do
-      if (RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] > 0) AND (WareBalance[WT].Exhaustion < 30) then
+    begin
+      HT := PRODUCTION_WARE2HOUSE[WT];
+      if (RequiredHouses[HT] > 0) AND (WareBalance[WT].Exhaustion < 30) then
       begin
         // Make sure that next cycle will not scan this house in this tick
-        RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] := 0;
+        RequiredHouses[HT] := 0;
 
         AllowStoneReservation := not fStoneShortage OR ( (WT = wtStone) AND (fPlanner.PlannedHouses[htSchool].Completed = 0) );
         // Try build required houses
-        if (AddToConstruction(PRODUCTION_WARE2HOUSE[WT], AllowStoneReservation, AllowStoneReservation) = csHousePlaced) then
-        begin
-          MaxPlans := 0; // This house is critical so dont plan anything else
-          Exit;
+        case AddToConstruction(HT, AllowStoneReservation, AllowStoneReservation) of
+          csHousePlaced:
+            begin
+              MaxPlans := 0; // This house is critical so dont plan anything else
+              Exit;
+            end;
+          csNoPlaceCanBeFound:
+            begin
+              if (HT in [htIronMine, htGoldMine, htCoalMine]) then
+                fPredictor.MarkExhaustedMine(HT);
+            end
         end;
       end;
+    end;
   end;
 
   procedure CheckHouseReservation();

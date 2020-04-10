@@ -3,7 +3,7 @@ unit KM_DevPerfLogForm;
 interface
 uses
   SysUtils, Classes, Vcl.Graphics, Vcl.Forms, Vcl.CheckLst, Vcl.ComCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.ExtCtrls, Types,
-  {KM_ResTypes, }KM_DevPerfLog, KM_DevPerfLogTypes, KM_DevPerfLogSingle, Vcl.Samples.Spin;
+  KM_DevPerfLog, KM_DevPerfLogTypes, KM_DevPerfLogSingle, Vcl.Samples.Spin, KM_Helpers;
 
 type
   TFormPerfLogs = class(TForm)
@@ -24,11 +24,7 @@ type
     CheckBoxes: array [TPerfSectionDev, 0..2] of TCheckBox;
   public
     procedure Show(aPerfLogs: TKMPerfLogs); reintroduce;
-  end;
-
-  TCheckBoxHelper = class helper for TCheckBox
-    procedure SetStateWithoutClick(aState: TCheckBoxState);
-    procedure SetCheckedWithoutClick(aChecked: Boolean);
+    function FormHeight: Integer;
   end;
 
 
@@ -48,6 +44,12 @@ begin
   else
   if Key = VK_NEXT then
     seFrameBudget.Value := seFrameBudget.Value - 10
+end;
+
+
+function TFormPerfLogs.FormHeight: Integer;
+begin
+  Result := CheckBoxes[High(TPerfSectionDev), 0].Top + CheckBoxes[High(TPerfSectionDev), 0].Height + 25;
 end;
 
 
@@ -273,35 +275,6 @@ begin
   fPerfLogs.FrameBudget := seFrameBudget.Value;
 
   fPerfLogs.Smoothing := cbSmoothLines.Checked;
-end;
-
-
-{ TCheckBoxHelper }
-procedure TCheckBoxHelper.SetStateWithoutClick(aState: TCheckBoxState);
-var
-    BckEvent: TNotifyEvent;
-begin
-    BckEvent := OnClick;
-    OnClick := nil;
-    try
-      State := aState;
-    finally
-      OnClick := BckEvent;
-    end;
-end;
-
-
-procedure TCheckBoxHelper.SetCheckedWithoutClick(aChecked: Boolean);
-var
-    BckEvent: TNotifyEvent;
-begin
-    BckEvent := OnClick;
-    OnClick := nil;
-    try
-      Checked := aChecked;
-    finally
-      OnClick := BckEvent;
-    end;
 end;
 
 

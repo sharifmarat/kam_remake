@@ -1,4 +1,4 @@
-﻿TX_HOUSES_NAMES__29 = 0; //Sawmill
+TX_HOUSES_NAMES__29 = 0; //Sawmill
 TX_HOUSES_NAMES_IRONSMITHY = 1; //Iron smithy
 TX_HOUSES_NAMES_WEAPONSMITHY = 2; //Weapon smithy
 TX_HOUSES_NAMES_COALMINE = 3; //Coal mine
@@ -455,7 +455,7 @@ TX_MAPED_TERRAIN_TILES_RANDOM = 389; //Random Direction
 TX_MAPED_TERRAIN_TILES_RANDOM_HINT = 390; //Tick for randomized tile direction or use right click to rotate the selected tile
 TX_MAPED_TERRAIN_OBJECTS_BLOCK = 392; //Block walking
 TX_MAPED_TERRAIN_OBJECTS_REMOVE = 393; //Remove an object
-TX_MAPED_TERRAIN_MAGIC_WATER = 672; //
+TX_MAPED_TERRAIN_MAGIC_WATER = 672; //Magic water
 TX_MAPED_TERRAIN_MAGIC_WATER_HINT = 671; //Magic water - sets the direction for all tiles in a body of water
 TX_MAPED_TERRAIN_EYEDROPPER_HINT = 965; //Eyedropper - select the type of tile under the cursor
 TX_MAPED_TERRAIN_OVERRIDE_CUSTOM_TILES = 1197; //Override manually|set tiles
@@ -966,6 +966,7 @@ TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_7 = 1135; //Sub-menu action 7
 TX_KEY_FUNC_MAPEDIT_OBJ_PALETTE = 1020; //Objects palette
 TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR = 1021; //Universal eraser
 TX_KEY_FUNC_MAPEDIT_PAINT_BUCKET = 1136; //Paint bucket (change owner)
+TX_KEY_FUNC_MAPEDIT_HISTORY = 1408; //History
 TX_KEY_FUNC_UNKNOWN = 903; //~~~ Unknown value
 TX_KEY_UNASSIGNABLE = 902; //Ctrl and Shift are unassignable
 TX_KEY_LMB = 904; //Left Mouse Button
@@ -1442,4 +1443,22 @@ TX_MENU_OPTIONS_VIDEOS_TEST = 1403;
 TX_MENU_OPTIONS_MODS = 1404; //Mods
 TX_MENU_OPTIONS_MODS_SNOW_HOUSES = 1405; //Snow houses
 
+TX_MAPED_HISTORY_HINT = 1409; //History of changes
+TX_MAPED_HISTORY_TITLE = 1410; //History
+TX_MAPED_HISTORY_JUMP_TO = 1411; //Jump to
+TX_MAPED_HISTORY_JUMP_TO_HINT = 1412; //Go to the selected point in history
+TX_MAPED_HISTORY_CHPOINT_INITIAL = 1413; //Initial
+TX_MAPED_HISTORY_CHPOINT_ADD_SMTH = 1414; //Add %s %s
+TX_MAPED_HISTORY_CHPOINT_REMOVE_SMTH = 1415; //Remove %s %s
+TX_MAPED_HISTORY_CHPOINT_UPDATE_SMTH = 1416; //Update %s %s
+TX_MAPED_HISTORY_CHPOINT_MOVE_SMTH = 1417; //Move %s %s
+TX_MAPED_HISTORY_CHPOINT_CHOWNER_SMTH = 1418; //Change owner: %s %s
+
+TX_WORD_ROAD = 1419; //road
+TX_WORD_CORN_FIELD = 1420; //corn field
+TX_WORD_WINE_FIELD = 1421; //wine field
+TX_WORD_OVERLAY = 1422; //overlay
+TX_WORD_OBJECT = 1423; //object
+
+TX_GAME_FOLDER_PERMISSIONS_ERROR = 1424; //You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
 

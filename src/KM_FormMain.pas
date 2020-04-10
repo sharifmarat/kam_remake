@@ -210,6 +210,7 @@ type
 
     procedure ControlsUpdate(Sender: TObject);
   private
+    fShowStartVideo: Boolean;
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
     fOnControlsUpdated: TEvent;
@@ -236,6 +237,7 @@ type
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
     procedure SetExportGameStats(aEnabled: Boolean);
+    procedure ShowFolderPermissionError;
     property OnControlsUpdated: TEvent read fOnControlsUpdated write fOnControlsUpdated;
   end;
 
@@ -269,6 +271,7 @@ uses
 //Remove VCL panel and use flicker-free TMyPanel instead
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
+  fShowStartVideo := True;
   RenderArea := TKMRenderControl.Create(Self);
   RenderArea.Parent := Self;
   RenderArea.Align := alClient;
@@ -325,11 +328,13 @@ begin
 
   Application.ProcessMessages;
 
-  if (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
+  if fShowStartVideo and (gGameApp.GameSettings <> nil) and gGameApp.GameSettings.VideoStartup then
   begin
+    gVideoPlayer.AddVideo('Campaigns\The Shattered Kingdom\Logo');
     gVideoPlayer.AddVideo('KaM');
     gVideoPlayer.Play;
   end;
+  fShowStartVideo := False;
 end;
 
 
@@ -715,7 +720,7 @@ begin
       and not gGameApp.Game.IsReplay) then
     Exit;
 
-  gGameApp.Game.SetGameSpeed(IfThen(chkSuperSpeed.Checked, DEBUG_SPEEDUP_SPEED, gGameApp.Game.GetNormalGameSpeed), False);
+  gGameApp.Game.SetGameSpeed(IfThen(chkSuperSpeed.Checked, DEBUG_SPEEDUP_SPEED, 1), False);
 
   ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;
@@ -891,6 +896,12 @@ begin
   RenderArea.Height := ClientHeight;
   RenderArea.Width  := ClientWidth;
   gMain.Resize(RenderArea.Width, RenderArea.Height, GetWindowParams);
+end;
+
+
+procedure TFormMain.ShowFolderPermissionError;
+begin
+  MessageDlg(Format(gResTexts[TX_GAME_FOLDER_PERMISSIONS_ERROR], [ExeDir]), mtError, [mbClose], 0);
 end;
 
 

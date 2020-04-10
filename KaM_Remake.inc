@@ -27,7 +27,7 @@
   {$IFDEF FPC_UNICODESTRINGS}
     {$DEFINE UNICODE}
   {$ENDIF}
-{$ENDIF}
+{$ENDIF} 
 
 //Delphi compiler specific settings
 {$IFDEF WDC}
@@ -38,5 +38,8 @@
 //Use secure authentication unit (KM_NetAuthSecure)
 {$DEFINE USESECUREAUTH}
 
-// Delphi compiler video play
+//Delphi compiler video play
 {$DEFINE VIDEOS}
+
+//Enable perflog (should be disabled for release / release candidate versions)
+{$DEFINE PERFLOG}

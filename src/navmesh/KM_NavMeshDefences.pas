@@ -535,6 +535,7 @@ var
     K: Integer;
     SP: TKMWordArray;
   begin
+    SetLength(fStartPolygons,0);
     for K := Low(aOwners) to High(aOwners) do
     begin
       gAIFields.Eye.OwnerUpdate(aOwners[K]);
@@ -874,6 +875,7 @@ begin
   end;
   Result := (fQueueArray[aIdx].Visited > 0); // Visited Array is always filled with zeros
 end;
+
 
 procedure TFilterFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
 begin

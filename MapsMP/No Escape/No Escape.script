@@ -109,7 +109,7 @@ end;
 
 procedure Flood(Stage: Integer);
 var
-  I: Integer;
+  I, J: Integer;
 begin
   case Stage of
     0: begin
@@ -118,9 +118,18 @@ begin
          Actions.GiveHouse(8, 12, 18, 42);
          Actions.GiveHouse(8, 8, 13, 38);
          Actions.GiveHouse(8, 8, 6, 37);
+         for I := 11 to 14 do
+           for J := 40 to 43 do
+             Actions.GiveFieldAged(8, I, J, States.KaMRandomI(3) + 1, True);
+         for I := 4 to 10 do
+           for J := 39 to 43 do
+             Actions.GiveFieldAged(8, I, J, States.KaMRandomI(3) + 1, True);
+         for I := 2 to 6 do
+           for J := 28 to 31 do
+             Actions.GiveFieldAged(8, I, J, States.KaMRandomI(3) + 1, True);
          Actions.PlanConnectRoad(8, 11, 31, 12, 39, True);
          Actions.PlanConnectRoad(8, 11, 31, 7, 38, True);
-         for I := 33 to 38 do
+         for I := 32 to 37 do
            Actions.GiveRoad(8, 11, I);
          while States.MapTileRotation(11, 60) <> 3 do
            Actions.MapBrushMagicWater(11, 60);

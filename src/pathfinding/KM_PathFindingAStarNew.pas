@@ -7,12 +7,14 @@ uses
 
 
 type
-  TANode = class
-             X,Y: SmallInt;
-             CostTo: Word;
-             Estim: Word;
-             Parent: TANode;
-           end;
+  TANodeRec = record
+                RouteID: Cardinal;
+                X,Y: SmallInt;
+                CostTo: Word;
+                Estim: Word;
+                Parent: Pointer; //PANodeRec
+              end;
+  PANodeRec = ^TANodeRec;
 
   //This is a helper class for TTerrain
   //Here should be pathfinding and all associated stuff
@@ -20,14 +22,12 @@ type
   TPathFindingAStarNew = class(TPathFinding)
   private
     fHeap: TBinaryHeap;
-    fMinN: TANode;
-    fOpenRef: array of array of TANode; //References to OpenList, Sized as map
-    fUsedNodes: array of TANode; //Used to make Reset more efficient
-    fUsedNodeCount: Integer;
+    fMinN: PANodeRec;
+    fOpenRef: array[0..MAX_MAP_SIZE, 0..MAX_MAP_SIZE] of TANodeRec; //References to OpenList, Sized as map
+    fRouteID: Cardinal;
     function HeapCmp(A,B: Pointer): Boolean;
-    procedure Flush;
   protected
-    function GetNodeAt(X,Y: SmallInt): TANode;
+    function GetNodeAt(X,Y: SmallInt): PANodeRec;
     function MakeRoute: Boolean; override;
     procedure ReturnRoute(NodeList: TKMPointList); override;
   public
@@ -41,20 +41,37 @@ implementation
 
 { TPathFindingAStarNew }
 constructor TPathFindingAStarNew.Create;
+var
+  X, Y: Integer;
 begin
   inherited;
 
   fHeap := TBinaryHeap.Create(High(Word));
   fHeap.Cmp := HeapCmp;
+
+  for Y := 0 to MAX_MAP_SIZE do
+    for X := 0 to MAX_MAP_SIZE do
+    begin
+      fOpenRef[Y, X].X := X;
+      fOpenRef[Y, X].Y := Y;
+    end;
+
 end;
 
 
 destructor TPathFindingAStarNew.Destroy;
 begin
-  Flush;
   fHeap.Free;
 
   inherited;
+end;
+
+
+function TPathFindingAStarNew.GetNodeAt(X, Y: SmallInt): PANodeRec;
+begin
+  Result := @fOpenRef[Y, X];
+  if Result.RouteID <> fRouteID then
+    Result := nil;
 end;
 
 
@@ -63,65 +80,38 @@ begin
   if A = nil then
     Result := True
   else
-    Result := (B = nil) or (TANode(A).Estim + TANode(A).CostTo < TANode(B).Estim + TANode(B).CostTo);
-end;
-
-
-function TPathFindingAStarNew.GetNodeAt(X,Y: SmallInt): TANode;
-begin
-  //Cell is new
-  if fOpenRef[Y,X] = nil then
-  begin
-    fOpenRef[Y,X] := TANode.Create;
-    fOpenRef[Y,X].X := X;
-    fOpenRef[Y,X].Y := Y;
-
-    if Length(fUsedNodes) <= fUsedNodeCount then
-      SetLength(fUsedNodes, fUsedNodeCount + 64);
-
-    fUsedNodes[fUsedNodeCount] := fOpenRef[Y,X];
-    Inc(fUsedNodeCount);
-  end;
-
-  Result := fOpenRef[Y,X];
-end;
-
-
-procedure TPathFindingAStarNew.Flush;
-var
-  I: Integer;
-begin
-  //Reverse seems to work ~10% faster (cos of cache access probably)
-  for I := fUsedNodeCount - 1 downto 0 do
-  begin
-    fOpenRef[fUsedNodes[I].Y, fUsedNodes[I].X] := nil;
-    fUsedNodes[I].Free;
-  end;
-
-  fUsedNodeCount := 0;
+    Result := (B = nil) or (PANodeRec(A).Estim + PANodeRec(A).CostTo < PANodeRec(B).Estim + PANodeRec(B).CostTo);
 end;
 
 
 function TPathFindingAStarNew.MakeRoute: Boolean;
 const c_closed = 65535;
 var
-  N: TANode;
+  N: PANodeRec;
   X, Y: Word;
   NewCost: Word;
 begin
-  //Clear previous data
-  Flush;
+  // Do not build the route in case destination is not walkable
+  if not IsWalkableTile(fLocA.X, fLocA.Y) then Exit(False);
 
-  //Check that fOpenRef has been initialised (running SetLength when it's already correct size
-  //is inefficient with such a large array, SetLength doesn't seem to test for that condition
-  //because the CPU debugger runs through all of SetLength anyway on both dimensions)
-  if (Length(fOpenRef) <> gTerrain.MapY+1) or (Length(fOpenRef[0]) <> gTerrain.MapX+1) then
-    SetLength(fOpenRef, gTerrain.MapY+1, gTerrain.MapX+1);
+  //Use a unique RouteID each run to track whether nodes are valid
+  //Before it overflows we need to reset, which is still very fast (<1ms)
+  //and only needs doing once every 4.2 billion paths
+  if fRouteID = High(fRouteID) then
+  begin
+    fRouteID := 0;
+    for Y := 0 to MAX_MAP_SIZE do
+      for X := 0 to MAX_MAP_SIZE do
+        fOpenRef[Y, X].RouteID := 0;
+  end;
+  Inc(fRouteID);
 
   //Initialize first element
-  N := GetNodeAt(fLocA.X, fLocA.Y);
+  N := @fOpenRef[fLocA.Y, fLocA.X];
+  N.RouteID := fRouteID;
+  N.CostTo := 0;
   N.Estim := EstimateToFinish(fLocA.X, fLocA.Y);
-  N.Parent  := nil;
+  N.Parent := nil;
 
   //Seed
   fMinN := N;
@@ -134,37 +124,39 @@ begin
     //Check all surrounding cells and issue costs to them
     for Y := Math.max(fMinN.Y-1,1) to Math.min(fMinN.Y+1, gTerrain.MapY-1) do
     for X := Math.max(fMinN.X-1,1) to Math.min(fMinN.X+1, gTerrain.MapX-1) do
-    if fOpenRef[Y,X] = nil then //Cell is new
     begin
-      if CanWalkTo(KMPoint(fMinN.X, fMinN.Y), X, Y) then
+      N := @fOpenRef[Y,X];
+      if N.RouteID <> fRouteID then //Cell is new
+      begin
+        if CanWalkTo(KMPoint(fMinN.X, fMinN.Y), X, Y) then
+        begin
+          N.RouteID := fRouteID;
+          N.Parent := fMinN;
+
+          if IsWalkableTile(X, Y) then
+          begin
+            N.CostTo := fMinN.CostTo + MovementCost(fMinN.X, fMinN.Y, X, Y);
+            N.Estim := EstimateToFinish(X,Y);
+            fHeap.Push(N);
+          end
+          else //If cell doen't meets Passability then mark it as Closed
+            N.Estim := c_closed;
+
+        end;
+      end
+      else //Else cell is old
       begin
 
-        N := GetNodeAt(X, Y);
-        N.Parent := fMinN;
-
-        if IsWalkableTile(X, Y) then
+        //Node N is valid. If route through new cell is shorter than previous
+        if N.Estim <> c_closed then
+        if CanWalkTo(KMPoint(fMinN.X, fMinN.Y), X, Y) then
         begin
-          N.CostTo := fMinN.CostTo + MovementCost(fMinN.X, fMinN.Y, X, Y);
-          N.Estim := EstimateToFinish(X,Y);
-          fHeap.Push(N);
-        end
-        else //If cell doen't meets Passability then mark it as Closed
-          N.Estim := c_closed;
-
-      end;
-    end
-    else //Else cell is old
-    begin
-
-      //If route through new cell is shorter than ORef[Y,X] then
-      if fOpenRef[Y,X].Estim <> c_closed then
-      if CanWalkTo(KMPoint(fMinN.X, fMinN.Y), X, Y) then
-      begin
-        NewCost := MovementCost(fMinN.X, fMinN.Y, X, Y);
-        if fMinN.CostTo + NewCost < fOpenRef[Y,X].CostTo then
-        begin
-          fOpenRef[Y,X].Parent := fMinN;
-          fOpenRef[Y,X].CostTo := fMinN.CostTo + NewCost;
+          NewCost := MovementCost(fMinN.X, fMinN.Y, X, Y);
+          if fMinN.CostTo + NewCost < N.CostTo then
+          begin
+            N.Parent := fMinN;
+            N.CostTo := fMinN.CostTo + NewCost;
+          end;
         end;
       end;
     end;
@@ -185,7 +177,7 @@ end;
 
 procedure TPathFindingAStarNew.ReturnRoute(NodeList: TKMPointList);
 var
-  N: TANode;
+  N: PANodeRec;
 begin
   NodeList.Clear;
 

@@ -511,7 +511,10 @@ end;
 
 procedure TKMMenuOptions.TestVideo_Click(Sender: TObject);
 begin
-  gVideoPlayer.AddVideo('_KaM');
+  gVideoPlayer.AddVideo('Victory');
+  gVideoPlayer.AddVideo('Campaigns\The Shattered Kingdom\Intro');
+  gVideoPlayer.AddVideo('Defeat');
+  gVideoPlayer.AddVideo('KaM');
   gVideoPlayer.Play;
 end;
 

@@ -761,7 +761,7 @@ begin
     if SAVE_RANDOM_CHECKS then
       fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks', True);
     if SAVE_GAME_AS_TEXT then
-      fDebug_SaveGameAsText   := F.ReadBool('Debug','SaveGameAsText', True);
+      fDebug_SaveGameAsText   := F.ReadBool('Debug','SaveGameAsText', False);
   finally
     F.Free;
   end;

@@ -267,7 +267,9 @@ const
 var
   I, K: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psTerrainFinder, gGame.GameTick);
+  {$ENDIF}
   if USE_WALKING_DISTANCE then
   begin
     //Because we use 10 for straight and 14 for diagonal in byte storage 24 is the maximum allowed
@@ -287,7 +289,9 @@ begin
         if (aPass in gTerrain.Land[I,K].Passability) and (KMLengthDiag(aStart, KMPoint(K,I)) <= aRadius) then
           aList.Add(KMPoint(K,I));
   end;
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionLeave(psTerrainFinder);
+  {$ENDIF}
 end;
 
 

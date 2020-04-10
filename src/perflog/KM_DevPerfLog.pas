@@ -12,6 +12,7 @@ type
   // Collection of PerfLoggers
   TKMPerfLogs = class
   private
+    fPerfLogForm: TForm;
     fItems: array [TPerfSectionDev] of TKMPerfLogSingle;
     fStackCPU: TKMPerfLogStackCPU;
     fStackGFX: TKMPerfLogStackGFX;
@@ -38,6 +39,7 @@ type
     procedure Render(aLeft, aWidth, aHeight: Integer);
     procedure SaveToFile(aFilename: string; aSaveThreshold: Integer = 10);
     procedure ShowForm(aContainer: TWinControl);
+    function FormHeight: Integer;
 
     class function IsCPUSection(aSection: TPerfSectionDev): Boolean;
     class function IsGFXSection(aSection: TPerfSectionDev): Boolean;
@@ -72,26 +74,27 @@ const
     (Name: '   Terrain';              ClassName: TKMPerfLogSingleCPU; Color: (R:0.5;G:0.5;B:0.5);),
     (Name: '   TerrainFinder';        ClassName: TKMPerfLogSingleCPU; Color: (R:0;G:1;B:1);),
     (Name: '   Scripting';            ClassName: TKMPerfLogSingleCPU; Color: (R:1;G:0.25;B:0.75);),
+    (Name: '   Minimap';              ClassName: TKMPerfLogSingleCPU; Color: (R:0.7;G:0;B:0.9);),
     (Name: 'Render.CPU';              ClassName: TKMPerfLogSingleCPU; Color: (R:1.0;G:0;B:0);),
-    (Name: 'Render.GFX';              ClassName: TKMPerfLogSingleGFX; Color: (R:1.0;G:1;B:0);),
-    (Name: '   Game';                 ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:0.75;B:0);),
-    (Name: '      Terrain';           ClassName: TKMPerfLogSingleGFX; Color: (R:0;G:0.25;B:0.25);),
-    (Name: '        TerBase';         ClassName: TKMPerfLogSingleGFX; Color: (R:0;G:0.5;B:0.25);),
+    (Name: 'Render.GFX';              ClassName: TKMPerfLogSingleGFX; Color: (R:0;G:1;B:1);),
+    (Name: '     Terrain';            ClassName: TKMPerfLogSingleGFX; Color: (R:0;G:0.25;B:0.25);),
+    (Name: '       TerBase';          ClassName: TKMPerfLogSingleGFX; Color: (R:0;G:0.5;B:0.25);),
     (Name: '         Tiles';          ClassName: TKMPerfLogSingleGFX; Color: (R:0.25;G:0;B:0.25);),
     (Name: '         Water';          ClassName: TKMPerfLogSingleGFX; Color: (R:0.25;G:0;B:0.5);),
     (Name: '         Layers';         ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:0;B:0.25);),
     (Name: '         Overlays';       ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:0.5;B:0.25);),
     (Name: '         Light';          ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:0.25;B:0);),
     (Name: '         Shadows';        ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:0.5;B:0);),
-    (Name: '      Hands';             ClassName: TKMPerfLogSingleGFX; Color: (R:1;G:1;B:0.5);),
-    (Name: '      RenderList';        ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:1;B:0.75);),
-    (Name: '      FOW';               ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:1;B:0.75);),
+    (Name: '     RenderList';         ClassName: TKMPerfLogSingleGFX; Color: (R:0.5;G:1;B:0.75);),
+    (Name: '     FOWRender';          ClassName: TKMPerfLogSingleGFX; Color: (R:0.75;G:1;B:0.75);),
     (Name: '   UpdateVBO';            ClassName: TKMPerfLogSingleCPU; Color: (R:0.5;G:0.5;B:1);),
     (Name: '   GUI';                  ClassName: TKMPerfLogSingleGFX; Color: (R:1.0;G:0.25;B:0);)
   );
 
+{$IFDEF PERFLOG}
 var
   gPerfLogs: TKMPerfLogs;
+{$ENDIF}
 
 
 implementation
@@ -102,11 +105,13 @@ uses
 
 { TKMPerfLogs }
 constructor TKMPerfLogs.Create(aSections: TPerfSectionSet; aHighPrecision: Boolean);
+{$IFDEF PERFLOG}
 var
   I: TPerfSectionDev;
+{$ENDIF}
 begin
   inherited Create;
-
+  {$IFDEF PERFLOG}
   FrameBudget := 20;
 
   for I := LOW_PERF_SECTION to High(TPerfSectionDev) do
@@ -121,14 +126,18 @@ begin
 
   fStackCPU := TKMPerfLogStackCPU.Create;
   fStackGFX := TKMPerfLogStackGFX.Create;
+  {$ENDIF}
 end;
 
 
 destructor TKMPerfLogs.Destroy;
+{$IFDEF PERFLOG}
 var
   I: TPerfSectionDev;
   s: string;
+{$ENDIF}
 begin
+  {$IFDEF PERFLOG}
   if SaveOnExit then
   begin
     DateTimeToString(s, 'yyyy-mm-dd_hh-nn-ss', Now); //2007-12-23 15-24-33
@@ -140,7 +149,7 @@ begin
 
   FreeAndNil(fStackCPU);
   FreeAndNil(fStackGFX);
-
+  {$ENDIF}
   inherited;
 end;
 
@@ -193,7 +202,7 @@ begin
 
   fItems[aSection].SectionEnter(aTick, aTag);
 
-  if SECTION_INFO[aSection].ClassName = TKMPerfLogSingleCPU then
+  if IsCPUSection(aSection) then
     fStackCPU.SectionEnter(aSection)
   else
     fStackGFX.SectionEnter(aSection);
@@ -344,32 +353,29 @@ begin
 end;
 
 
-//{$IFDEF DESKTOP}
+function TKMPerfLogs.FormHeight: Integer;
+begin
+  Result := TFormPerfLogs(fPerfLogForm).FormHeight;
+end;
+
+
 procedure TKMPerfLogs.ShowForm(aContainer: TWinControl);
-var
-  form: TFormPerfLogs;
 begin
   if Self = nil then Exit;
 
-  form := TFormPerfLogs.Create(aContainer);
+  fPerfLogForm := TFormPerfLogs.Create(aContainer);
 
-  form.Parent := aContainer;
+  fPerfLogForm.Parent := aContainer;
 
 
   if aContainer = nil then
   begin
-    form.Align := alNone;
-    form.BorderStyle := bsDialog;
-//    form.Left := 227;
-//    form.Top := 108;
-//    form.ShowModal;
+    fPerfLogForm.Align := alNone;
+    fPerfLogForm.BorderStyle := bsDialog;
   end;
 
-  form.Show(Self);
-
-//
+  TFormPerfLogs(fPerfLogForm).Show(Self);
 end;
-//{$ENDIF}
 
 
 end.

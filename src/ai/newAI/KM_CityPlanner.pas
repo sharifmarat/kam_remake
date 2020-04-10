@@ -9,7 +9,7 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils, Contnrs,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_CommonUtils,
-  KM_TerrainFinder, KM_PerfLog, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
+  KM_TerrainFinder, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
   KM_PathFindingRoad, KM_PathFindingAStarNew, KM_CityPredictor, KM_Eye, KM_AIParameters,
   KM_AIInfluences, KM_NavMeshDefences;
 
@@ -2696,7 +2696,7 @@ function TPathFindingCityPlanner.MovementCost(aFromX, aFromY, aToX, aToY: Word):
 var
   IsRoad: Boolean;
   AvoidBuilding: Byte;
-  Node: TANode;
+  Node: PANodeRec;
 begin
   Result := GA_PATHFINDING_BasePrice;
 
@@ -2719,8 +2719,8 @@ begin
     // Penalization of change in direction in general case
     Node := GetNodeAt(aFromX, aFromY);
     if (Node <> nil) AND (Node.Parent <> nil)
-      AND (Node.Parent.X <> aToX)
-      AND (Node.Parent.Y <> aToY)                           then Inc(Result, GA_PATHFINDING_TurnPenalization);
+      AND (PANodeRec(Node.Parent).X <> aToX)
+      AND (PANodeRec(Node.Parent).Y <> aToY)                then Inc(Result, GA_PATHFINDING_TurnPenalization);
     // Corn / wine field
     if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)     then Inc(Result, GA_PATHFINDING_Field)
     // Coal field
@@ -2745,7 +2745,7 @@ function TPathFindingShortcutsCityPlanner.MovementCost(aFromX, aFromY, aToX, aTo
 var
   IsRoad: Boolean;
   AvoidBuilding: Byte;
-  Node: TANode;
+  Node: PANodeRec;
 begin
   Result := GA_SHORTCUTS_BasePrice;
 
@@ -2768,8 +2768,8 @@ begin
     // Penalization of change in direction in general case
     Node := GetNodeAt(aFromX, aFromY);
     if (Node <> nil) AND (Node.Parent <> nil)
-      AND (Node.Parent.X <> aToX)
-      AND (Node.Parent.Y <> aToY)                           then Inc(Result, GA_SHORTCUTS_TurnPenalization);
+      AND (PANodeRec(Node.Parent).X <> aToX)
+      AND (PANodeRec(Node.Parent).Y <> aToY)                then Inc(Result, GA_SHORTCUTS_TurnPenalization);
     // Corn / wine field
     if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)     then Inc(Result, GA_SHORTCUTS_Field)
     // Coal field

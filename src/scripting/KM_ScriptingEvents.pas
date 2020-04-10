@@ -129,8 +129,8 @@ uses
   {$ENDIF}
   TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResTexts, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
-  KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_MethodParser,
-  KM_UnitsCollection, KM_PathFindingRoad, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_MethodParser,
+  KM_UnitsCollection, KM_PathFindingRoad, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 type
@@ -398,12 +398,16 @@ procedure TKMScriptEvents.CallEventHandlers(aEventType: TKMScriptEventType; cons
 var
   I: Integer;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
+  {$ENDIF}
   try
     for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
       CallEventProc(fEventHandlers[aEventType][I], aParams, aFloatParam)
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psScripting);
+    {$ENDIF}
   end;
 end;
 
@@ -796,8 +800,8 @@ end;
 
 
 //* Version: 11200
-//* Event with return result (function)
-//* Occurs right before the group gets order to split, so you can get INITIAL group parameters and use them later. F.e. initial group formation.
+//* Occurs right before the group gets order to split.
+//* Split parameters could be altered by script and returned to the game to be used there
 //* aGroup: group ID, which got split order
 //* aNewType: new group leader unit type
 //* aNewCnt: new group members count
@@ -807,7 +811,9 @@ var
   I: Integer;
   handler: TMethod;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psScripting, gGame.GameTick);
+  {$ENDIF}
   try
     if MethodAssigned(evtGroupBeforeOrderSplit) then
     begin
@@ -824,7 +830,9 @@ begin
       end;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psScripting);
+    {$ENDIF}
   end;
 end;
 

@@ -748,12 +748,14 @@ end;
 
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAIArmyAdv, aTick);
+  {$ENDIF}
   try
     if (aTick mod MAX_HANDS = fOwner) then
     begin
       //SP_OLD_ATTACK_AI := fOwner <> 1;
-      SP_OLD_ATTACK_AI := (gGame.MissionMode <> mmTactic);
+      //SP_OLD_ATTACK_AI := (gGame.MissionMode <> mmTactic);
       CheckThreats();
       if not gGame.IsPeaceTime then
       begin
@@ -766,10 +768,12 @@ begin
       else
         fAttackNew.UpdateState(aTick);
       fDefence.UpdateState(aTick);
-      SP_OLD_ATTACK_AI := False;
+      //SP_OLD_ATTACK_AI := False;
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAIArmyAdv);
+    {$ENDIF}
   end;
 end;
 

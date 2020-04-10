@@ -87,10 +87,18 @@ type
     procedure ExecuteSubMenuAction(aIndex: Byte);
     procedure Update_Label_Coordinates;
     procedure MapTypeChanged(aIsMultiplayer: Boolean);
+
+    procedure UnRedo_Click(Sender: TObject);
+    procedure History_Click(Sender: TObject);
+    procedure History_JumpTo(Sender: TObject);
+    procedure History_ListChange(Sender: TObject);
+    procedure History_MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
     Button_PlayerSelect: array [0..MAX_HANDS-1] of TKMFlatButtonShape; //Animals are common for all
+    Button_History: TKMButtonFlat;
+    Button_Undo, Button_Redo: TKMButtonFlat;
     Button_ChangeOwner: TKMButtonFlat;
     Button_UniversalEraser: TKMButtonFlat;
 
@@ -102,7 +110,15 @@ type
       Image_Extra: TKMImage;
       Image_Message: TKMImage;
 
+    PopUp_History: TKMPopUpPanel;
+      ListBox_History: TKMListBox;
+      Button_History_Undo,
+      Button_History_Redo,
+      Button_History_JumpTo: TKMButton;
+
     function GetToolBarWidth: Integer; override;
+
+    procedure HistoryUpdateUI;
   public
     constructor Create(aRender: TRender);
     destructor Destroy; override;
@@ -123,6 +139,9 @@ type
     procedure SetLoadMode(aMultiplayer: Boolean);
 
     procedure DebugControlsUpdated; override;
+	
+	  procedure HistoryUndoRedo;
+    procedure HistoryAddCheckpoint;
 
     procedure SyncUI(aMoveViewport: Boolean = True); override;
     procedure UpdateState(aTickCount: Cardinal); override;
@@ -159,11 +178,13 @@ begin
   fMinimap.PaintVirtualGroups := True;
 
   ResetDragObject;
-  //                                   224
+  //                                   250
   TKMImage.Create(Panel_Main, 0,    0, MAPED_TOOLBAR_WIDTH, 200, 407, rxGui, 0, [anLeft, anTop, anRight]); //Minimap place
   TKMImage.Create(Panel_Main, 0,  200, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]);
   TKMImage.Create(Panel_Main, 0,  600, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]);
   TKMImage.Create(Panel_Main, 0, 1000, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]); //For 1600x1200 this is needed
+  TKMImage.Create(Panel_Main, 0, 1400, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]);
+  TKMImage.Create(Panel_Main, 0, 1800, MAPED_TOOLBAR_WIDTH, 400, 404, rxGui, 0, [anLeft, anTop, anRight]); //For 4K displays
 
   MinimapView := TKMMinimapView.Create(Panel_Main, 10, 10, MAPED_TOOLBAR_WIDTH - 48, 176);
   MinimapView.OnChange := Minimap_OnUpdate;
@@ -181,12 +202,34 @@ begin
   end;
   Button_PlayerSelect[0].Down := True; //First player selected by default
 
-  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 33 + TB_PAD, 190, 32, 32, 662);
+  Button_History := TKMButtonFlat.Create(Panel_Main, Button_PlayerSelect[5].Right + 3, 190, 31, 32, 677);
+  Button_History.TexOffsetX := -1;
+  Button_History.Down := False;
+  Button_History.OnClick := History_Click;
+  Button_History.Hint := GetHintWHotKey(TX_MAPED_HISTORY_HINT, SC_MAPEDIT_HISTORY);
+
+  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 30 + TB_PAD, 190, 30, 32, 662);
   Button_ChangeOwner.Down := False;
   Button_ChangeOwner.OnClick := ChangeOwner_Click;
   Button_ChangeOwner.Hint := GetHintWHotKey(TX_MAPED_PAINT_BUCKET_CH_OWNER, SC_MAPEDIT_PAINT_BUCKET);
 
-  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 33 + TB_PAD, 227, 32, 32, 340);
+  //Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 20, 0, 10, SMALL_TAB_H + 4, '<', bsGame);
+  Button_Undo := TKMButtonFlat.Create(Panel_Main, Button_PlayerSelect[5].Right + 3, 227, 15, 32, 0);
+  Button_Undo.Caption := '<';
+  Button_Undo.CapOffsetY := -10;
+  Button_Undo.CapColor := icGreen;
+  Button_Undo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl + Z'')';
+  Button_Undo.OnClick := UnRedo_Click;
+
+  //Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 10, 0, 10, SMALL_TAB_H + 4, '>', bsGame);
+  Button_Redo := TKMButtonFlat.Create(Panel_Main, Button_Undo.Right + 1, 227, 15, 32, 0);
+  Button_Redo.Caption := '>';
+  Button_Redo.CapOffsetY := -10;
+  Button_Redo.CapColor := icGreen;
+  Button_Redo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl + Y'' or ''Ctrl + Shift + Z'')';
+  Button_Redo.OnClick := UnRedo_Click;
+
+  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 30 + TB_PAD, 227, 30, 32, 340);
   Button_UniversalEraser.Down := False;
   Button_UniversalEraser.OnClick := UniversalEraser_Click;
   Button_UniversalEraser.Hint := GetHintWHotKey(TX_MAPED_UNIVERSAL_ERASER, SC_MAPEDIT_UNIV_ERASOR);
@@ -250,6 +293,35 @@ begin
   fGuiPlayer.GuiPlayerGoals.GoalPopUp := fGuiGoal;
   fGuiMenu.GuiMenuQuickPlay := fGuiMenuQuickPlay;
   fGuiTerrain.GuiSelection.GuiRMGPopUp := fGuiRMG;
+
+  // PopUp window will be reated last
+  PopUp_History := TKMPopUpPanel.Create(Panel_Main, 270, 300, gResTexts[TX_MAPED_HISTORY_TITLE], pubgitScrollWCross, False, False);
+  PopUp_History.CapOffsetY := 15;
+  PopUp_History.Left := Panel_Main.Width - PopUp_History.Width;
+  PopUp_History.Top  := 0;
+  PopUp_History.DragEnabled := True;
+  PopUp_History.DoSetVisible; // History is visible by default
+  PopUp_History.OnMouseWheel := History_MouseWheel;
+
+    ListBox_History := TKMListBox.Create(PopUp_History, 10, 10, PopUp_History.Width - 20, PopUp_History.Height - 50, fntMetal, bsGame);
+    ListBox_History.AutoHideScrollBar := True;
+    ListBox_History.OnChange := History_ListChange;
+    ListBox_History.OnDoubleClick := History_JumpTo;
+
+    Button_History_JumpTo := TKMButton.Create(PopUp_History, 10, ListBox_History.Bottom + 5,
+                                                             ListBox_History.Width, 20, gResTexts[TX_MAPED_HISTORY_JUMP_TO], bsGame);
+    Button_History_JumpTo.OnClick := History_JumpTo;
+    Button_History_JumpTo.Hint := gResTexts[TX_MAPED_HISTORY_JUMP_TO_HINT];
+
+    Button_History_Undo := TKMButton.Create(PopUp_History, 10, PopUp_History.Height - 10, (ListBox_History.Width div 2) - 7, 20, '<< Undo', bsGame);
+    Button_History_Undo.OnClick := UnRedo_Click;
+    Button_History_Undo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl + Z'')';
+
+    Button_History_Redo := TKMButton.Create(PopUp_History, PopUp_History.Width - 10 - Button_History_Undo.Width,
+                                                           Button_History_Undo.Top, Button_History_Undo.Width, 20, 'Redo >>', bsGame);
+    Button_History_Redo.OnClick := UnRedo_Click;
+    Button_History_Redo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl + Y'' or ''Ctrl + Shift + Z'')';
+
 
   if OVERLAY_RESOLUTIONS then
   begin
@@ -341,6 +413,21 @@ begin
     if TKMPanel(Panel_Common.Childs[I]).Childs[K] is TKMPanel then
       TKMPanel(Panel_Common.Childs[I]).Childs[K].Hide;
   end;
+end;
+
+
+procedure TKMapEdInterface.History_Click(Sender: TObject);
+begin
+  PopUp_History.Visible := not PopUp_History.Visible;
+
+  Button_History.Down := PopUp_History.Visible;
+end;
+
+
+procedure TKMapEdInterface.History_JumpTo(Sender: TObject);
+begin
+  if ListBox_History.Selected then
+    gGame.MapEditor.History.JumpTo(ListBox_History.ItemIndex);
 end;
 
 
@@ -533,6 +620,18 @@ end;
 procedure TKMapEdInterface.UniversalEraser_Click(Sender: TObject);
 begin
   SetUniversalEraserMode(not Button_UniversalEraser.Down);
+end;
+
+
+procedure TKMapEdInterface.UnRedo_Click(Sender: TObject);
+begin
+  if (Sender = Button_Undo)
+    or (Sender = Button_History_Undo) then
+    gGame.MapEditor.History.Undo;
+
+  if (Sender = Button_Redo)
+    or (Sender = Button_History_Redo) then
+    gGame.MapEditor.History.Redo;
 end;
 
 
@@ -830,6 +929,26 @@ begin
   if Key = gResKeys[SC_MAPEDIT_PAINT_BUCKET].Key then
     ChangeOwner_Click(Button_ChangeOwner);
 
+  //History
+  if Key = gResKeys[SC_MAPEDIT_HISTORY].Key then
+    History_Click(Button_History);
+
+
+  if (ssCtrl in Shift) and (Key = Ord('Y')) then
+  begin
+    UnRedo_Click(Button_Redo); // Ctrl+Y = Redo
+    aHandled := True;
+  end;
+
+  if (ssCtrl in Shift) and (Key = Ord('Z')) then
+  begin
+    if ssShift in Shift then
+      UnRedo_Click(Button_Redo) //Ctrl+Shift+Z = Redo
+    else
+      UnRedo_Click(Button_Undo); //Ctrl+Z = Undo
+    aHandled := True;
+  end;
+
   gGameCursor.SState := Shift; // Update Shift state on KeyUp
 end;
 
@@ -959,6 +1078,58 @@ begin
 end;
 
 
+procedure TKMapEdInterface.History_ListChange(Sender: TObject);
+begin
+  Button_History_JumpTo.Enabled := ListBox_History.Selected;
+end;
+
+
+procedure TKMapEdInterface.History_MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
+begin
+  ListBox_History.MouseWheel(Sender, WheelSteps, aHandled);
+
+  aHandled := True;
+end;
+
+
+
+procedure TKMapEdInterface.HistoryAddCheckpoint;
+begin
+  HistoryUpdateUI;
+end;
+
+
+procedure TKMapEdInterface.HistoryUndoRedo;
+begin
+  if Self = nil then Exit;
+
+  HistoryUpdateUI;
+
+  if fGuiHouse.Visible or fGuiUnit.Visible then
+  begin
+    gMySpectator.Selected := nil; // Reset selection
+    HidePages;
+  end;
+end;
+
+
+procedure TKMapEdInterface.HistoryUpdateUI;
+begin
+  if Self = nil then Exit;
+
+  Button_Undo.Enabled := gGame.MapEditor.History.CanUndo;
+  Button_Redo.Enabled := gGame.MapEditor.History.CanRedo;
+
+  Button_History_Undo.Enabled := Button_Undo.Enabled;
+  Button_History_Redo.Enabled := Button_Redo.Enabled;
+
+  gGame.MapEditor.History.GetCheckpoints(ListBox_History.Items);
+  ListBox_History.UpdateScrollBar;
+
+  ListBox_History.SetTopIndex(gGame.MapEditor.History.Position, True);
+  History_ListChange(nil);
+end;
+
 procedure TKMapEdInterface.ResetCursorMode;
 begin
   gGameCursor.Mode := cmNone;
@@ -1006,8 +1177,9 @@ end;
 
 
 procedure TKMapEdInterface.MoveObjectToCursorCell(aObjectToMove: TObject);
-var H: TKMHouse;
-    HouseNewPos, HouseOldPos: TKMPoint;
+var
+  H: TKMHouse;
+  HouseNewPos, HouseOldPos: TKMPoint;
 begin
   if aObjectToMove = nil then Exit;
 
@@ -1029,17 +1201,17 @@ begin
 
   //Unit move
   if aObjectToMove is TKMUnit then
+  begin
     if aObjectToMove is TKMUnitWarrior then
       aObjectToMove := gHands.GetGroupByMember(TKMUnitWarrior(aObjectToMove))
     else
       TKMUnit(aObjectToMove).SetPosition(gGameCursor.Cell);
+  end;
 
   //Unit group move
   if aObjectToMove is TKMUnitGroup then
-  begin
     //Just move group to specified location
     TKMUnitGroup(aObjectToMove).Position := gGameCursor.Cell;
-  end;
 end;
 
 
@@ -1218,6 +1390,16 @@ end;
 
 procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean);
 begin
+  if fMyControls.CtrlOver <> nil then
+  begin
+    fMyControls.MouseWheel(X, Y, WheelSteps, aHandled);
+    if not aHandled then
+      inherited;
+    Exit; // Don't change field stages when mouse not over map
+  end;
+
+  if aHandled then Exit;
+  
   if gGameCursor.Mode in [cmField, cmWine] then
   begin
     if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
@@ -1237,6 +1419,10 @@ begin
 
   fViewport.Resize(X, Y);
   fGuiTerrain.Resize;
+
+  // Put PopUp_History back into window, if it goes out of it
+  PopUp_History.Top := PopUp_History.Top;
+  PopUp_History.Left := PopUp_History.Left;
 end;
 
 

@@ -17,6 +17,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+
+    procedure Clear;
     function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; RelativeEntrance: Boolean):TKMHouse;
     function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID): TKMHouse;
     procedure AddHouseToList(aHouse: TKMHouse);
@@ -66,6 +68,12 @@ destructor TKMHousesCollection.Destroy;
 begin
   fHouses.Free;
   inherited;
+end;
+
+
+procedure TKMHousesCollection.Clear;
+begin
+  fHouses.Clear;
 end;
 
 
@@ -133,7 +141,8 @@ end;
 //Delete pointer to House in List
 procedure TKMHousesCollection.DeleteHouseFromList(aHouse: TKMHouse);
 begin
-  Assert(gGame.GameMode = gmMapEd); // Allow to delete existing House directly only in MapEd
+  Assert(gGame.IsMapEditor); // Allow to delete existing House directly only in MapEd
+
   if (aHouse <> nil) then
     fHouses.Extract(aHouse);
 end;

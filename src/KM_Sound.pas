@@ -16,8 +16,6 @@ const
 
 type
 
-  TKMAudioFormat = (afWav, afOgg);
-
   TKMSoundPlayer = class
   private
     fALDevice: PALCdevice;
@@ -122,16 +120,17 @@ type
     function StartSound(var aScriptSound: TKMScriptSound): Integer; overload;
     procedure StopSound(aIndex: Integer);
     procedure RemoveSoundByIndex(aIndex: Integer);
+    function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    property Count: Integer read fCount;
+    property Count: Integer read GetCount;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
     function AddSound(aHandIndex: TKMHandID; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; aLoc: TKMPoint;
-                          aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
+                      aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
     procedure RemoveLoopSoundByUID(aScriptIndex: Integer);
     procedure RemoveSoundByUID(aScriptUID: Integer; aLoopedOnly: Boolean = False);
     procedure UpdateListener(X,Y: Single);
@@ -149,7 +148,9 @@ implementation
 uses
   Classes, Dialogs, SysUtils, TypInfo, Math, KromUtils,
   {$IFDEF WDC} UITypes, {$ENDIF}
+  {$IFNDEF NO_OGG_SOUND}
   Codec, VorbisFile,
+  {$ENDIF}
   KM_Game, KM_Resource, KM_HandsCollection, KM_RenderAux,
   KM_Log, KM_CommonUtils;
 
@@ -431,11 +432,13 @@ var
   WAVloop: TALint;
   WAVDuration: Cardinal;
   FileExt: String;
+  {$IFNDEF NO_OGG_SOUND}
   OggFileStream: TFileStream;
   OggVorbisFile: OggVorbis_File;
   VorbisInfo: P_Vorbis_Info;
   OggBytesRead, OggBytesChanged: Longword;
   OggBuffer: PChar;
+  {$ENDIF}
 begin
   Result := -1;
   if not fIsSoundInitialized then Exit;
@@ -503,6 +506,7 @@ begin
         alutUnloadWAV(WAVformat,WAVdata,WAVsize,WAVfreq);
       end else if LowerCase(FileExt) = OGG_FILE_EXT then
       begin
+        {$IFNDEF NO_OGG_SOUND}
         OggFileStream := TFileStream.Create(aFile, fmOpenRead or fmShareDenyNone);
         try
           OggOpenResult := ov_open_callbacks(OggFileStream, OggVorbisFile, nil, 0, ops_callbacks);
@@ -539,6 +543,7 @@ begin
         finally
           OggFileStream.Free;
         end;
+        {$ENDIF}
       end
       else
         raise Exception.Create('Unsupported sound file format: ' + FileExt);
@@ -832,6 +837,14 @@ begin
 end;
 
 
+function TKMScriptSoundsManager.GetCount: Integer;
+begin
+  if Self = nil then Exit(0);
+
+  Result := fCount;
+end;
+
+
 procedure TKMScriptSoundsManager.UpdateState;
 var
   I: Integer;
@@ -914,9 +927,13 @@ end;
 
 function TKMScriptSoundsManager.AddSound(aHandIndex: TKMHandID; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat;
                                          aLoc: TKMPoint; aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
+const
+  ERROR_EXIT_CODE = -1;
 var
   I, NewIndex: Integer;
 begin
+  if Self = nil then Exit(ERROR_EXIT_CODE);
+  
   Inc(fLastScriptUID); //While fLastScriptUID only increase
   NewIndex := fCount;
 
@@ -942,7 +959,7 @@ begin
   fScriptSounds[NewIndex].HandIndex := aHandIndex;
 
   //Return -1 if sound (not looped) did not start successfully
-  Result := -1;
+  Result := ERROR_EXIT_CODE;
   if (StartSound(NewIndex) <> -1) or aLooped then
     Result := fLastScriptUID; //Return ScriptSoundUID if all is OK, or for Looped sound, since we could start it later
 end;
@@ -971,6 +988,8 @@ procedure TKMScriptSoundsManager.RemoveSoundByUID(aScriptUID: Integer; aLoopedOn
 var
   I: Integer;
 begin
+  if Self = nil then Exit;
+
   Assert(aScriptUID > 0, 'Script sounds UID should be > 0');
   for I := fCount - 1 downto 0 do
     if (not aLoopedOnly or fScriptSounds[I].Looped) and (fScriptSounds[I].ScriptUID = aScriptUID) then

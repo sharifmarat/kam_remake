@@ -2,7 +2,7 @@ unit KM_FogOfWar;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
+  Math, KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
 { FOW state for each player }
@@ -26,6 +26,8 @@ type
     fMapX: Word;
     fMapY: Word;
 
+    fDynamicFOW: Boolean; //Local copy for faster access, updated in UpdateState
+
     //Initial revealers from static script
     fInitialRevealAll: Boolean;
     fInitialRevealers: TKMPointTagList;
@@ -47,9 +49,9 @@ type
       LastHouse: TKMHouseType;}
     end;*)
     procedure SetMapSize(X,Y: Word);
-    function CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;
-    function CheckTileRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;
-    function CheckRev(aRevArray: PKMByte2Array; const aPoint: TKMPointF): Byte;
+    function CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte; inline;
+    function CheckTileRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte; inline;
+    function CheckRev(aRevArray: PKMByte2Array; const aPoint: TKMPointF): Byte; inline;
   public
     Revelation: TKMByte2Array; //Public for faster access from Render
     RenderRevelation: TKMByte2Array; //Revelation for render - we have to render sprites a bit around actual FOW revelation
@@ -110,11 +112,11 @@ const
 
 implementation
 uses
-  Math, SysUtils, KM_GameApp, KM_PerfLog, KM_DevPerfLog, KM_DevPerfLogTypes;
+  SysUtils, KM_GameApp, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 const
   //Addition to Revelation radius for Render revelation
-  RENDER_RADIUS_ADD = 4; //3 is not enought sometimes, 4 is looking good
+  RENDER_RADIUS_ADD = 5; //4 is not enought sometimes (Barracks?), 5 looks good
 
 
 { TKMFogOfWar }
@@ -126,6 +128,8 @@ begin
   fInitialRevealAll := False;
   fInitialRevealers := TKMPointTagList.Create;
   SetMapSize(X,Y);
+
+  fDynamicFOW := (gGameApp <> nil) and gGameApp.DynamicFOWEnabled;
 end;
 
 
@@ -196,10 +200,12 @@ procedure TKMFogOfWar.RevealCircle(const Pos: TKMPoint; Radius, Amount: Word);
 var
   AroundRadius: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     AroundRadius := Radius + RENDER_RADIUS_ADD;
-    if not fCoverHasBeenCalled and not gGameApp.DynamicFOWEnabled then
+    if not fCoverHasBeenCalled and not fDynamicFOW then
     begin
       if fRevealedRadius[Pos.Y, Pos.X] < Radius then
       begin
@@ -216,7 +222,9 @@ begin
       RevealFor(False, AroundRadius, FOG_OF_WAR_MAX);
     end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -250,14 +258,18 @@ procedure TKMFogOfWar.CoverCircle(const Pos: TKMPoint; Radius: Word);
   end;
 
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     CoverFor(True, Radius);
     CoverFor(False, Radius - RENDER_RADIUS_ADD);
 
     fCoverHasBeenCalled := True;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -266,7 +278,9 @@ procedure TKMFogOfWar.RevealRect(const TL, BR: TKMPoint; Amount: Word);
 var
   I, K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := TL.Y to BR.Y do
       for K := TL.X to BR.X do
@@ -281,7 +295,9 @@ begin
       for K := Max(0, TL.X - RENDER_RADIUS_ADD) to Min(fMapX - 1, BR.X + RENDER_RADIUS_ADD) do
         RenderRevelation[I,K] := FOG_OF_WAR_MAX;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -290,7 +306,9 @@ procedure TKMFogOfWar.CoverRect(const TL, BR: TKMPoint);
 var
   I, K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := TL.Y to BR.Y do
       for K := TL.X to BR.X do
@@ -303,7 +321,9 @@ begin
 
     fCoverHasBeenCalled := True;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -313,7 +333,9 @@ procedure TKMFogOfWar.RevealEverything;
 var
   I,K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := 0 to fMapY - 1 do
       for K := 0 to fMapX - 1 do
@@ -322,7 +344,9 @@ begin
         RenderRevelation[I, K] := FOG_OF_WAR_MAX;
       end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -331,7 +355,9 @@ procedure TKMFogOfWar.CoverEverything;
 var
   I,K: Word;
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     for I := 0 to fMapY - 1 do
       for K := 0 to fMapX - 1 do
@@ -342,7 +368,9 @@ begin
 
     fCoverHasBeenCalled := True;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 
@@ -352,16 +380,19 @@ end;
 //0 unrevealed, 255 revealed completely
 //but false in cases where it will effect the gameplay (e.g. unit hit test)
 function TKMFogOfWar.CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;
+var
+  F: Byte;
 begin
   //I like how "alive" the fog looks with some tweaks
   //pulsating around units and slowly thickening when they leave :)
-  if gGameApp.DynamicFOWEnabled then
-    if (aRevArray^[Y,X] >= FOG_OF_WAR_ACT) then
+  F := aRevArray^[Y,X];
+  if fDynamicFOW then
+    if (F >= FOG_OF_WAR_ACT) then
       Result := 255
     else
-      Result := (aRevArray^[Y,X] shl 8) div FOG_OF_WAR_ACT
+      Result := (F shl 8) div FOG_OF_WAR_ACT
   else
-    if (aRevArray^[Y,X] >= FOG_OF_WAR_MIN) then
+    if (F >= FOG_OF_WAR_MIN) then
       Result := 255
     else
       Result := 0;
@@ -435,21 +466,15 @@ begin
 
   //Check all four corners and choose max
   Result := CheckVerticeRev(aRevArray,X-1,Y-1);
-
   if Result = 255 then Exit;
 
-  if X <= fMapX-1 then
-    Result := Max(Result, CheckVerticeRev(aRevArray,X,Y-1));
-
+  Result := Max(Result, CheckVerticeRev(aRevArray,X,Y-1));
   if Result = 255 then Exit;
 
-  if (X <= fMapX-1) and (Y <= fMapY-1) then
-    Result := Max(Result, CheckVerticeRev(aRevArray,X,Y));
-
+  Result := Max(Result, CheckVerticeRev(aRevArray,X,Y));
   if Result = 255 then Exit;
 
-  if Y <= fMapY-1 then
-    Result := Max(Result, CheckVerticeRev(aRevArray,X-1,Y));
+  Result := Max(Result, CheckVerticeRev(aRevArray,X-1,Y));
 end;
 
 
@@ -535,9 +560,12 @@ procedure TKMFogOfWar.UpdateState;
 var
   I, K: Word;
 begin
-  if not gGameApp.DynamicFOWEnabled then Exit;
+  fDynamicFOW := gGameApp.DynamicFOWEnabled;
+  if not fDynamicFOW then Exit;
 
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psGameFOW, gGameApp.Game.GameTick);
+  {$ENDIF}
   try
     Inc(fAnimStep);
 
@@ -564,7 +592,9 @@ begin
           end;}
         end;
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psGameFOW);
+    {$ENDIF}
   end;
 end;
 

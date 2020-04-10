@@ -34,11 +34,12 @@ type
     procedure MapCacheUpdate;
 
     procedure GameSpeedChange(aSpeed: Single);
+    function DoHaveGenericPermission: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure Start;
+    function Start: Boolean;
     procedure CloseQuery(var CanClose: Boolean);
     procedure Stop(Sender: TObject);
 
@@ -56,7 +57,7 @@ type
     function IsFormActive: Boolean;
     function ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
     function ClientToScreen(aPoint: TPoint): TPoint;
-    procedure ReinitRender(aReturnToOptions: Boolean);
+    function ReinitRender(aReturnToOptions: Boolean): Boolean;
     procedure FlashingStart;
     procedure FlashingStop;
 
@@ -83,8 +84,8 @@ uses
   Classes, Forms,
   {$IFDEF MSWindows} MMSystem, {$ENDIF}
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
-  SysUtils, StrUtils, Math, KromUtils,
-  KM_GameApp,
+  SysUtils, StrUtils, Math, KromUtils, KM_FileIO,
+  KM_GameApp, KM_Helpers,
   KM_Log, KM_CommonUtils, KM_Defaults, KM_Points, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
@@ -103,20 +104,28 @@ begin
   Application.CreateForm(TFormMain, fFormMain);
   Application.CreateForm(TFormLoading, fFormLoading);
 
+  {$IFDEF PERFLOG}
   gPerfLogs := TKMPerfLogs.Create([], True);
   gPerfLogs.ShowForm( fFormMain.cpPerfLogs );
-
+  fFormMain.cpPerfLogs.Height := gPerfLogs.FormHeight;
+  {$ELSE}
+  fFormMain.cpPerfLogs.Hide;
+  {$ENDIF}
 end;
 
 
 destructor TKMMain.Destroy;
 begin
+  {$IFDEF PERFLOG}gPerfLogs.Free;{$ENDIF}
+
   {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
+
   inherited;
 end;
 
 
-procedure TKMMain.Start;
+// Return False in case we had difficulties on the start
+function TKMMain.Start: Boolean;
   function GetScreenMonitorsInfo: TKMPointArray;
   var
     I: Integer;
@@ -128,7 +137,9 @@ procedure TKMMain.Start;
       Result[I].Y := Screen.Monitors[I].Height;
     end;
   end;
+
 begin
+  Result := True;
   //Random is only used for cases where order does not matter, e.g. shuffle tracks
   Randomize;
 
@@ -144,9 +155,14 @@ begin
 
   if not BLOCK_FILE_WRITE then
   begin
-    CreateDir(ExeDir + 'Logs' + PathDelim);
-    gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
-    gLog.DeleteOldLogs;
+    try
+      CreateDir(ExeDir + 'Logs' + PathDelim);
+      gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
+      gLog.DeleteOldLogs;
+    except
+      on E: Exception do
+        gLog := nil; // Ignore Log creation error. We will exit later with proper error message
+    end;
   end;
 
   //Resolutions are created first so that we could check Settings against them
@@ -173,7 +189,18 @@ begin
   if not fMainSettings.WindowParams.IsValid(GetScreenMonitorsInfo) then
      fMainSettings.WindowParams.NeedResetToDefaults := True;
 
-  ReinitRender(False);
+  // Stop app if we did not ReinitRender properly (didn't pass game folder permissions test)
+  // TODO refactor. Separate folder permissions check and render initialization
+  // Locale and texts could be loaded separetely to show proper translated error message
+  if not ReinitRender(False) then
+  begin
+    SKIP_RENDER := True; // Skip render, since gGameApp will show panels on FullScreen mode
+    fFormLoading.Hide; //Will close the form on Full Screen mode
+    fFormMain.Hide;
+    fFormMain.ShowFolderPermissionError; // Show localized error message
+    Stop(nil); // Stop the app
+    Exit(False);
+  end;
 
   fFormMain.ControlsRefill; //Refill some of the debug controls from game settings
 
@@ -202,7 +229,8 @@ end;
 
 procedure TKMMain.GameSpeedChange(aSpeed: Single);
 begin
-  fFormMain.chkSuperSpeed.Checked := aSpeed = DEBUG_SPEEDUP_SPEED;
+  // Set check state without trigger OnClick event handler for the CheckBox
+  fFormMain.chkSuperSpeed.SetCheckedWithoutClick(aSpeed = DEBUG_SPEEDUP_SPEED);
 end;
 
 
@@ -370,8 +398,25 @@ begin
 end;
 
 
-procedure TKMMain.ReinitRender(aReturnToOptions: Boolean);
+// Check game execution dir generic permissions
+function TKMMain.DoHaveGenericPermission: Boolean;
+const
+  GRANTED: array[Boolean] of string = ('blocked', 'granted');
+var
+  readAcc, writeAcc, execAcc: Boolean;
 begin
+  readAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_READ) = FILE_GENERIC_READ);
+  writeAcc  := (CheckFileAccess(ExeDir, FILE_GENERIC_WRITE) = FILE_GENERIC_WRITE);
+  execAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_EXECUTE) = FILE_GENERIC_EXECUTE);
+  gLog.AddTime(Format('Check game folder ''%s'' generic permissions: READ: %s; WRITE: %s; EXECUTE: %s',
+                      [ExeDir, GRANTED[readAcc], GRANTED[writeAcc], GRANTED[execAcc]]));
+  Result := readAcc and writeAcc and execAcc;
+end;
+
+
+function TKMMain.ReinitRender(aReturnToOptions: Boolean): Boolean;
+begin
+  Result := True;
   if fMainSettings.FullScreen then
   begin
     // Lock window params while we are in FullScreen mode
@@ -395,6 +440,15 @@ begin
                                 fFormLoading.LoadingStep,
                                 fFormLoading.LoadingText,
                                 StatusBarText);
+
+  // Check if player has all permissions on game folder. Close the app if not
+  // Check is done after gGameApp creating because we want to load texts first to shw traslated error message
+  // TODO refactor. Separate folder permissions check and render initialization
+  // Locale and texts could be loaded separetely to show proper translated error message
+  if (gLog = nil)
+    or (not aReturnToOptions and not DoHaveGenericPermission) then
+    Exit(False);
+
   gGameApp.OnGameSpeedActualChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
   //Preload game resources while in menu to make 1st game start faster

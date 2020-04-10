@@ -42,7 +42,6 @@ uses
   SysUtils,
   KM_Defaults,
   KM_Game,
-  KM_PerfLog,
   KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
@@ -100,14 +99,18 @@ end;
 
 procedure TKMAIFields.UpdateState(aTick: Cardinal);
 begin
+  {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAIFields, gGame.GameTick);
+  {$ENDIF}
   try
     fNavMesh.UpdateState(aTick);
     fInfluences.UpdateState(aTick);
     fEye.UpdateState(aTick);
     fSupervisor.UpdateState(aTick);
   finally
+    {$IFDEF PERFLOG}
     gPerfLogs.SectionLeave(psAIFields);
+    {$ENDIF}
   end;
 end;
 

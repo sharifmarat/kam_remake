@@ -215,8 +215,6 @@ end;
 { Destroy what was created }
 destructor TKMGameApp.Destroy;
 begin
-  FreeAndNil(gPerfLogs);
-
   //Freeing network sockets and OpenAL can result in events like Resize/Paint occuring (seen in crash reports)
   //Set fIsExiting so we know to skip them
   fIsExiting := True;
@@ -1104,10 +1102,13 @@ begin
   if not fTimerUI.Enabled then Exit; //Don't render while toggling locale
 
   gRender.BeginFrame;
+
+  {$IFDEF PERFLOG}
   gPerfLogs.StackGFX.FrameBegin;
   gPerfLogs.SectionEnter(psFrameFullG);
 
   try
+  {$ENDIF}
     if gVideoPlayer.IsActive then
       gVideoPlayer.Paint
     else
@@ -1117,12 +1118,14 @@ begin
       fMainMenuInterface.Paint;
 
     gRender.RenderBrightness(GameSettings.Brightness);
+  {$IFDEF PERFLOG}
   finally
     gPerfLogs.SectionLeave(psFrameFullG);
     gPerfLogs.StackGFX.FrameEnd;
   end;
 
   gPerfLogs.Render(TOOLBAR_WIDTH + 10, gMain.FormMain.RenderArea.Width - 10, gMain.FormMain.RenderArea.Height - 10);
+  {$ENDIF}
 
   gRender.EndFrame;
   gRender.Query.QueriesSwapBuffers;
@@ -1183,6 +1186,8 @@ begin
   //Always update networking for auto reconnection and query timeouts
   if fNetworking <> nil then
     fNetworking.UpdateState(fGlobalTickCount);
+
+  gVideoPlayer.UpdateState;
 
   if gGame <> nil then
   begin

@@ -29,12 +29,9 @@ type
     fGuiOverlays: TKMMapEdTerrainOverlays;
 
     procedure PageChange(Sender: TObject);
-    procedure UnRedoClick(Sender: TObject);
   protected
     Panel_Terrain: TKMPanel;
     Button_Terrain: array [TKMTerrainTab] of TKMButton;
-    Button_TerrainUndo: TKMButtonFlat;
-    Button_TerrainRedo: TKMButtonFlat;
     procedure DoShowSubMenu(aIndex: Byte); override;
     procedure DoExecuteSubMenuAction(aIndex: Byte); override;
   public
@@ -93,21 +90,6 @@ begin
       Button_Terrain[I].OnClick := PageChange;
     end;
 
-    //Button_TerrainUndo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 20, 0, 10, SMALL_TAB_H + 4, '<', bsGame);
-    Button_TerrainUndo := TKMButtonFlat.Create(Panel_Terrain, Panel_Terrain.Width - 62, -79, 15, SMALL_TAB_H + 4, 0);
-    Button_TerrainUndo.Caption := '<';
-    Button_TerrainUndo.CapOffsetY := -10;
-    Button_TerrainUndo.CapColor := icGreen;
-    Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl+Z'')';
-    Button_TerrainUndo.OnClick := UnRedoClick;
-    //Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 10, 0, 10, SMALL_TAB_H + 4, '>', bsGame);
-    Button_TerrainRedo := TKMButtonFlat.Create(Panel_Terrain, Panel_Terrain.Width - 47, -79, 15, SMALL_TAB_H + 4, 0);
-    Button_TerrainRedo.Caption := '>';
-    Button_TerrainRedo.CapOffsetY := -10;
-    Button_TerrainRedo.CapColor := icGreen;
-    Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl+Y'' or ''Ctrl+Shift+Z'')';
-    Button_TerrainRedo.OnClick := UnRedoClick;
-
     fGuiBrushes := TKMMapEdTerrainBrushes.Create(Panel_Terrain);
     fGuiHeights := TKMMapEdTerrainHeights.Create(Panel_Terrain);
     fGuiTiles := TKMMapEdTerrainTiles.Create(Panel_Terrain);
@@ -142,22 +124,6 @@ end;
 
 procedure TKMMapEdTerrain.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
-  if Visible then
-  begin
-    if (ssCtrl in Shift) and (Key = Ord('Y')) then
-    begin
-      UnRedoClick(Button_TerrainRedo); //Ctrl+Y = Redo
-      aHandled := True;
-    end;
-    if (ssCtrl in Shift) and (Key = Ord('Z')) then
-    begin
-      if ssShift in Shift then
-        UnRedoClick(Button_TerrainRedo) //Ctrl+Shift+Z = Redo
-      else
-        UnRedoClick(Button_TerrainUndo); //Ctrl+Z = Undo
-      aHandled := True;
-    end;
-  end;
   fGuiObjects.KeyUp(Key, Shift, aHandled);
 end;
 
@@ -202,19 +168,6 @@ begin
 
   //Signal that active page has changed, that may affect layers visibility
   fOnPageChange(Self);
-end;
-
-
-procedure TKMMapEdTerrain.UnRedoClick(Sender: TObject);
-begin
-  if Sender = Button_TerrainUndo then
-    gGame.TerrainPainter.Undo;
-
-  if Sender = Button_TerrainRedo then
-    gGame.TerrainPainter.Redo;
-
-  Button_TerrainUndo.Enabled := gGame.TerrainPainter.CanUndo;
-  Button_TerrainRedo.Enabled := gGame.TerrainPainter.CanRedo;
 end;
 
 
@@ -289,10 +242,8 @@ begin
   fGuiObjects.UpdateState;
   fGuiSelection.UpdateState;
   fGuiOverlays.UpdateState;
-
-  Button_TerrainUndo.Enabled := gGame.TerrainPainter.CanUndo;
-  Button_TerrainRedo.Enabled := gGame.TerrainPainter.CanRedo;
 end;
 
 
 end.
+

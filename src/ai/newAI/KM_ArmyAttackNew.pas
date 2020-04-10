@@ -72,6 +72,7 @@ type
     fCombatGroups: TObjectList<TKMCombatGroup>;
 
     function GetCount(): Integer;
+    function GetCombatGroupIdx(aGroup: TKMUnitGroup): Integer;
     function GetCombatGroup(aGroup: TKMUnitGroup): TKMCombatGroup;
   public
     constructor Create(aOwner: TKMHandID);
@@ -86,8 +87,11 @@ type
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure OwnerUpdate(aPlayer: TKMHandID);
-    procedure AddGroups(aGroups: TKMUnitGroupArray);
+
     function IsGroupInAction(aGroup: TKMUnitGroup): Boolean;
+    procedure AddGroups(aGroups: TKMUnitGroupArray);
+    procedure ReleaseGroup(aGroup: TKMUnitGroup);
+    procedure ReleaseGroups();
 
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
@@ -106,7 +110,7 @@ uses
   Types, TypInfo,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_NavMesh, KM_CommonUtils, KM_AISetup, KM_AI, KM_RenderAux,
-  KM_UnitWarrior, KM_AIParameters;
+  KM_UnitWarrior, KM_AIParameters, KM_UnitActionFight, KM_UnitActionWalkTo;
 
 
 
@@ -115,27 +119,27 @@ uses
 constructor TKMCombatGroup.Create(aGroup: TKMUnitGroup);
 begin
   inherited Create;
-  fGroup := aGroup.GetGroupPointer();
   fTargetType := ttPoint;
   fCombatPhase := cpIdle;
   fOnPlace := False;
   fTargetChanged := True;
+  fTargetPosition := KMPointDir(KMPOINT_ZERO, dirNA);
+  fTargetAim := KMPOINT_ZERO;
   fWalkTimeLimit := 0;
   fAttackTimeLimit := 0;
+  fGroup := aGroup.GetGroupPointer();
   fTargetGroup := nil;
   fTargetUnit := nil;
   fTargetHouse := nil;
-  fTargetPosition := KMPointDir(KMPOINT_ZERO, dirNA);
-  fTargetAim := KMPOINT_ZERO;
 end;
 
 
 destructor TKMCombatGroup.Destroy();
 begin
   gHands.CleanUpGroupPointer(fGroup);
-  gHands.CleanUpHousePointer(fTargetHouse);
   gHands.CleanUpGroupPointer(fTargetGroup);
   gHands.CleanUpUnitPointer(fTargetUnit);
+  gHands.CleanUpHousePointer(fTargetHouse);
   inherited;
 end;
 
@@ -149,14 +153,14 @@ begin
   LoadStream.Read(fOnPlace);
   LoadStream.Read(fTargetChanged);
   LoadStream.Read(fTargetPosition);
+  LoadStream.Read(fTargetAim, SizeOf(fTargetAim));
   LoadStream.Read(fWalkTimeLimit, SizeOf(fWalkTimeLimit));
   LoadStream.Read(fAttackTimeLimit, SizeOf(fAttackTimeLimit));
-  LoadStream.Read(fTargetAim, SizeOf(fTargetAim));
   //Subst on syncload
   LoadStream.Read(fGroup, 4);
-  LoadStream.Read(fTargetHouse, 4);
   LoadStream.Read(fTargetGroup, 4);
   LoadStream.Read(fTargetUnit, 4);
+  LoadStream.Read(fTargetHouse, 4);
 end;
 
 
@@ -168,25 +172,17 @@ begin
   SaveStream.Write(fOnPlace);
   SaveStream.Write(fTargetChanged);
   SaveStream.Write(fTargetPosition);
+  SaveStream.Write(fTargetAim, SizeOf(fTargetAim));
   SaveStream.Write(fWalkTimeLimit, SizeOf(fWalkTimeLimit));
   SaveStream.Write(fAttackTimeLimit, SizeOf(fAttackTimeLimit));
-  SaveStream.Write(fTargetAim, SizeOf(fTargetAim));
-  if (fGroup <> nil) then
-    SaveStream.Write(fGroup.UID) //Store ID
-  else
-    SaveStream.Write(Integer(0));
-  if (fTargetHouse <> nil) then
-    SaveStream.Write(fTargetHouse.UID) //Store ID
-  else
-    SaveStream.Write(Integer(0));
-  if (fTargetGroup <> nil) then
-    SaveStream.Write(fTargetGroup.UID) //Store ID
-  else
-    SaveStream.Write(Integer(0));
-  if (fTargetUnit <> nil) then
-    SaveStream.Write(fTargetUnit.UID) //Store ID
-  else
-    SaveStream.Write(Integer(0));
+  if (fGroup <> nil) then       SaveStream.Write(fGroup.UID)
+  else                          SaveStream.Write(Integer(0));
+  if (fTargetGroup <> nil) then SaveStream.Write(fTargetGroup.UID)
+  else                          SaveStream.Write(Integer(0));
+  if (fTargetUnit <> nil) then  SaveStream.Write(fTargetUnit.UID)
+  else                          SaveStream.Write(Integer(0));
+  if (fTargetHouse <> nil) then SaveStream.Write(fTargetHouse.UID)
+  else                          SaveStream.Write(Integer(0));
 end;
 
 
@@ -234,21 +230,8 @@ end;
 
 procedure TKMCombatGroup.ChangeTargetUnit(aUnit: TKMUnit);
 begin
-  // Avoid repeated order in case of ranged groups
-  if (fGroup.GroupType = gtRanged)
-    AND (fTargetUnit <> nil)
-    //AND not fTargetUnit.IsDeadOrDying
-    AND (
-     (
-       (fTargetUnit is TKMUnitWarrior)
-       AND (aUnit is TKMUnitWarrior)
-       AND (TKMUnitWarrior(fTargetUnit).Group = TKMUnitWarrior(aUnit).Group)
-     ) OR (
-       (KMDistanceSqr(fTargetUnit.CurrPosition, aUnit.CurrPosition) < sqr(GA_ATTACK_SQUAD_ChangeTarget_DistTolerance))
-     )
-    ) then
-    Exit;
-  fTargetChanged := True;
+  fTargetChanged := (fTargetUnit = nil) OR not fTargetUnit.IsDeadOrDying
+    OR ((aUnit is TKMUnitWarrior) AND (fTargetUnit is TKMUnitWarrior) AND (TKMUnitWarrior(fTargetUnit).Group <> TKMUnitWarrior(aUnit).Group));
   gHands.CleanUpUnitPointer(fTargetUnit);
   fTargetUnit := aUnit.GetUnitPointer;
 end;
@@ -305,24 +288,73 @@ procedure TKMCombatGroup.UpdateState(aTick: Cardinal);
     begin
       BestTgt := nil;
       G := TKMUnitWarrior(fTargetUnit).Group;
-      BestDist := 1E10;
-      for K := 0 to G.Count - 1 do
-        if not G.Members[K].IsDeadOrDying then
-        begin
-          Dist := KMDistanceSqr(fGroup.Position,G.Members[K].CurrPosition);
-          if (Dist < BestDist) then
-          begin
-            BestTgt := G.Members[K];
-            BestDist := Dist;
-          end;
-        end;
-      if (BestTgt <> nil) then
+      //Group will be nil if we target a warrior still walking out of barracks
+      if G <> nil then
       begin
-        gHands.CleanUpUnitPointer(fTargetUnit);
-        fTargetUnit := BestTgt.GetUnitPointer;
+        BestDist := 1E10;
+        for K := 0 to G.Count - 1 do
+          if not G.Members[K].IsDeadOrDying then
+          begin
+            Dist := KMDistanceSqr(fGroup.Position,G.Members[K].CurrPosition);
+            if (Dist < BestDist) then
+            begin
+              BestTgt := G.Members[K];
+              BestDist := Dist;
+            end;
+          end;
+        if (BestTgt <> nil) then
+        begin
+          gHands.CleanUpUnitPointer(fTargetUnit);
+          fTargetUnit := BestTgt.GetUnitPointer;
+        end;
       end;
     end;
   end;
+
+  procedure MoveRangedInFormation();
+  var
+    K, CntFighting, CntWalking, CntCanFight: Integer;
+    NodeList: TKMPointList;
+  begin
+    // Target comes from behind
+    K := Abs(Byte(KMGetDirection(Position,TargetAim)) - Byte(Group.OrderLoc.Dir));
+    if (K > 1) AND (K < 7) then
+    begin
+      Group.OrderAttackUnit(fTargetUnit, True);
+      Exit;
+    end;
+    //if Group.GetAliveMember.WithinFightRange(fTargetAim) then
+    // Check amount of shooting members
+    CntFighting := 0;
+    CntWalking := 0;
+    CntCanFight := 0;
+    for K := 0 to Group.Count - 1 do
+    begin
+      CntFighting := CntFighting + Byte(Group.Members[K].Action is TKMUnitActionFight);
+      CntWalking := CntWalking + Byte(Group.Members[K].Action is TKMUnitActionWalkTo);
+      CntCanFight := CntCanFight + Byte(Group.Members[K].WithinFightRange(fTargetAim));
+    end;
+    if (CntFighting = 0) AND (CntCanFight > 0) then
+    begin
+      Group.OrderAttackUnit(fTargetUnit, True);
+      Exit;
+    end;
+    if (CntFighting > Group.Count * 0.7) OR (CntCanFight > Group.Count * 0.5) OR (CntWalking + CntFighting > Group.Count * 0.7) then
+      Exit;
+    NodeList := TKMPointList.Create;
+    try
+      if gGame.Pathfinding.Route_Make(Group.GetAliveMember.CurrPosition, TargetUnit.NextPosition, [tpWalk], Group.GetAliveMember.GetFightMaxRange, nil, NodeList) then
+      begin
+        fTargetPosition := KMPointDir(NodeList[NodeList.Count-1],KMGetDirection(NodeList[NodeList.Count-1], TargetUnit.NextPosition));
+        if KMSamePoint(fTargetPosition.Loc, Position) then
+          fTargetPosition.Loc := KMGetPointInDir(fTargetPosition.Loc, fTargetPosition.Dir, 1);
+        Group.OrderWalk(fTargetPosition.Loc, True, wtokAISquad, fTargetPosition.Dir);
+      end;
+    finally
+      NodeList.Free;
+    end;
+  end;
+
 var
   ActPos: TKMPoint;
 begin
@@ -339,7 +371,16 @@ begin
   if (fTargetUnit <> nil) AND fTargetUnit.IsDeadOrDying then
   begin
     if (fTargetGroup <> nil) then
-      ChangeTargetUnit( fTargetGroup.GetAliveMember() )
+    begin
+      fTargetAim := GetTargetUnitPosition();
+      // New target is out of range -> wait for supervisor to update target group to the closest
+      if KMDistanceSqr(fTargetAim,Position) > Sqr(Group.GetAliveMember.GetFightMaxRange) then
+      begin
+        fTargetType := ttGroup;
+        fCombatPhase := cpAttack;
+        Exit;
+      end;
+    end
     else
       SetTargetUnit(nil);
   end;
@@ -348,24 +389,25 @@ begin
 
   // Orders
   ActPos := Position;
-  if (fTargetUnit <> nil) then
+  if (fTargetUnit <> nil) OR (fTargetGroup <> nil) then
   begin
-    fTargetAim := GetTargetUnitPosition();
-    if PlanPath(aTick, ActPos, fTargetAim, True, False) then  // Check if squad is in the place
-      Group.OrderWalk(fTargetAim, True, wtokAISquad, TargetPosition.Dir)
-    else if
-      fTargetChanged // Target has been changed
-      OR (fGroup.GroupType <> gtRanged) // If not ranged then send a command to attack every update
-      OR (KMDistanceSqr(fTargetAim,ActPos) > 12*12) // If ranged send attack command only until shoot distance to prevent reset of the shooting animation
-      OR (fGroup.Order in [goNone, goWalkTo]) // If ranged send attack command also if target is already in range but previous command was not attack something
-      OR (fAttackTimeLimit < aTick) // If ranged send attack command every X ticks to force at least first line of archers to shoot
-       then
-    begin
-      fAttackTimeLimit := aTick + GA_ATTACK_SQUAD_ChangeTarget_Delay;
-      fTargetChanged := False;
-      Group.OrderAttackUnit(fTargetUnit, True);
-    end;
-    fOnPlace := True;
+      fTargetAim := GetTargetUnitPosition();
+      if PlanPath(aTick, ActPos, fTargetAim, True, False) then  // Check if squad is in the place
+        Group.OrderWalk(fTargetAim, True, wtokAISquad, TargetPosition.Dir)
+      else if (fGroup.GroupType = gtRanged) then
+        MoveRangedInFormation()
+      else if
+        fTargetChanged // Target has been changed
+        OR (KMDistanceSqr(fTargetAim,ActPos) > 12*12)
+        OR (fGroup.Order in [goNone, goAttackHouse, goWalkTo]) // Force Group to change its task
+        OR (fAttackTimeLimit < aTick) // Make sure that unit is not stuck
+        then
+      begin
+        fAttackTimeLimit := aTick + GA_ATTACK_SQUAD_ChangeTarget_Delay;
+        fTargetChanged := False;
+        Group.OrderAttackUnit(fTargetUnit, True);
+      end;
+      fOnPlace := True;
   end
   else if (fTargetHouse <> nil) then
   begin
@@ -472,7 +514,7 @@ end;
 
 destructor TKMArmyAttackNew.Destroy;
 begin
-  fCombatGroups.Free;
+  fCombatGroups.Free; // Calls also Clear()
   inherited;
 end;
 
@@ -566,14 +608,31 @@ begin
 end;
 
 
+function TKMArmyAttackNew.GetCombatGroupIdx(aGroup: TKMUnitGroup): Integer;
+var
+  K: Integer;
+begin
+  Result := -1;
+  for K := 0 to Count - 1 do
+    if (fCombatGroups[K].Group = aGroup) then
+      Exit(K);
+end;
+
+
 function TKMArmyAttackNew.GetCombatGroup(aGroup: TKMUnitGroup): TKMCombatGroup;
 var
   K: Integer;
 begin
   Result := nil;
-  for K := 0 to Count - 1 do
-    if (fCombatGroups[K].Group = aGroup) then
-      Exit( fCombatGroups[K] );
+  K := GetCombatGroupIdx(aGroup);
+  if (K <> -1) then
+    Result := fCombatGroups[K];
+end;
+
+
+function TKMArmyAttackNew.IsGroupInAction(aGroup: TKMUnitGroup): Boolean;
+begin
+  Result := GetCombatGroup(aGroup) <> nil;
 end;
 
 
@@ -582,14 +641,24 @@ var
   K: Integer;
 begin
   for K := 0 to Length(aGroups) - 1 do
-    if (GetCombatGroup(aGroups[K]) = nil) then
+    if (GetCombatGroup(aGroups[K]) = nil) AND (aGroups[K] <> nil) AND not aGroups[K].IsDead then
       fCombatGroups.Add(  TKMCombatGroup.Create( aGroups[K] )  );
 end;
 
 
-function TKMArmyAttackNew.IsGroupInAction(aGroup: TKMUnitGroup): Boolean;
+procedure TKMArmyAttackNew.ReleaseGroup(aGroup: TKMUnitGroup);
+var
+  K: Integer;
 begin
-  Result := GetCombatGroup(aGroup) <> nil;
+  K := GetCombatGroupIdx(aGroup);
+  if (K <> -1) then
+    fCombatGroups.Delete(K);
+end;
+
+
+procedure TKMArmyAttackNew.ReleaseGroups();
+begin
+  fCombatGroups.Clear();
 end;
 
 
@@ -707,7 +776,7 @@ begin
         gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1.5, (Op1 shl 24) OR COLOR_BLUE, (Op2 shl 24) OR COLOR_BLUE);
       gRenderAux.Quad(CG.TargetAim.X, CG.TargetAim.Y, $FF000000 OR COLOR_WHITE);
       {$IFDEF DEBUG_NewAI}
-      if not KMSamePoint(CG.TargetAim, KMPOINT_ZERO) then
+      if not KMSamePoint(CG.TargetAim, KMPOINT_ZERO) AND (Length(CG.DEBUGPointPath) > 0) then
         with CG.DEBUGPointPath[Low(CG.DEBUGPointPath)] do
           gRenderAux.Quad(X, Y, $FF000000 OR COLOR_CYAN);
       {$ENDIF}
