@@ -194,10 +194,7 @@ const
   INIT_DISTANCE = 0;
 var
   I, Idx: Word;
-  PolyArr: TPolygonArray;
 begin
-  PolyArr := gAIFields.NavMesh.Polygons;
-
   MakeNewQueue();
   if (aMaxIdx >= 0) then
     for I := 0 to aMaxIdx do
@@ -205,7 +202,7 @@ begin
       Idx := aInitIdxArray[I];
       if not IsVisited(Idx) then
       begin
-        MarkAsVisited(Idx, INIT_DISTANCE, PolyArr[ Idx ].CenterPoint);
+        MarkAsVisited(Idx, INIT_DISTANCE, gAIFields.NavMesh.Polygons[ Idx ].CenterPoint);
         InsertInQueue(Idx);
       end;
     end;
@@ -215,21 +212,18 @@ end;
 // Flood fill in NavMesh grid
 procedure TNavMeshFloodFill.Flood();
 var
-  PolyArr: TPolygonArray;
   I: SmallInt;
   Idx, NearbyIdx: Word;
   Point: TKMPoint;
 begin
-  PolyArr := gAIFields.NavMesh.Polygons;
-
   while RemoveFromQueue(Idx) do
     if CanBeExpanded(Idx) then
-      for I := 0 to PolyArr[Idx].NearbyCount-1 do
+      for I := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount-1 do
       begin
-        NearbyIdx := PolyArr[Idx].Nearby[I];
+        NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[I];
         if not IsVisited(NearbyIdx) then
         begin
-          Point := PolyArr[Idx].NearbyPoints[I];
+          Point := gAIFields.NavMesh.Polygons[Idx].NearbyPoints[I];
           MarkAsVisited( NearbyIdx,
                          fQueueArray[Idx].Distance + KMDistanceAbs(fQueueArray[Idx].DistPoint, Point),
                          Point);

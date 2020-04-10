@@ -65,7 +65,6 @@ type
   private
   protected
     fOwner: TKMHandID;
-    fPolyArr: TPolygonArray;
     fDistancePenalization: TDistancePenalization;
     fBackwardFF: TArmyBackwardFF;
     fCntAllyPoly, fCntEnemyPoly: Word;
@@ -103,7 +102,6 @@ type
     fOwner: TKMHandID;
     fExpandedPolygonsCnt: Word;
     fBestEvaluation: Double;
-    fPolyArr: TPolygonArray;
     fDefInfo: TDefInfoArray;
     fBattleLines: TKMBattleLines;
     fBestBattleLines: TKMBattleLines;
@@ -242,7 +240,6 @@ const
 var
   I, Idx: Word;
 begin
-  fPolyArr := gAIFields.NavMesh.Polygons;
   fVisitedIdx := 4;
   if (aMaxIdx >= 0) then
     for I := 0 to aMaxIdx do
@@ -250,7 +247,7 @@ begin
       Idx := aInitIdxArray[I];
       if not IsVisited(Idx) then
       begin
-        MarkAsVisited(Idx, INIT_DISTANCE, fPolyArr[ Idx ].CenterPoint);
+        MarkAsVisited(Idx, INIT_DISTANCE, gAIFields.NavMesh.Polygons[ Idx ].CenterPoint);
         InsertInQueue(Idx);
       end;
     end;
@@ -438,9 +435,9 @@ procedure TArmyForwardFF.AssignDefencePositions();
     InsertInQueue(aIdx);
     while RemoveFromQueue(Idx) do
     begin
-      for K := 0 to fPolyArr[Idx].NearbyCount - 1 do
+      for K := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount - 1 do
       begin
-        NearbyIdx := fPolyArr[Idx].Nearby[K];
+        NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[K];
         if (fDefInfo[Idx].Mark >= fDefInfo[NearbyIdx].Mark) then
         begin
           if (fQueueArray[NearbyIdx].Visited < fVisitedIdx) then
@@ -449,10 +446,10 @@ procedure TArmyForwardFF.AssignDefencePositions();
           begin
             fQueueArray[NearbyIdx].Visited := fVisitedIdx;
             if (fQueueArray[NearbyIdx].Distance < fQueueArray[Idx].Distance) then
-              Dir := KMGetDirection(fPolyArr[ Idx ].CenterPoint,fPolyArr[ NearbyIdx ].CenterPoint)
+              Dir := KMGetDirection(gAIFields.NavMesh.Polygons[ Idx ].CenterPoint,gAIFields.NavMesh.Polygons[ NearbyIdx ].CenterPoint)
             else
-              Dir := KMGetDirection(fPolyArr[ NearbyIdx ].CenterPoint,fPolyArr[ Idx ].CenterPoint);
-            Exit( KMPointDir(fPolyArr[ Idx ].NearbyPoints[K], Dir) );
+              Dir := KMGetDirection(gAIFields.NavMesh.Polygons[ NearbyIdx ].CenterPoint,gAIFields.NavMesh.Polygons[ Idx ].CenterPoint);
+            Exit( KMPointDir(gAIFields.NavMesh.Polygons[ Idx ].NearbyPoints[K], Dir) );
           end;
           fQueueArray[NearbyIdx].Visited := fVisitedIdx;
         end;
@@ -493,9 +490,9 @@ procedure TArmyForwardFF.AssignDefencePositions();
         for K := 1 to QueueCntBackup do
         begin
           RemoveFromQueue(Idx);
-          for L := 0 to fPolyArr[Idx].NearbyCount - 1 do
+          for L := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount - 1 do
           begin
-            NearbyIdx := fPolyArr[Idx].Nearby[L];
+            NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[L];
             if (fDefInfo[Idx].Mark >= fDefInfo[NearbyIdx].Mark) AND (fQueueArray[NearbyIdx].Visited < fVisitedIdx) then
             begin
               InsertInQueue(NearbyIdx);
@@ -503,10 +500,10 @@ procedure TArmyForwardFF.AssignDefencePositions();
               begin
                 fQueueArray[NearbyIdx].Visited := fVisitedIdx;
                 if (fQueueArray[NearbyIdx].Distance < fQueueArray[Idx].Distance) then
-                  Dir := KMGetDirection(fPolyArr[ Idx ].CenterPoint,fPolyArr[ NearbyIdx ].CenterPoint)
+                  Dir := KMGetDirection(gAIFields.NavMesh.Polygons[ Idx ].CenterPoint,gAIFields.NavMesh.Polygons[ NearbyIdx ].CenterPoint)
                 else
-                  Dir := KMGetDirection(fPolyArr[ NearbyIdx ].CenterPoint,fPolyArr[ Idx ].CenterPoint);
-                Result[Cnt] := KMPointDir(fPolyArr[ Idx ].NearbyPoints[L], Dir);
+                  Dir := KMGetDirection(gAIFields.NavMesh.Polygons[ NearbyIdx ].CenterPoint,gAIFields.NavMesh.Polygons[ Idx ].CenterPoint);
+                Result[Cnt] := KMPointDir(gAIFields.NavMesh.Polygons[ Idx ].NearbyPoints[L], Dir);
                 Inc(Cnt);
                 if (Cnt >= aCnt) then
                   Exit;
@@ -566,7 +563,7 @@ begin
         while (M < BattleLines.Lines[L].PolygonsCount) do
         begin
           Idx := BattleLines.Lines[L].Polygons[M];
-          LinePoint := fPolyArr[ Idx ].CenterPoint;
+          LinePoint := gAIFields.NavMesh.Polygons[ Idx ].CenterPoint;
           Price := KMDistanceSqr(LinePoint, GroupPoint) - fDefInfo[Idx].Mark * 32;
           if (Price < BestPrice) then
           begin
@@ -722,7 +719,6 @@ begin
   {$IFDEF DEBUG_BattleLines}
     fDebugLines.Count := 0;
   {$ENDIF}
-  fPolyArr := gAIFields.NavMesh.Polygons;
   fQueueCnt := 0;
   fExpandedPolygonsCnt := 0;
   fBestEvaluation := +1E10;
@@ -796,15 +792,15 @@ begin
   else
     Exit;
 
-  for K := 0 to fPolyArr[aIdx].NearbyCount-1 do
+  for K := 0 to gAIFields.NavMesh.Polygons[aIdx].NearbyCount-1 do
   begin
-    NearbyIdx := fPolyArr[aIdx].Nearby[K];
+    NearbyIdx := gAIFields.NavMesh.Polygons[aIdx].Nearby[K];
     // Expand polygon
     if not IsVisited(NearbyIdx) then
     begin
       MarkAsVisited(NearbyIdx);
       fDefInfo[NearbyIdx].Mark := fDefInfo[aIdx].Mark - 1;
-      if (fPolyArr[NearbyIdx].NearbyCount = 3) then // New combat lines are created only from polygons with 3 surrounding polygons
+      if (gAIFields.NavMesh.Polygons[NearbyIdx].NearbyCount = 3) then // New combat lines are created only from polygons with 3 surrounding polygons
       begin
         ComputeWeightedDistance(NearbyIdx);
         //if (fDefInfo[aIdx].Distance + 3 > fDefInfo[NearbyIdx].Distance) then
@@ -908,8 +904,6 @@ begin
   //while RemoveFromQueue(Idx) AND (fDefInfo[Idx].Distance > 5) do
   while RemoveFromQueue(Idx) AND (fQueueArray[Idx].Distance < High(Word) - 10) do
   begin
-    //if (Idx = 167) then
-    //  debug(Idx);
     if CanBeExpanded(Idx) then
       ExpandPolygon(Idx);
     {$IFDEF DEBUG_BattleLines}
@@ -969,7 +963,7 @@ begin
   if (fBattleLines.Count <= 0) OR (Length(fBattleLines.Lines) <= 0) then
     Exit;
   if (fDebugLines.Count <= Length(fDebugLines.DBLs)) then
-    SetLength(fDebugLines.DBLs, Length(fDebugLines.DBLs) + 16);
+    SetLength(fDebugLines.DBLs, Length(fDebugLines.DBLs) + 128);
   L := fDebugLines.Count;
   Inc(fDebugLines.Count);
 
