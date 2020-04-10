@@ -1042,7 +1042,6 @@ begin
       begin
         IsCoop := True;
         BlockTeamSelection := True;
-        BlockColorSelection := True;
         BlockPeacetime := True;
         BlockFullMapPreview := True;
       end;
