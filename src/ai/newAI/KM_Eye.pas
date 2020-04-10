@@ -67,7 +67,6 @@ type
     fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY: Word;
     fUpdateTick: Cardinal;
     fHouseReq: TKMHouseRequirements;
-    fHMA: THouseMappingArray;
     fLocs: TKMPointList;
     fInfoArr: TKMBuildInfoArray;
 
@@ -121,7 +120,7 @@ type
     procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure ActualizeTile(aX, aY: Word);
     function CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
-    procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
+    procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; aInitPointsArr: TKMPointList; aClearHouseList: Boolean = True);
   end;
 
 
@@ -1101,13 +1100,13 @@ end;
 
 function TKMEye.GetCityCenterPolygons(aMultiplePoints: Boolean = False): TKMWordArray;
 var
-  I: Integer;
+  K: Integer;
   PointArray: TKMPointArray;
 begin
   PointArray := GetCityCenterPoints(aMultiplePoints);
   SetLength(Result, Length(PointArray));
-  for I := Low(Result) to High(Result) do
-    Result[I] := gAIFields.NavMesh.KMPoint2Polygon[ PointArray[I] ];
+  for K := Low(Result) to High(Result) do
+    Result[K] := gAIFields.NavMesh.KMPoint2Polygon[ PointArray[K] ];
 end;
 
 
@@ -1115,7 +1114,7 @@ function TKMEye.GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointA
 const
   SCANNED_HOUSES = [htStore, htSchool, htBarracks];
 var
-  I, Cnt: Integer;
+  K, Cnt: Integer;
   HT: TKMHouseType;
   H: TKMHouse;
 begin
@@ -1129,9 +1128,9 @@ begin
     Exit;
 
   Cnt := 0;
-  for I := 0 to gHands[fOwner].Houses.Count - 1 do
+  for K := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
-    H := gHands[fOwner].Houses[I];
+    H := gHands[fOwner].Houses[K];
     if (H <> nil) AND not H.IsDestroyed AND H.IsComplete AND (H.HouseType in SCANNED_HOUSES) then
     begin
       Result[Cnt] := H.PointBelowEntrance;
@@ -1452,7 +1451,6 @@ procedure TKMBuildFF.InitQueue(aHouseFF: Boolean);
 var
   K: Integer;
 begin
-  fHMA := gAIFields.Eye.HousesMapping; // Make sure that HMA is actual
   fQueueCnt := 0;
   if (fVisitIdx >= 254) then
   begin
@@ -1547,7 +1545,7 @@ var
 begin
   Result := False;
   CoalUnderPlan := False;
-  with fHMA[fHouseReq.HouseType] do
+  with gAIFields.Eye.HousesMapping[fHouseReq.HouseType] do
   begin
     for K := Low(Tiles) to High(Tiles) do
     begin
@@ -1680,16 +1678,16 @@ begin
             continue;
           P1 := KMPointAdd( Loc, KMPoint(gRes.Houses[HT].EntranceOffsetX,0) ); // Plans have moved offset so fix it (because there is never enought exceptions ;)
           // Internal house tiles
-          for L := Low(fHMA[HT].Tiles) to High(fHMA[HT].Tiles) do
+          for L := Low(gAIFields.Eye.HousesMapping[HT].Tiles) to High(gAIFields.Eye.HousesMapping[HT].Tiles) do
           begin
-            P2 := KMPointAdd(P1, fHMA[HT].Tiles[L]);
+            P2 := KMPointAdd(P1, gAIFields.Eye.HousesMapping[HT].Tiles[L]);
             State[P2.Y, P2.X] := bsHousePlan;
           end;
           // External house tiles in distance 1 from house plan
-          for Dir := Low(fHMA[HT].Surroundings[DIST]) to High(fHMA[HT].Surroundings[DIST]) do
-            for L := Low(fHMA[HT].Surroundings[DIST,Dir]) to High(fHMA[HT].Surroundings[DIST,Dir]) do
+          for Dir := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST])     to High(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST]) do
+            for L := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST,Dir]) to High(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST,Dir]) do
             begin
-              P2 := KMPointAdd(P1, fHMA[HT].Surroundings[DIST,Dir,L]);
+              P2 := KMPointAdd(P1, gAIFields.Eye.HousesMapping[HT].Surroundings[DIST,Dir,L]);
               if (gTerrain.Land[P2.Y,P2.X].Passability * [tpMakeRoads, tpWalkRoad] <> []) then
                 State[P2.Y, P2.X] := bsRoad
               else if (State[P2.Y, P2.X] <> bsNoBuild) then
@@ -1814,21 +1812,21 @@ begin
 end;
 
 
-procedure TKMBuildFF.FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
+procedure TKMBuildFF.FindPlaceForHouse(aHouseReq: TKMHouseRequirements; aInitPointsArr: TKMPointList; aClearHouseList: Boolean = True);
 var
   K: Integer;
 begin
   if aClearHouseList then
     fLocs.Clear;
-  if (Length(InitPointsArr) <= 0) then
+  if (aInitPointsArr = nil) OR (aInitPointsArr.Count <= 0) then
     Exit;
 
   fHouseReq := aHouseReq;
   UpdateState();
 
   InitQueue(True);
-  for K := 0 to Length(InitPointsArr) - 1 do
-    with InitPointsArr[K] do
+  for K := 0 to aInitPointsArr.Count - 1 do
+    with aInitPointsArr[K] do
       if CanBeVisited(X,Y,Y*fMapX + X, True) then
         MarkAsVisited(X,Y, InsertInQueue(Y*fMapX + X), 0);
 

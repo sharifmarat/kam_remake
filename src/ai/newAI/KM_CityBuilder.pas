@@ -815,10 +815,7 @@ procedure TKMCityBuilder.CheckBasicMaterials(var aMaxPlans, aMaxPlace: Integer; 
 var
   K, RequiredStones, RequiredWood, WoodReserves, Wood, Trunk: Integer;
   H: TKMHouse;
-  WareBalance: TWareBalanceArray;
 begin
-  WareBalance := fPredictor.WareBalance;
-
   // Analyze basic force stats (max possible plans, construction ware, gold)
   aMaxPlans := Ceil(fFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef);
   // Use "rapid construction" in case that we have resources
@@ -828,16 +825,16 @@ begin
     aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wtStone is OK
-  fStoneShortage := (WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
+  fStoneShortage := (fPredictor.WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
 
   // Make sure that gold will be produced ASAP -> minimal delay, exhaustion is OK
-  fGoldShortage := (WareBalance[wtGold].Exhaustion < GA_BUILDER_Shortage_Gold);
+  fGoldShortage := (fPredictor.WareBalance[wtGold].Exhaustion < GA_BUILDER_Shortage_Gold);
 
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
   Trunk := gHands[fOwner].Stats.GetWareBalance(wtTrunk);
   Wood := gHands[fOwner].Stats.GetWareBalance(wtWood);
   WoodReserves := Trunk * 2 + Wood;
-  aTrunkBalance := WoodReserves / (2 * Max(0.1, WareBalance[wtTrunk].ActualConsumption));
+  aTrunkBalance := WoodReserves / (2 * Max(0.1, fPredictor.WareBalance[wtTrunk].ActualConsumption));
   fTrunkShortage := (aTrunkBalance < GA_BUILDER_Shortage_Trunk);
 
   // Compute building materials
@@ -868,7 +865,7 @@ begin
 
   // Secure wood production: only process trunk -> wood => minimal delay
   fWoodShortage :=
-    (WareBalance[wtWood].Exhaustion < GA_BUILDER_Shortage_Wood)
+    (fPredictor.WareBalance[wtWood].Exhaustion < GA_BUILDER_Shortage_Wood)
     OR
     (
       (
@@ -1084,7 +1081,6 @@ const
 var
   MaxPlans, MaxPlace: Integer;
   RequiredHouses: TRequiredHousesArray;
-  WareBalance: TWareBalanceArray;
 
 
   function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
@@ -1201,7 +1197,7 @@ var
       WT := Ware;
       if (RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] > 0) then
       begin
-        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
+        Priority := fPredictor.WareBalance[WT].Exhaustion - fPredictor.WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
                     - Byte(PRODUCTION_WARE2HOUSE[WT] = htBakery) * 1000;
         for K := Low(WareOrder) to High(WareOrder) do
           if (WT = wtNone) then
@@ -1261,7 +1257,7 @@ var
     for WT in BUILD_ORDER_WARE do
     begin
       HT := PRODUCTION_WARE2HOUSE[WT];
-      if (RequiredHouses[HT] > 0) AND (WareBalance[WT].Exhaustion < 30) then
+      if (RequiredHouses[HT] > 0) AND (fPredictor.WareBalance[WT].Exhaustion < 30) then
       begin
         // Make sure that next cycle will not scan this house in this tick
         RequiredHouses[HT] := 0;
@@ -1390,7 +1386,6 @@ begin
   CheckBasicMaterials(MaxPlans, MaxPlace, TrunkBalance, aTick);
 
   RequiredHouses := fPredictor.RequiredHouses;
-  WareBalance := fPredictor.WareBalance;
 
   // Dont build more than 3 quarry at once if there is not quarry and stone shortage is possible
   RequiredHouses[htQuary] := RequiredHouses[htQuary] * Byte(not (fStoneShortage AND (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (fPlanner.PlannedHouses[htQuary].UnderConstruction > 2)));

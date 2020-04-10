@@ -1645,9 +1645,9 @@ var
     Time: Cardinal;
     Coef: Single;
   {$ENDIF}
-  L, HouseCnt: Integer;
+  L: Integer;
   HT: TKMHouseType;
-  InitPointsArr: TKMPointArray;
+  InitPointList: TKMPointList;
   HouseReq: TKMHouseRequirements;
   BuildFF: TKMBuildFF;
   CCPArr: TKMPointArray;
@@ -1679,62 +1679,45 @@ begin
   for L := 0 to BEST_PLANS_CNT - 1 do
     BestGainArr[L] := INIT_BEST_GAIN;
 
-  if SP_BOOST_AI_BUILD then
-  begin
-    HouseCnt := 0;
-    for HT := HOUSE_MIN to HOUSE_MAX do
+  InitPointList := TKMPointList.Create();
+  try
+    if SP_BOOST_AI_BUILD then
     begin
-      if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine]) then
-        for L := fPlannedHouses[HT].Count - 1 downto 0 do
-        begin
-          if (Length(InitPointsArr) <= HouseCnt) then
-            SetLength(InitPointsArr, Length(InitPointsArr) + 32);
-          InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[L].Loc); // Place for mines can be problematic
-          HouseCnt := HouseCnt + 1;
-        end;
-    end;
-    SetLength(InitPointsArr,HouseCnt);
-    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
-  end
-  else
-  begin
-    HouseCnt := 0;
-    for HT in HOUSE_DEPENDENCE[aHT] do
-      HouseCnt := HouseCnt + fPlannedHouses[HT].Count;
-    SetLength(InitPointsArr, HouseCnt);
-
-    HouseCnt := 0;
-    for HT in HOUSE_DEPENDENCE[aHT] do
-      for L := 0 to fPlannedHouses[HT].Count - 1 do
-      begin
-        InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[L].Loc); // Place for mines can be problematic
-        HouseCnt := HouseCnt + 1;
-      end;
-    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
-
-    if (BuildFF.Locs.Count < 10) then
-    begin
-      if (Length(InitPointsArr) < MAX_RND_HOUSES) then
-        SetLength(InitPointsArr, MAX_RND_HOUSES);
-      HouseCnt := 0;
       for HT := HOUSE_MIN to HOUSE_MAX do
-      begin
-        if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine])
-          AND not (HT in HOUSE_DEPENDENCE[aHT]) then
+        if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine]) then
           for L := fPlannedHouses[HT].Count - 1 downto 0 do
-            if (HouseCnt = 0) OR (KaMRandom('TKMCityPlanner.FindPlaceForHouse') < PROBABILITY) then
-            begin
-              if (HouseCnt >= MAX_RND_HOUSES) then
-                break;
-              InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[L].Loc); // Place for mines can be problematic
-              HouseCnt := HouseCnt + 1;
-            end;
-        if (HouseCnt >= MAX_RND_HOUSES) then
-          break;
+            InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[L].Loc)); // Place for mines can be problematic
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+    end
+    else
+    begin
+      for HT in HOUSE_DEPENDENCE[aHT] do
+        for L := 0 to fPlannedHouses[HT].Count - 1 do
+          InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[L].Loc)); // Place for mines can be problematic
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+
+      if (BuildFF.Locs.Count < 10) then
+      begin
+        InitPointList.Clear();
+        for HT := HOUSE_MIN to HOUSE_MAX do
+        begin
+          if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine])
+            AND not (HT in HOUSE_DEPENDENCE[aHT]) then
+            for L := fPlannedHouses[HT].Count - 1 downto 0 do
+              if (InitPointList.Count = 0) OR (KaMRandom('TKMCityPlanner.FindPlaceForHouse') < PROBABILITY) then
+              begin
+                if (InitPointList.Count >= MAX_RND_HOUSES) then
+                  break;
+                InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[L].Loc)); // Place for mines can be problematic
+              end;
+          if (InitPointList.Count >= MAX_RND_HOUSES) then
+            break;
+        end;
+        BuildFF.FindPlaceForHouse(HouseReq, InitPointList, False);
       end;
-      SetLength(InitPointsArr,HouseCnt);
-      BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, False);
     end;
+  finally
+    InitPointList.Free;
   end;
 
   with BuildFF.Locs do
@@ -1836,37 +1819,33 @@ const
   const
     INIT_GAIN = -10000;
   var
-    I, BestIdx, HouseCnt: Integer;
+    I, BestIdx: Integer;
     Gain, BestGain: Single;
     HT: TKMHouseType;
-    InitPointsArr: TKMPointArray;
+    InitPointList: TKMPointList;
     HouseReq: TKMHouseRequirements;
     BuildFF: TKMBuildFF;
   begin
     BuildFF := gAIFields.Eye.BuildFF;
 
-    HouseCnt := 0;
-    for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
-      HouseCnt := HouseCnt + fPlannedHouses[HT].Count;
+    InitPointList := TKMPointList.Create();
+    try
+      for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
+        for I := 0 to fPlannedHouses[HT].Count - 1 do
+          InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[I].Loc)); // Place under mines can be problematic
 
-    SetLength(InitPointsArr, HouseCnt);
-    HouseCnt := 0;
-    for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
-      for I := 0 to fPlannedHouses[HT].Count - 1 do
+      with HouseReq do
       begin
-        InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[I].Loc); // Place under mines can be problematic
-        HouseCnt := HouseCnt + 1;
+        HouseType := aHT;
+        IgnoreTrees := False;
+        IgnoreAvoidBuilding := True;
+        MaxCnt := 20; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
+        MaxDist := 30;
       end;
-
-    with HouseReq do
-    begin
-      HouseType := aHT;
-      IgnoreTrees := False;
-      IgnoreAvoidBuilding := True;
-      MaxCnt := 20; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
-      MaxDist := 30;
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+    finally
+      InitPointList.Free;
     end;
-    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
 
     BestGain := INIT_GAIN;
     BestIdx := -1;
@@ -2018,7 +1997,7 @@ var
   Gain, BestGain: Single;
   Loc, BestLoc: TKMPoint;
   HouseReq: TKMHouseRequirements;
-  InitPointsArr: TKMPointArray;
+  InitPointList: TKMPointList;
   BuildFF: TKMBuildFF;
   {$IFDEF DEBUG_NewAI}
     Time: Cardinal;
@@ -2081,12 +2060,16 @@ begin
         if (StoneLocs.Tag[MinIdx + 1] - StoneLocs.Tag[MinIdx] > MAX_DERIVATION) then
           break;
       // Copy points in stone mountain in specific influence (it can be multiple stone mountains but in same influence area)
-      SetLength(InitPointsArr, MaxIdx - MinIdx);
-      for I := MaxIdx downto MinIdx + 1 do
-        InitPointsArr[MaxIdx - I] := StoneLocs.Items[I];
-      MaxIdx := MinIdx;
-      // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
-      BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
+      InitPointList := TKMPointList.Create();
+      try
+        for I := MaxIdx downto MinIdx + 1 do
+          InitPointList.Add(StoneLocs.Items[I]);
+        MaxIdx := MinIdx;
+        // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
+        BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+      finally
+        InitPointList.Free;
+      end;
       // Evaluate new locs
       BestGain := -10000000;
       for I := 0 to BuildFF.Locs.Count - 1 do
@@ -2131,7 +2114,7 @@ var
   Gain, BestGain: Single;
   Loc, BestLoc: TKMPoint;
   HouseReq: TKMHouseRequirements;
-  InitPointsArr: TKMPointArray;
+  InitPointList: TKMPointList;
   HMA: THouseMappingArray;
   BuildFF: TKMBuildFF;
   {$IFDEF DEBUG_NewAI}
@@ -2153,9 +2136,13 @@ begin
     MaxDist := RADIUS;
   end;
 
-  SetLength(InitPointsArr, 1);
-  InitPointsArr[0] := aCenter;
-  BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
+  InitPointList := TKMPointList.Create();
+  try
+    InitPointList.Add(aCenter);
+    BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+  finally
+    InitPointList.Free;
+  end;
 
   BestGain := -1E10;
   BestLoc := KMPOINT_ZERO;
