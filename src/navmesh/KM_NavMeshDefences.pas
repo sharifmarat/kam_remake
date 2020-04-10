@@ -876,7 +876,6 @@ begin
   Result := (fQueueArray[aIdx].Visited > 0); // Visited Array is always filled with zeros
 end;
 
-
 procedure TFilterFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
 begin
   Inc(fPolyCnt);
