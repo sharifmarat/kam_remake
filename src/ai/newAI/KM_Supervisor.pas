@@ -231,6 +231,7 @@ const
   SQR_OFFENSIVE_DISTANCE = 30*30;
   INFLUENCE_THRESHOLD = 1;
 var
+  InCombat: Boolean;
   PL: TKMHandID;
   HouseIsClose, EnemyIsClose: Boolean;
   Idx, K, L, CntH, CntE: Integer;
@@ -250,9 +251,12 @@ begin
   for Idx := 0 to Length(fAlli2PL[aTeam]) - 1 do
   begin
     Owner := fAlli2PL[aTeam,Idx];
+    InCombat := gHands[ fAlli2PL[aTeam,Idx] ].AI.ArmyManagement.AttackNew.Count > 0;
     for PL := 0 to gHands.Count - 1 do
       if (gHands[Owner].Alliances[PL] = atEnemy) then
       begin
+        if not InCombat then
+          fCombatStatus[Owner,PL] := csNeutral;
         // Find all hostile houses (only if player attacking someone)
         HouseIsClose := False;
         if (fCombatStatus[Owner,PL] in [csAttackingCity, csAttackingEverything]) then
@@ -564,38 +568,6 @@ var
     OrderMove(AG);
   end;
 
-  procedure LaunchAttack(aAttack: Boolean; var aBattleLine: TKMBattleLine);
-  {
-  var
-    K, L, M: Integer;
-    Price, BestPrice: Single;
-    G, BestTarget: TKMUnitGroup;
-  //}
-  begin
-    EvaluateEnemy(aAttack, aBattleLine);
-    // Find groups with the same line
-    {
-    for K := Low(CG) to High(CG) do
-      if (CG[K] <> nil) then
-      begin
-        // Compute best target
-        BestPrice := 1E10;
-        for L := 0 to aBattleLine.GroupCount - 1 do
-        begin
-          Price := KMDistanceSqr(AG[K].Position, EG[ aBattleLine.Groups[L] ].Position);
-          if (Price < BestPrice) then
-          begin
-            BestPrice := Price;
-            BestTarget := EG[ aBattleLine.Groups[L] ];
-          end;
-        end;
-        // Set order to attack
-        if (BestPrice < 1E10) then
-          CG[K].TargetGroup := BestTarget;
-      end;
-    //}
-  end;
-
 var
   PlayerInCombat, LineInCombat, TeamInCombat: Boolean;
   K, L, Cnt, Ready: Integer;
@@ -675,7 +647,7 @@ begin
       end;
     end;
     // Launch attack or move groups
-    LaunchAttack((Ready > Cnt * 0.8) OR LineInCombat, BL.Lines[K])
+    EvaluateEnemy((Ready > Cnt * 0.8) OR LineInCombat, BL.Lines[K]);
   end;
   //}
 end;
