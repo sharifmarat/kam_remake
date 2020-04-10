@@ -434,6 +434,15 @@ begin
   //Unit failed to add, that happens
   if Result = nil then Exit;
 
+  if gGame.IsMapEditor then
+  begin
+    if aMakeCheckpoint then
+      gGame.MapEditor.History.MakeCheckpoint(caUnits, Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_ADD_SMTH],
+                                                            [gRes.Units[aUnitType].GUIName, aLoc.ToString]));
+
+    Exit;
+  end;
+
   Result.OnUnitDied := UnitDied;
   Result.OnUnitTrained := UnitTrained; //Used for debug Scout placed by a cheat
 
@@ -465,10 +474,6 @@ begin
       //The event is "OnWarriorEquipped" not "OnWarriorCreated".
       //fScriptingESA.ProcWarriorEquipped(Result, G);
     end;
-
-  if gGame.IsMapEditor and aMakeCheckpoint then
-    gGame.MapEditor.History.MakeCheckpoint(caUnits, Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_ADD_SMTH],
-                                                           [gRes.Units[aUnitType].GUIName, aLoc.ToString]));
 end;
 
 
