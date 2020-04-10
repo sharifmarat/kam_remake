@@ -547,6 +547,7 @@ begin
     end;
   // Get count of required positions in a combat line
   SetLength(TargetLines, Ally.GroupsCount);
+  FillChar(TargetLines[0], Length(TargetLines) * SizeOf(TargetLines[0]), #0);
   SetLength(PosReq,BattleLines.Count);
   if (BattleLines.Count = 1) then
     PosReq[0] := Ally.GroupsCount
@@ -1051,7 +1052,7 @@ begin
       DrawPolygon(K, 50, COLOR_WHITE, IntToStr(fQueueArray[K].Distance));
     end;
   //}
-  {
+  //{
   for K := 0 to Length(fQueueArray) - 1 do
     DrawPolygon(K, 1, Color, IntToStr(High(Word) - fDefInfo[K].Mark));
 
@@ -1064,7 +1065,7 @@ begin
     //}
 
 
-  {
+  //{
   if fDebugLines.Count > 0 then
   begin
     TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;
