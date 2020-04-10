@@ -712,8 +712,6 @@ end;
 
 
 procedure TFormMain.chkSuperSpeedClick(Sender: TObject);
-var
-  speed: Single;
 begin
   if (gGameApp.Game = nil)
     or (gGameApp.Game.IsMultiPlayerOrSpec
@@ -722,12 +720,7 @@ begin
       and not gGameApp.Game.IsReplay) then
     Exit;
 
-  speed := gGameApp.Game.GetNormalGameSpeed;
-
-  if speed = DEBUG_SPEEDUP_SPEED then
-    speed := 1;
-
-  gGameApp.Game.SetGameSpeed(IfThen(chkSuperSpeed.Checked, DEBUG_SPEEDUP_SPEED, speed), False);
+  gGameApp.Game.SetGameSpeed(IfThen(chkSuperSpeed.Checked, DEBUG_SPEEDUP_SPEED, 1), False);
 
   ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;
