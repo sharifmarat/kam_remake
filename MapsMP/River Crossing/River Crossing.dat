@@ -1,4 +1,4 @@
-!SET_MAP "data\mission\smaps\River Ñrossing v0.22.map"
+!SET_MAP "data\mission\smaps\River Crossing.map"
 !SET_TACTIC
 !SET_MAX_PLAYER 6
 !SET_HUMAN_PLAYER 0
@@ -349,4 +349,4 @@
 !SET_UNIT 24 84 5
 !SET_UNIT 24 34 32
 
-//This mission was made with KaM Remake Map Editor version r10750 at 09.02.2020 4:35:26
+//This mission was made with KaM Remake Map Editor version r11222 at 10.04.2020 7:10:18
