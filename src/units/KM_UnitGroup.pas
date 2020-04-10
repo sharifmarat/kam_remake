@@ -63,7 +63,6 @@ type
     fOrderTargetHouse: TKMHouse; //House we are ordered to attack. This property should never be accessed, use public OrderHouseTarget instead.
 
     //don't saved:
-    fPushbackLimit: Integer; //Locally stored limit, save it just to avoid its calculation every time
     fMapEdCount: Word;
 
     function GetCount: Integer;
@@ -85,7 +84,7 @@ type
     function GetFlagColor: Cardinal;
 
     procedure SetGroupOrder(aOrder: TKMGroupOrder);
-    procedure UpdatePushbackLimit;
+    function GetPushbackLimit: Word; inline;
 
     function GetOrderTargetUnit: TKMUnit;
     function GetOrderTargetGroup: TKMUnitGroup;
@@ -339,7 +338,6 @@ begin
       AddMember(Warrior, -1, False);
       Warrior.Condition := NewCondition;
     end;
-    UpdatePushbackLimit; //After all members were added
   end;
 
   //We could not set it earlier cos it's limited by Count
@@ -390,8 +388,6 @@ begin
   LoadStream.Read(fBlockOrders);
   LoadStream.Read(fManualFormation);
   LoadStream.Read(fMembersPushbackCommandsCnt);
-
-  UpdatePushbackLimit; //Need to update pushback limit after Count is loaded
 end;
 
 
@@ -694,7 +690,7 @@ end;
 
 
 //Locally stored limit, save it just to avoid its calculation every time
-procedure TKMUnitGroup.UpdatePushbackLimit;
+function TKMUnitGroup.GetPushbackLimit: Word;
 const
   //Const values were received from tests
   ORDERWALK_PUSHBACK_PER_MEMBER_MAX_CNT = 2.5;
@@ -702,7 +698,7 @@ const
 begin
   //Progressive formula, since for very large groups (>100 members) we neen to allow more pushbacks,
   //otherwise it will be hard to group to get to its position on a crowed areas
-  fPushbackLimit := Round(Math.Power(Count, COUNT_POWER_COEF) * ORDERWALK_PUSHBACK_PER_MEMBER_MAX_CNT);
+  Result := Round(Math.Power(Count, COUNT_POWER_COEF) * ORDERWALK_PUSHBACK_PER_MEMBER_MAX_CNT);
 end;
 
 
@@ -718,9 +714,6 @@ begin
   aWarrior.OnPickedFight := Member_PickedFight;
   aWarrior.OnWarriorDied := Member_Died;
   aWarrior.SetGroup(Self);
-
-  if aOnlyWarrior then
-    UpdatePushbackLimit; //Update pushlimit only when we added only 1 warrior at time, not when we added pack of them
 end;
 
 
@@ -817,8 +810,6 @@ begin
 
   SetUnitsPerRow(fUnitsPerRow);
 
-  UpdatePushbackLimit;
-
   //If Group has died report to owner
   if IsDead and Assigned(OnGroupDied) then
     OnGroupDied(Self);
@@ -901,12 +892,8 @@ var
   OrderExecuted: Boolean;
   P: TKMPointExact;
   U: TKMUnitWarrior;
-
-  function PushbackLimitReached: Boolean;
-  begin
-    Result := fMembersPushbackCommandsCnt > fPushbackLimit;
-  end;
-
+  pushbackLimit: Word;
+  pushbackLimitReached: Boolean;
 begin
   OrderExecuted := False;
 
@@ -916,9 +903,11 @@ begin
     goNone:         OrderExecuted := False;
     goWalkTo:       begin
                       OrderExecuted := True;
+                      pushbackLimit := GetPushbackLimit; //Save it to avoid recalc for every unit
                       for I := 0 to Count - 1 do
                       begin
-                        OrderExecuted := OrderExecuted and Members[I].IsIdle and (Members[I].OrderDone or PushbackLimitReached);
+                        pushbackLimitReached := fMembersPushbackCommandsCnt > pushbackLimit;
+                        OrderExecuted := OrderExecuted and Members[I].IsIdle and (Members[I].OrderDone or pushbackLimitReached);
 
                         if Members[I].OrderDone then
                         begin
@@ -932,7 +921,7 @@ begin
                         end
                         else
                           //Guide Idle and pushed units back to their places
-                          if not PushbackLimitReached
+                          if not pushbackLimitReached
                             and (Members[I].IsIdle
                                  or ((Members[I].Action is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].Action).WasPushed)) then
                           begin
@@ -1437,8 +1426,6 @@ begin
     fMembers.Delete(0);
   end;
 
-  UpdatePushbackLimit; //When all members were deleted
-
   //In MP commands execution may be delayed, check if we still selected
   if gMySpectator.Selected = Self then
   begin
@@ -1588,10 +1575,6 @@ begin
       fMembers.Delete(I); // Leave this group
     end;
 
-  //Update pushback limits when groups sizes are calculated
-  UpdatePushbackLimit;
-  NewGroup.UpdatePushbackLimit;
-
   //Keep the selected unit Selected
   if not SelectedUnit.IsDeadOrDying and NewGroup.HasMember(SelectedUnit) then
   begin
@@ -1716,7 +1699,6 @@ begin
   NewLeader := TKMUnitWarrior(aUnit);
   fMembers.Remove(NewLeader);
   NewLeader.ReleaseUnitPointer;
-  UpdatePushbackLimit;
 
   //Give new group
   NewGroup := gHands[Owner].UnitGroups.AddGroup(NewLeader);
@@ -1724,7 +1706,6 @@ begin
   NewGroup.fSelected := NewLeader;
   NewGroup.fTimeSinceHungryReminder := fTimeSinceHungryReminder;
   NewGroup.fOrderLoc := KMPointDir(NewLeader.CurrPosition, fOrderLoc.Dir);
-  NewGroup.UpdatePushbackLimit;
 
   //Set units per row
   UnitsPerRow := fUnitsPerRow;
@@ -1770,7 +1751,6 @@ begin
 
   //Make sure units per row is still valid
   SetUnitsPerRow(UnitsPerRow);
-  UpdatePushbackLimit;
 
   //Tell both groups to reposition
   OrderHalt(False);
