@@ -957,9 +957,9 @@ const
   COLOR_RED = $7700FF;
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
+{$IFDEF DEBUG_BattleLines}
 var
   K,L,Idx: Integer;
-{$IFDEF DEBUG_BattleLines}
   //Opacity: Byte;
   Color, TickIdx: Cardinal;
   today: TDateTime;
@@ -967,6 +967,7 @@ var
   //P1,P2: TKMPoint;
 {$ENDIF}
 begin
+  {$IFDEF DEBUG_BattleLines}
   {
   for K := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
     if IsVisited(K) then
@@ -992,7 +993,7 @@ begin
       DrawPolygon(Idx, 50, COLOR_GREEN, IntToStr(fDefInfo[Idx].Mark));
     end;
     //}
-
+  {$ENDIF}
   {$IFDEF DEBUG_BattleLines}
   //{
   if fDebugLines.Count > 0 then

@@ -1,6 +1,7 @@
 !SET_MAP "data\mission\smaps\Inner Struggle.map"
 !SET_TACTIC
 !SET_MAX_PLAYER 6
+!SET_HUMAN_PLAYER 0
 
 !SET_CURR_PLAYER 0
 !ENABLE_PLAYER 0
@@ -268,4 +269,4 @@
 !SET_UNIT 25 93 72
 !SET_UNIT 25 87 70
 
-//This mission was made with KaM Remake Map Editor version r9482 at 14.05.2018 11:07:35
+//This mission was made with KaM Remake Map Editor version r11222 at 10.04.2020 7:10:09

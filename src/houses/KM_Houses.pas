@@ -368,7 +368,7 @@ uses
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_InterfaceGame,
   KM_UnitWarrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResUnits, KM_ResMapElements,
-  KM_Log, KM_ScriptingEvents, KM_CommonUtils,
+  KM_Log, KM_ScriptingEvents, KM_CommonUtils, KM_MapEditorHistory,
   KM_GameTypes;
 
 const
@@ -788,9 +788,12 @@ end;
 //Set house to new position
 procedure TKMHouse.SetPosition(const aPos: TKMPoint);
 var
-  WasOnSnow, IsRallyPointSet: Boolean;
+  WasOnSnow, IsRallyPointSet, newPos: Boolean;
 begin
   Assert(gGame.GameMode = gmMapEd);
+
+  newPos := fPosition <> aPos;
+
   //We have to remove the house THEN check to see if we can place it again so we can put it on the old position
   gTerrain.SetHouse(fPosition, fType, hsNone, PLAYER_NONE);
 
@@ -822,6 +825,10 @@ begin
   CheckOnSnow;
   if not WasOnSnow or not fIsOnSnow then
     fSnowStep := 0;
+
+  if newPos then
+    gGame.MapEditor.History.MakeCheckpoint(caHouses, Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_MOVE_SMTH],
+                                                            [gRes.Houses[HouseType].HouseName, aPos.ToString]));
 end;
 
 

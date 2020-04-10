@@ -8341,6 +8341,7 @@ begin
   fDragging := False;
 end;
 
+
 procedure TKMPopUpPanel.PaintPanel(aPaintLayer: Integer);
 begin
   inherited;

@@ -1451,13 +1451,14 @@ TX_MAPED_HISTORY_CHPOINT_INITIAL = 1413; //Initial
 TX_MAPED_HISTORY_CHPOINT_ADD_SMTH = 1414; //Add %s %s
 TX_MAPED_HISTORY_CHPOINT_REMOVE_SMTH = 1415; //Remove %s %s
 TX_MAPED_HISTORY_CHPOINT_UPDATE_SMTH = 1416; //Update %s %s
-TX_MAPED_HISTORY_CHPOINT_CHOWNER_SMTH = 1417; //Change owner: %s %s
+TX_MAPED_HISTORY_CHPOINT_MOVE_SMTH = 1417; //Move %s %s
+TX_MAPED_HISTORY_CHPOINT_CHOWNER_SMTH = 1418; //Change owner: %s %s
 
-TX_WORD_ROAD = 1418; //road
-TX_WORD_CORN_FIELD = 1419; //corn field
-TX_WORD_WINE_FIELD = 1420; //wine field
-TX_WORD_OVERLAY = 1421; //overlay
-TX_WORD_OBJECT = 1422; //object
+TX_WORD_ROAD = 1419; //road
+TX_WORD_CORN_FIELD = 1420; //corn field
+TX_WORD_WINE_FIELD = 1421; //wine field
+TX_WORD_OVERLAY = 1422; //overlay
+TX_WORD_OBJECT = 1423; //object
 
-TX_GAME_FOLDER_PERMISSIONS_ERROR = 1423; //You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
+TX_GAME_FOLDER_PERMISSIONS_ERROR = 1424; //You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
 

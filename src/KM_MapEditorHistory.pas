@@ -123,7 +123,8 @@ type
     fCheckpointPos: Integer;
     fCheckpoints: TList<TKMCheckpoint>;
 
-    fOnChange: TEvent;
+    fOnUndoRedo: TEvent;
+    fOnAddCheckpoint: TEvent;
     fUpdateTerrainNeeded: Boolean;
 
     procedure IncCounter;
@@ -132,7 +133,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    property OnChange: TEvent read fOnChange write fOnChange;
+    property OnUndoRedo: TEvent read fOnUndoRedo write fOnUndoRedo;
+    property OnAddCheckpoint: TEvent read fOnAddCheckpoint write fOnAddCheckpoint;
 
     function CanUndo: Boolean;
     function CanRedo: Boolean;
@@ -656,8 +658,8 @@ begin
     IncCounter;
   end;
 
-  if Assigned (fOnChange) then
-    fOnChange;
+  if Assigned (fOnAddCheckpoint) then
+    fOnAddCheckpoint;
 end;
 
 
@@ -731,8 +733,8 @@ begin
     for I := fCheckpointPos to aIndex - 1 do
       Redo(False);
 
-  if undoRedoNeeded and Assigned(fOnChange) then
-    fOnChange;
+  if undoRedoNeeded and Assigned(fOnUndoRedo) then
+    fOnUndoRedo;
 
   // Update terrain once only after all undos/redos were done
   if fUpdateTerrainNeeded then
@@ -773,8 +775,8 @@ begin
 
   IncCounter;
 
-  if aUpdateImmidiately and Assigned(fOnChange) then
-    fOnChange;
+  if aUpdateImmidiately and Assigned(fOnUndoRedo) then
+    fOnUndoRedo;
 end;
 
 
@@ -797,8 +799,8 @@ begin
 
   IncCounter;
 
-  if aUpdateImmidiately and Assigned(fOnChange) then
-    fOnChange;
+  if aUpdateImmidiately and Assigned(fOnUndoRedo) then
+    fOnUndoRedo;
 end;
 
 

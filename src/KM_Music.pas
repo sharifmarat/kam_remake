@@ -12,7 +12,9 @@ interface
 
 {.DEFINE USEBASS}
 {$IFDEF MSWindows}
-  {$DEFINE USELIBZPLAY}
+  {$IFNDEF NO_LIBZPLAY}
+    {$DEFINE USELIBZPLAY}
+  {$ENDIF}
 {$ENDIF}
 
 uses

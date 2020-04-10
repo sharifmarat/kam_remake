@@ -1,4 +1,4 @@
-!SET_MAP "data\mission\smaps\Cold Water 8P_2020.map"
+!SET_MAP "data\mission\smaps\Cold Water 8P.map"
 !SET_MAX_PLAYER 8
 !SET_HUMAN_PLAYER 0
 
@@ -524,4 +524,4 @@
 
 //Animals
 
-//This mission was made with KaM Remake Map Editor version r10968 at 2020.03.28. 0:55:47
+//This mission was made with KaM Remake Map Editor version r11222 at 10.04.2020 7:09:59
