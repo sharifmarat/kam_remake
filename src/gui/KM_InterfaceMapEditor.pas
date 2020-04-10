@@ -117,6 +117,8 @@ type
       Button_History_JumpTo: TKMButton;
 
     function GetToolBarWidth: Integer; override;
+
+    procedure HistoryUpdateUI;
   public
     constructor Create(aRender: TRender);
     destructor Destroy; override;
@@ -138,7 +140,8 @@ type
 
     procedure DebugControlsUpdated; override;
 	
-	  procedure HistoryUpdate;
+	  procedure HistoryUndoRedo;
+    procedure HistoryAddCheckpoint;
 
     procedure SyncUI(aMoveViewport: Boolean = True); override;
     procedure UpdateState(aTickCount: Cardinal); override;
@@ -1089,7 +1092,28 @@ begin
 end;
 
 
-procedure TKMapEdInterface.HistoryUpdate;
+
+procedure TKMapEdInterface.HistoryAddCheckpoint;
+begin
+  HistoryUpdateUI;
+end;
+
+
+procedure TKMapEdInterface.HistoryUndoRedo;
+begin
+  if Self = nil then Exit;
+
+  HistoryUpdateUI;
+
+  if fGuiHouse.Visible or fGuiUnit.Visible then
+  begin
+    gMySpectator.Selected := nil; // Reset selection
+    HidePages;
+  end;
+end;
+
+
+procedure TKMapEdInterface.HistoryUpdateUI;
 begin
   if Self = nil then Exit;
 
@@ -1104,14 +1128,7 @@ begin
 
   ListBox_History.SetTopIndex(gGame.MapEditor.History.Position, True);
   History_ListChange(nil);
-
-  if fGuiHouse.Visible or fGuiUnit.Visible then
-  begin
-    gMySpectator.Selected := nil; // Reset selection
-    HidePages;
-  end;
 end;
-
 
 procedure TKMapEdInterface.ResetCursorMode;
 begin
