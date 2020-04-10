@@ -284,23 +284,22 @@ var
   I,Dist: Integer;
   Point: TKMPoint;
   Dir: TDirection;
-  HMA: THouseMappingArray;
 begin
-  HMA := gAIFields.Eye.HousesMapping;
   // Reserve all tiles inside house plan
   //if (aHT <> htCoalMine) then
-    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Tiles[I]);
       gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_INSIDE_LOCK;
       gAIFields.Eye.BuildFF.ActualizeTile(Point.X, Point.Y);
     end;
   // Reserve all tiles in distance 1 from house plan
   Dist := 1;
-  for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
-    for I := Low(HMA[aHT].Surroundings[Dist,Dir]) to High(HMA[aHT].Surroundings[Dist,Dir]) do
+  for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I]);
       // Skip coal tiles, forests and other reserved tiles
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] < AVOID_BUILDING_HOUSE_INSIDE_LOCK) then
       begin
@@ -316,24 +315,22 @@ var
   I,Dist: Integer;
   Point: TKMPoint;
   Dir: TDirection;
-  HMA: THouseMappingArray;
 begin
   if (aHT in [htGoldMine, htIronMine]) then
     Exit;
-  HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
   //if (aHT <> htCoalMine) then
-    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Tiles[I]);
       gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
     end;
   // Free all tiles in distance 1 from house plan
   Dist := 1;
-  for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
-    for I := Low(HMA[aHT].Surroundings[Dist,Dir]) to High(HMA[aHT].Surroundings[Dist,Dir]) do
+  for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I]);
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then
         gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
     end;
