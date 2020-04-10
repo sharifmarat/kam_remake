@@ -37,6 +37,7 @@ var
 begin
   //This is to match up with multiplayer random check generation, so multiplayer replays can be replayed in singleplayer mode
   KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer');
+
   //There are still more commands left
   if fCursor <= Count then
   begin
@@ -71,7 +72,8 @@ procedure TKMGameInputProcess_Single.RunningTimer(aTick: Cardinal);
 begin
   inherited;
 
-  KaMRandom(MaxInt, 'TKMGameInputProcess_Single.RunningTimer'); //This is to match up with multiplayer CRC generation, so multiplayer replays can be replayed in singleplayer mode
+  // This is to match up with multiplayer CRC generation, so multiplayer replays can be replayed in singleplayer mode
+  KaMRandom(MaxInt, 'TKMGameInputProcess_Single.RunningTimer');
 end;
 
 
