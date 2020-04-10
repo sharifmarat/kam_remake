@@ -1715,7 +1715,7 @@ begin
     InitPointList.Free;
   end;
   {$IFDEF DEBUG_NewAI}
-    TimeBuildFF := TimeGet();
+    TimeBuildFF := TimeGet() - Time;
   {$ENDIF}
 
   with BuildFF.Locs do
@@ -1727,7 +1727,6 @@ begin
 
   {$IFDEF DEBUG_NewAI}
     Time := TimeGet() - Time;
-    TimeBuildFF := TimeGet() - TimeBuildFF;
     fTimeSumSearchHouse[aHT] := fTimeSumSearchHouse[aHT] + Time;
     fTimeSumBuildFFHouse[aHT] := fTimeSumBuildFFHouse[aHT] + TimeBuildFF;
     if (fTimePeakSearchHouse[aHT] < Time) then

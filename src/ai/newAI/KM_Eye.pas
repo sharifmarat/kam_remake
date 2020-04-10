@@ -1061,27 +1061,24 @@ var
   K: Integer;
   Ownership: Byte;
   Point: TKMPoint;
-  FI: TKMForestsInfo;
-  Polygons: TPolygonArray;
 begin
   fBuildFF.UpdateState(); // Mark walkable area in owner's city
   // Try to find potential forests only in owner's influence areas
-  FI.Count := 0;
-  Polygons := gAIFields.NavMesh.Polygons;
-  for K := 0 to Length(Polygons) - 1 do
+  Result.Count := 0;
+  for K := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
   begin
-    if (FI.Count >= aMaxCnt) then
+    if (Result.Count >= aMaxCnt) then
       break;
     Ownership := gAIFields.Influences.OwnPoly[fOwner, K];
     if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin) AND
        (Ownership < GA_EYE_GetForests_SPRndOwnLimMax) then
     begin
-      Point := Polygons[K].CenterPoint;
+      Point := gAIFields.NavMesh.Polygons[K].CenterPoint;
       if (Soil[Point.Y,Point.X] > GA_EYE_GetForests_MinRndSoil) then
       begin
-        if (Length(FI.Forests) >= FI.Count) then
-          SetLength(FI.Forests,Length(FI.Forests)+100);
-        with FI.Forests[ FI.Count ] do
+        if (Length(Result.Forests) >= Result.Count) then
+          SetLength(Result.Forests,Length(Result.Forests)+100);
+        with Result.Forests[ Result.Count ] do
         begin
           PartOfForest := False;
           Loc := Point;
@@ -1089,11 +1086,10 @@ begin
           Distance := Byte(BuildFF.VisitIdx = BuildFF.Visited[Point.Y,Point.X]) * BuildFF.Distance[Point];
           Bid := 0;
         end;
-        Inc(FI.Count);
+        Inc(Result.Count);
       end;
     end;
   end;
-  Result := FI;
 end;
 
 
@@ -1230,19 +1226,15 @@ const
     end;
   end;
   procedure DrawTriangle(aIdx: Integer; aColor: Cardinal);
-  var
-    PolyArr: TPolygonArray;
-    NodeArr: TKMPointArray;
   begin
-    PolyArr := gAIFields.NavMesh.Polygons;
-    NodeArr := gAIFields.NavMesh.Nodes;
-    gRenderAux.TriangleOnTerrain(
-      NodeArr[ PolyArr[aIdx].Indices[0] ].X,
-      NodeArr[ PolyArr[aIdx].Indices[0] ].Y,
-      NodeArr[ PolyArr[aIdx].Indices[1] ].X,
-      NodeArr[ PolyArr[aIdx].Indices[1] ].Y,
-      NodeArr[ PolyArr[aIdx].Indices[2] ].X,
-      NodeArr[ PolyArr[aIdx].Indices[2] ].Y, aColor);
+    with gAIFields.NavMesh do
+      gRenderAux.TriangleOnTerrain(
+        Nodes[ Polygons[aIdx].Indices[0] ].X,
+        Nodes[ Polygons[aIdx].Indices[0] ].Y,
+        Nodes[ Polygons[aIdx].Indices[1] ].X,
+        Nodes[ Polygons[aIdx].Indices[1] ].Y,
+        Nodes[ Polygons[aIdx].Indices[2] ].X,
+        Nodes[ Polygons[aIdx].Indices[2] ].Y, aColor);
   end;
 var
   PL: TKMHandID;
