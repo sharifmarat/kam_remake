@@ -92,6 +92,7 @@ type
     procedure HistoryClick(Sender: TObject);
     procedure HistoryJumpTo(Sender: TObject);
     procedure History_ListChange(Sender: TObject);
+    procedure History_MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
@@ -297,6 +298,7 @@ begin
   PopUp_History.Top  := 0;
   PopUp_History.DragEnabled := True;
   PopUp_History.DoSetVisible; // History is visible by default
+  PopUp_History.OnMouseWheel := History_MouseWheel;
 
     ListBox_History := TKMListBox.Create(PopUp_History, 10, 10, PopUp_History.Width - 20, PopUp_History.Height - 50, fntMetal, bsGame);
     ListBox_History.AutoHideScrollBar := True;
@@ -1079,6 +1081,14 @@ begin
 end;
 
 
+procedure TKMapEdInterface.History_MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
+begin
+  ListBox_History.MouseWheel(Sender, WheelSteps, aHandled);
+
+  aHandled := True;
+end;
+
+
 procedure TKMapEdInterface.HistoryUpdate;
 begin
   if Self = nil then Exit;
@@ -1362,6 +1372,16 @@ end;
 
 procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean);
 begin
+  if fMyControls.CtrlOver <> nil then
+  begin
+    fMyControls.MouseWheel(X, Y, WheelSteps, aHandled);
+    if not aHandled then
+      inherited;
+    Exit; // Don't change field stages when mouse not over map
+  end;
+
+  if aHandled then Exit;
+  
   if gGameCursor.Mode in [cmField, cmWine] then
   begin
     if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
