@@ -24,19 +24,10 @@
         <Projects Include="Utils\FontX Generator\FontXGenerator.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="KaM Editor\KM_Editor.dproj">
-            <Dependencies/>
-        </Projects>
         <Projects Include="Utils\DedicatedServer\KaM_DedicatedServer.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="Test\KaM_RemakeTests.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="TestFunctional\KaM_RemakeTestFunc.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="Utils\Runner\Runner.dproj">
@@ -134,15 +125,6 @@
     <Target Name="FontXGenerator:Make">
         <MSBuild Projects="Utils\FontX Generator\FontXGenerator.dproj" Targets="Make"/>
     </Target>
-    <Target Name="KM_Editor">
-        <MSBuild Projects="KaM Editor\KM_Editor.dproj"/>
-    </Target>
-    <Target Name="KM_Editor:Clean">
-        <MSBuild Projects="KaM Editor\KM_Editor.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="KM_Editor:Make">
-        <MSBuild Projects="KaM Editor\KM_Editor.dproj" Targets="Make"/>
-    </Target>
     <Target Name="KaM_DedicatedServer">
         <MSBuild Projects="Utils\DedicatedServer\KaM_DedicatedServer.dproj"/>
     </Target>
@@ -160,24 +142,6 @@
     </Target>
     <Target Name="KaM_DedicatedServerGUI:Make">
         <MSBuild Projects="Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="KaM_RemakeTests">
-        <MSBuild Projects="Test\KaM_RemakeTests.dproj"/>
-    </Target>
-    <Target Name="KaM_RemakeTests:Clean">
-        <MSBuild Projects="Test\KaM_RemakeTests.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="KaM_RemakeTests:Make">
-        <MSBuild Projects="Test\KaM_RemakeTests.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="KaM_RemakeTestFunc">
-        <MSBuild Projects="TestFunctional\KaM_RemakeTestFunc.dproj"/>
-    </Target>
-    <Target Name="KaM_RemakeTestFunc:Clean">
-        <MSBuild Projects="TestFunctional\KaM_RemakeTestFunc.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="KaM_RemakeTestFunc:Make">
-        <MSBuild Projects="TestFunctional\KaM_RemakeTestFunc.dproj" Targets="Make"/>
     </Target>
     <Target Name="Runner">
         <MSBuild Projects="Utils\Runner\Runner.dproj"/>
@@ -252,13 +216,13 @@
         <MSBuild Projects="Utils\TranslationManager\TranslationManager.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="KaM_Remake;Batcher;CampaignBuilder;FontEditor;FontXCollator;FontXEditor;FontXGenerator;KM_Editor;KaM_DedicatedServer;KaM_DedicatedServerGUI;KaM_RemakeTests;KaM_RemakeTestFunc;Runner;RXXEditor;RXXPacker;ScriptValidator;ServerPoller;TileEditor;TilesetResampler;TranslationManager"/>
+        <CallTarget Targets="KaM_Remake;Batcher;CampaignBuilder;FontEditor;FontXCollator;FontXEditor;FontXGenerator;KaM_DedicatedServer;KaM_DedicatedServerGUI;Runner;RXXEditor;RXXPacker;ScriptValidator;ServerPoller;TileEditor;TilesetResampler;TranslationManager"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="KaM_Remake:Clean;Batcher:Clean;CampaignBuilder:Clean;FontEditor:Clean;FontXCollator:Clean;FontXEditor:Clean;FontXGenerator:Clean;KM_Editor:Clean;KaM_DedicatedServer:Clean;KaM_DedicatedServerGUI:Clean;KaM_RemakeTests:Clean;KaM_RemakeTestFunc:Clean;Runner:Clean;RXXEditor:Clean;RXXPacker:Clean;ScriptValidator:Clean;ServerPoller:Clean;TileEditor:Clean;TilesetResampler:Clean;TranslationManager:Clean"/>
+        <CallTarget Targets="KaM_Remake:Clean;Batcher:Clean;CampaignBuilder:Clean;FontEditor:Clean;FontXCollator:Clean;FontXEditor:Clean;FontXGenerator:Clean;KaM_DedicatedServer:Clean;KaM_DedicatedServerGUI:Clean;Runner:Clean;RXXEditor:Clean;RXXPacker:Clean;ScriptValidator:Clean;ServerPoller:Clean;TileEditor:Clean;TilesetResampler:Clean;TranslationManager:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="KaM_Remake:Make;Batcher:Make;CampaignBuilder:Make;FontEditor:Make;FontXCollator:Make;FontXEditor:Make;FontXGenerator:Make;KM_Editor:Make;KaM_DedicatedServer:Make;KaM_DedicatedServerGUI:Make;KaM_RemakeTests:Make;KaM_RemakeTestFunc:Make;Runner:Make;RXXEditor:Make;RXXPacker:Make;ScriptValidator:Make;ServerPoller:Make;TileEditor:Make;TilesetResampler:Make;TranslationManager:Make"/>
+        <CallTarget Targets="KaM_Remake:Make;Batcher:Make;CampaignBuilder:Make;FontEditor:Make;FontXCollator:Make;FontXEditor:Make;FontXGenerator:Make;KaM_DedicatedServer:Make;KaM_DedicatedServerGUI:Make;Runner:Make;RXXEditor:Make;RXXPacker:Make;ScriptValidator:Make;ServerPoller:Make;TileEditor:Make;TilesetResampler:Make;TranslationManager:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
