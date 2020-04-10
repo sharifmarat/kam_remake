@@ -1650,7 +1650,12 @@ begin
               and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.dat', MF))
               and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.map', MF)) then
             begin
-              ProcessMap(SearchRec.Name, MF);
+              try
+                ProcessMap(SearchRec.Name, MF);
+              except
+                on E: Exception do
+                  gLog.AddTime('Error loading map ''' + SearchRec.Name + ''''); //Just silently log an exception
+              end;
             end;
           until (FindNext(SearchRec) <> 0) or Terminated;
         finally
