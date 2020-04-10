@@ -56,12 +56,14 @@ xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
 xcopy "%KMRPrevVersionDir%"\oalinst.exe "%kam_folder%"\oalinst.exe* /y /r /i
 
+mkdir "%kam_folder%"\Utils
+
 @REM copy ScriptingEditor
 if %IncludeScriptingEditor%==True (
 xcopy "%ScriptingEditorDir%"\bin\ScriptingEditor.exe* "%kam_folder%"\ScriptingEditor /y /r /i
 xcopy "%ScriptingEditorDir%"\bin\SE_Data_KMR "%kam_folder%"\ScriptingEditor\SE_Data\ /y /r /s
 xcopy "%ScriptingEditorDir%"\bin\SE_Data\Examples "%kam_folder%"\ScriptingEditor\SE_Data\Examples\ /y /r /s
-xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptingEditor\SE_Data\ScriptValidator.exe* /y /r /i
+xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ScriptValidator.exe* /y /r /i
 @REM no need for OLD folder there
 rmdir /S /Q "%kam_folder%"\bin\SE_Data\OLD
 rmdir /S /Q "%kam_folder%"\bin\SE_Data\Logs
@@ -69,12 +71,12 @@ rmdir /S /Q "%kam_folder%"\bin\SE_Data\Logs
 
 
 @REM copy utility applications exe files
-xcopy "..\Utils\Campaign builder\KaM_Remake_Settings_ini_readme.txt" "%kam_folder%"\KaM_Remake_Settings_ini_readme.txt* /y /r /i
-xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\CampaignBuilder.exe* /y /r /i
-xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\KaM_Remake_Server_win32.exe* /y /r /i
-xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\KaM_Remake_ServerGUI_win32.exe* /y /r /i
-xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptValidator.exe* /y /r /i
-xcopy "..\Utils\TranslationManager\TranslationManager.exe" "%kam_folder%"\TranslationManager.exe* /y /r /i
+xcopy "..\Utils\Campaign builder\KaM_Remake_Settings_ini_readme.txt" "%kam_folder%"\Utils\KaM_Remake_Settings_ini_readme.txt* /y /r /i
+xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\Utils\CampaignBuilder.exe* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\Utils\KaM_Remake_Server_win32.exe* /y /r /i
+xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\Utils\KaM_Remake_ServerGUI_win32.exe* /y /r /i
+xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\Utils\ScriptValidator.exe* /y /r /i
+xcopy "..\Utils\TranslationManager\TranslationManager.exe" "%kam_folder%"\Utils\TranslationManager.exe* /y /r /i
 @REM copy linux dedicated servers
-xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86" "%kam_folder%"\KaM_Remake_Server_linux_x86* /y /r /i
-xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86_64" "%kam_folder%"\KaM_Remake_Server_linux_x86_64* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86" "%kam_folder%"\Utils\KaM_Remake_Server_linux_x86* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86_64" "%kam_folder%"\Utils\KaM_Remake_Server_linux_x86_64* /y /r /i
