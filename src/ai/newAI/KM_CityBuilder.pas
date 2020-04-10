@@ -47,6 +47,10 @@ type
     fPlanner: TKMCityPlanner;
     fPredictor: TKMCityPredictor;
 
+    {$IFDEF DEBUG_NewAI}
+      fTimePlanRoads: Cardinal;
+    {$ENDIF}
+
     procedure UpdateBuildNodes();
     procedure UpdateBuildNode(var aNode: TBuildNode);
 
@@ -118,6 +122,10 @@ begin
   fOwner := aPlayer;
   fPredictor := aPredictor;
   fPlanner := TKMCityPlanner.Create(aPlayer);
+
+  {$IFDEF DEBUG_NewAI}
+    fTimePlanRoads := 0;
+  {$ENDIF}
 end;
 
 
@@ -276,23 +284,22 @@ var
   I,Dist: Integer;
   Point: TKMPoint;
   Dir: TDirection;
-  HMA: THouseMappingArray;
 begin
-  HMA := gAIFields.Eye.HousesMapping;
   // Reserve all tiles inside house plan
   //if (aHT <> htCoalMine) then
-    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Tiles[I]);
       gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_INSIDE_LOCK;
       gAIFields.Eye.BuildFF.ActualizeTile(Point.X, Point.Y);
     end;
   // Reserve all tiles in distance 1 from house plan
   Dist := 1;
-  for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
-    for I := Low(HMA[aHT].Surroundings[Dist,Dir]) to High(HMA[aHT].Surroundings[Dist,Dir]) do
+  for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I]);
       // Skip coal tiles, forests and other reserved tiles
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] < AVOID_BUILDING_HOUSE_INSIDE_LOCK) then
       begin
@@ -308,24 +315,22 @@ var
   I,Dist: Integer;
   Point: TKMPoint;
   Dir: TDirection;
-  HMA: THouseMappingArray;
 begin
   if (aHT in [htGoldMine, htIronMine]) then
     Exit;
-  HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
   //if (aHT <> htCoalMine) then
-    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Tiles[I]);
       gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
     end;
   // Free all tiles in distance 1 from house plan
   Dist := 1;
-  for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
-    for I := Low(HMA[aHT].Surroundings[Dist,Dir]) to High(HMA[aHT].Surroundings[Dist,Dir]) do
+  for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I]);
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then
         gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
     end;
@@ -815,10 +820,7 @@ procedure TKMCityBuilder.CheckBasicMaterials(var aMaxPlans, aMaxPlace: Integer; 
 var
   K, RequiredStones, RequiredWood, WoodReserves, Wood, Trunk: Integer;
   H: TKMHouse;
-  WareBalance: TWareBalanceArray;
 begin
-  WareBalance := fPredictor.WareBalance;
-
   // Analyze basic force stats (max possible plans, construction ware, gold)
   aMaxPlans := Ceil(fFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef);
   // Use "rapid construction" in case that we have resources
@@ -828,16 +830,16 @@ begin
     aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wtStone is OK
-  fStoneShortage := (WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
+  fStoneShortage := (fPredictor.WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
 
   // Make sure that gold will be produced ASAP -> minimal delay, exhaustion is OK
-  fGoldShortage := (WareBalance[wtGold].Exhaustion < GA_BUILDER_Shortage_Gold);
+  fGoldShortage := (fPredictor.WareBalance[wtGold].Exhaustion < GA_BUILDER_Shortage_Gold);
 
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
   Trunk := gHands[fOwner].Stats.GetWareBalance(wtTrunk);
   Wood := gHands[fOwner].Stats.GetWareBalance(wtWood);
   WoodReserves := Trunk * 2 + Wood;
-  aTrunkBalance := WoodReserves / (2 * Max(0.1, WareBalance[wtTrunk].ActualConsumption));
+  aTrunkBalance := WoodReserves / (2 * Max(0.1, fPredictor.WareBalance[wtTrunk].ActualConsumption));
   fTrunkShortage := (aTrunkBalance < GA_BUILDER_Shortage_Trunk);
 
   // Compute building materials
@@ -868,7 +870,7 @@ begin
 
   // Secure wood production: only process trunk -> wood => minimal delay
   fWoodShortage :=
-    (WareBalance[wtWood].Exhaustion < GA_BUILDER_Shortage_Wood)
+    (fPredictor.WareBalance[wtWood].Exhaustion < GA_BUILDER_Shortage_Wood)
     OR
     (
       (
@@ -896,6 +898,9 @@ var
   FieldsComplete, Check: Boolean;
   K, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
+  {$IFDEF DEBUG_NewAI}
+    Time: Cardinal;
+  {$ENDIF}
 begin
   Result := csNoNodeAvailable;
   FieldsComplete := False;
@@ -944,6 +949,9 @@ begin
           for K := Loc.X-1 to Loc.X+1 do
             gAIFields.Influences.AvoidBuilding[Loc.Y+2, K] := AVOID_BUILDING_HOUSE_ENTRANCE;
         // Add road to node
+        {$IFDEF DEBUG_NewAI}
+          Time := TimeGet();
+        {$ENDIF}
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
         begin
@@ -977,8 +985,14 @@ begin
         else
         begin
           gHands[fOwner].RemHousePlan(Loc);
+          {$IFDEF DEBUG_NewAI}
+            fTimePlanRoads := fTimePlanRoads + TimeGet() - Time;
+          {$ENDIF}
           Exit;
         end;
+        {$IFDEF DEBUG_NewAI}
+          fTimePlanRoads := fTimePlanRoads + TimeGet() - Time;
+        {$ENDIF}
         // Reserve house place
         if aHouseReservation then
         begin
@@ -1084,7 +1098,6 @@ const
 var
   MaxPlans, MaxPlace: Integer;
   RequiredHouses: TRequiredHousesArray;
-  WareBalance: TWareBalanceArray;
 
 
   function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
@@ -1201,7 +1214,7 @@ var
       WT := Ware;
       if (RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] > 0) then
       begin
-        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
+        Priority := fPredictor.WareBalance[WT].Exhaustion - fPredictor.WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
                     - Byte(PRODUCTION_WARE2HOUSE[WT] = htBakery) * 1000;
         for K := Low(WareOrder) to High(WareOrder) do
           if (WT = wtNone) then
@@ -1261,7 +1274,7 @@ var
     for WT in BUILD_ORDER_WARE do
     begin
       HT := PRODUCTION_WARE2HOUSE[WT];
-      if (RequiredHouses[HT] > 0) AND (WareBalance[WT].Exhaustion < 30) then
+      if (RequiredHouses[HT] > 0) AND (fPredictor.WareBalance[WT].Exhaustion < 30) then
       begin
         // Make sure that next cycle will not scan this house in this tick
         RequiredHouses[HT] := 0;
@@ -1390,7 +1403,6 @@ begin
   CheckBasicMaterials(MaxPlans, MaxPlace, TrunkBalance, aTick);
 
   RequiredHouses := fPredictor.RequiredHouses;
-  WareBalance := fPredictor.WareBalance;
 
   // Dont build more than 3 quarry at once if there is not quarry and stone shortage is possible
   RequiredHouses[htQuary] := RequiredHouses[htQuary] * Byte(not (fStoneShortage AND (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (fPlanner.PlannedHouses[htQuary].UnderConstruction > 2)));
@@ -1698,6 +1710,9 @@ begin
   if fGoldShortage  then Text := Text + ' Gold,';
   if (Length(Text) > 0) then
     aBalanceText := Format('%s|Shortage:%s%s[]',[aBalanceText,COLOR_RED,Text.SubString(0,Length(Text)-1)]);
+  {$IFDEF DEBUG_NewAI}
+    aBalanceText := Format('%s|Time Plan Roads: %d',[aBalanceText,fTimePlanRoads]);
+  {$ENDIF}
   // Planner
   fPlanner.LogStatus(aBalanceText);
 end;

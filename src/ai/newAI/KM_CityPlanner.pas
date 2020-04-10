@@ -99,6 +99,8 @@ type
     {$IFDEF DEBUG_NewAI}
       fTimeSumSearchHouse: array[HOUSE_MIN..HOUSE_MAX] of Cardinal;
       fTimePeakSearchHouse: array[HOUSE_MIN..HOUSE_MAX] of Cardinal;
+      fTimeSumBuildFFHouse: array[HOUSE_MIN..HOUSE_MAX] of Cardinal;
+      fTimePeakBuildFFHouse: array[HOUSE_MIN..HOUSE_MAX] of Cardinal;
       fTimeSumSearchForest: Cardinal;
       fTimePeakSearchForest: Cardinal;
       fTimeSumPlanFields: Cardinal;
@@ -255,6 +257,8 @@ begin
   {$IFDEF DEBUG_NewAI}
     FillChar(fTimeSumSearchHouse, SizeOf(fTimeSumSearchHouse), #0);
     FillChar(fTimePeakSearchHouse, SizeOf(fTimePeakSearchHouse), #0);
+    FillChar(fTimeSumBuildFFHouse, SizeOf(fTimeSumBuildFFHouse), #0);
+    FillChar(fTimePeakBuildFFHouse, SizeOf(fTimePeakBuildFFHouse), #0);
     fTimeSumPlanFields := 0;
     fTimePeakPlanFields := 0;
     fTimeSumSearchForest := 0;
@@ -607,14 +611,12 @@ const
   function IsExhaustedCoalMine(aCoalLoc: TKMPoint): Boolean;
   var
     X,Y,I: Integer;
-    HMA: THouseMappingArray;
   begin
     Result := False;
-    HMA := gAIFields.Eye.HousesMapping;
-    for I := Low(HMA[htCoalMine].Tiles) to High(HMA[htCoalMine].Tiles) do
+    for I := Low(gAIFields.Eye.HousesMapping[htCoalMine].Tiles) to High(gAIFields.Eye.HousesMapping[htCoalMine].Tiles) do
     begin
-      X := aCoalLoc.X + HMA[htCoalMine].Tiles[I].X;
-      Y := aCoalLoc.Y + HMA[htCoalMine].Tiles[I].Y;
+      X := aCoalLoc.X + gAIFields.Eye.HousesMapping[htCoalMine].Tiles[I].X;
+      Y := aCoalLoc.Y + gAIFields.Eye.HousesMapping[htCoalMine].Tiles[I].Y;
       if gTerrain.TileHasCoal(X, Y) then
         Exit;
     end;
@@ -853,16 +855,14 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
     I,K,RoadsInsidePlanIdx: Integer;
     Point: TKMPoint;
     Road, Path: TKMPointList;
-    HMA: THouseMappingArray;
   begin
-    HMA := gAIFields.Eye.HousesMapping;
     Road := TKMPointList.Create();
     Path := TKMPointList.Create();
     try
       // Find all road inside of newly placed house plan
-      for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+      for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
       begin
-        Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+        Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Tiles[I]);
         if IsRoad(Point) then
           Road.Add(Point);
       end;
@@ -1007,20 +1007,18 @@ function TKMCityPlanner.GetTreesInHousePlan(aHT: TKMHouseType; aIdx: Integer; va
 var
   I: Integer;
   Point: TKMPoint;
-  HMA: THouseMappingArray;
 begin
   aField.Clear;
-  HMA := gAIFields.Eye.HousesMapping;
-  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+  for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
   begin
-    Point := KMPointAdd( fPlannedHouses[aHT].Plans[aIdx].Loc, HMA[aHT].Tiles[I] );
+    Point := KMPointAdd( fPlannedHouses[aHT].Plans[aIdx].Loc, gAIFields.Eye.HousesMapping[aHT].Tiles[I] );
     if gTerrain.ObjectIsChopableTree(Point, [caAge1,caAge2,caAge3,caAgeFull]) then
       aField.Add(Point);
   end;
   if (aField.Count > 0) then
-    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+    for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
     begin
-      Point := KMPointAdd( fPlannedHouses[aHT].Plans[aIdx].Loc, HMA[aHT].Tiles[I] );
+      Point := KMPointAdd( fPlannedHouses[aHT].Plans[aIdx].Loc, gAIFields.Eye.HousesMapping[aHT].Tiles[I] );
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] = 0) then
         gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := 10;
     end;
@@ -1037,16 +1035,14 @@ var
   Dir: TDirection;
   HT: TKMHouseType;
   FieldLoc: TKMPoint;
-  HMA: THouseMappingArray;
 begin
   HT := htWineyard;
-  HMA := gAIFields.Eye.HousesMapping;
   for Dist := 1 to 4 do
   begin
-    for Dir := Low(HMA[HT].Surroundings[Dist]) to High(HMA[HT].Surroundings[Dist]) do
-    for I := Low(HMA[HT].Surroundings[Dist,Dir]) to High(HMA[HT].Surroundings[Dist,Dir]) do
+    for Dir := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist]) do
+    for I := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) do
     begin
-      FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
+      FieldLoc := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir,I]);
       if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)                         // Tile must be in map
         AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftWine)                     // Plan can be placed
         AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then // Tile is not reserved
@@ -1077,30 +1073,28 @@ var
   Dir, BestDir: TDirection;
   HT: TKMHouseType;
   FieldLoc: TKMPoint;
-  HMA: THouseMappingArray;
   PriceArr: TDirArrInt;
   CntArr: TDirArrByte;
 begin
   PriceArr := PRICE_ARR_CONST;
   CntArr := CNT_ARR_CONST;
   HT := htFarm;
-  HMA := gAIFields.Eye.HousesMapping;
   // Get best edge of current loc (try build field in edges)
   Dist := 5;
-  for Dir := Low(HMA[HT].Surroundings[Dist]) to High(HMA[HT].Surroundings[Dist]) do
-    for I := Low(HMA[HT].Surroundings[Dist,Dir]) + Dist to High(HMA[HT].Surroundings[Dist,Dir]) - Dist + 1 do
+  for Dir := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist]) do
+    for I := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) + Dist to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) - Dist + 1 do
     begin
-      FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
+      FieldLoc := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir,I]);
       if not gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)
         OR not gTerrain.TileIsRoadable( FieldLoc ) then
         PriceArr[Dir] := PriceArr[Dir] + SNAP_TO_EDGE;
     end;
   // Get count of possible fields
   for Dist := 1 to 4 do
-    for Dir := Low(HMA[HT].Surroundings[Dist]) to High(HMA[HT].Surroundings[Dist]) do
-      for I := Low(HMA[HT].Surroundings[Dist,Dir]) + Dist to High(HMA[HT].Surroundings[Dist,Dir]) - Dist + 1 do
+    for Dir := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist]) do
+      for I := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) + Dist to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) - Dist + 1 do
       begin
-        FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
+        FieldLoc := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir,I]);
         if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)                          // Tile must be in map
           AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftCorn)                      // Plan can be placed
           AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then  // Tile is not reserved
@@ -1125,9 +1119,9 @@ begin
     Dir := BestDir;
     for Dist := 1 to 4 do
     begin
-      for I := Low(HMA[HT].Surroundings[Dist,Dir]) + Dist to High(HMA[HT].Surroundings[Dist,Dir]) - Dist + 1 do
+      for I := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) + Dist to High(gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir]) - Dist + 1 do
       begin
-        FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
+        FieldLoc := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[HT].Surroundings[Dist,Dir,I]);
         if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)
           AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftCorn)
           AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then
@@ -1322,15 +1316,13 @@ end;
 function TKMCityPlanner.ObstaclesInHousePlan(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 var
   I,X,Y,Road,Tree: Integer;
-  HMA: THouseMappingArray;
 begin
   Road := 0;
   Tree := 0;
-  HMA := gAIFields.Eye.HousesMapping;
-  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+  for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
   begin
-    X := aLoc.X + HMA[aHT].Tiles[I].X;
-    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
+    X := aLoc.X + gAIFields.Eye.HousesMapping[aHT].Tiles[I].X;
+    Y := aLoc.Y + gAIFields.Eye.HousesMapping[aHT].Tiles[I].Y;
     Tree := Tree + Byte(gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]));
     Road := Road + Byte(tpWalkRoad in gTerrain.Land[Y, X].Passability);
   end;
@@ -1346,16 +1338,14 @@ const
 var
   X,Y,I,Dist,Fields: Integer;
   Dir: TDirection;
-  HMA: THouseMappingArray;
 begin
-  HMA := gAIFields.Eye.HousesMapping;
   Fields := 0;
   for Dist := 1 to (Byte(aHT = htWineyard) * 2) + (Byte(aHT = htFarm) * 5) do
-    for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
-      for I := Low(HMA[aHT].Surroundings[Dist,Dir]) + Dist to High(HMA[aHT].Surroundings[Dist,Dir]) - Dist + 1 do
+    for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) do
+      for I := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) + Dist to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) - Dist + 1 do
       begin
-        X := aLoc.X + HMA[aHT].Surroundings[Dist,Dir,I].X;
-        Y := aLoc.Y + HMA[aHT].Surroundings[Dist,Dir,I].Y;
+        X := aLoc.X + gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I].X;
+        Y := aLoc.Y + gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I].Y;
         if gTerrain.TileInMapCoords(X,Y)
           AND (gAIFields.Influences.AvoidBuilding[Y,X] = 0) // Tile is not reserved (house / road / field / forest)
           AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
@@ -1408,15 +1398,13 @@ var
   Output: Single;
   Point: TKMPoint;
   Dir: TDirection;
-  HMA: THouseMappingArray;
 begin
   Output := 0;
-  HMA := gAIFields.Eye.HousesMapping;
-  for Dir := Low(HMA[aHT].Surroundings[DIST]) to High(HMA[aHT].Surroundings[DIST]) do
+  for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST]) do
     // Skip edges in specific direction (these points are shared in 2 directions)
-    for K := Low(HMA[aHT].Surroundings[DIST,Dir]) + Byte((Dir = dirE) OR (Dir = dirW)) to High(HMA[aHT].Surroundings[DIST,Dir]) - Byte((Dir = dirE) OR (Dir = dirW)) do
+    for K := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST,Dir]) + Byte((Dir = dirE) OR (Dir = dirW)) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST,Dir]) - Byte((Dir = dirE) OR (Dir = dirW)) do
     begin
-      Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[DIST,Dir,K]);
+      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST,Dir,K]);
       AvoidBuilding := gAIFields.Influences.AvoidBuilding[Point.Y, Point.X];
       Output := Output
                 + Byte(IsNearHouse(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToHouse
@@ -1501,7 +1489,7 @@ var
     Coef: Double;
   begin
     if KMSamePoint(aLoc, aBestLocs[0]) then
-      fPlaceFarmDebugText := Format('New farm; Time sum: %d, peak:  %d'
+      fPlaceFarmDebugText := Format('New farm; Time sum: %d, peak:  %d; FF sum: %d, FF peak: %d'
         + '|Perc'
         + #9 + '[X,Y]'
         + #9#9 + 'Obstac'
@@ -1513,7 +1501,8 @@ var
         + #9#9 + 'FlatAr'
         + #9#9 + 'AllInf'
         + #9#9 + 'EnmInf'
-        + #9#9 + 'FieldCrtit',[fTimeSumSearchHouse[htFarm],fTimePeakSearchHouse[htFarm]]);
+        + #9#9 + 'FieldCrtit',[fTimeSumSearchHouse[htFarm],fTimePeakSearchHouse[htFarm], fTimeSumBuildFFHouse[htFarm], fTimePeakBuildFFHouse[htFarm]]);
+
     Coef := 1;
     if (BestGainArr[0] <> 0) then
       Coef := (-100 / BestGainArr[0]);
@@ -1535,20 +1524,26 @@ var
   procedure CommentHouseLoc(aLoc: TKMPoint; aObstacles, aSnap, aSeedDist, aHouseDist, aCenterDist, aRoutes, aFlatArea, aAllyInf, aEnemyInfl, aFreeEntr, aSum: Double);
   var
     Coef: Double;
-    Sum, Peak: Cardinal;
+    Sum, SumFF, Peak, PeakFF: Cardinal;
     HT: TKMHouseType;
   begin
     Sum := 0;
+    SumFF := 0;
     Peak := 0;
+    PeakFF := 0;
     for HT := Low(fTimeSumSearchHouse) to High(fTimeSumSearchHouse) do
     begin
       if (HT <> htFarm) then
         Sum := Sum + fTimeSumSearchHouse[HT];
       if (Peak < fTimePeakSearchHouse[HT]) then
         Peak := fTimePeakSearchHouse[HT];
+      if (HT <> htFarm) then
+        SumFF := SumFF + fTimeSumBuildFFHouse[HT];
+      if (PeakFF < fTimePeakBuildFFHouse[HT]) then
+        PeakFF := fTimePeakBuildFFHouse[HT];
     end;
     if KMSamePoint(aLoc, aBestLocs[0]) then
-      fPlaceHouseDebugText := Format('New house: %s; Time sum: %d, peak: %d'
+      fPlaceHouseDebugText := Format('New house: %s; Time sum: %d, peak: %d; FF sum: %d, FF peak: %d'
         + '|Perc'
         + #9 + '[X,Y]'
         + #9#9 + 'Obstac'
@@ -1560,7 +1555,7 @@ var
         + #9#9 + 'FlatAr'
         + #9#9 + 'AllInf'
         + #9#9 + 'EnmInf'
-        + #9#9 + 'FreeEntr',[gRes.Houses[aHT].HouseName, Sum, Peak]);
+        + #9#9 + 'FreeEntr',[gRes.Houses[aHT].HouseName, Sum, Peak, SumFF, PeakFF]);
     Coef := 1;
     if (BestGainArr[0] <> 0) then
       Coef := (100 / BestGainArr[0]);
@@ -1642,12 +1637,12 @@ const
   MAX_RND_HOUSES = 10;
 var
   {$IFDEF DEBUG_NewAI}
-    Time: Cardinal;
+    Time, TimeBuildFF: Cardinal;
     Coef: Single;
   {$ENDIF}
-  L, HouseCnt: Integer;
+  L: Integer;
   HT: TKMHouseType;
-  InitPointsArr: TKMPointArray;
+  InitPointList: TKMPointList;
   HouseReq: TKMHouseRequirements;
   BuildFF: TKMBuildFF;
   CCPArr: TKMPointArray;
@@ -1679,63 +1674,49 @@ begin
   for L := 0 to BEST_PLANS_CNT - 1 do
     BestGainArr[L] := INIT_BEST_GAIN;
 
-  if SP_BOOST_AI_BUILD then
-  begin
-    HouseCnt := 0;
-    for HT := HOUSE_MIN to HOUSE_MAX do
+  InitPointList := TKMPointList.Create();
+  try
+    if SP_BOOST_AI_BUILD then
     begin
-      if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine]) then
-        for L := fPlannedHouses[HT].Count - 1 downto 0 do
-        begin
-          if (Length(InitPointsArr) <= HouseCnt) then
-            SetLength(InitPointsArr, Length(InitPointsArr) + 32);
-          InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[L].Loc); // Place for mines can be problematic
-          HouseCnt := HouseCnt + 1;
-        end;
-    end;
-    SetLength(InitPointsArr,HouseCnt);
-    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
-  end
-  else
-  begin
-    HouseCnt := 0;
-    for HT in HOUSE_DEPENDENCE[aHT] do
-      HouseCnt := HouseCnt + fPlannedHouses[HT].Count;
-    SetLength(InitPointsArr, HouseCnt);
-
-    HouseCnt := 0;
-    for HT in HOUSE_DEPENDENCE[aHT] do
-      for L := 0 to fPlannedHouses[HT].Count - 1 do
-      begin
-        InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[L].Loc); // Place for mines can be problematic
-        HouseCnt := HouseCnt + 1;
-      end;
-    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
-
-    if (BuildFF.Locs.Count < 10) then
-    begin
-      if (Length(InitPointsArr) < MAX_RND_HOUSES) then
-        SetLength(InitPointsArr, MAX_RND_HOUSES);
-      HouseCnt := 0;
       for HT := HOUSE_MIN to HOUSE_MAX do
-      begin
-        if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine])
-          AND not (HT in HOUSE_DEPENDENCE[aHT]) then
+        if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine]) then
           for L := fPlannedHouses[HT].Count - 1 downto 0 do
-            if (HouseCnt = 0) OR (KaMRandom('TKMCityPlanner.FindPlaceForHouse') < PROBABILITY) then
-            begin
-              if (HouseCnt >= MAX_RND_HOUSES) then
-                break;
-              InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[L].Loc); // Place for mines can be problematic
-              HouseCnt := HouseCnt + 1;
-            end;
-        if (HouseCnt >= MAX_RND_HOUSES) then
-          break;
+            InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[L].Loc)); // Place for mines can be problematic
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+    end
+    else
+    begin
+      for HT in HOUSE_DEPENDENCE[aHT] do
+        for L := 0 to fPlannedHouses[HT].Count - 1 do
+          InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[L].Loc)); // Place for mines can be problematic
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+
+      if (BuildFF.Locs.Count < 10) then
+      begin
+        InitPointList.Clear();
+        for HT := HOUSE_MIN to HOUSE_MAX do
+        begin
+          if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine])
+            AND not (HT in HOUSE_DEPENDENCE[aHT]) then
+            for L := fPlannedHouses[HT].Count - 1 downto 0 do
+              if (InitPointList.Count = 0) OR (KaMRandom('TKMCityPlanner.FindPlaceForHouse') < PROBABILITY) then
+              begin
+                if (InitPointList.Count >= MAX_RND_HOUSES) then
+                  break;
+                InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[L].Loc)); // Place for mines can be problematic
+              end;
+          if (InitPointList.Count >= MAX_RND_HOUSES) then
+            break;
+        end;
+        BuildFF.FindPlaceForHouse(HouseReq, InitPointList, False);
       end;
-      SetLength(InitPointsArr,HouseCnt);
-      BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, False);
     end;
+  finally
+    InitPointList.Free;
   end;
+  {$IFDEF DEBUG_NewAI}
+    TimeBuildFF := TimeGet() - Time;
+  {$ENDIF}
 
   with BuildFF.Locs do
     for L := 0 to Count - 1 do
@@ -1747,8 +1728,11 @@ begin
   {$IFDEF DEBUG_NewAI}
     Time := TimeGet() - Time;
     fTimeSumSearchHouse[aHT] := fTimeSumSearchHouse[aHT] + Time;
+    fTimeSumBuildFFHouse[aHT] := fTimeSumBuildFFHouse[aHT] + TimeBuildFF;
     if (fTimePeakSearchHouse[aHT] < Time) then
       fTimePeakSearchHouse[aHT] := Time;
+    if (fTimePeakBuildFFHouse[aHT] < TimeBuildFF) then
+      fTimePeakBuildFFHouse[aHT] := TimeBuildFF;
 
     SetLength(fBestHouseLocs,Min(BEST_PLANS_CNT-1,5)+1);
     SetLength(fBestHouseVal,Length(fBestHouseLocs));
@@ -1836,37 +1820,33 @@ const
   const
     INIT_GAIN = -10000;
   var
-    I, BestIdx, HouseCnt: Integer;
+    I, BestIdx: Integer;
     Gain, BestGain: Single;
     HT: TKMHouseType;
-    InitPointsArr: TKMPointArray;
+    InitPointList: TKMPointList;
     HouseReq: TKMHouseRequirements;
     BuildFF: TKMBuildFF;
   begin
     BuildFF := gAIFields.Eye.BuildFF;
 
-    HouseCnt := 0;
-    for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
-      HouseCnt := HouseCnt + fPlannedHouses[HT].Count;
+    InitPointList := TKMPointList.Create();
+    try
+      for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
+        for I := 0 to fPlannedHouses[HT].Count - 1 do
+          InitPointList.Add(KMPointBelow(fPlannedHouses[HT].Plans[I].Loc)); // Place under mines can be problematic
 
-    SetLength(InitPointsArr, HouseCnt);
-    HouseCnt := 0;
-    for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
-      for I := 0 to fPlannedHouses[HT].Count - 1 do
+      with HouseReq do
       begin
-        InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[I].Loc); // Place under mines can be problematic
-        HouseCnt := HouseCnt + 1;
+        HouseType := aHT;
+        IgnoreTrees := False;
+        IgnoreAvoidBuilding := True;
+        MaxCnt := 20; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
+        MaxDist := 30;
       end;
-
-    with HouseReq do
-    begin
-      HouseType := aHT;
-      IgnoreTrees := False;
-      IgnoreAvoidBuilding := True;
-      MaxCnt := 20; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
-      MaxDist := 30;
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+    finally
+      InitPointList.Free;
     end;
-    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
 
     BestGain := INIT_GAIN;
     BestIdx := -1;
@@ -2018,7 +1998,7 @@ var
   Gain, BestGain: Single;
   Loc, BestLoc: TKMPoint;
   HouseReq: TKMHouseRequirements;
-  InitPointsArr: TKMPointArray;
+  InitPointList: TKMPointList;
   BuildFF: TKMBuildFF;
   {$IFDEF DEBUG_NewAI}
     Time: Cardinal;
@@ -2081,12 +2061,16 @@ begin
         if (StoneLocs.Tag[MinIdx + 1] - StoneLocs.Tag[MinIdx] > MAX_DERIVATION) then
           break;
       // Copy points in stone mountain in specific influence (it can be multiple stone mountains but in same influence area)
-      SetLength(InitPointsArr, MaxIdx - MinIdx);
-      for I := MaxIdx downto MinIdx + 1 do
-        InitPointsArr[MaxIdx - I] := StoneLocs.Items[I];
-      MaxIdx := MinIdx;
-      // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
-      BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
+      InitPointList := TKMPointList.Create();
+      try
+        for I := MaxIdx downto MinIdx + 1 do
+          InitPointList.Add(StoneLocs.Items[I]);
+        MaxIdx := MinIdx;
+        // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
+        BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+      finally
+        InitPointList.Free;
+      end;
       // Evaluate new locs
       BestGain := -10000000;
       for I := 0 to BuildFF.Locs.Count - 1 do
@@ -2131,8 +2115,7 @@ var
   Gain, BestGain: Single;
   Loc, BestLoc: TKMPoint;
   HouseReq: TKMHouseRequirements;
-  InitPointsArr: TKMPointArray;
-  HMA: THouseMappingArray;
+  InitPointList: TKMPointList;
   BuildFF: TKMBuildFF;
   {$IFDEF DEBUG_NewAI}
     Time: Cardinal;
@@ -2143,7 +2126,6 @@ begin
   {$ENDIF}
   Output := False;
   BuildFF := gAIFields.Eye.BuildFF;
-  HMA := gAIFields.Eye.HousesMapping;
   with HouseReq do
   begin
     HouseType := htWoodcutters;
@@ -2153,9 +2135,13 @@ begin
     MaxDist := RADIUS;
   end;
 
-  SetLength(InitPointsArr, 1);
-  InitPointsArr[0] := aCenter;
-  BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
+  InitPointList := TKMPointList.Create();
+  try
+    InitPointList.Add(aCenter);
+    BuildFF.FindPlaceForHouse(HouseReq, InitPointList, True);
+  finally
+    InitPointList.Free;
+  end;
 
   BestGain := -1E10;
   BestLoc := KMPOINT_ZERO;
@@ -2168,8 +2154,8 @@ begin
     if (Gain > BestGain) then // No need to check for coal tiles everything
     begin
       CoalTiles := 0;
-      for K := Low(HMA[htWoodcutters].Tiles) to High(HMA[htWoodcutters].Tiles) do
-        CoalTiles := CoalTiles + gTerrain.TileIsCoal(Loc.X + HMA[htWoodcutters].Tiles[K].X, Loc.Y + HMA[htWoodcutters].Tiles[K].Y);
+      for K := Low(gAIFields.Eye.HousesMapping[htWoodcutters].Tiles) to High(gAIFields.Eye.HousesMapping[htWoodcutters].Tiles) do
+        CoalTiles := CoalTiles + gTerrain.TileIsCoal(Loc.X + gAIFields.Eye.HousesMapping[htWoodcutters].Tiles[K].X, Loc.Y + gAIFields.Eye.HousesMapping[htWoodcutters].Tiles[K].Y);
       Gain := Gain - CoalTiles * COAL_PENALIZATON;
       if (Gain > BestGain) then
       begin
@@ -2555,7 +2541,6 @@ var
   HT: TKMHouseType;
   Loc: TKMPoint;
   Color: Cardinal;
-  HMA: THouseMappingArray;
   {$IFDEF DEBUG_NewAI}
   X,Y: Integer;
   Val: Cardinal;
@@ -2596,8 +2581,6 @@ begin
     end;
   {$ENDIF}
 
-  HMA := gAIFields.Eye.HousesMapping;
-
   {$IFDEF DEBUG_NewAI}
   // Paint best places for last house
   for K := 0 to Length(fBestHouseLocs) - 1 do
@@ -2618,9 +2601,9 @@ begin
     Color := $80000000 OR Color;
     for K := 0 to fPlannedHouses[HT].Count - 1 do
     begin
-      for L := 0 to Length(HMA[HT].Tiles) - 1 do
+      for L := 0 to Length(gAIFields.Eye.HousesMapping[HT].Tiles) - 1 do
       begin
-        Loc := KMPointAdd(fPlannedHouses[HT].Plans[K].Loc, HMA[HT].Tiles[L]);
+        Loc := KMPointAdd(fPlannedHouses[HT].Plans[K].Loc, gAIFields.Eye.HousesMapping[HT].Tiles[L]);
         gRenderAux.Quad(Loc.X, Loc.Y, Color);
       end;
     end;

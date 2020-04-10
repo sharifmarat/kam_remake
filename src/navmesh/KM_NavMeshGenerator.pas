@@ -70,7 +70,7 @@ type
     function Intersect(aX1, aY1, aX2, aY2: Word): Boolean; overload;
     function Intersect(aX1, aY1, aX2, aY2: TKMPoint): Boolean; overload;
     function ExtractNodes(): TKMNavMeshByteArray;
-    procedure AddInnerNodes(aW: TKMNavMeshByteArray);
+    procedure AddInnerNodes(var aW: TKMNavMeshByteArray);
     procedure PolygonTriangulation();
     procedure PrettyPoly();
 
@@ -182,7 +182,6 @@ begin
   SetLength(fNodes, fNodeCount);
   SetLength(fPolygons, fPolyCount);
 end;
-
 
 
 {$IFDEF DEBUG_NavMesh}
@@ -539,7 +538,7 @@ end;
 
 
 
-procedure TKMNavMeshGenerator.AddInnerNodes(aW: TKMNavMeshByteArray);
+procedure TKMNavMeshGenerator.AddInnerNodes(var aW: TKMNavMeshByteArray);
 var
   E: TKMNavMeshByteArray;
   procedure FillArea(aStep: Word; aInitPoint: TKMPoint);

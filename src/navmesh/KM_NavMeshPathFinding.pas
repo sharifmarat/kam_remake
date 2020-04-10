@@ -200,10 +200,8 @@ var
   Idx: Word;
   NewCost: Cardinal;
   POMPoint: TKMPoint;
-  PolyArr: TPolygonArray;
 begin
   Flush();
-  PolyArr := gAIFields.NavMesh.Polygons;
 
   //Initialize first element
   N := GetNodeAt(fStart);
@@ -215,22 +213,22 @@ begin
   begin
     fMinN.Estim := c_closed;
     //Check all surrounding polygons and issue costs to them
-    for I := 0 to PolyArr[fMinN.Idx].NearbyCount-1 do
+    for I := 0 to gAIFields.NavMesh.Polygons[fMinN.Idx].NearbyCount-1 do
     begin
-      Idx := PolyArr[ fMinN.Idx ].Nearby[I];
+      Idx := gAIFields.NavMesh.Polygons[ fMinN.Idx ].Nearby[I];
       // New polygon
       if (fUsedNodes[Idx] = nil) then
       begin
         N := GetNodeAt(Idx);
         N.Parent := fMinN;
-        N.Point := PolyArr[ fMinN.Idx ].NearbyPoints[I];
+        N.Point := gAIFields.NavMesh.Polygons[ fMinN.Idx ].NearbyPoints[I];
         N.CostTo := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, N.Point);
         fHeap.Push(N);
       end
       // Visited polygon (recalculate estimation and actualize better result)
       else if (fUsedNodes[Idx].Estim <> c_closed) then
       begin
-        POMPoint := PolyArr[ fMinN.Idx ].NearbyPoints[I];
+        POMPoint := gAIFields.NavMesh.Polygons[ fMinN.Idx ].NearbyPoints[I];
         NewCost := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, POMPoint);
         if (NewCost < fUsedNodes[Idx].CostTo) then
         begin

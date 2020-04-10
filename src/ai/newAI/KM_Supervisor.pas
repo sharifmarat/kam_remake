@@ -30,7 +30,7 @@ type
   TKMHandByteArr = array[0..MAX_HANDS-1] of Byte;
   TKMHandID2Arr = array of TKMHandIDArray;
 
-  TKMCombatStatus = (csNeutral = 0, csDefending, csAttacking);
+  TKMCombatStatus = (csNeutral = 0, csDefending, csAttackingCity, csAttackingEverything);
 
 // Supervisor <-> agent relation ... cooperating AI players are just an illusion, agents does not see each other
   TKMSupervisor = class
@@ -231,6 +231,7 @@ const
   SQR_OFFENSIVE_DISTANCE = 30*30;
   INFLUENCE_THRESHOLD = 1;
 var
+  InCombat: Boolean;
   PL: TKMHandID;
   HouseIsClose, EnemyIsClose: Boolean;
   Idx, K, L, CntH, CntE: Integer;
@@ -244,18 +245,21 @@ begin
   // Check if team have newAI
   if not NewAIInTeam(aTeam, True, True) OR (SP_OLD_ATTACK_AI = True) then
     Exit;
-  // First check houses for csAttacking
+  // First check houses for csAttackingCity
   CntH := 0;
   CntE := 0;
   for Idx := 0 to Length(fAlli2PL[aTeam]) - 1 do
   begin
     Owner := fAlli2PL[aTeam,Idx];
+    InCombat := gHands[ fAlli2PL[aTeam,Idx] ].AI.ArmyManagement.AttackNew.Count > 0;
     for PL := 0 to gHands.Count - 1 do
       if (gHands[Owner].Alliances[PL] = atEnemy) then
       begin
+        if not InCombat then
+          fCombatStatus[Owner,PL] := csNeutral;
         // Find all hostile houses (only if player attacking someone)
         HouseIsClose := False;
-        if (fCombatStatus[Owner,PL] = csAttacking) then
+        if (fCombatStatus[Owner,PL] in [csAttackingCity, csAttackingEverything]) then
         begin
           if (CntH + gHands[PL].Houses.Count >= Length(H)) then
             SetLength(H, Length(H) + gHands[PL].Houses.Count);
@@ -271,8 +275,10 @@ begin
         EnemyIsClose := False;
         // Select scan distance (it is based on combat status so AIs in the FFA do not get mad)
         SelectedDistance := SQR_DANGEROUS_DISTANCE;
-        if (fCombatStatus[Owner,PL] = csAttacking) then
-          SelectedDistance := SQR_OFFENSIVE_DISTANCE;
+        if (fCombatStatus[Owner,PL] = csAttackingCity) then
+          SelectedDistance := SQR_OFFENSIVE_DISTANCE
+        else if (fCombatStatus[Owner,PL] = csAttackingEverything) then
+          SelectedDistance := 1E10;
         if (CntE + gHands[PL].UnitGroups.Count >= Length(E)) then
           SetLength(E, Length(E) + gHands[PL].UnitGroups.Count);
         for K := 0 to gHands[PL].UnitGroups.Count - 1 do
@@ -562,38 +568,6 @@ var
     OrderMove(AG);
   end;
 
-  procedure LaunchAttack(aAttack: Boolean; var aBattleLine: TKMBattleLine);
-  {
-  var
-    K, L, M: Integer;
-    Price, BestPrice: Single;
-    G, BestTarget: TKMUnitGroup;
-  //}
-  begin
-    EvaluateEnemy(aAttack, aBattleLine);
-    // Find groups with the same line
-    {
-    for K := Low(CG) to High(CG) do
-      if (CG[K] <> nil) then
-      begin
-        // Compute best target
-        BestPrice := 1E10;
-        for L := 0 to aBattleLine.GroupCount - 1 do
-        begin
-          Price := KMDistanceSqr(AG[K].Position, EG[ aBattleLine.Groups[L] ].Position);
-          if (Price < BestPrice) then
-          begin
-            BestPrice := Price;
-            BestTarget := EG[ aBattleLine.Groups[L] ];
-          end;
-        end;
-        // Set order to attack
-        if (BestPrice < 1E10) then
-          CG[K].TargetGroup := BestTarget;
-      end;
-    //}
-  end;
-
 var
   PlayerInCombat, LineInCombat, TeamInCombat: Boolean;
   K, L, Cnt, Ready: Integer;
@@ -673,7 +647,7 @@ begin
       end;
     end;
     // Launch attack or move groups
-    LaunchAttack((Ready > Cnt * 0.8) OR LineInCombat, BL.Lines[K])
+    EvaluateEnemy((Ready > Cnt * 0.8) OR LineInCombat, BL.Lines[K]);
   end;
   //}
 end;
@@ -1051,7 +1025,9 @@ begin
       for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
         if gHands[ fAlli2PL[aTeamIdx,IdxPL] ].AI.Setup.AutoAttack then
         begin
-          fCombatStatus[fAlli2PL[aTeamIdx,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttacking;
+          fCombatStatus[fAlli2PL[aTeamIdx,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttackingCity;
+          if (gGame.MissionMode = mmTactic) then
+            fCombatStatus[fAlli2PL[aTeamIdx,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttackingEverything;
           with AR do
           begin
             Active := True;

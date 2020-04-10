@@ -67,7 +67,6 @@ type
     fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY: Word;
     fUpdateTick: Cardinal;
     fHouseReq: TKMHouseRequirements;
-    fHMA: THouseMappingArray;
     fLocs: TKMPointList;
     fInfoArr: TKMBuildInfoArray;
 
@@ -121,7 +120,7 @@ type
     procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure ActualizeTile(aX, aY: Word);
     function CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
-    procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
+    procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; aInitPointsArr: TKMPointList; aClearHouseList: Boolean = True);
   end;
 
 
@@ -1062,27 +1061,24 @@ var
   K: Integer;
   Ownership: Byte;
   Point: TKMPoint;
-  FI: TKMForestsInfo;
-  Polygons: TPolygonArray;
 begin
   fBuildFF.UpdateState(); // Mark walkable area in owner's city
   // Try to find potential forests only in owner's influence areas
-  FI.Count := 0;
-  Polygons := gAIFields.NavMesh.Polygons;
-  for K := 0 to Length(Polygons) - 1 do
+  Result.Count := 0;
+  for K := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
   begin
-    if (FI.Count >= aMaxCnt) then
+    if (Result.Count >= aMaxCnt) then
       break;
     Ownership := gAIFields.Influences.OwnPoly[fOwner, K];
     if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin) AND
        (Ownership < GA_EYE_GetForests_SPRndOwnLimMax) then
     begin
-      Point := Polygons[K].CenterPoint;
+      Point := gAIFields.NavMesh.Polygons[K].CenterPoint;
       if (Soil[Point.Y,Point.X] > GA_EYE_GetForests_MinRndSoil) then
       begin
-        if (Length(FI.Forests) >= FI.Count) then
-          SetLength(FI.Forests,Length(FI.Forests)+100);
-        with FI.Forests[ FI.Count ] do
+        if (Length(Result.Forests) >= Result.Count) then
+          SetLength(Result.Forests,Length(Result.Forests)+100);
+        with Result.Forests[ Result.Count ] do
         begin
           PartOfForest := False;
           Loc := Point;
@@ -1090,24 +1086,23 @@ begin
           Distance := Byte(BuildFF.VisitIdx = BuildFF.Visited[Point.Y,Point.X]) * BuildFF.Distance[Point];
           Bid := 0;
         end;
-        Inc(FI.Count);
+        Inc(Result.Count);
       end;
     end;
   end;
-  Result := FI;
 end;
 
 
 
 function TKMEye.GetCityCenterPolygons(aMultiplePoints: Boolean = False): TKMWordArray;
 var
-  I: Integer;
+  K: Integer;
   PointArray: TKMPointArray;
 begin
   PointArray := GetCityCenterPoints(aMultiplePoints);
   SetLength(Result, Length(PointArray));
-  for I := Low(Result) to High(Result) do
-    Result[I] := gAIFields.NavMesh.KMPoint2Polygon[ PointArray[I] ];
+  for K := Low(Result) to High(Result) do
+    Result[K] := gAIFields.NavMesh.KMPoint2Polygon[ PointArray[K] ];
 end;
 
 
@@ -1115,7 +1110,7 @@ function TKMEye.GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointA
 const
   SCANNED_HOUSES = [htStore, htSchool, htBarracks];
 var
-  I, Cnt: Integer;
+  K, Cnt: Integer;
   HT: TKMHouseType;
   H: TKMHouse;
 begin
@@ -1129,9 +1124,9 @@ begin
     Exit;
 
   Cnt := 0;
-  for I := 0 to gHands[fOwner].Houses.Count - 1 do
+  for K := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
-    H := gHands[fOwner].Houses[I];
+    H := gHands[fOwner].Houses[K];
     if (H <> nil) AND not H.IsDestroyed AND H.IsComplete AND (H.HouseType in SCANNED_HOUSES) then
     begin
       Result[Cnt] := H.PointBelowEntrance;
@@ -1231,19 +1226,15 @@ const
     end;
   end;
   procedure DrawTriangle(aIdx: Integer; aColor: Cardinal);
-  var
-    PolyArr: TPolygonArray;
-    NodeArr: TKMPointArray;
   begin
-    PolyArr := gAIFields.NavMesh.Polygons;
-    NodeArr := gAIFields.NavMesh.Nodes;
-    gRenderAux.TriangleOnTerrain(
-      NodeArr[ PolyArr[aIdx].Indices[0] ].X,
-      NodeArr[ PolyArr[aIdx].Indices[0] ].Y,
-      NodeArr[ PolyArr[aIdx].Indices[1] ].X,
-      NodeArr[ PolyArr[aIdx].Indices[1] ].Y,
-      NodeArr[ PolyArr[aIdx].Indices[2] ].X,
-      NodeArr[ PolyArr[aIdx].Indices[2] ].Y, aColor);
+    with gAIFields.NavMesh do
+      gRenderAux.TriangleOnTerrain(
+        Nodes[ Polygons[aIdx].Indices[0] ].X,
+        Nodes[ Polygons[aIdx].Indices[0] ].Y,
+        Nodes[ Polygons[aIdx].Indices[1] ].X,
+        Nodes[ Polygons[aIdx].Indices[1] ].Y,
+        Nodes[ Polygons[aIdx].Indices[2] ].X,
+        Nodes[ Polygons[aIdx].Indices[2] ].Y, aColor);
   end;
 var
   PL: TKMHandID;
@@ -1452,7 +1443,6 @@ procedure TKMBuildFF.InitQueue(aHouseFF: Boolean);
 var
   K: Integer;
 begin
-  fHMA := gAIFields.Eye.HousesMapping; // Make sure that HMA is actual
   fQueueCnt := 0;
   if (fVisitIdx >= 254) then
   begin
@@ -1547,7 +1537,7 @@ var
 begin
   Result := False;
   CoalUnderPlan := False;
-  with fHMA[fHouseReq.HouseType] do
+  with gAIFields.Eye.HousesMapping[fHouseReq.HouseType] do
   begin
     for K := Low(Tiles) to High(Tiles) do
     begin
@@ -1680,16 +1670,16 @@ begin
             continue;
           P1 := KMPointAdd( Loc, KMPoint(gRes.Houses[HT].EntranceOffsetX,0) ); // Plans have moved offset so fix it (because there is never enought exceptions ;)
           // Internal house tiles
-          for L := Low(fHMA[HT].Tiles) to High(fHMA[HT].Tiles) do
+          for L := Low(gAIFields.Eye.HousesMapping[HT].Tiles) to High(gAIFields.Eye.HousesMapping[HT].Tiles) do
           begin
-            P2 := KMPointAdd(P1, fHMA[HT].Tiles[L]);
+            P2 := KMPointAdd(P1, gAIFields.Eye.HousesMapping[HT].Tiles[L]);
             State[P2.Y, P2.X] := bsHousePlan;
           end;
           // External house tiles in distance 1 from house plan
-          for Dir := Low(fHMA[HT].Surroundings[DIST]) to High(fHMA[HT].Surroundings[DIST]) do
-            for L := Low(fHMA[HT].Surroundings[DIST,Dir]) to High(fHMA[HT].Surroundings[DIST,Dir]) do
+          for Dir := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST])     to High(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST]) do
+            for L := Low(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST,Dir]) to High(gAIFields.Eye.HousesMapping[HT].Surroundings[DIST,Dir]) do
             begin
-              P2 := KMPointAdd(P1, fHMA[HT].Surroundings[DIST,Dir,L]);
+              P2 := KMPointAdd(P1, gAIFields.Eye.HousesMapping[HT].Surroundings[DIST,Dir,L]);
               if (gTerrain.Land[P2.Y,P2.X].Passability * [tpMakeRoads, tpWalkRoad] <> []) then
                 State[P2.Y, P2.X] := bsRoad
               else if (State[P2.Y, P2.X] <> bsNoBuild) then
@@ -1814,21 +1804,21 @@ begin
 end;
 
 
-procedure TKMBuildFF.FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
+procedure TKMBuildFF.FindPlaceForHouse(aHouseReq: TKMHouseRequirements; aInitPointsArr: TKMPointList; aClearHouseList: Boolean = True);
 var
   K: Integer;
 begin
   if aClearHouseList then
     fLocs.Clear;
-  if (Length(InitPointsArr) <= 0) then
+  if (aInitPointsArr = nil) OR (aInitPointsArr.Count <= 0) then
     Exit;
 
   fHouseReq := aHouseReq;
   UpdateState();
 
   InitQueue(True);
-  for K := 0 to Length(InitPointsArr) - 1 do
-    with InitPointsArr[K] do
+  for K := 0 to aInitPointsArr.Count - 1 do
+    with aInitPointsArr[K] do
       if CanBeVisited(X,Y,Y*fMapX + X, True) then
         MarkAsVisited(X,Y, InsertInQueue(Y*fMapX + X), 0);
 

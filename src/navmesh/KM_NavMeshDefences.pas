@@ -406,8 +406,6 @@ end;
 
 // Evaluation of actual defensive line
 procedure TBackwardFF.EvaluateDefence(const aIdx: Word);
-var
-  PolyArr: TPolygonArray;
   // Get second defensive polygon (2 neighboring polygons in NavMesh have common 1 line)
   function GetSecondDefencePolygon(const aDefIdx: Word): Word;
   var
@@ -418,9 +416,9 @@ var
     VisitedCnt := 0;
     VisitedIdx := 0; // For compiler
     UnVisitedIdx := 0; // For compiler
-    for I := 0 to PolyArr[aDefIdx].NearbyCount-1 do
+    for I := 0 to gAIFields.NavMesh.Polygons[aDefIdx].NearbyCount-1 do
     begin
-      NearbyIdx := PolyArr[aDefIdx].Nearby[I];
+      NearbyIdx := gAIFields.NavMesh.Polygons[aDefIdx].Nearby[I];
       if IsVisited(NearbyIdx) then
       begin
         VisitedCnt := VisitedCnt + 1;
@@ -449,9 +447,9 @@ var
       SecondIndice := False;
       for I := 0 to 2 do
         for K := 0 to 2 do
-          if (PolyArr[aDefIdx1].Indices[I] = PolyArr[DefIdx2].Indices[K]) then
+          if (gAIFields.NavMesh.Polygons[aDefIdx1].Indices[I] = gAIFields.NavMesh.Polygons[DefIdx2].Indices[K]) then
           begin
-            fBestDefLines.Lines[ fBestDefLines.Count ].Nodes[ Byte(SecondIndice) ] := PolyArr[aDefIdx1].Indices[I];
+            fBestDefLines.Lines[ fBestDefLines.Count ].Nodes[ Byte(SecondIndice) ] := gAIFields.NavMesh.Polygons[aDefIdx1].Indices[I];
             SecondIndice := True; // It will also switch index from 0 to 1
             break;
           end;
@@ -465,8 +463,6 @@ var
   I, QueueIdx: Word;
   Evaluation: Single;
 begin
-  PolyArr := gAIFields.NavMesh.Polygons;
-
   // Calculate evaluation of actual defensive position
   Evaluation := fQueueCnt * POLYGON_CNT_PENALIZATION;
   QueueIdx := aIdx;
@@ -527,8 +523,6 @@ end;
 // Backward flood fill -> flood fill from enemy influence area to owner city
 // BackwardFF will find the best possible defences
 procedure TBackwardFF.BackwardFlood(aOwners: TKMHandIDArray);
-var
-  PolyArr: TPolygonArray;
   // Save init polygons so they are always inside of defence line
   procedure MarkInitPolygons();
   var
@@ -556,9 +550,9 @@ var
     QueueIdx := fStartQueue;
     for I := 1 to fQueueCnt do // Enemy polygons are prepared in Queue
     begin
-      for K := 0 to PolyArr[QueueIdx].NearbyCount-1 do
+      for K := 0 to gAIFields.NavMesh.Polygons[QueueIdx].NearbyCount-1 do
       begin
-        NearbyIdx := PolyArr[QueueIdx].Nearby[K];
+        NearbyIdx := gAIFields.NavMesh.Polygons[QueueIdx].Nearby[K];
         if (fQueueArray[NearbyIdx].Visited < fVisitedIdx-1) then // This polygon was not visited in forward cycle -> it will not be visited in backward
           fQueueArray[NearbyIdx].Visited := fVisitedIdx;
       end;
@@ -570,14 +564,14 @@ var
   var
     I, NearbyIdx: Integer;
   begin
-    for I := 0 to PolyArr[aIdx].NearbyCount-1 do
+    for I := 0 to gAIFields.NavMesh.Polygons[aIdx].NearbyCount-1 do
     begin
-      NearbyIdx := PolyArr[aIdx].Nearby[I];
+      NearbyIdx := gAIFields.NavMesh.Polygons[aIdx].Nearby[I];
       if not IsVisited(NearbyIdx) then
       begin
         fQueueArray[NearbyIdx].Visited := fVisitedIdx; // Mark as visited
         fDefInfo[NearbyIdx].Distance := fQueueArray[NearbyIdx].Distance; // Save distance for future calculation
-        if (PolyArr[NearbyIdx].NearbyCount = 3) then // Defences are created only from polygons with 3 surrounding polygons
+        if (gAIFields.NavMesh.Polygons[NearbyIdx].NearbyCount = 3) then // Defences are created only from polygons with 3 surrounding polygons
         begin
           fQueueArray[NearbyIdx].Distance := High(Word) - fQueueArray[NearbyIdx].Distance; // Invert distance (only polygons which will be inserted)
           InsertAndSort(NearbyIdx); // Insert ONLY polygons with 3 nearby polygons because it is possible to create defence line from them and also it save performance
@@ -590,7 +584,6 @@ var
 var
   Idx: Word;
 begin
-  PolyArr := gAIFields.NavMesh.Polygons;
   MarkInitPolygons();
   fBestDefLines.Count := 0;
   CreateBorders();
@@ -610,7 +603,6 @@ var
   Idx, NearbyIdx, Cnt, ScannedCnt, NextLine, ActLineIdx: Word;
   I, K: Integer;
   Direction: TKMDirection;
-  PolyArr: TPolygonArray;
 begin
   Result := False;
 
@@ -619,27 +611,26 @@ begin
     Exit;
   aBaseCnt := Max(aBaseCnt,fBestDefLines.Count);
 
-  PolyArr := gAIFields.NavMesh.Polygons;
   // Prepare defensive FF - add all polygon is BestDefLines to queue
   NewQueue(fVisitedIdx + 1);
   for I := 0 to fBestDefLines.Count - 1 do
   begin
     Idx := fBestDefLines.Lines[I].Polygon;
-    MarkAsVisited(Idx, fDefInfo[ Idx ].Distance, PolyArr[Idx].CenterPoint);
+    MarkAsVisited(Idx, fDefInfo[ Idx ].Distance, gAIFields.NavMesh.Polygons[Idx].CenterPoint);
     InsertInQueue( Idx );
     // Direction of groups in defence position may be tricky so it is computed for all children at once as a average point of surrounding polygons
-    fDefInfo[Idx].PointInDir := PolyArr[Idx].CenterPoint;
+    fDefInfo[Idx].PointInDir := gAIFields.NavMesh.Polygons[Idx].CenterPoint;
     Cnt := 1;
     // Mark every polygon before def line as visited so FF will not make defences here
-    for K := 0 to PolyArr[Idx].NearbyCount-1 do
+    for K := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount-1 do
     begin
-      NearbyIdx := PolyArr[Idx].Nearby[K];
+      NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[K];
       //if (fDefInfo[ NearbyIdx ].Distance > fDefInfo[ Idx ].Distance) then // Sometimes distances does not match with polygons inside of def line
       if not fFilterFF.IsPolyInsideDef(NearbyIdx) then
       begin
         Cnt := Cnt + 1;
-        fDefInfo[Idx].PointInDir := KMPointAdd(fDefInfo[Idx].PointInDir, PolyArr[NearbyIdx].CenterPoint);
-        MarkAsVisited(NearbyIdx, fDefInfo[ NearbyIdx ].Distance, PolyArr[Idx].NearbyPoints[K]);
+        fDefInfo[Idx].PointInDir := KMPointAdd(fDefInfo[Idx].PointInDir, gAIFields.NavMesh.Polygons[NearbyIdx].CenterPoint);
+        MarkAsVisited(NearbyIdx, fDefInfo[ NearbyIdx ].Distance, gAIFields.NavMesh.Polygons[Idx].NearbyPoints[K]);
       end
     end;
     // Average sum of points for direction
@@ -688,12 +679,12 @@ begin
         Cnt := Cnt + 1;
     end;
     // Expand polygon
-    for I := 0 to PolyArr[Idx].NearbyCount-1 do
+    for I := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount-1 do
     begin
-      NearbyIdx := PolyArr[Idx].Nearby[I];
+      NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[I];
       if not IsVisited(NearbyIdx) then
       begin
-        MarkAsVisited(NearbyIdx, fDefInfo[ NearbyIdx ].Distance, PolyArr[Idx].NearbyPoints[I]);
+        MarkAsVisited(NearbyIdx, fDefInfo[ NearbyIdx ].Distance, gAIFields.NavMesh.Polygons[Idx].NearbyPoints[I]);
         InsertInQueue(NearbyIdx);
         fDefInfo[NearbyIdx].PointInDir := fDefInfo[Idx].PointInDir;
       end;
@@ -875,7 +866,6 @@ begin
   end;
   Result := (fQueueArray[aIdx].Visited > 0); // Visited Array is always filled with zeros
 end;
-
 
 procedure TFilterFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
 begin
