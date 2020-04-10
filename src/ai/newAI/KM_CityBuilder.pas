@@ -47,6 +47,10 @@ type
     fPlanner: TKMCityPlanner;
     fPredictor: TKMCityPredictor;
 
+    {$IFDEF DEBUG_NewAI}
+      fTimePlanRoads: Cardinal;
+    {$ENDIF}
+
     procedure UpdateBuildNodes();
     procedure UpdateBuildNode(var aNode: TBuildNode);
 
@@ -118,6 +122,10 @@ begin
   fOwner := aPlayer;
   fPredictor := aPredictor;
   fPlanner := TKMCityPlanner.Create(aPlayer);
+
+  {$IFDEF DEBUG_NewAI}
+    fTimePlanRoads := 0;
+  {$ENDIF}
 end;
 
 
@@ -893,6 +901,9 @@ var
   FieldsComplete, Check: Boolean;
   K, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
+  {$IFDEF DEBUG_NewAI}
+    Time: Cardinal;
+  {$ENDIF}
 begin
   Result := csNoNodeAvailable;
   FieldsComplete := False;
@@ -941,6 +952,9 @@ begin
           for K := Loc.X-1 to Loc.X+1 do
             gAIFields.Influences.AvoidBuilding[Loc.Y+2, K] := AVOID_BUILDING_HOUSE_ENTRANCE;
         // Add road to node
+        {$IFDEF DEBUG_NewAI}
+          Time := TimeGet();
+        {$ENDIF}
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
         begin
@@ -974,8 +988,14 @@ begin
         else
         begin
           gHands[fOwner].RemHousePlan(Loc);
+          {$IFDEF DEBUG_NewAI}
+            fTimePlanRoads := fTimePlanRoads + TimeGet() - Time;
+          {$ENDIF}
           Exit;
         end;
+        {$IFDEF DEBUG_NewAI}
+          fTimePlanRoads := fTimePlanRoads + TimeGet() - Time;
+        {$ENDIF}
         // Reserve house place
         if aHouseReservation then
         begin
@@ -1693,6 +1713,9 @@ begin
   if fGoldShortage  then Text := Text + ' Gold,';
   if (Length(Text) > 0) then
     aBalanceText := Format('%s|Shortage:%s%s[]',[aBalanceText,COLOR_RED,Text.SubString(0,Length(Text)-1)]);
+  {$IFDEF DEBUG_NewAI}
+    aBalanceText := Format('%s|Time Plan Roads: %d',[aBalanceText,fTimePlanRoads]);
+  {$ENDIF}
   // Planner
   fPlanner.LogStatus(aBalanceText);
 end;
