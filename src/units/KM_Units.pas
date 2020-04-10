@@ -341,7 +341,7 @@ uses
   TypInfo,
   KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_UnitWarrior, KM_Resource, KM_ResUnits,
-  KM_Hand, KM_HouseWoodcutters,
+  KM_Hand, KM_HouseWoodcutters, KM_MapEditorHistory,
 
   KM_UnitActionAbandonWalk,
   KM_UnitActionFight,
@@ -1478,10 +1478,14 @@ end;
 
 
 procedure TKMUnit.SetPosition(aPos: TKMPoint);
+var
+  newPos: Boolean;
 begin
   //This is only used by the map editor, set all positions to aPos
-  Assert(gGame.GameMode = gmMapEd);
+  Assert(gGame.IsMapEditor);
   if not gTerrain.CanPlaceUnit(aPos, UnitType) then Exit;
+
+  newPos := fCurrPosition <> aPos;
 
   gTerrain.UnitRem(fCurrPosition);
   fCurrPosition := aPos;
@@ -1489,6 +1493,10 @@ begin
   fPrevPosition := aPos;
   fPositionF := KMPointF(aPos);
   gTerrain.UnitAdd(fCurrPosition, Self);
+
+  if newPos then
+    gGame.MapEditor.History.MakeCheckpoint(caUnits, Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_MOVE_SMTH],
+                                                           [gRes.Units[UnitType].GUIName, aPos.ToString]));
 end;
 
 

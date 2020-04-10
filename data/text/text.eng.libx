@@ -1364,10 +1364,11 @@
 1414:Add %s %s
 1415:Remove %s %s
 1416:Update %s %s
-1417:Change owner: %s %s
-1418:road
-1419:corn field
-1420:wine field
-1421:overlay
-1422:object
-1423:You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
+1417:Move %s %s
+1418:Change owner: %s %s
+1419:road
+1420:corn field
+1421:wine field
+1422:overlay
+1423:object
+1424:You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
