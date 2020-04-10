@@ -88,9 +88,9 @@ type
     procedure Update_Label_Coordinates;
     procedure MapTypeChanged(aIsMultiplayer: Boolean);
 
-    procedure UnRedoClick(Sender: TObject);
-    procedure HistoryClick(Sender: TObject);
-    procedure HistoryJumpTo(Sender: TObject);
+    procedure UnRedo_Click(Sender: TObject);
+    procedure History_Click(Sender: TObject);
+    procedure History_JumpTo(Sender: TObject);
     procedure History_ListChange(Sender: TObject);
     procedure History_MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
   protected
@@ -202,7 +202,7 @@ begin
   Button_History := TKMButtonFlat.Create(Panel_Main, Button_PlayerSelect[5].Right + 3, 190, 31, 32, 677);
   Button_History.TexOffsetX := -1;
   Button_History.Down := False;
-  Button_History.OnClick := HistoryClick;
+  Button_History.OnClick := History_Click;
   Button_History.Hint := GetHintWHotKey(TX_MAPED_HISTORY_HINT, SC_MAPEDIT_HISTORY);
 
   Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 30 + TB_PAD, 190, 30, 32, 662);
@@ -216,7 +216,7 @@ begin
   Button_Undo.CapOffsetY := -10;
   Button_Undo.CapColor := icGreen;
   Button_Undo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl + Z'')';
-  Button_Undo.OnClick := UnRedoClick;
+  Button_Undo.OnClick := UnRedo_Click;
 
   //Button_TerrainRedo := TKMButton.Create(Panel_Terrain, Panel_Terrain.Width - 10, 0, 10, SMALL_TAB_H + 4, '>', bsGame);
   Button_Redo := TKMButtonFlat.Create(Panel_Main, Button_Undo.Right + 1, 227, 15, 32, 0);
@@ -224,7 +224,7 @@ begin
   Button_Redo.CapOffsetY := -10;
   Button_Redo.CapColor := icGreen;
   Button_Redo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl + Y'' or ''Ctrl + Shift + Z'')';
-  Button_Redo.OnClick := UnRedoClick;
+  Button_Redo.OnClick := UnRedo_Click;
 
   Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, MAPED_TOOLBAR_WIDTH - 44 - 30 + TB_PAD, 227, 30, 32, 340);
   Button_UniversalEraser.Down := False;
@@ -303,20 +303,20 @@ begin
     ListBox_History := TKMListBox.Create(PopUp_History, 10, 10, PopUp_History.Width - 20, PopUp_History.Height - 50, fntMetal, bsGame);
     ListBox_History.AutoHideScrollBar := True;
     ListBox_History.OnChange := History_ListChange;
-    ListBox_History.OnDoubleClick := HistoryJumpTo;
+    ListBox_History.OnDoubleClick := History_JumpTo;
 
     Button_History_JumpTo := TKMButton.Create(PopUp_History, 10, ListBox_History.Bottom + 5,
                                                              ListBox_History.Width, 20, gResTexts[TX_MAPED_HISTORY_JUMP_TO], bsGame);
-    Button_History_JumpTo.OnClick := HistoryJumpTo;
+    Button_History_JumpTo.OnClick := History_JumpTo;
     Button_History_JumpTo.Hint := gResTexts[TX_MAPED_HISTORY_JUMP_TO_HINT];
 
     Button_History_Undo := TKMButton.Create(PopUp_History, 10, PopUp_History.Height - 10, (ListBox_History.Width div 2) - 7, 20, '<< Undo', bsGame);
-    Button_History_Undo.OnClick := UnRedoClick;
+    Button_History_Undo.OnClick := UnRedo_Click;
     Button_History_Undo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl + Z'')';
 
     Button_History_Redo := TKMButton.Create(PopUp_History, PopUp_History.Width - 10 - Button_History_Undo.Width,
                                                            Button_History_Undo.Top, Button_History_Undo.Width, 20, 'Redo >>', bsGame);
-    Button_History_Redo.OnClick := UnRedoClick;
+    Button_History_Redo.OnClick := UnRedo_Click;
     Button_History_Redo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl + Y'' or ''Ctrl + Shift + Z'')';
 
 
@@ -413,7 +413,7 @@ begin
 end;
 
 
-procedure TKMapEdInterface.HistoryClick(Sender: TObject);
+procedure TKMapEdInterface.History_Click(Sender: TObject);
 begin
   PopUp_History.Visible := not PopUp_History.Visible;
 
@@ -421,7 +421,7 @@ begin
 end;
 
 
-procedure TKMapEdInterface.HistoryJumpTo(Sender: TObject);
+procedure TKMapEdInterface.History_JumpTo(Sender: TObject);
 begin
   if ListBox_History.Selected then
     gGame.MapEditor.History.JumpTo(ListBox_History.ItemIndex);
@@ -620,7 +620,7 @@ begin
 end;
 
 
-procedure TKMapEdInterface.UnRedoClick(Sender: TObject);
+procedure TKMapEdInterface.UnRedo_Click(Sender: TObject);
 begin
   if (Sender = Button_Undo)
     or (Sender = Button_History_Undo) then
@@ -928,21 +928,21 @@ begin
 
   //History
   if Key = gResKeys[SC_MAPEDIT_HISTORY].Key then
-    HistoryClick(Button_History);
+    History_Click(Button_History);
 
 
   if (ssCtrl in Shift) and (Key = Ord('Y')) then
   begin
-    UnRedoClick(Button_Redo); // Ctrl+Y = Redo
+    UnRedo_Click(Button_Redo); // Ctrl+Y = Redo
     aHandled := True;
   end;
 
   if (ssCtrl in Shift) and (Key = Ord('Z')) then
   begin
     if ssShift in Shift then
-      UnRedoClick(Button_Redo) //Ctrl+Shift+Z = Redo
+      UnRedo_Click(Button_Redo) //Ctrl+Shift+Z = Redo
     else
-      UnRedoClick(Button_Undo); //Ctrl+Z = Undo
+      UnRedo_Click(Button_Undo); //Ctrl+Z = Undo
     aHandled := True;
   end;
 
