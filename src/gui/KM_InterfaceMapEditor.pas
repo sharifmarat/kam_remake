@@ -1160,8 +1160,9 @@ end;
 
 
 procedure TKMapEdInterface.MoveObjectToCursorCell(aObjectToMove: TObject);
-var H: TKMHouse;
-    HouseNewPos, HouseOldPos: TKMPoint;
+var
+  H: TKMHouse;
+  HouseNewPos, HouseOldPos: TKMPoint;
 begin
   if aObjectToMove = nil then Exit;
 
@@ -1183,17 +1184,17 @@ begin
 
   //Unit move
   if aObjectToMove is TKMUnit then
+  begin
     if aObjectToMove is TKMUnitWarrior then
       aObjectToMove := gHands.GetGroupByMember(TKMUnitWarrior(aObjectToMove))
     else
       TKMUnit(aObjectToMove).SetPosition(gGameCursor.Cell);
+  end;
 
   //Unit group move
   if aObjectToMove is TKMUnitGroup then
-  begin
     //Just move group to specified location
     TKMUnitGroup(aObjectToMove).Position := gGameCursor.Cell;
-  end;
 end;
 
 
