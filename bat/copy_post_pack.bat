@@ -19,9 +19,9 @@ xcopy ..\Campaigns "%kam_folder%"\Campaigns\ /y /r /s
 xcopy ..\Maps "%kam_folder%"\Maps\ /y /r /s /exclude:excluded_test_maps.txt
 xcopy ..\MapsMP "%kam_folder%"\MapsMP\ /y /r /s
 xcopy ..\Tutorials "%kam_folder%"\Tutorials\ /y /r /s
+xcopy ..\Docs\Readme "%kam_folder%"\ /y /r /s
 xcopy ..\Sounds "%kam_folder%"\Sounds\ /y /r /s
 xcopy ..\Music "%kam_folder%"\Music\ /y /r /s
-xcopy ..\Readme "%kam_folder%"\ /y /r /s
 xcopy ..\lib "%kam_folder%"\lib\ /y /r /s
 
 REM ============================================================
