@@ -50,7 +50,7 @@ uses
 const
   TABLE_ELEMS = 376;
   //Tiles table was initially made by JBSnorro, thanks to him :)
-  MapEdTileRemap: array [1..TABLE_ELEMS] of Integer = (
+  MapEdTileRemap: array [0..TABLE_ELEMS - 1] of Integer = (
      1,73,74,75, 37, 21, 22, 38, 33, 34, 32,181,173,177,129,130,131,132,133,  0,274,270,269,267,268,271,272,273,303, 49,193,197,217,225,  0,  0, 45, 24, 13, 23,208,224, 26,216,  0,  0,  0,
     27,76,77,78, 36, 39, 40,198,100,101,102,189,169,185,134,135,136,137,138,275,283,279,278,276,277,280,281,282,304,124,125,126,229,218,219,220, 46, 11,  5,  0,195, 25,203,207,  0,  0,  0,
     28,79,80,81, 35, 88, 89, 90, 70, 71, 72,182,174,178,196,139,140,141,142,302,  0,309,310,  0,  0,311,312,  0,  0,127,128,  0,230,226,227,228, 47,204,205,206,199,200,265,266,  0,  0,  0,
@@ -200,7 +200,7 @@ begin
   Result := False;
   for I := 0 to MAPED_TILES_Y - 1 do
   begin
-    RowStart := 1 + I * (TABLE_ELEMS_CNT div MAPED_TILES_Y) + TilesScroll.Position;
+    RowStart := I * (TABLE_ELEMS_CNT div MAPED_TILES_Y) + TilesScroll.Position;
     for K := RowStart to RowStart + MAPED_TILES_X - 1 do
       if MapEdTileRemap[K] = aTextId + 1 then
       begin
@@ -268,7 +268,7 @@ begin
 //  if Tile > TILES_CNT then
 //    Result := 0;
 
-  Result := MapEdTileRemap[Tile + 1];
+  Result := MapEdTileRemap[Tile];
 end;
 
 
