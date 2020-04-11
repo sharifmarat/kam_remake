@@ -697,7 +697,7 @@ begin
   if (fHostileGroups.IndexOf(Group) = -1) then // Is this attacking group already in list?
   begin
     if (aUnit = nil) // Does attacker attack house
-      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.Ownership[fOwner,aUnit.CurrPosition.Y,aUnit.CurrPosition.X] > 50)) then // Or citizen which is inside of city?
+      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.OwnPoint[fOwner,aUnit.CurrPosition] > 50)) then // Or citizen which is inside of city?
       fHostileGroups.Add( Group.GetGroupPointer() )
     else // Does attacker attack at soldier in defence position?
     begin

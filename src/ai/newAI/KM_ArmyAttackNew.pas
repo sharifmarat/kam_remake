@@ -747,6 +747,7 @@ begin
     Op2 := $50;
     if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = CG.Group) then
     begin
+      //Col1 := gMySpectator.Hand.FlagColor;
       Op1 := $AA;
       Op2 := $FF;
       case CG.Group.Order of

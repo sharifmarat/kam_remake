@@ -120,6 +120,11 @@ const
 { TKMNavMeshGenerator }
 constructor TKMNavMeshGenerator.Create();
 begin
+  fInnerPointStartIdx := 0;
+  fInnerPointEndIdx := 0;
+  fBorderNodeCount := 0;
+  fNodeCount := 0;
+  fPolyCount := 0;
   inherited Create;
 end;
 
@@ -1168,12 +1173,12 @@ const
   COLOR_BLUE = $FF0000;
 {$IFDEF DEBUG_NavMesh}
 var
-  X,Y,K: Integer;
+  X,K: Integer;
   p1,p2,p3: TKMPoint;
 {$ENDIF}
 begin
   Result := False;
-  if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH then
+  if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH OR (fNodeCount <= 0) then // fNodeCount for replay
     Exit;
 
   {$IFDEF DEBUG_NavMesh}

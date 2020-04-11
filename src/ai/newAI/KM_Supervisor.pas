@@ -40,6 +40,7 @@ type
     fAlli2PL: TKMHandID2Arr;
     fCombatStatus: array[0..MAX_HANDS-1,0..MAX_HANDS-1] of TKMCombatStatus;
     fArmyPos: TArmyForwardFF;
+
     procedure UpdateFFA();
     function CheckDefenceStatus(aTeam: Byte; var E: TKMUnitGroupArray; var H: TKMHouseArray): TKMCombatStatus;
     procedure UpdateDefSupport(aTeamIdx: Byte);
@@ -68,13 +69,15 @@ type
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure UpdateAlliances();
+
+    function LogStatus(): UnicodeString;
     procedure Paint(aRect: TKMRect);
   end;
 
 
 implementation
 uses
-  Math,
+  SysUtils, Math,
   KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
   KM_AIFields, KM_NavMesh, KM_CommonUtils;
 
@@ -230,6 +233,7 @@ const
   SQR_DANGEROUS_DISTANCE = 15*15;
   SQR_OFFENSIVE_DISTANCE = 30*30;
   INFLUENCE_THRESHOLD = 1;
+  ARMY_IN_HOSTILE_CITY = 200;
 var
   InCombat: Boolean;
   PL: TKMHandID;
@@ -245,18 +249,33 @@ begin
   // Check if team have newAI
   if not NewAIInTeam(aTeam, True, True) OR (SP_OLD_ATTACK_AI = True) then
     Exit;
-  // First check houses for csAttackingCity
   CntH := 0;
   CntE := 0;
   for Idx := 0 to Length(fAlli2PL[aTeam]) - 1 do
   begin
     Owner := fAlli2PL[aTeam,Idx];
-    InCombat := gHands[ fAlli2PL[aTeam,Idx] ].AI.ArmyManagement.AttackNew.Count > 0;
+    InCombat := gHands[Owner].AI.ArmyManagement.AttackNew.Count > 0;
     for PL := 0 to gHands.Count - 1 do
       if (gHands[Owner].Alliances[PL] = atEnemy) then
       begin
-        if not InCombat then
+        // Check if defensive units moved closer to enemy city and if so, then change status from defender to attacker
+        if (fCombatStatus[Owner,PL] = csDefending) then
+        begin
+          for K := 0 to gHands[Owner].UnitGroups.Count - 1 do
+          begin
+            G := gHands[Owner].UnitGroups.Groups[K];
+            if (G <> nil) AND not G.IsDead AND (gAIFields.Influences.OwnPoint[ PL, G.Position ] > ARMY_IN_HOSTILE_CITY) then
+            begin
+              fCombatStatus[Owner,PL] := csAttackingCity;
+              break;
+            end;
+          end;
+        end;
+
+        // All combat groups are dead
+        if not InCombat AND not gHands[Owner].AI.ArmyManagement.AttackRequest.Active then
           fCombatStatus[Owner,PL] := csNeutral;
+
         // Find all hostile houses (only if player attacking someone)
         HouseIsClose := False;
         if (fCombatStatus[Owner,PL] in [csAttackingCity, csAttackingEverything]) then
@@ -287,7 +306,7 @@ begin
           if (G <> nil) AND not G.IsDead then
           begin
             P := G.Position;
-            if (gAIFields.Influences.OwnPoly[ Owner, gAIFields.NavMesh.KMPoint2Polygon[P] ] > INFLUENCE_THRESHOLD) then
+            if (gAIFields.Influences.OwnPoint[ Owner, P ] > INFLUENCE_THRESHOLD) then
               AddEnemy(G, CntE, EnemyIsClose)
             else
               for L := 0 to gHands[Owner].UnitGroups.Count - 1 do
@@ -322,6 +341,8 @@ const
   sqr_RANGE = 12*12;
   sqr_INTEREST_DISTANCE_Group = 30*30;
   sqr_INTEREST_DISTANCE_House = 20*20;
+  sqr_MAX_DISTANCE_FROM_HOUSE = 10*10;
+  MAX_ATTACKERS_PER_HOUSE = 12;
   WarriorPrice: array [utMilitia..utHorseman] of Single = (
     1.5,2.0,2.5,2.0,2.5, // utMilitia,utAxeFighter,utSwordsman,utBowman,utArbaletman,
     2.0,2.5,2.0,2.5,     // utPikeman,utHallebardman,utHorseScout,utCavalry
@@ -346,16 +367,39 @@ var
   CG: TKMCombatGroup;
   U: TKMUnit;
   UW: TKMUnitWarrior;
+  TargetH: TKMHouse;
   Dist: array of Single;
   Threat: array of record
     DistRanged, Distance, Risk, WeightedCount: Single;
   end;
+  AttackingHouseCnt: array of Word;
 begin
   // Init variables for compiler
   BestIdxA := 0;
   BestIdxE := 0;
   CntA := Length(A);
   CntE := Length(E);
+
+  // Remove groups that already attack house (destroy it at all cost)
+  SetLength(AttackingHouseCnt, Length(H));
+  if (Length(AttackingHouseCnt) > 0) then
+  begin
+    FillChar(AttackingHouseCnt[0], Length(AttackingHouseCnt) * SizeOf(AttackingHouseCnt[0]), #0);
+    for IdxA := CntA - 1 downto 0 do
+    begin
+      TargetH := A[IdxA].OrderTargetHouse;
+      if (TargetH <> nil) AND (A[IdxA].GroupType <> gtRanged) AND (KMDistanceSqr(A[IdxA].Position,TargetH.Entrance) < sqr_MAX_DISTANCE_FROM_HOUSE) then
+        for IdxE := 0 to Length(H) - 1 do
+          if (H[IdxE] = TargetH) then
+          begin
+            Inc(AttackingHouseCnt[IdxE],A[IdxA].Count);
+            Dec(CntA);
+            A[IdxA] := A[CntA];
+            break;
+          end;
+    end;
+  end;
+
   if aAttack AND (Length(E) > 0) then
   begin
 
@@ -397,7 +441,7 @@ begin
     end;
 
     // Set targets
-    // Archers
+    // Archers - higher distance
     for IdxA := 0 to CntA - 1 do
       if (A[IdxA].GroupType = gtRanged) then
       begin
@@ -474,23 +518,29 @@ begin
 
   for IdxE := 0 to Length(H) - 1 do
   begin
-    BestOpportunity := abs(NO_THREAT);
-    for IdxA := 0 to CntA - 1 do
-      if (A[IdxA] <> nil) AND (A[IdxA].GroupType <> gtRanged) then
-      begin
-        Opportunity := KMDistanceSqr(H[IdxE].Entrance, A[IdxA].Position);
-        if (BestOpportunity > Opportunity) AND (Opportunity < sqr_INTEREST_DISTANCE_House) then
-        begin
-          BestIdxA := IdxA;
-          BestOpportunity := Opportunity;
-        end;
-      end;
-    // Set order
-    if (BestOpportunity <> abs(NO_THREAT)) then
+    Overflow := 0;
+    while (AttackingHouseCnt[IdxE] < MAX_ATTACKERS_PER_HOUSE) AND (Overflow < 5) do
     begin
-      CG := gHands[ A[BestIdxA].Owner ].AI.ArmyManagement.AttackNew.CombatGroup[ A[BestIdxA] ];
-      CG.TargetHouse := H[IdxE];
-      A[BestIdxA] := nil;
+      Inc(Overflow);
+      BestOpportunity := abs(NO_THREAT);
+      for IdxA := 0 to CntA - 1 do
+        if (A[IdxA] <> nil) AND (A[IdxA].GroupType <> gtRanged) then
+        begin
+          Opportunity := KMDistanceSqr(H[IdxE].Entrance, A[IdxA].Position);
+          if (BestOpportunity > Opportunity) AND (Opportunity < sqr_INTEREST_DISTANCE_House) then
+          begin
+            BestIdxA := IdxA;
+            BestOpportunity := Opportunity;
+          end;
+        end;
+      // Set order
+      if (BestOpportunity <> abs(NO_THREAT)) then
+      begin
+        Inc(AttackingHouseCnt[IdxE],A[BestIdxA].Count);
+        CG := gHands[ A[BestIdxA].Owner ].AI.ArmyManagement.AttackNew.CombatGroup[ A[BestIdxA] ];
+        CG.TargetHouse := H[IdxE];
+        A[BestIdxA] := nil;
+      end;
     end;
   end;
 
@@ -751,7 +801,7 @@ procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
       begin
         Assistance := False;
         Player := aNewAIPLs[I];
-        Influence := gAIFields.Influences.Ownership[ Player, aPoint.Y, aPoint.X];
+        Influence := gAIFields.Influences.OwnPoint[Player, aPoint];
       end;
     SortByInfluence(AssistArr);
     // Prefer to defend allies in range of influence
@@ -1077,12 +1127,12 @@ procedure TKMSupervisor.DivideResources();
         begin
           PLCnt := 0;
           for IdxPL2 := 0 to Length(aPlayers) - 1 do // Mark players which can place mine here (by influence)
-            if (gAIFields.Influences.Ownership[aPlayers[IdxPL2], aMines[K].Y,aMines[K].X] > 0) then
+            if (gAIFields.Influences.OwnPoint[aPlayers[IdxPL2], aMines[K]] > 0) then
             begin
               Inc(PLPossibleMines[IdxPL2]);
               Inc(PLCnt);
             end;
-          Mines[Cnt].Val := PLCnt * MAX_INFLUENCE + gAIFields.Influences.Ownership[PL, aMines[K].Y,aMines[K].X];
+          Mines[Cnt].Val := PLCnt * MAX_INFLUENCE + gAIFields.Influences.OwnPoint[PL, aMines[K]];
           Mines[Cnt].pPoint := @aMines[K];
           Inc(Cnt);
         end;
@@ -1097,7 +1147,7 @@ procedure TKMSupervisor.DivideResources();
         IdxPL2 := 0;
         BestPrice := High(Word);
         for IdxPL := 0 to Length(aPlayers) - 1 do
-          if (gAIFields.Influences.Ownership[aPlayers[IdxPL], Mines[K].pPoint^.Y, Mines[K].pPoint^.X] > 0)
+          if (gAIFields.Influences.OwnPoint[aPlayers[IdxPL], Mines[K].pPoint^] > 0)
             AND (PLPossibleMines[IdxPL] + PLMines[IdxPL] < BestPrice) then
           begin
             BestPrice := PLPossibleMines[IdxPL] + PLMines[IdxPL];
@@ -1108,7 +1158,7 @@ procedure TKMSupervisor.DivideResources();
           Inc(PLMines[IdxPL2]);
           // Decrease possible mine cnt
           for IdxPL2 := 0 to Length(aPlayers) - 1 do
-            if (gAIFields.Influences.Ownership[aPlayers[IdxPL2], Mines[K].pPoint^.Y, Mines[K].pPoint^.X] > 0) then
+            if (gAIFields.Influences.OwnPoint[aPlayers[IdxPL2], Mines[K].pPoint^] > 0) then
               Dec(PLPossibleMines[IdxPL2]);
         end;
       end;
@@ -1157,6 +1207,46 @@ begin
         Result := True;
         Exit;
       end;
+end;
+
+
+
+function TKMSupervisor.LogStatus(): UnicodeString;
+const
+  COLOR_WHITE = '[$FFFFFF]';
+var
+  Team, K: Integer;
+  PL,PL2, Cnt: TKMHandID;
+  CombatStatusText: UnicodeString;
+begin
+  Result := '';
+  if not OVERLAY_AI_SUPERVISOR then
+    Exit;
+  // Head
+  Cnt := 0;
+  for PL := 0 to gHands.Count-1 do
+    Cnt := Cnt + Byte((fPL2Alli[PL] <> PLAYER_NONE) AND gHands[PL].Enabled);
+  Result := Format('Supervisor (FFA = %d; Teams = %d); Players = %d',[Byte(fFFA), Length(fAlli2PL), Cnt]);
+  // Diplomacy + combat status
+  for Team := Low(fAlli2PL) to High(fAlli2PL) do
+  begin
+    Result := Format('%s|  Team %d',[Result,Team]);
+    for K := Low(fAlli2PL[Team]) to High(fAlli2PL[Team]) do
+    begin
+      PL := Alli2PL[Team,K];
+      Result := Format('%s|    [$%s] Player %s %d (Enabled %d; Defeated: %d)',[Result,IntToHex(gHands[PL].FlagColor AND $FFFFFF,6),COLOR_WHITE,PL,Byte(gHands[PL].Enabled),Byte(gHands[PL].AI.HasLost)]);
+      for PL2 := Low(fCombatStatus[PL]) to High(fCombatStatus[PL]) do
+      begin
+        case fCombatStatus[PL,PL2] of
+          csNeutral: continue;
+          csDefending:            CombatStatusText := 'defending';
+          csAttackingCity:        CombatStatusText := 'attacking city';
+          csAttackingEverything:  CombatStatusText := 'attacking everything';
+        end;
+        Result := Format('%s [$%s] %s %s %d,',[Result,IntToHex(gHands[PL2].FlagColor AND $FFFFFF,6),CombatStatusText,COLOR_WHITE,PL2]);
+      end;
+    end;
+  end;
 end;
 
 

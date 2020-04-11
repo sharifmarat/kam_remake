@@ -679,7 +679,7 @@ begin
             continue;
           Bid := //+ DistFromStore(Loc)
                  + ObstaclesInHousePlan(aHT, Loc)
-                 - gAIFields.Influences.Ownership[ fOwner, Loc.Y, Loc.X ]
+                 - gAIFields.Influences.OwnPoint[fOwner, Loc]
                  - Byte((aHT = htWoodcutters) AND ChopOnly) * CHOP_ONLY_ADVANTAGE; // Chop only mode
           if (Bid < BestBid) then
           begin
@@ -2042,7 +2042,7 @@ begin
             continue;
           // Update tag
           Tag[I] := Max(0, 10000
-                           + gAIFields.Influences.Ownership[fOwner, Items[I].Y, Items[I].X]
+                           + gAIFields.Influences.OwnPoint[fOwner, Items[I]]
                            - gAIFields.Influences.GetOtherOwnerships(fOwner,Items[I].X,Items[I].Y)
                            - BuildFF.Distance[ Items[I] ]) * 10;
           IsWalkable := True;
@@ -2380,7 +2380,7 @@ begin
         AND (fForestsInfo.Forests[K].TreeCout >= MIN_TREES)
         AND (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atEnemy) < 20) then
       begin
-        Gain := gAIFields.Influences.Ownership[ fOwner, Loc.Y, Loc.X ]; // This is equivalent of distance
+        Gain := gAIFields.Influences.OwnPoint[fOwner, Loc]; // This is equivalent of distance
         if (Gain > BestGain) then
         begin
           Check := True;
@@ -3110,7 +3110,7 @@ var
 
             if not (gTerrain.TileInMapCoords(Loc.X, Loc.Y, 1))
               OR (fPerfArr[Loc.Y,Loc.X] >= fPerfIdx)
-              OR (Dist > 4) AND (gAIFields.Influences.Ownership[fOwner, Loc.Y, Loc.X] < INFLUENCE_LIMIT) then
+              OR (Dist > 4) AND (gAIFields.Influences.OwnPoint[fOwner, Loc] < INFLUENCE_LIMIT) then
               continue;
 
             fPerfArr[Loc.Y,Loc.X] := fPerfIdx;

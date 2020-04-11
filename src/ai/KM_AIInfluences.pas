@@ -55,8 +55,10 @@ type
     // City influence
     function GetOwnership(const aPL: TKMHandID; const aIdx: Word): Byte; inline;
     procedure SetOwnership(const aPL: TKMHandID; const aIdx: Word; const aOwnership: Byte); inline;
-    function GetOwnershipFromPoint(const aPL: TKMHandID; const aY, aX: Word): Byte; inline; // For property -> aY, aX are switched!
-    procedure SetOwnershipFromPoint(const aPL: TKMHandID; const aY, aX: Word; const aOwnership: Byte); inline; // For property -> aY, aX are switched!
+    function GetOwnershipFromCoords(const aPL: TKMHandID; const aY, aX: Word): Byte; inline; // For property -> aY, aX are switched!
+    procedure SetOwnershipFromCoords(const aPL: TKMHandID; const aY, aX: Word; const aOwnership: Byte); inline; // For property -> aY, aX are switched!
+    function GetOwnershipFromPoint(const aPL: TKMHandID; const aPoint: TKMPoint): Byte; inline;
+    procedure SetOwnershipFromPoint(const aPL: TKMHandID; const aPoint: TKMPoint; const aOwnership: Byte); inline;
     procedure UpdateOwnership(const aPL: TKMHandID);
     // Common
     procedure InitArrays();
@@ -76,7 +78,8 @@ type
     property EnemyGroupPresence[const aPL: TKMHandID; const aIdx: Word; const aGT: TKMGroupType]: Word read GetEnemyGroupPresence;
     //property AlliancePresence[const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TKMAllianceType]: Word read GetAlliancePresence;
     // City influence
-    property Ownership[const aPL: TKMHandID; const aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
+    property Ownership[const aPL: TKMHandID; const aY,aX: Word]: Byte read GetOwnershipFromCoords write SetOwnershipFromCoords; // To secure compatibility with old AI
+    property OwnPoint[const aPL: TKMHandID; const aPoint: TKMPoint]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint;
     property OwnPoly[const aPL: TKMHandID; const aIdx: Word]: Byte read GetOwnership write SetOwnership;
     // Common
     property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
@@ -443,15 +446,27 @@ begin
 end;
 
 
-function TKMInfluences.GetOwnershipFromPoint(const aPL: TKMHandID; const aY, aX: Word): Byte;
+function TKMInfluences.GetOwnershipFromCoords(const aPL: TKMHandID; const aY, aX: Word): Byte;
 begin
   Result := GetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX]);
 end;
 
 
-procedure TKMInfluences.SetOwnershipFromPoint(const aPL: TKMHandID; const aY, aX: Word; const aOwnership: Byte);
+procedure TKMInfluences.SetOwnershipFromCoords(const aPL: TKMHandID; const aY, aX: Word; const aOwnership: Byte);
 begin
   SetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX], aOwnership);
+end;
+
+
+function TKMInfluences.GetOwnershipFromPoint(const aPL: TKMHandID; const aPoint: TKMPoint): Byte;
+begin
+  Result := GetOwnership(aPL, fNavMesh.KMPoint2Polygon[aPoint]);
+end;
+
+
+procedure TKMInfluences.SetOwnershipFromPoint(const aPL: TKMHandID; const aPoint: TKMPoint; const aOwnership: Byte);
+begin
+  SetOwnership(aPL, fNavMesh.KMPoint2Polygon[aPoint], aOwnership);
 end;
 
 
