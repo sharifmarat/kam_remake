@@ -583,6 +583,7 @@ begin
   // Find positions in Combat line and assign them
   SetLength(TargetPositions, Ally.GroupsCount);   // GroupsNumber
   FillChar(TargetPositions[0],Length(TargetPositions) * SizeOf(TargetPositions[0]), #0);
+  BestIdx := 0;
   for K := 0 to BattleLines.Count - 1 do
     if (PosReq[K] > 0) then
     begin
@@ -886,7 +887,7 @@ begin
         Dec(fQueueCnt);
         ExpandPolygon(Idx);
         {$IFDEF DEBUG_BattleLines}
-        SaveDebugLine();
+        //SaveDebugLine();
         {$ENDIF}
         InEnemyInfluence := True;
         break;
@@ -907,7 +908,7 @@ begin
     if CanBeExpanded(Idx) then
       ExpandPolygon(Idx);
     {$IFDEF DEBUG_BattleLines}
-    SaveDebugLine();
+    //SaveDebugLine();
     {$ENDIF}
   end;
 end;
@@ -1047,6 +1048,7 @@ begin
     end;
   //}
   //{
+  Color := COLOR_WHITE;
   for K := 0 to Length(fQueueArray) - 1 do
     DrawPolygon(K, 1, Color, IntToStr(High(Word) - fDefInfo[K].Mark));
 
