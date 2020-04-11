@@ -274,7 +274,7 @@ begin
   else
   if Key = gResKeys[SC_MAPEDIT_TILES_PALETTE].Key then
   begin
-    Panel_TilesPalettePopup.Show;
+    Panel_TilesPalettePopup.ToggleVisibility;
     aHandled := True;
   end;
 end;

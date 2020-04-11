@@ -612,7 +612,7 @@ begin
       fHideAllPages;
     end;
 
-    PopUp_ObjectsPalette.Show;
+    PopUp_ObjectsPalette.ToggleVisibility;
   end;
 end;
 
