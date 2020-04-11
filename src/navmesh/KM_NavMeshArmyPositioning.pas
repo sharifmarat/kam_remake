@@ -72,7 +72,7 @@ type
     procedure MakeNewQueue(); override;
     function IsVisited(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
-    procedure InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray); override;
+    procedure InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray); override;
     function ForwardFF(): Boolean;
 
     procedure AssignDefencePositions();
@@ -92,7 +92,7 @@ type
     constructor Create(aSorted: Boolean = False); override;
     destructor Destroy; override;
 
-    function FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
+    function FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
     procedure Paint();
   end;
 
@@ -113,7 +113,7 @@ type
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx: Word); reintroduce;
-    //procedure InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray); reintroduce;
+    //procedure InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray); reintroduce;
     procedure InitQueue(var aEnemy: TKMAllianceInfo); reintroduce;
     procedure BackwardFlood(var aEnemy: TKMAllianceInfo);
     procedure EvaluateLine(const aIdx: Word);
@@ -235,7 +235,7 @@ begin
 end;
 
 
-procedure TArmyForwardFF.InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray);
+procedure TArmyForwardFF.InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray);
 const
   INIT_DISTANCE = 0;
 var
@@ -356,7 +356,7 @@ begin
     Exit;
   // Check enemy units
   GetInitPolygonsGroups(atEnemy,Enemy);
-  GetInitPolygonsHouses(atEnemy,Enemy);
+  //GetInitPolygonsHouses(atEnemy,Enemy); // Houses are overtaken from Supervisor
   if (Enemy.GroupsCount = 0) AND (Enemy.HousesCount = 0) then
     Exit;
   // Mark enemy units and houses
@@ -367,12 +367,22 @@ begin
 end;
 
 
-function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
+function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
 var
   K,L: Integer;
 begin
   Result := False;
   fOwner := aOwners[0];
+
+  Enemy.HousesCount := 0;
+  SetLength(Enemy.Houses, Length(aTargetHouses));
+  SetLength(Enemy.HousesPoly, Length(aTargetHouses));
+  for K := 0 to Length(aTargetHouses) - 1 do
+  begin
+    Enemy.Houses[Enemy.HousesCount] := aTargetHouses[K];
+    Enemy.HousesPoly[Enemy.HousesCount] := gAIFields.NavMesh.KMPoint2Polygon[ aTargetHouses[K].Entrance ];
+    Inc(Enemy.HousesCount);
+  end;
 
   if ForwardFF() then
   begin
@@ -391,8 +401,8 @@ begin
           Inc(TargetEnemy.GroupsCount);
         end;
     for K := 0 to Enemy.HousesCount - 1 do
-      for L := Low(aTargetHouses) to High(aTargetHouses) do
-        if (aTargetHouses[L] = Enemy.Houses[K]) then
+    //  for L := Low(aTargetHouses) to High(aTargetHouses) do
+    //    if (aTargetHouses[L] = Enemy.Houses[K]) then
         begin
           TargetEnemy.Houses[TargetEnemy.HousesCount] := Enemy.Houses[K];
           TargetEnemy.HousesPoly[TargetEnemy.HousesCount] := Enemy.HousesPoly[K];
@@ -667,7 +677,7 @@ begin
 end;
 
 
-//procedure TArmyBackwardFF.InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray);
+//procedure TArmyBackwardFF.InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray);
 procedure TArmyBackwardFF.InitQueue(var aEnemy: TKMAllianceInfo);
   function FindPolyIdx(aPoly: Integer): Integer;
   var

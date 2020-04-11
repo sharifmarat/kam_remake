@@ -234,6 +234,7 @@ const
   SQR_OFFENSIVE_DISTANCE = 30*30;
   INFLUENCE_THRESHOLD = 1;
   ARMY_IN_HOSTILE_CITY = 200;
+  TARGET_HOUSE_IN_INFLUENCE = 150;
 var
   InCombat: Boolean;
   PL: TKMHandID;
@@ -285,7 +286,11 @@ begin
           for K := 0 to gHands[PL].Houses.Count - 1 do
           begin
             House := gHands[PL].Houses[K];
-            if (House <> nil) AND not House.IsDestroyed AND House.IsComplete AND (House.HouseType in TARGET_HOUSES) then
+            if (House <> nil) AND not House.IsDestroyed AND (
+              ((House.HouseType in TARGET_HOUSES) AND House.IsComplete)
+              OR
+              (gAIFields.Influences.OwnPoint[ Owner, House.Position ] > TARGET_HOUSE_IN_INFLUENCE)
+            ) then
               AddHouse(House,CntH,HouseIsClose);
           end;
         end;

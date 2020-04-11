@@ -36,13 +36,13 @@ type
     procedure InsertAndSort(const aIdx: Word); virtual; // Only for sorted case
     function RemoveFromQueue(var aIdx: Word): Boolean;
 
-    procedure InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray); virtual;
+    procedure InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray); virtual;
     procedure Flood(); virtual;
   public
     constructor Create(aSorted: Boolean = False); virtual;
     destructor Destroy(); override;
 
-    function FillPolygons(const aMaxIdx: Word; aInitIdxArray: TKMWordArray): Boolean; virtual;
+    function FillPolygons(const aMaxIdx: Word; var aInitIdxArray: TKMWordArray): Boolean; virtual;
   end;
 
 
@@ -189,7 +189,7 @@ end;
 
 
 // Init Queue
-procedure TNavMeshFloodFill.InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray);
+procedure TNavMeshFloodFill.InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray);
 const
   INIT_DISTANCE = 0;
 var
@@ -236,7 +236,7 @@ begin
 end;
 
 
-function TNavMeshFloodFill.FillPolygons(const aMaxIdx: Word; aInitIdxArray: TKMWordArray): Boolean;
+function TNavMeshFloodFill.FillPolygons(const aMaxIdx: Word; var aInitIdxArray: TKMWordArray): Boolean;
 begin
   Result := (Length(aInitIdxArray) > 0);
   if Result then

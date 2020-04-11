@@ -24,7 +24,7 @@ type
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
-    function FindPositions(aCount,aMinSpacing: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
+    function FindPositions(aCount,aMinSpacing: Word; var aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
   end;
 
 
@@ -70,7 +70,7 @@ begin
 end;
 
 
-function TNavMeshFloodPositioning.FindPositions(aCount,aMinSpacing: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
+function TNavMeshFloodPositioning.FindPositions(aCount,aMinSpacing: Word; var aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
 begin
   fSqrMinSpacing := sqr(aMinSpacing);
   SetLength(fPointArray, aCount);
