@@ -258,8 +258,8 @@ begin
     for PL := 0 to gHands.Count - 1 do
       if (gHands[Owner].Alliances[PL] = atEnemy) then
       begin
-        // Check if defensive units moved closer to enemy city and if so, then change status from defender to attacker
-        if (fCombatStatus[Owner,PL] = csDefending) then
+        // Check if units are closer to enemy city and if so, then change status to attacker
+        if (fCombatStatus[Owner,PL] in [csNeutral, csDefending]) then
         begin
           for K := 0 to gHands[Owner].UnitGroups.Count - 1 do
           begin
@@ -1225,7 +1225,7 @@ begin
   // Head
   Cnt := 0;
   for PL := 0 to gHands.Count-1 do
-    Cnt := Cnt + Byte((fPL2Alli[PL] <> PLAYER_NONE) AND gHands[PL].Enabled);
+    Cnt := Cnt + Byte(gHands[PL].Enabled);
   Result := Format('Supervisor (FFA = %d; Teams = %d); Players = %d',[Byte(fFFA), Length(fAlli2PL), Cnt]);
   // Diplomacy + combat status
   for Team := Low(fAlli2PL) to High(fAlli2PL) do
