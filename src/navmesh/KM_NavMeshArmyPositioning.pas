@@ -87,6 +87,7 @@ type
     BattleLines: TKMBattleLines;
     TargetPositions: TKMPointDirArray;
     TargetLines: TKMWordArray;
+    InCombatLine: TBooleanArray;
 
     constructor Create(aSorted: Boolean = False); override;
     destructor Destroy; override;
@@ -369,24 +370,9 @@ end;
 function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
 var
   K,L: Integer;
-  //PL: TKMHandID;
-  //aTargetGroups: TKMUnitGroupArray;
-  //aTargetHouses: TKMHouseArray;
 begin
   Result := False;
   fOwner := aOwners[0];
-
-
-  //DEBUG
-  {
-  PL := 1;
-  SetLength(aTargetGroups, gHands[PL].UnitGroups.Count);
-  SetLength(aTargetHouses, gHands[PL].Houses.Count);
-  for K := 0 to gHands[PL].UnitGroups.Count - 1 do
-    aTargetGroups[K] := gHands[PL].UnitGroups[K];
-  for K := 0 to gHands[PL].Houses.Count - 1 do
-    aTargetHouses[K] := gHands[PL].Houses[K];
-  //}
 
   if ForwardFF() then
   begin
@@ -415,9 +401,7 @@ begin
     BattleLines := fBackwardFF.FindTeamDefences(TargetEnemy, aOwners, fDefInfo, fQueueArray);
     Result := BattleLines.Count > 0;
     if Result then
-    begin
       AssignDefencePositions();
-    end;
   end;
 end;
 
@@ -457,7 +441,6 @@ procedure TArmyForwardFF.AssignDefencePositions();
     end;
   end;
 
-  //{
   function FindPositions(aLineIdx: Integer; aCnt: Word): TKMPointDirArray;
   var
     MinMark, Overflow, Idx, NearbyIdx: Word;
@@ -513,12 +496,11 @@ procedure TArmyForwardFF.AssignDefencePositions();
           end;
         end;
 
-        MinMark := MinMark - 1;
+        MinMark := MinMark - 2;
       end;
     end;
     SetLength(Result, Cnt);
   end;
-  //}
 
 var
   K, L, M, Idx, BestIdx: Integer;
@@ -582,7 +564,9 @@ begin
     PositionAssigned[K] := False;
   // Find positions in Combat line and assign them
   SetLength(TargetPositions, Ally.GroupsCount);   // GroupsNumber
+  SetLength(InCombatLine, Ally.GroupsCount);
   FillChar(TargetPositions[0],Length(TargetPositions) * SizeOf(TargetPositions[0]), #0);
+  FillChar(InCombatLine[0],Length(InCombatLine) * SizeOf(InCombatLine[0]), #0);
   BestIdx := 0;
   for K := 0 to BattleLines.Count - 1 do
     if (PosReq[K] > 0) then
@@ -596,6 +580,7 @@ begin
           begin
             GroupPoint := Ally.Groups[M].Position;
             Price := KMDistanceSqr(Positions[L].Loc, GroupPoint);
+            InCombatLine[M] := InCombatLine[M] OR (Price < 10*10);
             if (Price < BestPrice) then
             begin
               BestPrice := Price;
@@ -1047,11 +1032,13 @@ begin
       DrawPolygon(K, 50, COLOR_WHITE, IntToStr(fQueueArray[K].Distance));
     end;
   //}
-  //{
+  {
   Color := COLOR_WHITE;
   for K := 0 to Length(fQueueArray) - 1 do
     DrawPolygon(K, 1, Color, IntToStr(High(Word) - fDefInfo[K].Mark));
 
+    //}
+  {
   for K := 0 to fBestBattleLines.Count - 1 do
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
     begin
@@ -1061,7 +1048,7 @@ begin
     //}
 
 
-  //{
+  {
   if fDebugLines.Count > 0 then
   begin
     TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;

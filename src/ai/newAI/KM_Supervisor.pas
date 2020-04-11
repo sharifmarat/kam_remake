@@ -690,8 +690,7 @@ begin
         if (CG[L] <> nil) then
         begin
           Inc(Cnt);
-          //Inc(Ready, Byte((KMDistanceAbs(Ally.Groups[L].Position,TP[L].Loc) < 10) OR (fArmyPos.fDefInfo[ Ally.GroupsPoly[L] ].EnemyInfluence > 0)) );
-          Inc(Ready, Byte(CG[L].OnPlace OR (fArmyPos.fDefInfo[ Ally.GroupsPoly[L] ].EnemyInfluence > 0)) );
+          Inc(Ready, Byte(CG[L].OnPlace OR fArmyPos.InCombatLine[L] OR (fArmyPos.fDefInfo[ Ally.GroupsPoly[L] ].EnemyInfluence > 0)) );
           LineInCombat := LineInCombat OR (CG[L].CombatPhase = cpAttack);
         end;
       end;
