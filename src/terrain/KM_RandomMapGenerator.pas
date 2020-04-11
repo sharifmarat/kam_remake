@@ -74,12 +74,12 @@ type
     function RNDPointInCircle(aMin,aMax,aCenter: TKMPoint; aMaxRadius: Single): TKMPoint;
 
     procedure SnowMountains(var A: TKMByte2Array);
-    procedure NoGoZones(Locs: TKMPointArray; var TilesPartsArr: TTileParts);
+    procedure NoGoZones(var Locs: TKMPointArray; var TilesPartsArr: TTileParts);
   // Rules for extraction shapes from linear interpolation
     procedure Rules(const aTopLim,aTopLim2,aDownLim,aDownLim2: Integer; var aArr: TInteger2Array);
   // Procedures wich make composition of biomes
-    procedure CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array);
-    procedure CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi,aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array);
+    procedure CreateResources(var aLocs: TKMPointArray; var A: TKMByte2Array);
+    procedure CreateObstacles(var aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi,aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array);
     procedure CreateBiomes(var A: TKMByte2Array);
   // Fix of mountain to be able to construct mine there
     //procedure MineFix(const Position: TKMPoint; const MINESIZE, Resource: Byte; var Visited: TBoolean2Array; var A: TKMByte2Array);
@@ -93,7 +93,7 @@ type
     //procedure GenerateTilesOLD(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
     procedure GenerateTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
     procedure GenerateBasicTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
-    procedure GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
+    procedure GenerateHeight(var aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
     procedure GenerateObjects(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
     procedure MineFinalFixer(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
   public
@@ -1181,7 +1181,7 @@ end;
 // Note: add elements into class fRes: TBalancedResource1Array
 //   = array of shapes which represents resources (each shape have its own count of resources and points which were get from Voronoi diagram)
 //     Cellular automaton can change shapes so it is important to keep more points to secure that every shape will have its resources in GenerateTiles
-procedure TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array);
+procedure TKMRandomMapGenerator.CreateResources(var aLocs: TKMPointArray; var A: TKMByte2Array);
 const
   RESOURCES: array[0..4] of TBiomeType = (btIron,btGold,btStone,btCoal,btCoal);
   BASE_RES_RADIUS: array[0..4] of Single = (1.5,1.5,0.5,2,2);
@@ -1459,7 +1459,7 @@ end;
 // A = TKMByte2Array for obstacles
 // aVoronoi = Voronoi diagram (same diagram for resource generator and for obstacle generator => avoid to replace resources with obstacles)
 // aPointsArr = points of Voronoi diagram (easy way how to find each shape)
-procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi, aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array);
+procedure TKMRandomMapGenerator.CreateObstacles(var aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi, aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array);
 const
   OBST2BIOME: array[TObstacleType] of TBiomeType = (btSwamp,btWater,btWetland,btEgold,btEIron);
 var
@@ -2460,7 +2460,7 @@ end;
 // Find NoGoZones and create NO_WALK object there; NoGoZones are zones which are inaccessible by walking from potential storehouse location
 // Locs = locs of players positions
 // TilesPartsArr = tiles composition array
-procedure TKMRandomMapGenerator.NoGoZones(Locs: TKMPointArray; var TilesPartsArr: TTileParts);
+procedure TKMRandomMapGenerator.NoGoZones(var Locs: TKMPointArray; var TilesPartsArr: TTileParts);
 var
   Y1,X1,Y0,Y2,X0,X2, i, step: Integer;
   PathArr: TInteger2Array;
@@ -3114,7 +3114,7 @@ end;
 // TilesPartsArr = tiles composition array
 // A = array of biomes
 // TileTempl = array of biome-decomposition
-procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
+procedure TKMRandomMapGenerator.GenerateHeight(var aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
 
   procedure ScanObstacle(aStartPoint,aEndPoint,aInitDir: TKMPoint; var aPointsCnt: Integer; var aVisitArr: TBoolean2Array; var CopyA: TKMByte2Array; var aBorderPoints: TKMPointArray);
   var

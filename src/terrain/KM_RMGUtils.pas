@@ -241,7 +241,7 @@ TKMSharpShapeFixer = class(TKMInternalTileCounter)
     property Resources: TBalancedResource1Array read fResources write fResources;
 
     procedure ClearArray();
-    procedure AddResource(aOwner, aResource, aMinesCnt: Byte; aQuantity: Integer; aPoints: TKMPointArray);
+    procedure AddResource(aOwner, aResource, aMinesCnt: Byte; aQuantity: Integer; var aPoints: TKMPointArray);
   end;
 
 // Fill walkable areas with height (the impact of height is decreasing with increased distance)
@@ -265,7 +265,7 @@ TKMSharpShapeFixer = class(TKMInternalTileCounter)
   public
     constructor Create(var aBiomeArr: TKMByte2Array; var aHeightArr: TInteger2Array); reintroduce;
     destructor Destroy(); override;
-    procedure ExpandHeight(aInitPoints: TKMPointArray; aHeight: Integer; aDecreaseCoef: Single; aIgnoreTileTypes: Boolean = False);
+    procedure ExpandHeight(var aInitPoints: TKMPointArray; aHeight: Integer; aDecreaseCoef: Single; aIgnoreTileTypes: Boolean = False);
   end;
 
   // Get all points which are inside of specific shape (biome)
@@ -970,7 +970,7 @@ begin
 end;
 
 
-procedure TKMBalancedResources.AddResource(aOwner, aResource, aMinesCnt: Byte; aQuantity: Integer; aPoints: TKMPointArray);
+procedure TKMBalancedResources.AddResource(aOwner, aResource, aMinesCnt: Byte; aQuantity: Integer; var aPoints: TKMPointArray);
 begin
   if (fResCnt >= Length(fResources)) then
     SetLength(fResources, fResCnt + 24);
@@ -1071,7 +1071,7 @@ begin
   end;
 end;
 
-procedure TKMHeightFillWalkableAreas.ExpandHeight(aInitPoints: TKMPointArray; aHeight: Integer; aDecreaseCoef: Single; aIgnoreTileTypes: Boolean = False);
+procedure TKMHeightFillWalkableAreas.ExpandHeight(var aInitPoints: TKMPointArray; aHeight: Integer; aDecreaseCoef: Single; aIgnoreTileTypes: Boolean = False);
 var
   I,X,Y: SmallInt;
   Distance: Word;
