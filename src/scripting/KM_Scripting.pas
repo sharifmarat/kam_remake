@@ -554,6 +554,8 @@ begin
     RegisterMethodCheck(c, 'function MissionDifficulty: TKMMissionDifficulty');
     RegisterMethodCheck(c, 'function MissionDifficultyLevels: TKMMissionDifficultySet');
 
+    RegisterMethodCheck(c, 'function MissionVersion: UnicodeString');
+
     RegisterMethodCheck(c, 'function MarketFromWare(aMarketID: Integer): Integer');
     RegisterMethodCheck(c, 'function MarketLossFactor: Single');
     RegisterMethodCheck(c, 'function MarketOrderAmount(aMarketID: Integer): Integer');
@@ -1190,6 +1192,8 @@ begin
 
       RegisterMethod(@TKMScriptStates.MissionDifficulty,                        'MissionDifficulty');
       RegisterMethod(@TKMScriptStates.MissionDifficultyLevels,                  'MissionDifficultyLevels');
+
+      RegisterMethod(@TKMScriptStates.MissionVersion,                           'MissionVErsion');
 
       RegisterMethod(@TKMScriptStates.MarketFromWare,                           'MarketFromWare');
       RegisterMethod(@TKMScriptStates.MarketLossFactor,                         'MarketLossFactor');

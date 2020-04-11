@@ -720,11 +720,16 @@ begin
             and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_REPLAY, fMultiplayerPath))
             and FileExists(TKMSavesCollection.FullPath(SearchRec.Name, EXT_SAVE_BASE, fMultiplayerPath)) then
           begin
-            Save := TKMSaveInfo.Create(SearchRec.Name, fMultiplayerPath);
-            if SLOW_SAVE_SCAN then
-              Sleep(50);
-            fOnSaveAdd(Save);
-            fOnSaveAddDone(Self);
+            try
+              Save := TKMSaveInfo.Create(SearchRec.Name, fMultiplayerPath);
+              if SLOW_SAVE_SCAN then
+                Sleep(50);
+              fOnSaveAdd(Save);
+              fOnSaveAddDone(Self);
+            except
+              on E: Exception do
+                gLog.AddTime('Error loading save ''' + SearchRec.Name + ''''); //Just silently log an exception
+            end;
           end;
         until (FindNext(SearchRec) <> 0) or Terminated;
       finally

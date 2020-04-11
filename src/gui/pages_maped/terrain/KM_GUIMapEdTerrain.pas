@@ -117,6 +117,7 @@ begin
   if aHandled then Exit;
 
   fGuiBrushes.KeyDown(Key, Shift, aHandled);
+  fGuiTiles.KeyDown(Key, Shift, aHandled);
   fGuiObjects.KeyDown(Key, Shift, aHandled);
   fGuiSelection.KeyDown(Key, Shift, aHandled);
 end;

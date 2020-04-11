@@ -1,4 +1,4 @@
-TX_HOUSES_NAMES__29 = 0; //Sawmill
+﻿TX_HOUSES_NAMES__29 = 0; //Sawmill
 TX_HOUSES_NAMES_IRONSMITHY = 1; //Iron smithy
 TX_HOUSES_NAMES_WEAPONSMITHY = 2; //Weapon smithy
 TX_HOUSES_NAMES_COALMINE = 3; //Coal mine
@@ -964,6 +964,7 @@ TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_5 = 1133; //Sub-menu action 5
 TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_6 = 1134; //Sub-menu action 6
 TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_7 = 1135; //Sub-menu action 7
 TX_KEY_FUNC_MAPEDIT_OBJ_PALETTE = 1020; //Objects palette
+TX_KEY_FUNC_MAPEDIT_TILES_PALETTE = 1425; //Tiles palette
 TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR = 1021; //Universal eraser
 TX_KEY_FUNC_MAPEDIT_PAINT_BUCKET = 1136; //Paint bucket (change owner)
 TX_KEY_FUNC_MAPEDIT_HISTORY = 1408; //History
@@ -1187,6 +1188,7 @@ TX_MAPED_MISSION_PARAMETERS_BTN = 1145; //Mission|parameters
 TX_MAPED_MISSION_PARAMETERS_BTN_HINT = 1146; //Modify mission parameters
 TX_MAPED_MISSION_PARAMETERS_TITLE = 1147; //Mission parameters
 TX_MAPED_MISSION_AUTHOR = 1148; //Author
+TX_MAPED_MISSION_VERSION = 1427; //Version
 TX_MAPED_MISSION_SMALL_DESC = 1149; //Small description
 TX_MAPED_MISSION_BIG_DESC = 1150; //Long description
 TX_MAPED_MISSION_LIBX_TEXT_ID = 1151; //Libx text ID
@@ -1461,4 +1463,5 @@ TX_WORD_OVERLAY = 1422; //overlay
 TX_WORD_OBJECT = 1423; //object
 
 TX_GAME_FOLDER_PERMISSIONS_ERROR = 1424; //You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
+TX_MAPED_TERRAIN_TILES_PALETTE = 1426; //Tiles palette
 

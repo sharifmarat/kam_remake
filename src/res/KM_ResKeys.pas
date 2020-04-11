@@ -10,7 +10,7 @@ type
 
 const
   // Total number of different functions in the game that can have a shortcut
-  FUNC_COUNT = 100;
+  FUNC_COUNT = 101;
 
   // Load key IDs from inc file
   {$I KM_KeyIDs.inc}
@@ -86,6 +86,7 @@ const
     49, 50, 51, 52, 53, 54,                 // Map Editor sub-menus (1-6)
     81, 87, 69, 82, 84, 89, 85,             // Map Editor sub-menu actions (Q, W, E, R, T, Y, U)
     32,                                     // Map Editor show objects palette (Space)
+    73,                                     // Map Editor show tiles palette (I)
     46,                                     // Map Editor universal erasor (Delete)
     45,                                     // Map Editor paint bucket (Insert)
     72                                      // Map Editor history (H)
@@ -136,6 +137,7 @@ const
     TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_5, TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_6,   // Map Editor sub-menu actions
     TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_7,                                         // Map Editor sub-menu actions
     TX_KEY_FUNC_MAPEDIT_OBJ_PALETTE,                                              // Map Editor show objects palette
+    TX_KEY_FUNC_MAPEDIT_TILES_PALETTE,                                            // Map Editor show tiles palette
     TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR,                                              // Map Editor universal erasor
     TX_KEY_FUNC_MAPEDIT_PAINT_BUCKET,                                             // Map Editor paint bucket
     TX_KEY_FUNC_MAPEDIT_HISTORY                                                   // Map Editor history

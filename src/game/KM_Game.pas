@@ -2524,7 +2524,7 @@ begin
 
                             // Update our ware distributions from settings at the start of the game
                             if (fGameTick = 1)
-                              and IsWareDistributionStoredBetweenGames then
+                            and IsWareDistributionStoredBetweenGames then
                               fGameInputProcess.CmdWareDistribution(gicWareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
 
                             if (fGameTick mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
@@ -2601,7 +2601,6 @@ begin
                             fAdvanceFrame := False;
                             fIsPaused := True;
                           end;
-
                         finally
                           {$IFDEF PERFLOG}
                           gPerfLogs.SectionLeave(psGameTick);
