@@ -40,6 +40,7 @@ type
     fAlli2PL: TKMHandID2Arr;
     fCombatStatus: array[0..MAX_HANDS-1,0..MAX_HANDS-1] of TKMCombatStatus;
     fArmyPos: TArmyForwardFF;
+
     procedure UpdateFFA();
     function CheckDefenceStatus(aTeam: Byte; var E: TKMUnitGroupArray; var H: TKMHouseArray): TKMCombatStatus;
     procedure UpdateDefSupport(aTeamIdx: Byte);
@@ -68,13 +69,15 @@ type
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure UpdateAlliances();
+
+    function LogStatus(): UnicodeString;
     procedure Paint(aRect: TKMRect);
   end;
 
 
 implementation
 uses
-  Math,
+  SysUtils, Math,
   KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
   KM_AIFields, KM_NavMesh, KM_CommonUtils;
 
@@ -1157,6 +1160,46 @@ begin
         Result := True;
         Exit;
       end;
+end;
+
+
+
+function TKMSupervisor.LogStatus(): UnicodeString;
+const
+  COLOR_WHITE = '[$FFFFFF]';
+var
+  Team, K: Integer;
+  PL,PL2, Cnt: TKMHandID;
+  CombatStatusText: UnicodeString;
+begin
+  Result := '';
+  if not OVERLAY_AI_SUPERVISOR then
+    Exit;
+  // Head
+  Cnt := 0;
+  for PL := 0 to gHands.Count-1 do
+    Cnt := Cnt + Byte((fPL2Alli[PL] <> PLAYER_NONE) AND gHands[PL].Enabled);
+  Result := Format('Supervisor (FFA = %d; Teams = %d); Players = %d',[Byte(fFFA), Length(fAlli2PL), Cnt]);
+  // Diplomacy + combat status
+  for Team := Low(fAlli2PL) to High(fAlli2PL) do
+  begin
+    Result := Format('%s|  Team %d',[Result,Team]);
+    for K := Low(fAlli2PL[Team]) to High(fAlli2PL[Team]) do
+    begin
+      PL := Alli2PL[Team,K];
+      Result := Format('%s|    [$%s] Player %s %d (Enabled %d; Defeated: %d)',[Result,IntToHex(gHands[PL].FlagColor AND $FFFFFF,6),COLOR_WHITE,PL,Byte(gHands[PL].Enabled),Byte(gHands[PL].AI.HasLost)]);
+      for PL2 := Low(fCombatStatus[PL]) to High(fCombatStatus[PL]) do
+      begin
+        case fCombatStatus[PL,PL2] of
+          csNeutral: continue;
+          csDefending:            CombatStatusText := 'defending';
+          csAttackingCity:        CombatStatusText := 'attacking city';
+          csAttackingEverything:  CombatStatusText := 'attacking everything';
+        end;
+        Result := Format('%s [$%s] %s %s %d,',[Result,IntToHex(gHands[PL2].FlagColor AND $FFFFFF,6),CombatStatusText,COLOR_WHITE,PL2]);
+      end;
+    end;
+  end;
 end;
 
 
