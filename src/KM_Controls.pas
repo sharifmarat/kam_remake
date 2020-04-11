@@ -1,4 +1,4 @@
-unit KM_Controls;
+﻿unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -1671,6 +1671,7 @@ type
     fDragging: Boolean;
     fDragStartPos: TKMPoint;
     fBGImageType: TKMPopUpBGImageType;
+    fOnClose: TEvent;
     procedure UpdateSizes;
     procedure Close(Sender: TObject);
   protected
@@ -1698,6 +1699,8 @@ type
 
     procedure ControlMouseDown(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure ControlMouseUp(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
+
+    property OnClose: TEvent read fOnClose write fOnClose;
 
     procedure PaintPanel(aPaintLayer: Integer); override;
   end;
@@ -8295,6 +8298,9 @@ end;
 procedure TKMPopUpPanel.Close(Sender: TObject);
 begin
   Hide;
+
+  if Assigned(fOnClose) then
+    fOnClose;
 end;
 
 

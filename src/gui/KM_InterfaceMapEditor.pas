@@ -93,6 +93,7 @@ type
     procedure History_JumpTo(Sender: TObject);
     procedure History_ListChange(Sender: TObject);
     procedure History_MouseWheel(Sender: TObject; WheelSteps: Integer; var aHandled: Boolean);
+    procedure History_Close;
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
@@ -301,6 +302,7 @@ begin
   PopUp_History.DragEnabled := True;
   PopUp_History.DoSetVisible; // History is visible by default
   PopUp_History.OnMouseWheel := History_MouseWheel;
+  PopUp_History.OnClose := History_Close;
 
     ListBox_History := TKMListBox.Create(PopUp_History, 10, 10, PopUp_History.Width - 20, PopUp_History.Height - 50, fntMetal, bsGame);
     ListBox_History.AutoHideScrollBar := True;
@@ -419,6 +421,12 @@ procedure TKMapEdInterface.History_Click(Sender: TObject);
 begin
   PopUp_History.Visible := not PopUp_History.Visible;
 
+  Button_History.Down := PopUp_History.Visible;
+end;
+
+
+procedure TKMapEdInterface.History_Close;
+begin
   Button_History.Down := PopUp_History.Visible;
 end;
 
