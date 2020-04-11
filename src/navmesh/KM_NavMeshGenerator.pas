@@ -122,9 +122,11 @@ constructor TKMNavMeshGenerator.Create();
 begin
   fInnerPointStartIdx := 0;
   fInnerPointEndIdx := 0;
-  fBorderNodeCount := 0;
   fNodeCount := 0;
   fPolyCount := 0;
+  {$IFDEF DEBUG_NavMesh}
+  fBorderNodeCount := 0;
+  {$ENDIF}
   inherited Create;
 end;
 

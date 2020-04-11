@@ -72,7 +72,7 @@ type
     procedure MakeNewQueue(); override;
     function IsVisited(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
-    procedure InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray); override;
+    procedure InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray); override;
     function ForwardFF(): Boolean;
 
     procedure AssignDefencePositions();
@@ -87,11 +87,12 @@ type
     BattleLines: TKMBattleLines;
     TargetPositions: TKMPointDirArray;
     TargetLines: TKMWordArray;
+    InCombatLine: TBooleanArray;
 
     constructor Create(aSorted: Boolean = False); override;
     destructor Destroy; override;
 
-    function FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
+    function FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
     procedure Paint();
   end;
 
@@ -112,7 +113,7 @@ type
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx: Word); reintroduce;
-    //procedure InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray); reintroduce;
+    //procedure InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray); reintroduce;
     procedure InitQueue(var aEnemy: TKMAllianceInfo); reintroduce;
     procedure BackwardFlood(var aEnemy: TKMAllianceInfo);
     procedure EvaluateLine(const aIdx: Word);
@@ -234,7 +235,7 @@ begin
 end;
 
 
-procedure TArmyForwardFF.InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray);
+procedure TArmyForwardFF.InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray);
 const
   INIT_DISTANCE = 0;
 var
@@ -355,7 +356,7 @@ begin
     Exit;
   // Check enemy units
   GetInitPolygonsGroups(atEnemy,Enemy);
-  GetInitPolygonsHouses(atEnemy,Enemy);
+  //GetInitPolygonsHouses(atEnemy,Enemy); // Houses are overtaken from Supervisor
   if (Enemy.GroupsCount = 0) AND (Enemy.HousesCount = 0) then
     Exit;
   // Mark enemy units and houses
@@ -366,27 +367,22 @@ begin
 end;
 
 
-function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; aTargetGroups: TKMUnitGroupArray; aTargetHouses: TKMHouseArray): Boolean;
+function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
 var
   K,L: Integer;
-  //PL: TKMHandID;
-  //aTargetGroups: TKMUnitGroupArray;
-  //aTargetHouses: TKMHouseArray;
 begin
   Result := False;
   fOwner := aOwners[0];
 
-
-  //DEBUG
-  {
-  PL := 1;
-  SetLength(aTargetGroups, gHands[PL].UnitGroups.Count);
-  SetLength(aTargetHouses, gHands[PL].Houses.Count);
-  for K := 0 to gHands[PL].UnitGroups.Count - 1 do
-    aTargetGroups[K] := gHands[PL].UnitGroups[K];
-  for K := 0 to gHands[PL].Houses.Count - 1 do
-    aTargetHouses[K] := gHands[PL].Houses[K];
-  //}
+  Enemy.HousesCount := 0;
+  SetLength(Enemy.Houses, Length(aTargetHouses));
+  SetLength(Enemy.HousesPoly, Length(aTargetHouses));
+  for K := 0 to Length(aTargetHouses) - 1 do
+  begin
+    Enemy.Houses[Enemy.HousesCount] := aTargetHouses[K];
+    Enemy.HousesPoly[Enemy.HousesCount] := gAIFields.NavMesh.KMPoint2Polygon[ aTargetHouses[K].Entrance ];
+    Inc(Enemy.HousesCount);
+  end;
 
   if ForwardFF() then
   begin
@@ -405,8 +401,8 @@ begin
           Inc(TargetEnemy.GroupsCount);
         end;
     for K := 0 to Enemy.HousesCount - 1 do
-      for L := Low(aTargetHouses) to High(aTargetHouses) do
-        if (aTargetHouses[L] = Enemy.Houses[K]) then
+    //  for L := Low(aTargetHouses) to High(aTargetHouses) do
+    //    if (aTargetHouses[L] = Enemy.Houses[K]) then
         begin
           TargetEnemy.Houses[TargetEnemy.HousesCount] := Enemy.Houses[K];
           TargetEnemy.HousesPoly[TargetEnemy.HousesCount] := Enemy.HousesPoly[K];
@@ -415,9 +411,7 @@ begin
     BattleLines := fBackwardFF.FindTeamDefences(TargetEnemy, aOwners, fDefInfo, fQueueArray);
     Result := BattleLines.Count > 0;
     if Result then
-    begin
       AssignDefencePositions();
-    end;
   end;
 end;
 
@@ -457,7 +451,6 @@ procedure TArmyForwardFF.AssignDefencePositions();
     end;
   end;
 
-  //{
   function FindPositions(aLineIdx: Integer; aCnt: Word): TKMPointDirArray;
   var
     MinMark, Overflow, Idx, NearbyIdx: Word;
@@ -513,12 +506,11 @@ procedure TArmyForwardFF.AssignDefencePositions();
           end;
         end;
 
-        MinMark := MinMark - 1;
+        MinMark := MinMark - 2;
       end;
     end;
     SetLength(Result, Cnt);
   end;
-  //}
 
 var
   K, L, M, Idx, BestIdx: Integer;
@@ -582,7 +574,9 @@ begin
     PositionAssigned[K] := False;
   // Find positions in Combat line and assign them
   SetLength(TargetPositions, Ally.GroupsCount);   // GroupsNumber
+  SetLength(InCombatLine, Ally.GroupsCount);
   FillChar(TargetPositions[0],Length(TargetPositions) * SizeOf(TargetPositions[0]), #0);
+  FillChar(InCombatLine[0],Length(InCombatLine) * SizeOf(InCombatLine[0]), #0);
   BestIdx := 0;
   for K := 0 to BattleLines.Count - 1 do
     if (PosReq[K] > 0) then
@@ -596,6 +590,7 @@ begin
           begin
             GroupPoint := Ally.Groups[M].Position;
             Price := KMDistanceSqr(Positions[L].Loc, GroupPoint);
+            InCombatLine[M] := InCombatLine[M] OR (Price < 10*10);
             if (Price < BestPrice) then
             begin
               BestPrice := Price;
@@ -682,7 +677,7 @@ begin
 end;
 
 
-//procedure TArmyBackwardFF.InitQueue(const aMaxIdx: Integer; aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray);
+//procedure TArmyBackwardFF.InitQueue(const aMaxIdx: Integer; var aInitIdxArray: TKMWordArray; aInitPolyGroups: TKMUnitGroupArray);
 procedure TArmyBackwardFF.InitQueue(var aEnemy: TKMAllianceInfo);
   function FindPolyIdx(aPoly: Integer): Integer;
   var
@@ -1047,11 +1042,13 @@ begin
       DrawPolygon(K, 50, COLOR_WHITE, IntToStr(fQueueArray[K].Distance));
     end;
   //}
-  //{
+  {
   Color := COLOR_WHITE;
   for K := 0 to Length(fQueueArray) - 1 do
     DrawPolygon(K, 1, Color, IntToStr(High(Word) - fDefInfo[K].Mark));
 
+    //}
+  {
   for K := 0 to fBestBattleLines.Count - 1 do
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
     begin
@@ -1061,7 +1058,7 @@ begin
     //}
 
 
-  //{
+  {
   if fDebugLines.Count > 0 then
   begin
     TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;
