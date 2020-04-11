@@ -143,7 +143,8 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
     GT: TKMGroupType;
     Weight: Single;
   begin
-    Weight := (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * GA_PATHFINDING_AvoidEdges;
+    Weight := + gAIFields.Influences.ArmyTraffic[fOwner, aTo] * GA_PATHFINDING_AvoidTraffic
+              + (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * GA_PATHFINDING_AvoidEdges;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
       Weight := Weight + CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT] * GA_PATHFINDING_AvoidSpecEnemy;
     Result := Round(Weight);

@@ -86,7 +86,7 @@ begin
 
   // Scan current polygon and try find enemies presence
   for I := 0 to fHighEnemiesIdx do
-    if    (      fHouseInfluence AND (gAIFields.Influences.Ownership[  fEnemies[I], aPoint.Y, aPoint.X  ] > HOUSE_INFLUENCE_LIMIT)  )
+    if    (      fHouseInfluence AND (gAIFields.Influences.OwnPoint[ fEnemies[I], aPoint ] > HOUSE_INFLUENCE_LIMIT)  )
        OR (  not fHouseInfluence AND (gAIFields.Influences.PresenceAllGroups[  fEnemies[I], aIdx  ] > ARMY_INFLUENCE_LIMIT) ) then
     begin
       // Mark presence

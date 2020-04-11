@@ -629,7 +629,7 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
     Cnt := 0;
     for K := Low(aHA) to High(aHA) do
       if (aHA[K].HouseType in SCAN_HOUSES) OR
-        (gAIFields.Influences.Ownership[fOwner, aHA[K].Position.Y, aHA[K].Position.X] > 100) OR
+        (gAIFields.Influences.OwnPoint[fOwner, aHA[K].Position] > 100) OR
         (gAIFields.Influences.GetBestAllianceOwnership(fOwner, aHA[K].Position.X, aHA[K].Position.Y, atAlly) > 50) then
       begin
         aHA[Cnt] := aHA[K];
