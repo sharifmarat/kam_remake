@@ -296,7 +296,6 @@ begin
 
   // PopUp window will be reated last
   PopUp_History := TKMPopUpPanel.Create(Panel_Main, 270, 300, gResTexts[TX_MAPED_HISTORY_TITLE], pubgitScrollWCross, False, False);
-  PopUp_History.CapOffsetY := 15;
   PopUp_History.Left := Panel_Main.Width - PopUp_History.Width;
   PopUp_History.Top  := 0;
   PopUp_History.DragEnabled := True;

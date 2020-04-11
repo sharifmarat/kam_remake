@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -269,6 +269,7 @@ type
     procedure Unfocus;
     procedure AnchorsCenter;
     procedure AnchorsStretch;
+    procedure ToggleVisibility;
     function MasterParent: TKMPanel;
 
     procedure SetPosCenter;
@@ -342,6 +343,8 @@ type
     function FindFocusableControl(aFindNext: Boolean): TKMControl;
     procedure FocusNext;
     procedure ResetFocusedControlIndex;
+
+    property MasterControl: TKMMasterControl read fMasterControl;
 
     procedure PaintPanel(aPaintLayer: Integer); virtual;
 
@@ -2613,6 +2616,12 @@ procedure TKMControl.Show;
 begin
   if Parent <> nil then Parent.Show;
   Visible := True;
+end;
+
+
+procedure TKMControl.ToggleVisibility;
+begin
+  Visible := not Visible;
 end;
 
 
@@ -8238,6 +8247,8 @@ end;
 constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '';
                                  aImageType: TKMPopUpBGImageType = pubgitYellow; aShowBevel: Boolean = True;
                                  aShowShadeBevel: Boolean = True);
+var
+  imgWPad, imgTop: Integer;
 begin
   inherited Create(aParent, (aParent.Width div 2) - (aWidth div 2), (aParent.Height div 2) - (aHeight div 2), aWidth, aHeight);
 
@@ -8256,8 +8267,10 @@ begin
     pubgitYellow:  ImageBG := TKMImage.Create(Self, -25, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
     pubgitScrollWCross:
       begin
-        ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70,  409);
-        ImageClose := TKMImage.Create(Self, -20 + (aWidth + 40) - ((aWidth + 40) div 10) - 16, 24 - 50, 31, 30, 52);
+        imgTop := -(aHeight div 10) - 10;
+        imgWPad := (aWidth div 30) + 5;
+        ImageBG := TKMImage.Create(Self, -imgWPad, imgTop, aWidth + 2 * imgWPad, aHeight + (aHeight div 7) + 20,  409);
+        ImageClose := TKMImage.Create(Self, -imgWPad + (aWidth + 2*imgWPad) - ((aWidth + 2*imgWPad) div 10) - 16, 24 + imgTop, 31, 30, 52);
         ImageClose.Anchors := [anTop, anRight];
         ImageClose.Hint := gResTexts[TX_MSG_CLOSE_HINT];
         ImageClose.OnClick := Close;
@@ -8346,7 +8359,7 @@ procedure TKMPopUpPanel.PaintPanel(aPaintLayer: Integer);
 begin
   inherited;
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop - 30 + CapOffsetY, Width, Caption, Font, taCenter, FontColor);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop - (Height div 20) + CapOffsetY, Width, Caption, Font, taCenter, FontColor);
 end;
 
 

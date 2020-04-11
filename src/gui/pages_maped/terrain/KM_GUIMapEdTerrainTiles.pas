@@ -2,16 +2,18 @@ unit KM_GUIMapEdTerrainTiles;
 {$I KaM_Remake.inc}
 interface
 uses
-   Math, SysUtils,
-   KM_InterfaceDefaults,
-   KM_Controls, KM_Defaults, KM_Pics;
+  {$IFDEF MSWindows} Windows, {$ENDIF}
+  {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
+  Classes, Math, SysUtils,
+  KM_InterfaceDefaults,
+  KM_Controls, KM_Defaults, KM_Pics;
 
 
 const
   //Tile table sizes
   MAPED_TILES_X = 6;
   MAPED_TILES_Y = 8;
-
+  TABLE_ELEMS = 376;
 
 type
   TKMMapEdTerrainTiles = class (TKMMapEdSubMenuPage)
@@ -23,15 +25,24 @@ type
     procedure TilesRefresh(Sender: TObject);
     function GetTileTexIDFromTag(aTag: Byte; aScrollPosition: Integer = -1): Word;
     function IsTileVisible(aTextId: Integer): Boolean;
+    procedure TilesPalette_CloseUpd(Sender: TObject);
   protected
     Panel_Tiles: TKMPanel;
-    TilesTable: array [0 .. MAPED_TILES_X * MAPED_TILES_Y - 1] of TKMButtonFlat; //how many are visible?
-    TilesScroll: TKMScrollBar;
-    TilesRandom: TKMCheckBox;
-    TilesMagicWater, TilesEyedropper, TilesRotate: TKMButtonFlat;
-    NumEdit_SetTileNumber: TKMNumericEdit;
+      TilesTable: array [0..MAPED_TILES_X * MAPED_TILES_Y - 1] of TKMButtonFlat; //how many are visible?
+      TilesScroll: TKMScrollBar;
+      TilesRandom: TKMCheckBox;
+      TilesMagicWater, TilesEyedropper, TilesRotate: TKMButtonFlat;
+      NumEdit_SetTileNumber: TKMNumericEdit;
+    TilesPalette_Button:  TKMButtonFlat;
+    Panel_TilesPalettePopup: TKMPopUpPanel;
+      Panel_TilesPalette: TKMScrollPanel;
+        TilesPaletteTbl: array [0..TABLE_ELEMS - 1] of TKMButtonFlat;
+      Button_PaletteClose:  TKMButton;
+
   public
     constructor Create(aParent: TKMPanel);
+
+    procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 
     procedure TilesTableSetTileTexId(aTexId: Integer);
     procedure Show;
@@ -48,7 +59,7 @@ uses
   KM_CommonUtils, KM_Utils;
 
 const
-  TABLE_ELEMS = 376;
+  PAL_1ST_ROW = 29; // Ends at the end of stones
   //Tiles table was initially made by JBSnorro, thanks to him :)
   MapEdTileRemap: array [0..TABLE_ELEMS - 1] of Integer = (
      1,73,74,75, 37, 21, 22, 38, 33, 34, 32,181,173,177,129,130,131,132,133,  0,274,270,269,267,268,271,272,273,303, 49,193,197,217,225,  0,  0, 45, 24, 13, 23,208,224, 26,216,  0,  0,  0,
@@ -70,13 +81,14 @@ constructor TKMMapEdTerrainTiles.Create(aParent: TKMPanel);
 const
   BTN_SIZE_S = 34;
   BTN_SIZE = 36;
+  PAL_S = 34;
 
   TB_TLS_M = 9;
   TB_TLS_R = 9;
   TB_TLS_S = 13;
   TB_TLS_T = 13;
 var
-  J,K: Integer;
+  J,K,X,Y,row,TexID,palH: Integer;
 begin
   inherited Create;
 
@@ -124,6 +136,38 @@ begin
       TilesTable[J * MAPED_TILES_X + K].OnClick := TilesChange;
       TilesTable[J * MAPED_TILES_X + K].OnMouseWheel := TilesScroll.MouseWheel;
     end;
+
+  TilesPalette_Button := TKMButtonFlat.Create(Panel_Tiles, 9, 23 + BTN_SIZE + 28 + 4 + MAPED_TILES_Y * 32 + 25, Panel_Tiles.Width - 9, 21, 0);
+  TilesPalette_Button.Anchors := [anLeft, anTop, anRight];
+  TilesPalette_Button.Caption := gResTexts[TX_MAPED_TERRAIN_TILES_PALETTE];
+  TilesPalette_Button.CapOffsetY := -11;
+  TilesPalette_Button.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_TILES_PALETTE, SC_MAPEDIT_TILES_PALETTE);
+  TilesPalette_Button.OnClick := TilesPalette_CloseUpd;
+
+  palH := 2*MAPED_TILES_Y*PAL_S + 15;
+
+  Panel_TilesPalettePopup := TKMPopUpPanel.Create(aParent.MasterControl.MasterPanel, 1000, palH + 10, 'Tiles palette', pubgitScrollWCross, True, False);
+  Panel_TilesPalettePopup.DragEnabled := True;
+  Panel_TilesPalettePopup.CapOffsetY := -15;
+    Panel_TilesPalette := TKMScrollPanel.Create(Panel_TilesPalettePopup, 5, 5, 990, palH, [saHorizontal, saVertical], bsGame, ssGame);
+      row := TABLE_ELEMS div MAPED_TILES_Y;
+      for J := 0 to MAPED_TILES_Y - 1 do
+        for K := 0 to row - 1 do
+        begin
+          X := ((K mod PAL_1ST_ROW) + (K div PAL_1ST_ROW)*((2*PAL_1ST_ROW - row) div 2)) * PAL_S;
+          Y := (J + MAPED_TILES_Y*(K div PAL_1ST_ROW)) * PAL_S + 5*(K div PAL_1ST_ROW);
+          TexID := MapEdTileRemap[J * row + K];
+          TilesPaletteTbl[J * row + K] := TKMButtonFlat.Create(Panel_TilesPalette, X, Y, 32, 32, TexID, rxTiles);
+          TilesPaletteTbl[J * row + K].Tag :=  J * row + K; //Store ID
+          TilesPaletteTbl[J * row + K].Clickable := TexID <> 0;
+          TilesPaletteTbl[J * row + K].HideHighlight := TexID = 0;
+          TilesPaletteTbl[J * row + K].OnClick := TilesChange;
+          if TexID = 0 then
+            TilesPaletteTbl[J * row + K].Hint := ''
+          else
+            //Show 0..N-1 to be consistent with objects and script commands like States.MapTileObject
+            TilesPaletteTbl[J * row + K].Hint := IntToStr(TexID - 1);
+        end;
 
   fSubMenuActionsEvents[0] := TilesChange;
   fSubMenuActionsEvents[1] := TilesChange;
@@ -193,6 +237,12 @@ begin
 end;
 
 
+procedure TKMMapEdTerrainTiles.TilesPalette_CloseUpd(Sender: TObject);
+begin
+  Panel_TilesPalettePopup.ToggleVisibility;
+end;
+
+
 function TKMMapEdTerrainTiles.IsTileVisible(aTextId: Integer): Boolean;
 var
   I,K,RowStart: Integer;
@@ -209,6 +259,24 @@ begin
       end;
   end;
 
+end;
+
+
+procedure TKMMapEdTerrainTiles.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+begin
+  if aHandled then Exit;
+
+  if (Key = VK_ESCAPE) and Panel_TilesPalettePopup.Visible then
+  begin
+    Panel_TilesPalettePopup.Hide;
+    aHandled := True;
+  end
+  else
+  if Key = gResKeys[SC_MAPEDIT_TILES_PALETTE].Key then
+  begin
+    Panel_TilesPalettePopup.Show;
+    aHandled := True;
+  end;
 end;
 
 
@@ -275,7 +343,7 @@ end;
 procedure TKMMapEdTerrainTiles.TilesRefresh(Sender: TObject);
 var
   I,K,L: Integer;
-  TileTexID: Integer;
+  TileTexID, row: Integer;
 begin
   TilesRandom.Checked := (gGameCursor.MapEdDir = 4);
   TilesEyedropper.Down := gGameCursor.Mode = cmEyedropper;
@@ -298,6 +366,11 @@ begin
     //If cursor has a tile then make sure its properly selected in table as well
     TilesTable[L].Down := (gGameCursor.Mode in [cmTiles, cmEyedropper]) and (gGameCursor.Tag1 = TileTexID - 1);
   end;
+
+  row := TABLE_ELEMS div MAPED_TILES_Y;
+  for I := 0 to MAPED_TILES_Y - 1 do
+    for K := 0 to row - 1 do
+      TilesPaletteTbl[I * row + K].Down := (gGameCursor.Mode in [cmTiles, cmEyedropper]) and (gGameCursor.Tag1 = MapEdTileRemap[I * row + K] - 1)
 end;
 
 
