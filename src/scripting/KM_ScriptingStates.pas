@@ -142,6 +142,8 @@ type
     function MissionDifficulty: TKMMissionDifficulty;
     function MissionDifficultyLevels: TKMMissionDifficultySet;
 
+    function MissionVersion: UnicodeString;
+
     function MarketFromWare(aMarketID: Integer): Integer;
     function MarketLossFactor: Single;
     function MarketOrderAmount(aMarketID: Integer): Integer;
@@ -2881,6 +2883,19 @@ function TKMScriptStates.MissionDifficultyLevels: TKMMissionDifficultySet;
 begin
   try
     Result := gGame.MapTxtInfo.DifficultyLevels;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 11300
+//* Returns mission version
+function TKMScriptStates.MissionVersion: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.Version;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

@@ -35,7 +35,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     function GetBlockColorSelection: Boolean;
   public
-    Author, BigDesc, SmallDesc: UnicodeString;
+    Author, Version, BigDesc, SmallDesc: UnicodeString;
     SmallDescLibx, BigDescLibx: Integer;
     IsCoop: Boolean; //Some multiplayer missions are defined as coop
     IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
@@ -870,6 +870,16 @@ begin
                        + WrapColor('[' + fCustomScriptParams[CSP].Data + ']', icOrange) + '||';
 
   Result := Result + TxtInfo.BigDesc;
+
+  // Add 1 new line for author & version section
+  if (TxtInfo.Author <> '') or (TxtInfo.Version <> '') and (Result <> '') then
+    Result := Result + '|';
+
+  if (TxtInfo.Author <> '') then
+    Result := Result + Format('|[$00B0FF]%s:[] %s', [gResTexts[TX_MAPED_MISSION_AUTHOR], TxtInfo.Author]);
+
+  if TxtInfo.Version <> '' then
+    Result := Result + Format('|[$7070FF]%s:[] %s', [gResTexts[TX_MAPED_MISSION_VERSION], TxtInfo.Version]);
 end;
 
 
@@ -936,6 +946,9 @@ begin
 
   if Author <> '' then
     WriteLine('Author', Author);
+
+  if Author <> '' then
+    WriteLine('Version', Version);
 
   if SmallDescLibx <> -1 then
     WriteLine('SmallDescLIBX', IntToStr(SmallDescLibx))
@@ -1018,6 +1031,8 @@ begin
       ReadLn(ft, St);
       if SameText(St, 'Author') then
         Readln(ft, Author);
+      if SameText(St, 'Version') then
+        Readln(ft, Version);
       if SameText(St, 'BigDesc') then
         Readln(ft, BigDesc);
 
@@ -1115,7 +1130,7 @@ function TKMMapTxtInfo.IsEmpty: Boolean;
 begin
   Result := not (IsCoop or IsSpecial or IsPlayableAsSP or IsRMG
             or BlockTeamSelection or BlockColorSelection or BlockPeacetime or BlockFullMapPreview
-            or (Author <> '')
+            or (Author <> '') or (Version <> '')
             or (SmallDesc <> '') or IsSmallDescLibxSet
             or (BigDesc <> '') or IsBigDescLibxSet
             or HasDifficultyLevels);
@@ -1145,6 +1160,7 @@ begin
   BlockFullMapPreview := False;
   DifficultyLevels := [];
   Author := '';
+  Version := '';
   SmallDesc := '';
   SmallDescLibx := -1;
   BigDesc := '';

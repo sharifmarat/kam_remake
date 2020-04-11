@@ -27,6 +27,7 @@ type
       PopUp_MissionParams: TKMPopUpPanel;
         Panel_MissionParams: TKMPanel;
           Edit_Author: TKMEdit;
+          Edit_Version: TKMEdit;
           Radio_SmallDescType: TKMRadioGroup;
           Edit_SmallDesc: TKMEdit;
           NumEdit_SmallDesc: TKMNumericEdit;
@@ -96,8 +97,14 @@ begin
 
     Top := 0;
     TKMLabel.Create(Panel_MissionParams, 0, Top, gResTexts[TX_MAPED_MISSION_AUTHOR], fntOutline, taLeft);
+    TKMLabel.Create(Panel_MissionParams, (Panel_MissionParams.Width div 2) + 5, Top, gResTexts[TX_MAPED_MISSION_VERSION], fntOutline, taLeft);
     Inc(Top, 20);
-    Edit_Author := TKMEdit.Create(Panel_MissionParams, 0, Top, Panel_MissionParams.Width, 20, fntArial);
+    Edit_Author := TKMEdit.Create(Panel_MissionParams, 0, Top, (Panel_MissionParams.Width div 2) - 5, 20, fntArial);
+    Edit_Author.ShowColors := True;
+    Edit_Version := TKMEdit.Create(Panel_MissionParams, (Panel_MissionParams.Width div 2) + 5, Top,
+                                   (Panel_MissionParams.Width div 2) - 5, 20, fntArial);
+    Edit_Version.ShowColors := True;
+
     Inc(Top, 30);
     TKMLabel.Create(Panel_MissionParams, 0, Top, gResTexts[TX_MAPED_MISSION_SMALL_DESC], fntOutline, taLeft);
     Inc(Top, 20);
@@ -109,6 +116,7 @@ begin
     Radio_SmallDescType.OnChange := RadioMissionDesc_Changed;
 
     Edit_SmallDesc := TKMEdit.Create(Panel_MissionParams, RADIO_W + 20, Top, Panel_MissionParams.Width - RADIO_W - 25, 20, fntGame);
+    Edit_SmallDesc.ShowColors := True;
     NumEdit_SmallDesc := TKMNumericEdit.Create(Panel_MissionParams, RADIO_W + 20, Top, -1, 999, fntGrey);
 
     Inc(Top, 55);
@@ -179,6 +187,7 @@ begin
     Edit_BigDesc := TKMEdit.Create(Panel_MissionParams, RADIO_W + 20, Top, Panel_MissionParams.Width - RADIO_W - 25, 20, fntGame);
     Edit_BigDesc.MaxLen := 4096;
     Edit_BigDesc.AllowedChars := acAll;
+    Edit_BigDesc.ShowColors := True;
     NumEdit_BigDesc := TKMNumericEdit.Create(Panel_MissionParams, RADIO_W + 20, Top, -1, 999, fntGrey);
 
     Inc(Top, 55);
@@ -188,6 +197,7 @@ begin
     Memo_BigDesc.ScrollDown := True;
 
     Edit_Author.OnChange                 := UpdateMapTxtInfo;
+    Edit_Version.OnChange                := UpdateMapTxtInfo;
     Edit_SmallDesc.OnChange              := UpdateMapTxtInfo;
     NumEdit_SmallDesc.OnChange           := UpdateMapTxtInfo;
     Edit_BigDesc.OnChange                := UpdateMapTxtInfo;
@@ -354,7 +364,8 @@ begin
   end;
 
   Memo_BigDesc.Text := Edit_BigDesc.Text;
-  gGame.MapTxtInfo.Author        := Edit_Author.Text;
+  gGame.MapTxtInfo.Author := Edit_Author.Text;
+  gGame.MapTxtInfo.Version := Edit_Version.Text;
 
   case Radio_SmallDescType.ItemIndex of
     0:  begin
@@ -401,6 +412,7 @@ var
   MD: TKMMissionDifficulty;
 begin
   Edit_Author.Text := gGame.MapTxtInfo.Author;
+  Edit_Version.Text := gGame.MapTxtInfo.Version;
 
   if gGame.MapTxtInfo.IsSmallDescLibxSet then
     Radio_SmallDescType.ItemIndex := 1
