@@ -877,6 +877,11 @@ begin
     begin
       if (gAIFields.Influences.AvoidBuilding[Y, X] = AVOID_BUILDING_HOUSE_INSIDE_LOCK) then
         Exit;
+      if (aHT = htWatchTower) then
+      begin
+        RightSideFree := RightSideFree AND ((Dir <> dirE) OR CanBeRoad(X,Y));
+        LeftSideFree := LeftSideFree AND ((Dir <> dirW) OR CanBeRoad(X,Y));
+      end;
     end
     // For "normal" houses there must be at least 1 side also free (on the left or right from house plan)
     else if (Dir = dirE) then // Direction east
