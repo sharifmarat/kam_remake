@@ -131,11 +131,11 @@ begin
       CheckBox_RMG := TKMCheckBox.Create(Panel_CheckBoxes, 0, 60, CHK_W, 20, gResTexts[TX_LOBBY_MAP_RANDOM], fntMetal);
       CheckBox_RMG.Hint := gResTexts[TX_LOBBY_MAP_RANDOM_HINT];
 
-      CheckBox_BlockTeamSelection := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 0, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_TEAM_SEL],  fntMetal);
-      CheckBox_BlockTeamSelection.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_TEAM_SEL_HINT];
-
-      CheckBox_BlockColorSelection := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 20, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_COLOR_SEL], fntMetal);
+      CheckBox_BlockColorSelection := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 0, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_COLOR_SEL], fntMetal);
       CheckBox_BlockColorSelection.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_COLOR_SEL_HINT];
+
+      CheckBox_BlockTeamSelection := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 20, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_TEAM_SEL],  fntMetal);
+      CheckBox_BlockTeamSelection.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_TEAM_SEL_HINT];
 
       CheckBox_BlockPeacetime := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 40, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_PT], fntMetal);
       CheckBox_BlockPeacetime.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_PT_HINT];
