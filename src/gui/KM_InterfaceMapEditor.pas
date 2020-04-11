@@ -204,7 +204,7 @@ begin
 
   Button_History := TKMButtonFlat.Create(Panel_Main, Button_PlayerSelect[5].Right + 3, 190, 31, 32, 677);
   Button_History.TexOffsetX := -1;
-  Button_History.Down := False;
+  Button_History.Down := True; // History is opened by default
   Button_History.OnClick := History_Click;
   Button_History.Hint := GetHintWHotKey(TX_MAPED_HISTORY_HINT, SC_MAPEDIT_HISTORY);
 
