@@ -1356,7 +1356,7 @@ end;
 
 function TKMGame.GetMissionFile: UnicodeString;
 begin
-  if not IsMultiPlayerOrSpec then
+  if not IsMultiplayer then
     Result := fMissionFileSP //In SP we store it
   else
     //In MP we can't store it since it will be MapsMP or MapsDL on different clients
