@@ -17,40 +17,41 @@ type
                        pmAvoidSpecEnemy // Try avoid anti type units (cav will keep distance form spears etc)
                      );
 
-  TNavMeshNode = class
-    Idx,Estim: Word; // Index of navMeshNode in navmesh, estimated cost from navMeshNode to end
-    CostTo: Cardinal; // Cost to Idx navMeshNode
-    Point: TKMPoint; // Point in navMeshNode of navmesh (each triangle [created by points in navMeshNode] have its point -> multiple poits will create path)
-    Parent: TNavMeshNode; // Parent navMeshNode
+  TNavMeshNode = record
+    Idx: Word; // Index of NavMeshNode in NavMesh
+    Estim: Word; // Estimated cost from NavMeshNode to fEnd
+    CostTo: Cardinal; // Cost from fStart to Idx NavMeshNode
+    RouteID: Cardinal; // ID of the route
+    Point: TKMPoint; // Point in NavMeshNode of NavMesh (each triangle [created by points in NavMeshNode] have its point -> multiple poits will create path)
+    Parent: Pointer; // Parent NavMeshNode
   end;
+  PNavMeshNode = ^TNavMeshNode;
 
   TNavMeshPathFinding = class
   private
     fStart, fEnd: Word;
     fHeap: TBinaryHeap;
-    fMinN: TNavMeshNode;
+    fMinN: PNavMeshNode;
     fUsedNodes: array of TNavMeshNode;
+    fRouteID: Cardinal;
 
     fOwner: TKMHandID;
     fGroupType: TKMGroupType;
     fMode: TPathfindingMode;
 
     function HeapCmp(A,B: Pointer): Boolean;
-    procedure Flush(aDestroy: Boolean = False);
   protected
-    function GetNodeAt(aIdx: Word): TNavMeshNode;
     function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Cardinal;
-    function EstimateToFinish(aIdx: Word): Word;
 
     function InitPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
     function InitRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
     function MakeRoute(): Boolean;
+    procedure GetRouteInfo(out aDistance, aCount: Word; out aLastN: PNavMeshNode);
     procedure ReturnPolygonRoute(out aDistance: Word; out aRoutePolygonArray: TKMWordArray);
     procedure ReturnRoute(out aDistance: Word; out aRoutePointArray: TKMPointArray);
   public
     constructor Create();
-    destructor Destroy(); override;
-
+    destructor Destroy; override;
 
     //function WalkableDistance(aStart, aEnd: TKMPoint; out aDistance: Word): Boolean;
     function ShortestPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
@@ -69,14 +70,13 @@ uses
 constructor TNavMeshPathFinding.Create;
 begin
   inherited;
-  fHeap := TBinaryHeap.Create(High(Word));
+  fHeap := TBinaryHeap.Create(MAX_POLYGONS);
   fHeap.Cmp := HeapCmp;
 end;
 
 
 destructor TNavMeshPathFinding.Destroy;
 begin
-  Flush(true);
   fHeap.Free;
   inherited;
 end;
@@ -84,39 +84,7 @@ end;
 
 function TNavMeshPathFinding.HeapCmp(A,B: Pointer): Boolean;
 begin
-  if (A = nil) then
-    Result := True
-  else
-    Result := (B = nil) OR (TNavMeshNode(A).Estim + TNavMeshNode(A).CostTo < TNavMeshNode(B).Estim + TNavMeshNode(B).CostTo);
-end;
-
-
-procedure TNavMeshPathFinding.Flush(aDestroy: Boolean = False);
-var
-  I: Integer;
-begin
-  if not aDestroy AND (Length(fUsedNodes) <> gAIFields.NavMesh.PolygonsCnt) then
-    SetLength(fUsedNodes, gAIFields.NavMesh.PolygonsCnt);
-  for I := Length(fUsedNodes)-1 downto 0 do
-  begin
-    fUsedNodes[I].Free;
-    fUsedNodes[I] := nil;
-  end;
-end;
-
-
-function TNavMeshPathFinding.GetNodeAt(aIdx: Word): TNavMeshNode;
-begin
-  if (fUsedNodes[aIdx] = nil) then
-  begin
-    fUsedNodes[aIdx] := TNavMeshNode.Create;
-    fUsedNodes[aIdx].Idx := aIdx;
-    fUsedNodes[aIdx].Estim := EstimateToFinish(aIdx);
-    //fUsedNodes[aIdx].CostTo := 0;
-    //fUsedNodes[aIdx].Parent := nil;
-    //fUsedNodes[aIdx].Point := TKMPOINT_ZERO;
-  end;
-  Result := fUsedNodes[aIdx];
+  Result := (A = nil) OR (B = nil) OR (PNavMeshNode(A).Estim + PNavMeshNode(A).CostTo < PNavMeshNode(B).Estim + PNavMeshNode(B).CostTo);
 end;
 
 
@@ -130,7 +98,7 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
               );
   end;
 
-  function AvoidSpecEnemy(): Word;
+  function AvoidSpecEnemy(): Cardinal;
   const
     CHANCES: array[TKMGroupType] of array[TKMGroupType] of Single = (
     // gtMelee gtAntiHorse gtRanged gtMounted
@@ -143,142 +111,144 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
     GT: TKMGroupType;
     Weight: Single;
   begin
-    Weight := + gAIFields.Influences.ArmyTraffic[fOwner, aTo] * GA_PATHFINDING_AvoidTraffic
+    Weight := //+ gAIFields.Influences.ArmyTraffic[fOwner, aTo] * GA_PATHFINDING_AvoidTraffic
               + (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * GA_PATHFINDING_AvoidEdges;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
       Weight := Weight + CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT] * GA_PATHFINDING_AvoidSpecEnemy;
     Result := Round(Weight);
   end;
 
-var
-  DX,DY: Word;
-  Output: Cardinal;
 begin
-  Output := 0;
   //Do not add extra cost if the tile is the target, as it can cause a longer route to be chosen
-  if (aTo <> fEnd) then
-  begin
-    DX := Abs(aSPoint.X - aEPoint.X);
-    DY := Abs(aSPoint.Y - aEPoint.Y);
-    if (DX > DY) then
-      Output := (DX * 10) + (DY * 4)
-    else
-      Output := (DY * 10) + (DX * 4);
-    end;
-  case fMode of
-    pmShortestWay: begin end;
-    pmAvoidTraffic: Output := Output + AvoidTraffic();
-    pmAvoidSpecEnemy: Output := Output + AvoidSpecEnemy();
-  end;
-  Result := Output;
-end;
-
-
-function TNavMeshPathFinding.EstimateToFinish(aIdx: Word): Word;
-var
-  DX, DY, Output: Word;
-  SPoint, EPoint: TKMPoint;
-begin
-  SPoint := gAIFields.NavMesh.Polygons[aIdx].CenterPoint;
-  EPoint := gAIFields.NavMesh.Polygons[fEnd].CenterPoint;
-  // Output := KMDistanceAbs(SPoint, EPoint); // in test map it throws +1 cycle (109 vs 110 interactions)
-  DX := Abs(SPoint.X - EPoint.X);
-  DY := Abs(SPoint.Y - EPoint.Y);
-  if (DX > DY) then
-    Output := (DX * 10) + (DY * 4)
-  else
-    Output := (DY * 10) + (DX * 4);
-  Result := Output;
+  Result := Byte(aTo <> fEnd) * KMDistanceAbs(aSPoint, aEPoint);
+  if      (fMode = pmAvoidTraffic  ) then Inc(Result, AvoidTraffic())
+  else if (fMode = pmAvoidSpecEnemy) then Inc(Result, AvoidSpecEnemy());
+  //else if (fMode = pmShortestWay   ) then begin end;
 end;
 
 
 function TNavMeshPathFinding.MakeRoute(): Boolean;
+
+	function EstimateToFinish(aIdx: Word): Word;
+	begin
+    with gAIFields.NavMesh do
+	    Result := KMDistanceAbs(Polygons[aIdx].CenterPoint, Polygons[fEnd].CenterPoint);
+	end;
+
 const
-  c_closed = 65535; // High(Word)
+  C_CLOSED = 65535; // High(Word)
 var
-  N: TNavMeshNode;
-  I: Integer;
+  N: PNavMeshNode;
+  K: Integer;
   Idx: Word;
   NewCost: Cardinal;
-  POMPoint: TKMPoint;
 begin
-  Flush();
+  // Check length
+  if (Length(fUsedNodes) <> gAIFields.NavMesh.PolygonsCnt) then
+  begin
+    fRouteID := High(fRouteID);
+    SetLength(fUsedNodes, gAIFields.NavMesh.PolygonsCnt);
+    for K := Low(fUsedNodes) to High(fUsedNodes) do
+      fUsedNodes[K].Idx := K;
+  end;
+  // Update current route ID
+  if (fRouteID = High(fRouteID)) then
+  begin
+    fRouteID := 0;
+    for K := Low(fUsedNodes) to High(fUsedNodes) do
+      fUsedNodes[K].RouteID := 0;
+  end;
+  Inc(fRouteID);
 
   //Initialize first element
-  N := GetNodeAt(fStart);
+  N := @fUsedNodes[fStart];
+  N.RouteID := fRouteID;
   N.Parent := nil;
+  N.Point := gAIFields.NavMesh.Polygons[fStart].CenterPoint;
+  N.CostTo := 0;
+  N.Estim := EstimateToFinish(N.Idx);
 
   //Seed
   fMinN := N;
-  while (fMinN <> nil) and (fMinN.Idx <> fEnd) do
+  while (fMinN <> nil) AND (fMinN.Idx <> fEnd) do
   begin
-    fMinN.Estim := c_closed;
+    fMinN.Estim := C_CLOSED;
     //Check all surrounding polygons and issue costs to them
-    for I := 0 to gAIFields.NavMesh.Polygons[fMinN.Idx].NearbyCount-1 do
-    begin
-      Idx := gAIFields.NavMesh.Polygons[ fMinN.Idx ].Nearby[I];
-      // New polygon
-      if (fUsedNodes[Idx] = nil) then
+    with gAIFields.NavMesh.Polygons[fMinN.Idx] do
+      for K := 0 to NearbyCount - 1 do
       begin
-        N := GetNodeAt(Idx);
-        N.Parent := fMinN;
-        N.Point := gAIFields.NavMesh.Polygons[ fMinN.Idx ].NearbyPoints[I];
-        N.CostTo := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, N.Point);
-        fHeap.Push(N);
-      end
-      // Visited polygon (recalculate estimation and actualize better result)
-      else if (fUsedNodes[Idx].Estim <> c_closed) then
-      begin
-        POMPoint := gAIFields.NavMesh.Polygons[ fMinN.Idx ].NearbyPoints[I];
-        NewCost := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, POMPoint);
-        if (NewCost < fUsedNodes[Idx].CostTo) then
+        Idx := Nearby[K];
+        // New polygon
+        if (fUsedNodes[Idx].RouteID <> fRouteID) then
         begin
-          fUsedNodes[Idx].Parent := fMinN;
-          fUsedNodes[Idx].CostTo := NewCost;
-          fUsedNodes[Idx].Point := POMPoint;
+          N := @fUsedNodes[Idx];
+          N.RouteID := fRouteID;
+          N.Parent := fMinN;
+          N.Point := NearbyPoints[K];
+          N.CostTo := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, N.Point);
+          N.Estim := EstimateToFinish(Idx);
+          fHeap.Push(N);
+        end
+        // Visited polygon (recalculate estimation and update result if it is better)
+        else if (fUsedNodes[Idx].Estim <> C_CLOSED) then
+        begin
+          NewCost := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, NearbyPoints[K]);
+          if (NewCost < fUsedNodes[Idx].CostTo) then
+          begin
+            fUsedNodes[Idx].Parent := fMinN;
+            fUsedNodes[Idx].Point := NearbyPoints[K];
+            fUsedNodes[Idx].CostTo := NewCost;
+          end;
         end;
       end;
-    end;
-    //Find next cell with least (Estim+CostTo)
+    // Find next record with best cost (Estim + CostTo)
     if fHeap.IsEmpty then
       Break;
     fMinN := fHeap.Pop;
   end;
-  //Route found, no longer need the lookups
+  // Route found, no longer need the lookups
   fHeap.Clear;
+
   Result := (fMinN.Idx = fEnd);
+end;
+
+
+procedure TNavMeshPathFinding.GetRouteInfo(out aDistance, aCount: Word; out aLastN: PNavMeshNode);
+var
+  N: PNavMeshNode;
+begin
+  aDistance := 0;
+  aCount := Byte(fMinN <> nil);
+  aLastN := fMinN;
+  if (aCount = 0) OR (fMinN.Parent = nil) then
+    Exit;
+
+  N := aLastN.Parent;
+  while (N <> nil) do
+  begin
+    aDistance := aDistance + KMDistanceAbs(N.Point, aLastN.Point);
+    aLastN := N;
+    N := N.Parent;
+    Inc(aCount);
+  end;
 end;
 
 
 procedure TNavMeshPathFinding.ReturnPolygonRoute(out aDistance: Word; out aRoutePolygonArray: TKMWordArray);
 var
   Count: Word;
-  N, FinalN: TNavMeshNode;
+  K: Integer;
+  N: PNavMeshNode;
 begin
-  aDistance := 0;
-  if (fMinN = nil) then
-    Exit;
-  FinalN := fMinN;
-  N := fMinN.Parent;
-  Count := 1;
-  while (N <> nil) do
-  begin
-    aDistance := aDistance + KMDistanceAbs(N.Point, FinalN.Point); // DistanceAbs is very rough but when is result different from actual distance there are probably obstacles in path and it is better to count with higher distance
-    FinalN := N;
-    N := N.Parent;
-    Inc(Count,1);
-  end;
-
+  GetRouteInfo(aDistance, Count, N);
   SetLength(aRoutePolygonArray, Count+1);
+  aRoutePolygonArray[Count] := N.Idx;
   N := fMinN;
-  Count := 0;
-  while (N <> nil) do
+  for K := 0 to Count - 1 do
   begin
-    aRoutePolygonArray[Count+1] := N.Idx;
+    aRoutePolygonArray[K] := N.Idx;
     N := N.Parent;
-    Inc(Count,1);
   end;
-  aRoutePolygonArray[Count] := FinalN.Idx;
   aRoutePolygonArray[0] := fMinN.Idx;
 end;
 
@@ -286,73 +256,55 @@ end;
 procedure TNavMeshPathFinding.ReturnRoute(out aDistance: Word; out aRoutePointArray: TKMPointArray);
 var
   Count: Word;
-  N, FinalN: TNavMeshNode;
+  K: Integer;
+  N: PNavMeshNode;
 begin
-  aDistance := 0;
-  if (fMinN = nil) then
-    Exit;
-  FinalN := fMinN;
-  N := fMinN.Parent;
-  Count := 1;
-  while (N <> nil) do
-  begin
-    aDistance := aDistance + KMDistanceAbs(N.Point, FinalN.Point); // DistanceAbs is very rough but when is result different from actual distance there are probably obstacles in path and it is better to count with higher distance
-    FinalN := N;
-    N := N.Parent;
-    Inc(Count,1);
-  end;
-
+  GetRouteInfo(aDistance, Count, N);
   SetLength(aRoutePointArray, Count+1);
+  aRoutePointArray[Count] := gAIFields.NavMesh.Polygons[ N.Idx ].CenterPoint;
   N := fMinN;
-  Count := 0;
-  while (N <> nil) do
+  for K := 0 to Count - 1 do
   begin
-    aRoutePointArray[Count+1] := N.Point;
+    aRoutePointArray[K] := N.Point;
     N := N.Parent;
-    Inc(Count,1);
   end;
-  aRoutePointArray[Count] := gAIFields.NavMesh.Polygons[ FinalN.Idx ].CenterPoint;
-  aRoutePointArray[0] := gAIFields.NavMesh.Polygons[fMinN.Idx].CenterPoint;
+  aRoutePointArray[0] := gAIFields.NavMesh.Polygons[ fMinN.Idx ].CenterPoint;
 end;
 
 
 function TNavMeshPathFinding.InitPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
-var
-  Output: Boolean;
 begin
   Result := False;
   fStart := aStart;
   fEnd := aEnd;
-  if (fStart = High(Word)) OR (fEnd = High(Word))
+  if (fStart = 0) OR (fEnd = 0)
     OR (fStart >= gAIFields.NavMesh.PolygonsCnt)
     OR (fEnd >= gAIFields.NavMesh.PolygonsCnt) then  // Non-Existing polygon
     Exit;
-  Output := MakeRoute();
-  if Output then
+  Result := MakeRoute();
+  if Result then
   begin
     ReturnPolygonRoute(aDistance, aRoutePolygonArray);
     aRoutePolygonArray[0] := aEnd;
   end;
-  Result := Output;
 end;
 
 
 function TNavMeshPathFinding.InitRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
-var
-  Output: Boolean;
 begin
   Result := False;
   fStart := gAIFields.NavMesh.KMPoint2Polygon[ aStart ];
   fEnd := gAIFields.NavMesh.KMPoint2Polygon[ aEnd ];
-  if (fStart = High(Word)) OR (fEnd = High(Word)) then  // Non-Existing polygon
+  if (fStart = 0) OR (fEnd = 0)
+    OR (fStart >= gAIFields.NavMesh.PolygonsCnt)
+    OR (fEnd >= gAIFields.NavMesh.PolygonsCnt) then  // Non-Existing polygon
     Exit;
-  Output := MakeRoute();
-  if Output then
+  Result := MakeRoute();
+  if Result then
   begin
     ReturnRoute(aDistance, aRoutePointArray);
     aRoutePointArray[0] := aEnd;
   end;
-  Result := Output;
 end;
 
 

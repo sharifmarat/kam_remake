@@ -15,6 +15,11 @@ uses
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
   KromUtils, KM_CommonUtils;
 
+const
+  MAX_NODES = 10000; // Max nodes in NavMesh array
+  MAX_POLYGONS = 10000;
+
+
 type
 
   TKMNavMeshByteArray = array[-1..257,-1..257] of Byte;
@@ -25,12 +30,12 @@ type
   end;
   TKMBordInfo = record
     Count: Word;
-    Borders: array[0..10000] of TKMBord;
+    Borders: array[0..MAX_NODES] of TKMBord;
   end;
   {$IFDEF DEBUG_NavMesh}
   TDebugLines = record // Only for debug
     Count: Word;
-    Lines: array[0..15000] of record
+    Lines: array[0..MAX_POLYGONS*2] of record
       P1,P2: TKMPoint;
       Color: Cardinal;
     end;
@@ -104,8 +109,6 @@ uses
 
 
 const
-  MAX_NODES = 10000; // Max nodes in NavMesh array
-  MAX_POLYGONS = 10000;
   UNVISITED_OBSTACLE = 255;
   VISITED_OBSTACLE = UNVISITED_OBSTACLE - 1;
   NODE_IN_WALKABLE_AREA = 1;
@@ -573,12 +576,12 @@ begin
       Inc(fNodeCount);
       FillArea( INNER_EDGE_STEP+1, KMPoint(X,Y) );
     end;
-  fInnerPointEndIdx := fNodeCount;
+  fInnerPointEndIdx := fNodeCount-1;
   // Sort inner points according to Y
   FillChar(fIdxArr, SizeOf(fIdxArr), #0);
   Y := 0;
   K := fInnerPointStartIdx;
-  while (K < fInnerPointEndIdx) do
+  while (K <= fInnerPointEndIdx) do
     if (fNodes[K].Y > Y) then
     begin
       fIdxArr[Y] := K;
