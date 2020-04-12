@@ -156,6 +156,9 @@ uses
   KM_HandsCollection, KM_Hand, KM_Units, KM_UnitsCollection, KM_CommonClasses, KM_UnitWarrior, KM_Utils,
   KM_Game, KM_CommonUtils, KM_Resource, KM_HouseTownhall, KM_HouseBarracks, KM_HouseMarket;
 
+const
+  CHECKPOINTS_MAX_CNT = 500;
+
 
 { TKMCheckpoint }
 constructor TKMCheckpoint.Create(const aCaption: string);
@@ -651,6 +654,10 @@ begin
     fCheckpoints.Last.Adjoin;
   end else
   begin
+    // Delete the very first checkpoint when we reached the limit
+    if fCheckpoints.Count >= CHECKPOINTS_MAX_CNT then
+      fCheckpoints.Delete(0);
+
     // Otherwise create new one
     cp := TKMCheckpoint.FactoryCreate(aArea, aCaption);
     fCheckpoints.Add(cp);
