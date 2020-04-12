@@ -13,11 +13,11 @@ uses
 
 type
 
-  TDefenceInfo = record
+  TKMInfluenceInfo = record
     AllyInfluence, EnemyInfluence: Byte;
     Distance, Mark: Word;
   end;
-  TDefInfoArray = array of TDefenceInfo;
+  TKMInflInfoArray = array of TKMInfluenceInfo;
 
   TKMAllianceInfo = record
     // GroupsNumber = real number of groups, GroupsCount = count of groups in arrays
@@ -43,7 +43,6 @@ type
   end;
   {$ENDIF}
 
-
   TDistancePenalization = class;
   TArmyForwardFF = class;
   TArmyBackwardFF = class;
@@ -52,12 +51,12 @@ type
   private
   protected
     fMaxDistance: Word;
-    fDefInfo: TDefInfoArray;
+    fInflInfo: TKMInflInfoArray;
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
-    function PrefillDistances(var aAlliance: TKMAllianceInfo; var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr): Boolean;
+    function PrefillDistances(var aAlliance: TKMAllianceInfo; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): Boolean;
   end;
 
 
@@ -80,7 +79,7 @@ type
     function GetInitPolygonsGroups(aAllianceType: TKMAllianceType; var aAlliance: TKMAllianceInfo): Boolean;
     function GetInitPolygonsHouses(aAllianceType: TKMAllianceType; var aAlliance: TKMAllianceInfo): Boolean;
   public
-    fDefInfo: TDefInfoArray;
+    fInflInfo: TKMInflInfoArray;
     Enemy: TKMAllianceInfo;
     TargetEnemy: TKMAllianceInfo;
     Ally: TKMAllianceInfo;
@@ -102,8 +101,7 @@ type
   protected
     fOwner: TKMHandID;
     fExpandedPolygonsCnt: Word;
-    fBestEvaluation: Double;
-    fDefInfo: TDefInfoArray;
+    fInflInfo: TKMInflInfoArray;
     fBattleLines: TKMBattleLines;
     fBestBattleLines: TKMBattleLines;
     {$IFDEF DEBUG_BattleLines}
@@ -122,26 +120,18 @@ type
   public
     constructor Create(aSorted: Boolean = False); override;
 
-    function FindTeamDefences(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
+    function FindTeamDefences(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
 
     procedure Paint();
   end;
 
-
-const
-  PREFILL_MAX_DISTANCE_GROUPS = 30;
-  PREFILL_MAX_DISTANCE_HOUSES = 5;
-  PREFILL_SHIFT = 3;
-
-  POLYGON_CNT_PENALIZATION = 10;
-  SCAN_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool, htTownhall]; //htWatchTower,
 
 
 implementation
 uses
   SysUtils,
   KM_Hand, KM_HandsCollection,
-  KM_AIFields, KM_AIInfluences, KM_NavMesh,
+  KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_AIParameters,
   {$IFDEF DEBUG_BattleLines}
   DateUtils,
   {$ENDIF}
@@ -151,31 +141,30 @@ uses
 { TDistancePenalization }
 function TDistancePenalization.CanBeExpanded(const aIdx: Word): Boolean;
 begin
-  //Result := fDefInfo[aIdx].Distance > 0;
-  Result := fDefInfo[aIdx].EnemyInfluence > 0;
+  //Result := fInflInfo[aIdx].Distance > 0;
+  Result := fInflInfo[aIdx].EnemyInfluence > 0;
 end;
 
 
 procedure TDistancePenalization.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
 begin
   inherited MarkAsVisited(aIdx, aDistance, aPoint);
-  //fDefInfo[aIdx].Distance := Max(0,PREFILL_MAX_DISTANCE - aDistance) shl PREFILL_SHIFT;
-  //fDefInfo[aIdx].Distance := Max(0,PREFILL_MAX_DISTANCE - aDistance) * 4;
-  fDefInfo[aIdx].EnemyInfluence := Min(255,Max(0,fMaxDistance - aDistance));
+  //fInflInfo[aIdx].Distance := Max(0,PREFILL_MAX_DISTANCE - aDistance) * 4;
+  fInflInfo[aIdx].EnemyInfluence := Min(255,Max(0,fMaxDistance - aDistance));
 end;
 
 
-function TDistancePenalization.PrefillDistances(var aAlliance: TKMAllianceInfo; var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr): Boolean;
+function TDistancePenalization.PrefillDistances(var aAlliance: TKMAllianceInfo; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): Boolean;
 begin
   Result := (aAlliance.GroupsCount > 0) OR (aAlliance.HousesCount > 0);
   if not Result then
     Exit;
-  fDefInfo := aDefInfo;
+  fInflInfo := aDefInfo;
   fQueueArray := aQueueArray; // This is clear array with zeros
   fVisitedIdx := 0; // It will be updated to 1 after FillPolygons are called
-  fMaxDistance := PREFILL_MAX_DISTANCE_HOUSES;
+  fMaxDistance := GA_ATTACK_NMAP_PrefillDistances_Houses;
   FillPolygons(aAlliance.HousesCount, aAlliance.HousesPoly);
-  fMaxDistance := PREFILL_MAX_DISTANCE_GROUPS;
+  fMaxDistance := GA_ATTACK_NMAP_PrefillDistances_Groups;
   FillPolygons(aAlliance.GroupsCount, aAlliance.GroupsPoly);
 end;
 
@@ -208,13 +197,13 @@ begin
   if (Length(fQueueArray) < gAIFields.NavMesh.PolygonsCnt) then
   begin
     SetLength(fQueueArray, gAIFields.NavMesh.PolygonsCnt);
-    SetLength(fDefInfo, gAIFields.NavMesh.PolygonsCnt);
+    SetLength(fInflInfo, gAIFields.NavMesh.PolygonsCnt);
   end;
   // Clear queue
   fQueueCnt := 0;
   ClearVisitIdx();
   // Distance will be changed so clear array
-  FillChar(fDefInfo[0], SizeOf(fDefInfo[0]) * Length(fDefInfo), #0);
+  FillChar(fInflInfo[0], SizeOf(fInflInfo[0]) * Length(fInflInfo), #0);
 end;
 
 
@@ -226,12 +215,11 @@ end;
 
 procedure TArmyForwardFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
 begin
-  //fDefInfo[aIdx].EnemyInfluence := Min(250,fDefInfo[aIdx].Distance);
-  //Inc(fDefInfo[aIdx].Distance,aDistance);
-  fDefInfo[aIdx].Distance := aDistance;
+  //fInflInfo[aIdx].EnemyInfluence := Min(250,fInflInfo[aIdx].Distance);
+  //fInflInfo[aIdx].AllyInfluence := gAIFields.Influences.GetAlliancePresence(fOwner, aIdx, atAlly);
+  //Inc(fInflInfo[aIdx].Distance,aDistance);
+  fInflInfo[aIdx].Distance := aDistance;
   inherited MarkAsVisited(aIdx, aDistance, aPoint);
-
-  //fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetAlliancePresence(fOwner, aIdx, atAlly);
 end;
 
 
@@ -314,6 +302,8 @@ end;
 
 
 function TArmyForwardFF.GetInitPolygonsHouses(aAllianceType: TKMAllianceType; var aAlliance: TKMAllianceInfo): Boolean;
+const
+  SCAN_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool, htTownhall]; // htWatchTower
 var
   PL: TKMHandID;
   K: Integer;
@@ -361,7 +351,7 @@ begin
     Exit;
   // Mark enemy units and houses
   MakeNewQueue();
-  fDistancePenalization.PrefillDistances(Enemy, fDefInfo, fQueueArray);
+  fDistancePenalization.PrefillDistances(Enemy, fInflInfo, fQueueArray);
   // Flood fill
   Result := FillPolygons(Ally.GroupsCount-1, Ally.GroupsPoly);
 end;
@@ -408,7 +398,7 @@ begin
           TargetEnemy.HousesPoly[TargetEnemy.HousesCount] := Enemy.HousesPoly[K];
           Inc(TargetEnemy.HousesCount);
         end;
-    BattleLines := fBackwardFF.FindTeamDefences(TargetEnemy, aOwners, fDefInfo, fQueueArray);
+    BattleLines := fBackwardFF.FindTeamDefences(TargetEnemy, aOwners, fInflInfo, fQueueArray);
     Result := BattleLines.Count > 0;
     if Result then
       AssignDefencePositions();
@@ -432,7 +422,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
       for K := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount - 1 do
       begin
         NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[K];
-        if (fDefInfo[Idx].Mark >= fDefInfo[NearbyIdx].Mark) then
+        if (fInflInfo[Idx].Mark >= fInflInfo[NearbyIdx].Mark) then
         begin
           if (fQueueArray[NearbyIdx].Visited < fVisitedIdx) then
             InsertInQueue(NearbyIdx);
@@ -453,8 +443,8 @@ procedure TArmyForwardFF.AssignDefencePositions();
 
   function FindPositions(aLineIdx: Integer; aCnt: Word): TKMPointDirArray;
   var
-    MinMark, Overflow, Idx, NearbyIdx: Word;
-    K, L, Cnt, QueueCntBackup: Integer;
+    Overflow, Idx, NearbyIdx: Word;
+    MinMark, K, L, Cnt, QueueCntBackup: Integer;
     Dir: TKMDirection;
   begin
     SetLength(Result, aCnt);
@@ -463,7 +453,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
       // Find best mark
       MinMark := 0;
       for K := 0 to PolygonsCount - 1 do
-        MinMark := Max(MinMark, fDefInfo[ Polygons[K] ].Mark);
+        MinMark := Max(MinMark, fInflInfo[ Polygons[K] ].Mark);
 
       // Find positions
       Cnt := 0;
@@ -475,7 +465,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
         Inc(Overflow);
         // Add all marks of specific level to queue
         for K := 0 to PolygonsCount - 1 do
-          if (MinMark <= fDefInfo[ Polygons[K] ].Mark) AND not IsVisited(Polygons[K]) then
+          if (MinMark <= fInflInfo[ Polygons[K] ].Mark) AND not IsVisited(Polygons[K]) then
             InsertInQueue(Polygons[K]);
 
         // Loop over queue but dont process the children
@@ -486,7 +476,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
           for L := 0 to gAIFields.NavMesh.Polygons[Idx].NearbyCount - 1 do
           begin
             NearbyIdx := gAIFields.NavMesh.Polygons[Idx].Nearby[L];
-            if (fDefInfo[Idx].Mark >= fDefInfo[NearbyIdx].Mark) AND (fQueueArray[NearbyIdx].Visited < fVisitedIdx) then
+            if (fInflInfo[Idx].Mark >= fInflInfo[NearbyIdx].Mark) AND (fQueueArray[NearbyIdx].Visited < fVisitedIdx) then
             begin
               InsertInQueue(NearbyIdx);
               if (fQueueArray[NearbyIdx].Visited < 10) then // Polygon is not used
@@ -556,7 +546,7 @@ begin
         begin
           Idx := BattleLines.Lines[L].Polygons[M];
           LinePoint := gAIFields.NavMesh.Polygons[ Idx ].CenterPoint;
-          Price := KMDistanceSqr(LinePoint, GroupPoint) - fDefInfo[Idx].Mark * 32;
+          Price := KMDistanceSqr(LinePoint, GroupPoint) - fInflInfo[Idx].Mark * 32;
           if (Price < BestPrice) then
           begin
             BestPrice := Price;
@@ -673,7 +663,7 @@ end;
 
 procedure TArmyBackwardFF.ComputeWeightedDistance(const aIdx: Word);
 begin
-  fQueueArray[aIdx].Distance := High(Word) - fDefInfo[aIdx].Distance - fDefInfo[aIdx].EnemyInfluence * 8;
+  fQueueArray[aIdx].Distance := High(Word) - fInflInfo[aIdx].Distance - fInflInfo[aIdx].EnemyInfluence * GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence;
 end;
 
 
@@ -717,7 +707,6 @@ begin
   {$ENDIF}
   fQueueCnt := 0;
   fExpandedPolygonsCnt := 0;
-  fBestEvaluation := +1E10;
   // Mark init points and create lines
   fBattleLines.Count := 0;
   fBattleLines.Price := 0;
@@ -750,7 +739,7 @@ begin
       MarkAsVisited(Idx);
       ComputeWeightedDistance(Idx);
       InsertAndSort(Idx);
-      fDefInfo[Idx].Mark := High(Word);
+      fInflInfo[Idx].Mark := High(Word);
     end;
   end;
 end;
@@ -795,11 +784,11 @@ begin
     if not IsVisited(NearbyIdx) then
     begin
       MarkAsVisited(NearbyIdx);
-      fDefInfo[NearbyIdx].Mark := fDefInfo[aIdx].Mark - 1;
+      fInflInfo[NearbyIdx].Mark := fInflInfo[aIdx].Mark - 1;
       if (gAIFields.NavMesh.Polygons[NearbyIdx].NearbyCount = 3) then // New combat lines are created only from polygons with 3 surrounding polygons
       begin
         ComputeWeightedDistance(NearbyIdx);
-        //if (fDefInfo[aIdx].Distance + 3 > fDefInfo[NearbyIdx].Distance) then
+        //if (fInflInfo[aIdx].Distance + 3 > fInflInfo[NearbyIdx].Distance) then
         //begin
           InsertAndSort(NearbyIdx);
           Inc(fBattleLines.Lines[LineIdx1].PolygonsCount);
@@ -873,9 +862,8 @@ begin
     Overflow2 := 0;
     repeat
       Inc(Overflow2);
-      if (fDefInfo[Idx].EnemyInfluence > 10) then
+      if (fInflInfo[Idx].EnemyInfluence > GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence) then
       begin
-        //if CanBeExpanded(Idx) then // Def line must be behind safe radius
         fQueueArray[OldIdx].Next := fQueueArray[Idx].Next;
         if (Idx = fStartQueue) then fStartQueue := fQueueArray[Idx].Next;
         if (Idx = fEndQueue)   then fEndQueue := OldIdx;
@@ -897,8 +885,7 @@ begin
 
   // Start searching for defense line
   Idx := fStartQueue;
-  //while RemoveFromQueue(Idx) AND (fDefInfo[Idx].Distance > 5) do
-  while RemoveFromQueue(Idx) AND (fQueueArray[Idx].Distance < High(Word) - 10) do
+  while RemoveFromQueue(Idx) AND (fQueueArray[Idx].Distance < High(Word) - GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence) do
   begin
     if CanBeExpanded(Idx) then
       ExpandPolygon(Idx);
@@ -911,30 +898,37 @@ end;
 
 procedure TArmyBackwardFF.EvaluateLine(const aIdx: Word);
 var
-  K, L, Idx, MinDist, MaxDist: Integer;
+  K, L, Idx, MinMark, MaxMark, MinDist, MaxDist: Integer;
   Evaluation: Single;
 begin
   // Calculate evaluation of actual defensive position
   MaxDist := 0;
   MinDist := High(Word);
+  MaxMark := 0;
+  MinMark := High(Word);
   for K := 0 to fBattleLines.Count - 1 do
     for L := 0 to fBattleLines.Lines[K].PolygonsCount - 1 do
     begin
       Idx := fBattleLines.Lines[K].Polygons[L];
       MaxDist := Max(MaxDist,fQueueArray[Idx].Distance);
       MinDist := Min(MinDist,fQueueArray[Idx].Distance);
+      MaxMark := Max(MaxMark,fInflInfo[Idx].Mark);
+      MinMark := Min(MinMark,fInflInfo[Idx].Mark);
       //Evaluation := + Evaluation + fQueueArray[Idx].Distance * 10;
     end;
-  Evaluation := fQueueCnt * 8 + abs(High(Word) - MaxDist) * 2 + abs(High(Word) - MinDist) * 2;
+  //MaxMark := High(Word) - MaxMark;
+  //MinMark := High(Word) - MinMark;
+  //Evaluation := fQueueCnt * 8 - abs(High(Word) - MaxDist) * 2 - abs(High(Word) - MinDist) * 2;
+  Evaluation := fQueueCnt * GA_ATTACK_NMAP_EvaluateLine_QueueCnt + abs(High(Word) - MinDist) * GA_ATTACK_NMAP_EvaluateLine_MinDist;
+
 
   // If is evaluation better save polygons
-  if (Evaluation < fBestEvaluation) then
+  if (Evaluation < fBestBattleLines.Price) then
   begin
-    fBestEvaluation := Evaluation;
     fBestBattleLines.Count := fBattleLines.Count;
     fBestBattleLines.Price := Evaluation;
     if (Length(fBestBattleLines.Lines) < fBattleLines.Count) then
-    SetLength(fBestBattleLines.Lines, fBattleLines.Count + 16);
+      SetLength(fBestBattleLines.Lines, fBattleLines.Count + 16);
     for K := 0 to fBattleLines.Count - 1 do
     begin
       fBestBattleLines.Lines[K].GroupsCount   := fBattleLines.Lines[K].GroupsCount;
@@ -959,7 +953,7 @@ begin
   if (fBattleLines.Count <= 0) OR (Length(fBattleLines.Lines) <= 0) then
     Exit;
   if (fDebugLines.Count <= Length(fDebugLines.DBLs)) then
-    SetLength(fDebugLines.DBLs, Length(fDebugLines.DBLs) + 128);
+    SetLength(fDebugLines.DBLs, Length(fDebugLines.DBLs) + 64);
   L := fDebugLines.Count;
   Inc(fDebugLines.Count);
 
@@ -981,12 +975,13 @@ end;
 {$ENDIF}
 
 
-function TArmyBackwardFF.FindTeamDefences(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
+function TArmyBackwardFF.FindTeamDefences(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
 begin
   fOwner := aOwners[0];
-  fDefInfo := aDefInfo;
+  fInflInfo := aDefInfo;
   fQueueArray := aQueueArray;
   fBestBattleLines.Count := 0;
+  fBestBattleLines.Price := +1E10;
   if (aEnemy.GroupsCount > 0) OR (aEnemy.HousesCount > 0) then
     BackwardFlood(aEnemy);
   Result := fBestBattleLines;
@@ -994,21 +989,20 @@ end;
 
 
 procedure TArmyBackwardFF.Paint();
-  procedure DrawPolygon(aIdx: Integer; const Opacity: Byte; aFillColor: Cardinal; aText: String = '');
+  procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
   var
     P0,P1,P2: TKMPoint;
   begin
-    if (Opacity = 0) then
+    if (aOpacity = 0) then
       Exit;
-    aFillColor := aFillColor OR (Opacity shl 24);
     with gAIFields.NavMesh do
     begin
       P0 := Nodes[ Polygons[aIdx].Indices[0] ];
       P1 := Nodes[ Polygons[aIdx].Indices[1] ];
       P2 := Nodes[ Polygons[aIdx].Indices[2] ];
-      gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor);
+      gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor OR (aOpacity shl 24));
       if (Length(aText) > 0) then
-        gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y, aText, $FFFFFFFF);
+        gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + aOffset, aText, $FFFFFFFF);
     end;
   end;
 const
@@ -1021,44 +1015,33 @@ const
 {$IFDEF DEBUG_BattleLines}
 var
   K,L,Idx: Integer;
-  //Opacity: Byte;
   Color, TickIdx: Cardinal;
-  //MinPrc, MaxPrc: Single;
-  //P1,P2: TKMPoint;
 {$ENDIF}
 begin
   {$IFDEF DEBUG_BattleLines}
-  {
-  for K := 0 to gAIFields.NavMesh.PolygonsCnt - 1 do
-    if IsVisited(K) then
-    begin
-      if (gAIFields.NavMesh.Polygons[K].NearbyCount = 3) then
-        DrawPolygon(K, 50, COLOR_BLACK, IntToStr(High(Word) - fQueueArray[K].Distance))
-      else
-        DrawPolygon(K, 50, COLOR_BLACK, IntToStr(fQueueArray[K].Distance));
-    end
-    else
-    begin
-      DrawPolygon(K, 50, COLOR_WHITE, IntToStr(fQueueArray[K].Distance));
-    end;
-  //}
-  {
-  Color := COLOR_WHITE;
-  for K := 0 to Length(fQueueArray) - 1 do
-    DrawPolygon(K, 1, Color, IntToStr(High(Word) - fDefInfo[K].Mark));
 
-    //}
-  {
+  { DISTANCE
+  for K := 0 to Length(fQueueArray) - 1 do
+    if (gAIFields.NavMesh.Polygons[K].NearbyCount = 3) then
+      DrawPolygon(K, 0, 1+100*Byte(fQueueArray[K].Distance = High(Word)), COLOR_BLUE, IntToStr(High(Word) - fQueueArray[K].Distance));
+  //}
+
+  { MARK
+  for K := 0 to Length(fQueueArray) - 1 do
+    DrawPolygon(K, 0, 1, COLOR_WHITE, IntToStr(High(Word) - fInflInfo[K].Mark));
+  //}
+
+  //{ BEST BATTLE LINE: MARK
   for K := 0 to fBestBattleLines.Count - 1 do
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
-    begin
-      Idx := fBestBattleLines.Lines[K].Polygons[L];
-      DrawPolygon(Idx, 50, COLOR_GREEN, IntToStr(High(Word) - fDefInfo[Idx].Mark));
-    end;
-    //}
+      with fBestBattleLines.Lines[K] do
+      begin
+        DrawPolygon(Polygons[L], -2, 25, COLOR_GREEN, IntToStr(High(Word) - fInflInfo[ Polygons[L] ].Mark));
+        DrawPolygon(Polygons[L], -1, 25, COLOR_GREEN, IntToStr(High(Word) - fQueueArray[ Polygons[L] ].Distance));
+      end;
+  //}
 
-
-  {
+  { DEBUG LINE
   if fDebugLines.Count > 0 then
   begin
     TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;
@@ -1070,43 +1053,11 @@ begin
         for L := 0 to Lines[K].PolygonsCount - 1 do
         begin
           Idx := Lines[K].Polygons[L];
-          DrawPolygon(Idx, 50, Color, IntToStr(fQueueArray[Idx].Distance));
+          DrawPolygon(Idx, 0, 50, Color, IntToStr(fQueueArray[Idx].Distance));
         end;
   end;
-    //}
-
-  {
-  Opacity := 250;
-  with fBestLines do
-    for L := 0 to Count - 1 do
-    begin
-      P1 := gAIFields.NavMesh.Nodes[ Lines[L].Nodes[0] ];
-      P2 := gAIFields.NavMesh.Nodes[ Lines[L].Nodes[1] ];
-      gRenderAux.LineOnTerrain(P1, P2, (Opacity shl 24) OR COLOR_RED);
-      //DrawPolygon(DefArr.Lines[L].Polygon, Opacity, COLOR_BLUE);
-    end;
   //}
 
-  {
-    MinPrc := +1E10;
-    MaxPrc := -1E10;
-    for K := 0 to fDebugDefLines.Count - 1 do
-      with fDebugDefLines.DefLines[K] do
-      begin
-        if (MinPrc > Price) then MinPrc := Price;
-        if (MaxPrc < Price) then MaxPrc := Price;
-      end;
-    for K := 0 to fDebugDefLines.Count - 1 do
-      with fDebugDefLines.DefLines[K] do
-        for L := 0 to DefArr.Count - 1 do
-        begin
-          Opacity := Max(50,Min(255,Round(255 - abs((Price - MinPrc) / MaxPrc) * 254)));
-          P1 := gAIFields.NavMesh.Nodes[ DefArr.Lines[L].Nodes[0] ];
-          P2 := gAIFields.NavMesh.Nodes[ DefArr.Lines[L].Nodes[1] ];
-          gRenderAux.LineOnTerrain(P1, P2, (Opacity shl 24) OR COLOR_RED);
-          //DrawPolygon(DefArr.Lines[L].Polygon, Opacity, COLOR_BLUE);
-        end;
-  //}
   {$ENDIF}
 end;
 

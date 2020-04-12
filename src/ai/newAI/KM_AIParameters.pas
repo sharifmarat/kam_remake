@@ -19,6 +19,31 @@ uses
 var
 
 
+{ KM_NavMeshArmyPositioning }
+//{ 2020-04-12
+  GA_ATTACK_NMAP_PrefillDistances_Houses             : Word =    5;
+
+  GA_ATTACK_NMAP_PrefillDistances_Groups              : Word =   20;
+  GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence       : Word =    8;
+  GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence      : Word =   30;
+  GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence       : Word =    5;
+  GA_ATTACK_NMAP_EvaluateLine_QueueCnt                : Single =     0.0000000000;
+  GA_ATTACK_NMAP_EvaluateLine_MinDist                 : Single =     1.0906372070;
+
+  GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup       : Single =     4.7476720810;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee     : Single =     3.6055257320;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse : Single =     1.6098828316;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged    : Single =     1.6779685020;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted   : Single =     2.8249523640;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist  : Single =     4.1452937126;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist      : Single =    25.5256671906;
+  GA_ATTACK_SUPERVISOR_EvalTarget_OportunityGain      : Single =     6.6960072517;
+  GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain  : Single =     6.4341087341;
+  GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold  : Single =     0.7516828954;
+
+
+//}
+
 { KM_ArmyAttack }
 //{ 2019-12-26
   GA_ATTACK_SQUAD_ChangeTarget_DistTolerance         : Single =     6.1796259880;
@@ -296,8 +321,8 @@ var
 {  KM_NavMeshPathFinding }
 //{ 2019-12-25
   GA_PATHFINDING_AvoidTraffic                        : Single =     2.7351799011;
-  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     1.6479400396;
-  GA_PATHFINDING_AvoidEdges                          : Single =   129;
+  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     8.5770339966;
+  GA_PATHFINDING_AvoidEdges                          : Single =   147.4333343506;
 //}
 
 { 2019-12-15
