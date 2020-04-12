@@ -102,6 +102,11 @@ type
     procedure InitGAParameters(); override;
   end;
 
+  TKMRunnerGA_ArmyAttackNew = class(TKMRunnerGA_Common)
+  protected
+    procedure InitGAParameters(); override;
+  end;
+
   TKMRunnerFindBugs = class(TKMRunnerCommon)
   private
     fBestScore, fWorstScore, fAverageScore: Double;
@@ -198,18 +203,18 @@ uses KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection;
 procedure TKMRunnerGA_Common.InitGAParameters();
 begin
   f_SIM_SimulationTimeInMin      := 10;
-  f_SIM_NumberOfMaps             := 3;
+  f_SIM_NumberOfMaps             := 20;
   f_SIM_MapNamePrefix            := 'GA_S1_%.3d';
-  f_GA_POPULATION_CNT            := 2;
-  f_GA_GENE_CNT                  := 5;
+  f_GA_POPULATION_CNT            := 30;
+  f_GA_GENE_CNT                  := 5; // It will be overriden by class
   f_GA_START_TOURNAMENT_IndividualsCnt := 3;
-  f_GA_FINAL_TOURNAMENT_IndividualsCnt := 3;
-  f_GA_START_MUTATION_ResetGene  := 1;
-  f_GA_FINAL_MUTATION_ResetGene  := 5;
-  f_GA_START_MUTATION_Gaussian   := 10;
-  f_GA_FINAL_MUTATION_Gaussian   := 20;
-  f_GA_START_MUTATION_Variance := 1;
-  f_GA_FINAL_MUTATION_Variance := 0.1;
+  f_GA_FINAL_TOURNAMENT_IndividualsCnt := 4;
+  f_GA_START_MUTATION_ResetGene  := 0.01;
+  f_GA_FINAL_MUTATION_ResetGene  := 0.0001;
+  f_GA_START_MUTATION_Gaussian   := 0.2;
+  f_GA_FINAL_MUTATION_Gaussian   := 0.1;
+  f_GA_START_MUTATION_Variance := 0.1;
+  f_GA_FINAL_MUTATION_Variance := 0.01;
 end;
 
 procedure TKMRunnerGA_Common.SetUp;
@@ -249,7 +254,7 @@ begin
   end
   else
   begin
-    fCrashDetectionMode := True;
+    fCrashDetectionMode := False;
     // Init new population
     fNewPopulation := TGAPopulation.Create(f_GA_POPULATION_CNT, f_GA_GENE_CNT, f_SIM_NumberOfMaps, True);
     SetRndGenes();
@@ -573,11 +578,20 @@ procedure TKMRunnerGA_ArmyAttack.InitGAParameters();
 begin
   inherited;
   f_SIM_SimulationTimeInMin := 10;
-  f_SIM_NumberOfMaps  := 20;
+  f_SIM_NumberOfMaps  := 2;
   f_SIM_MapNamePrefix := 'GA_S2_%.3d';
   f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_ArmyAttack');
 end;
 
+{ TKMRunnerGA_ArmyAttackNew }
+procedure TKMRunnerGA_ArmyAttackNew.InitGAParameters();
+begin
+  inherited;
+  f_SIM_SimulationTimeInMin := 10;
+  f_SIM_NumberOfMaps  := 20;
+  f_SIM_MapNamePrefix := 'GA_S2_%.3d';
+  f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_ArmyAttackNew');
+end;
 
 
 
@@ -1265,6 +1279,7 @@ initialization
   RegisterRunner(TKMRunnerGA_CityBuilder);
   RegisterRunner(TKMRunnerGA_CityPlanner);
   RegisterRunner(TKMRunnerGA_ArmyAttack);
+  RegisterRunner(TKMRunnerGA_ArmyAttackNew);
   RegisterRunner(TKMRunnerFindBugs);
   RegisterRunner(TKMRunnerCombatAITest);
   RegisterRunner(TKMRunnerStone);
