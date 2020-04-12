@@ -700,7 +700,7 @@ begin
 
   for I := 0 to fCheckpoints.Count - 1 do
   begin
-    s := IntToStr(I) + '. ' + fCheckpoints[I].Caption;
+    s := IntToStr(I + 1) + '. ' + fCheckpoints[I].Caption;
     
     // Undo checkpoints are white (no color-wrap)
     // Current checkpoint highlighted in yellow
