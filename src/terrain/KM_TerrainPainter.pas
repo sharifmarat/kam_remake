@@ -1575,7 +1575,7 @@ begin
                       end;
                   end;
       end;
-  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER]);
+  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER] + ' ' + aLoc.ToString);
 end;
 
 
@@ -2016,7 +2016,7 @@ begin
   end;
 
   gTerrain.UpdatePassability(aLoc);
-  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_ROTATE_TILE]);
+  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_ROTATE_TILE] + ' ' + aLoc.ToString);
 end;
 
 
