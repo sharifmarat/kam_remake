@@ -123,7 +123,7 @@ type
     fCounter: Cardinal;
 
     fCheckpointPos: Integer;
-    fCheckpoints: TList<TKMCheckpoint>;
+    fCheckpoints: TObjectList<TKMCheckpoint>;
 
     fOnUndoRedo: TEvent;
     fOnAddCheckpoint: TEvent;
@@ -161,7 +161,7 @@ uses
   KM_Game, KM_CommonUtils, KM_Resource, KM_HouseTownhall, KM_HouseBarracks, KM_HouseMarket;
 
 const
-  CHECKPOINTS_MAX_CNT = 300;
+  CHECKPOINTS_MAX_CNT = 500;
 
 
 { TKMCheckpoint }
@@ -629,7 +629,7 @@ constructor TKMMapEditorHistory.Create;
 begin
   inherited;
 
-  fCheckpoints := TList<TKMCheckpoint>.Create;
+  fCheckpoints := TObjectList<TKMCheckpoint>.Create;
 end;
 
 
