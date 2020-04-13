@@ -53,7 +53,7 @@ begin
   Log('Thread ' + IntToStr(fThreadNumber) + ': Start simulation');
   CI := TKMComInterface.Create();
   try
-    fSimulationSuccessful := CI.CreateNewSimulation(SimSetup, GASetup);
+    fSimulationSuccessful := CI.CreateNewSimulation(fThreadNumber, SimSetup, GASetup);
     if not fSimulationSuccessful then
       Log('Thread ' + IntToStr(fThreadNumber) + ': no output string was received');
   finally
