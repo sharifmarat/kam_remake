@@ -947,7 +947,7 @@ begin
   if Author <> '' then
     WriteLine('Author', Author);
 
-  if Author <> '' then
+  if Version <> '' then
     WriteLine('Version', Version);
 
   if SmallDescLibx <> -1 then
