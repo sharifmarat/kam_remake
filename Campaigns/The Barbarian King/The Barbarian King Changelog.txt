@@ -521,3 +521,12 @@ TBK12: Version 2.2: (30.12.2019)
 - integrated newest version of 'difficulty.script'
 - 'Easy' decreases Recruit Rate by 50% instead of 33%
 - Fixed a bug that was introduced when moving the campaign to version r10745
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Version 0.9.8c (12.04.2020):
+
+TBK01: Version 2.2b (12.04.2020)
+- Fixed a bug where it was not possible to win this mission
