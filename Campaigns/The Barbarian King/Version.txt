@@ -1,4 +1,4 @@
-0.9.8b
-Released on 31.12.2019 (Discord Server only)
-Tested with KaMRemake r10745 (beta)
+0.9.8c
+Released on 12.04.2020
+Tested with KaMRemake r11222 (beta)
 by Strangelove

@@ -28,3 +28,8 @@ Version 0.8.1d: (29.12.2019)
 - Removed 6 defense positions on 'Hard' difficulty
 - Enabled 'Harder' difficulty (all defense positions are active for this setting)
 - Reworked initial fight for yet untested difficulty modes 'Easier', 'Hard' and 'Harder'
+
+Version 0.8.1e: (03.04.2020)
+- Increased amount of Gold in Loc1's Gold Mountain
+- Replaced transitions from gold-abyss with new ones
+- Concentrated Iron of Loc2 to make it more accessable

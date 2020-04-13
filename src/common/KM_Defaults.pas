@@ -155,6 +155,7 @@ var
   SHOW_ATTACK_RADIUS      :Boolean = False; //Render towers/archers attack radius
   DISPLAY_SOUNDS          :Boolean = False; //Display sounds on map
   RENDER_3D               :Boolean = False; //Experimental 3D render
+  LINEAR_FILTER_SPRITES   :Boolean = False; //To check pixel sampling alignment issues (bouncing) at 100% zoom
   HOUSE_BUILDING_STEP     :Single = 0;
   OVERLAY_NAVMESH         :Boolean = False; //Show navmesh
   OVERLAY_DEFENCES        :Boolean = False; //Show AI defence perimeters
@@ -259,7 +260,8 @@ var
   HITPOINT_RESTORE_PACE: Word = 100;         //1 hitpoint is restored to units every X ticks (using Humbelum's advice)
 
 const
-  TERRAIN_MAX_BLENDING_LEVEL = 100;
+  TERRAIN_MAX_BLENDING_LEVEL = 16;
+  TERRAIN_DEF_BLENDING_LVL = TERRAIN_MAX_BLENDING_LEVEL div 2;
   MAPED_BRUSH_MAX_SIZE = 32;
 
   //Here we store options that are hidden somewhere in code
@@ -312,6 +314,8 @@ const
   LOC_RANDOM = 0;
   LOC_SPECTATE = -1;
   LOC_ANY = -1000;
+
+  MIN_PLAYER_COLOR_DIST = 0.3; // Minimun color distance between players
 
   EXT_SAVE_TXT_DOT = '.txt';
 

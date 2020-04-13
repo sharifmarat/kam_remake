@@ -22,6 +22,8 @@ type
     //
   );
 
+  TKMCheckpointAreaSet = set of TKMCheckpointArea;
+
   TKMCheckpoint = class
   private
     fArea: TKMCheckpointArea;
@@ -121,14 +123,16 @@ type
     fCounter: Cardinal;
 
     fCheckpointPos: Integer;
-    fCheckpoints: TList<TKMCheckpoint>;
+    fCheckpoints: TObjectList<TKMCheckpoint>;
 
     fOnUndoRedo: TEvent;
     fOnAddCheckpoint: TEvent;
-    fUpdateTerrainNeeded: Boolean;
+
+    function GetPrevAreaCheckpointPos(aPos: Integer; aArea: TKMCheckpointArea): Integer;
 
     procedure IncCounter;
     procedure UpdateAll;
+    procedure JumpTo(aIndex: Integer; aAreas: TKMCheckpointAreaSet); overload;
   public
     constructor Create;
     destructor Destroy; override;
@@ -144,7 +148,7 @@ type
     procedure Clear;
 
     procedure MakeCheckpoint(aArea: TKMCheckpointArea; const aCaption: string);
-    procedure JumpTo(aIndex: Integer);
+    procedure JumpTo(aIndex: Integer); overload;
     procedure Undo(aUpdateImmidiately: Boolean = True);
     procedure Redo(aUpdateImmidiately: Boolean = True);
   end;
@@ -155,6 +159,9 @@ uses
   Math,
   KM_HandsCollection, KM_Hand, KM_Units, KM_UnitsCollection, KM_CommonClasses, KM_UnitWarrior, KM_Utils,
   KM_Game, KM_CommonUtils, KM_Resource, KM_HouseTownhall, KM_HouseBarracks, KM_HouseMarket;
+
+const
+  CHECKPOINTS_MAX_CNT = 500;
 
 
 { TKMCheckpoint }
@@ -622,7 +629,7 @@ constructor TKMMapEditorHistory.Create;
 begin
   inherited;
 
-  fCheckpoints := TList<TKMCheckpoint>.Create;
+  fCheckpoints := TObjectList<TKMCheckpoint>.Create;
 end;
 
 
@@ -651,6 +658,10 @@ begin
     fCheckpoints.Last.Adjoin;
   end else
   begin
+    // Delete the very first checkpoint when we reached the limit
+    if fCheckpoints.Count >= CHECKPOINTS_MAX_CNT then
+      fCheckpoints.Delete(0);
+
     // Otherwise create new one
     cp := TKMCheckpoint.FactoryCreate(aArea, aCaption);
     fCheckpoints.Add(cp);
@@ -693,7 +704,7 @@ begin
 
   for I := 0 to fCheckpoints.Count - 1 do
   begin
-    s := IntToStr(I) + '. ' + fCheckpoints[I].Caption;
+    s := IntToStr(I + 1) + '. ' + fCheckpoints[I].Caption;
     
     // Undo checkpoints are white (no color-wrap)
     // Current checkpoint highlighted in yellow
@@ -715,30 +726,66 @@ begin
 end;
 
 
+function TKMMapEditorHistory.GetPrevAreaCheckpointPos(aPos: Integer; aArea: TKMCheckpointArea): Integer;
+begin
+  if aPos <= 0 then Exit(0);
+
+  // Find previous state of area we are undoing ("Initial" state at 0 being our last chance)
+  Result := aPos;
+  while Result > 0 do
+  begin
+    if fCheckpoints[Result].Area = aArea then
+      Break;
+    Dec(Result);
+  end;
+end;
+
+
+procedure TKMMapEditorHistory.JumpTo(aIndex: Integer; aAreas: TKMCheckpointAreaSet);
+var
+  A: TKMCheckpointArea;
+  prev: Integer;
+begin
+  for A in aAreas do
+  begin
+    if A = caAll then
+      prev := 0
+    else
+      prev := GetPrevAreaCheckpointPos(aIndex, A);
+
+    fCheckpoints[prev].Apply(A, False);
+    fCheckpointPos := aIndex;
+    IncCounter;
+  end;
+end;
+
+
 procedure TKMMapEditorHistory.JumpTo(aIndex: Integer);
 var
   I: Integer;
   undoRedoNeeded: Boolean;
+  areas: TKMCheckpointAreaSet;
 begin
   aIndex := EnsureRange(aIndex, 0, fCheckpoints.Count - 1);
   undoRedoNeeded := (aIndex <> fCheckpointPos);
-  fUpdateTerrainNeeded := False;
+
+  if not undoRedoNeeded then Exit;
+
+  areas := [];
   if aIndex < fCheckpointPos then
-  begin
-    for I := aIndex to fCheckpointPos - 1 do
-      Undo(False);
-  end
+    for I := aIndex + 1 to fCheckpointPos do //Collect areas of checkpoints that should be Undone
+      areas := areas + [fCheckpoints[I].Area]
   else
-  if aIndex > fCheckpointPos then
-    for I := fCheckpointPos to aIndex - 1 do
-      Redo(False);
+  for I := fCheckpointPos + 1 to aIndex do // Collect areas from +1 pos upto index
+    areas := areas + [fCheckpoints[I].Area];
+
+  JumpTo(aIndex, areas);
+
+  if (areas * [caTerrain, caAll]) <> [] then
+      UpdateAll;
 
   if undoRedoNeeded and Assigned(fOnUndoRedo) then
     fOnUndoRedo;
-
-  // Update terrain once only after all undos/redos were done
-  if fUpdateTerrainNeeded then
-    UpdateAll;
 end;
 
 
@@ -754,22 +801,12 @@ var
 begin
   if not CanUndo then Exit;
 
-  // Find previous state of area we are undoing ("Initial" state at 0 being our last chance)
-  prev := fCheckpointPos - 1;
-  while prev > 0 do
-  begin
-    if fCheckpoints[prev].Area = fCheckpoints[fCheckpointPos].Area then
-      Break;
-    Dec(prev);
-  end;
+  prev := GetPrevAreaCheckpointPos(fCheckpointPos - 1, fCheckpoints[fCheckpointPos].Area);
 
   Assert(prev >= 0);
 
   // Apply only requested area (e.g. if we are undoing single change made to Houses at step 87 since editing start)
   fCheckpoints[prev].Apply(fCheckpoints[fCheckpointPos].Area, aUpdateImmidiately);
-
-  if not aUpdateImmidiately and (fCheckpoints[fCheckpointPos].Area in [caTerrain, caAll]) then
-    fUpdateTerrainNeeded := True;
 
   Dec(fCheckpointPos);
 
@@ -791,9 +828,6 @@ begin
   Assert(next <= fCheckpoints.Count - 1);
 
   fCheckpoints[next].Apply(caAll, aUpdateImmidiately);
-
-  if not aUpdateImmidiately and (fCheckpoints[fCheckpointPos].Area in [caTerrain, caAll]) then
-    fUpdateTerrainNeeded := True;
 
   fCheckpointPos := next;
 

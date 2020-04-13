@@ -50,3 +50,6 @@ Version 2.2 (29.12.2019)
 - Main Script reworked to refelect those changes
 - Removed unused strings from libx and deleted outdated translations
 - Removed 'functions.script' as its not needed anymore
+
+Version 2.2b (12.04.2020)
+- Fixed a bug where it was not possible to win this mission

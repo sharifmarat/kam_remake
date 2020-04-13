@@ -79,9 +79,10 @@ begin
 	begin
 		iTicks := SPAWN_TIMER; //Reset timer!
 		Inc(iWave);
+		//Create more Barbarian-Groups
 		case States.MissionDifficulty() of
 			mdEasy1:	
-				case iWave of	//Create more Barbarian-Groups
+				case iWave of	
 					1,2: 	SetLength(aBarbarian, 2);
 					3,4: 	SetLength(aBarbarian, 3);
 					5: 		SetLength(aBarbarian, 4);
@@ -89,14 +90,14 @@ begin
 					7: 		SetLength(aBarbarian, 10);
 				end;
 			mdNormal:	
-				case iWave of	//Create more Barbarian-Groups
+				case iWave of
 					1,2,3: 	SetLength(aBarbarian, 3);
 					4,5: 	SetLength(aBarbarian, 4);
 					6: 		SetLength(aBarbarian, 5);
 					7: 		SetLength(aBarbarian, 10);
 				end;
 			mdHard1:	
-				case iWave of	//Create more Barbarian-Groups
+				case iWave of
 					1: 		SetLength(aBarbarian, 3);
 					2,3: 	SetLength(aBarbarian, 4);
 					4,5,6: 	SetLength(aBarbarian, 5);
@@ -127,6 +128,15 @@ begin
 	//Msg before last wave!
 	if ((iWave = 6) and (iTicks = (SPAWN_TIMER /2))) then
 		Actions.ShowMsg(-1, '<$4>');
+	
+	//Win-Condition!
+	if iWave = 7 then
+	begin
+		iTicks := SPAWN_TIMER; //Freeze Timer!
+		Actions.OverlayTextSet(-1,'<$5>: ' + inttostr(iWave)+ '/7');
+		if States.StatUnitCount(7) = 0 then
+			Actions.PlayerWin([0], true);		
+	end;
 end;
 
 procedure OnPlayerDefeated(aIndex: Integer);

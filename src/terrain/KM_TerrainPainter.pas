@@ -87,7 +87,7 @@ type
 
     procedure SetBrushParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
                              aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
-                             aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                             aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = TERRAIN_DEF_BLENDING_LVL;
                              aUseMagicBrush: Boolean = False);
     procedure SetHeightParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
                               aIsEqualize, aRaise: Boolean; aSlope, aSpeed: Byte);
@@ -1328,7 +1328,7 @@ end;
 
 procedure TKMTerrainPainter.SetBrushParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
                                            aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
-                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = TERRAIN_DEF_BLENDING_LVL;
                                            aUseMagicBrush: Boolean = False);
 begin
   SetCommonParams(X, Y, aShape);
@@ -1575,7 +1575,7 @@ begin
                       end;
                   end;
       end;
-  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER]);
+  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER] + ' ' + aLoc.ToString);
 end;
 
 
@@ -2016,7 +2016,7 @@ begin
   end;
 
   gTerrain.UpdatePassability(aLoc);
-  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_ROTATE_TILE]);
+  gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_ROTATE_TILE] + ' ' + aLoc.ToString);
 end;
 
 

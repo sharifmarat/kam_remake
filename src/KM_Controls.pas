@@ -7887,21 +7887,23 @@ begin
   //do not invoke inherited here, to fully override parent DoClick method
   IsClickHandled := False;
 
-  if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) then
+  if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE)
+    and Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled then
   begin
     if Assigned(fOnCellClick) then
       IsClickHandled := IsClickHandled or fOnCellClick(Self, fMouseOverCell.X, fMouseOverCell.Y)
     else
       if Assigned(fOnCellClickShift) then
         IsClickHandled := IsClickHandled or fOnCellClickShift(Self, Shift, fMouseOverCell.X, fMouseOverCell.Y)
-
   end;
 
   //Let propagate click event only when OnCellClick did not handle it
   if not IsClickHandled then
   begin
     inherited DoClick(X, Y, Shift, Button);
-    if Assigned(fOnChange) and not fOnChangeInvoked then
+    if Assigned(fOnChange)
+      and not fOnChangeInvoked
+      and Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled then // Only trigger for enabled cells
       fOnChange(Self);
   end;
 end;
@@ -7912,6 +7914,10 @@ var NewIndex: Integer;
 begin
   aOnChangeInvoked := False;
   if not (ssLeft in Shift) or (fMouseOverRow = -1) then
+    Exit;
+
+  // Do not do anything else, in case Cell we are working on is Disabled
+  if not Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled then
     Exit;
 
   NewIndex := fMouseOverRow;
@@ -7927,7 +7933,9 @@ begin
   begin
     fTimeOfLastClick := 0; //Double click shouldn't happen if you click on one server A, then server B
     ItemIndex := NewIndex;
-    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) and Columns[fMouseOverCell.X].TriggerOnChange
+    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE)
+      and Columns[fMouseOverCell.X].TriggerOnChange
+      and Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled
       and Assigned(fOnChange) then
     begin
       fOnChange(Self);

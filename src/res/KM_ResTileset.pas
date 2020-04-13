@@ -171,13 +171,14 @@ const
 
 
 
-  TERRAIN_EQUALITY_PAIRS: array[0..0] of record
+  TERRAIN_EQUALITY_PAIRS: array[0..1] of record
       TK1, TK2: TKMTerrainKind;
     end =
       (
 //        (TK1: tkGold; TK2: tkGoldMount),
 //        (TK1: tkIron; TK2: tkIronMount),
-        (TK1: tkWater; TK2: tkFastWater)
+        (TK1: tkWater; TK2: tkFastWater),
+        (TK1: tkSnowOnGrass; TK2: tkSnowOnDirt)
       );
 
 
