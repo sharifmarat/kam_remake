@@ -444,7 +444,7 @@ begin
            Actions.GroupHungerSet(G, 15000 + States.KaMRandomI(10000) - States.KaMRandomI(5000));
            Actions.ShowMsgGoToFormatted(P, 156, 39, '<$7>', [Military[P].Count, States.UnitTypeName(Military[P].UnitType)]);
          end;
-       end;
+       end
 
     else Exit;
 
@@ -516,11 +516,48 @@ end;
 function BarbarianRage: Single; {old values 0.15 0.3 0.45 0.5 0.6 - seem too high}
 begin
   case States.MissionDifficulty of
-    mdEasy1: Result := 0.1;
+    mdEasy1:  Result := 0.1;
     mdNormal: Result := 0.15;
-    mdHard1: Result := 0.25;
-    mdHard2: Result := 0.35;
-    mdHard3: Result := 0.45;
+    mdHard1:  Result := 0.25;
+    mdHard2:  Result := 0.35;
+    mdHard3:  Result := 0.45;
+  end;
+end;
+
+
+procedure UpdateAttackTimers;
+var
+  Pos: TKMPoint;
+  K: Integer;
+begin
+  case States.MissionDifficulty of
+
+    mdEasy1: begin
+               for K := 4 to 11 do
+                 Actions.AIAttackRemoveAll(K);
+               Pos.X := 0;
+               Pos.Y := 0;
+               Actions.AIAttackAdd(4, True, 51000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(5, True, 51000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(6, True, 45000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(9, True, 64000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(10, True, 45000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(11, True, 61000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+             end;
+
+    mdNormal: begin
+                for K := 4 to 11 do
+                  Actions.AIAttackRemoveAll(K);
+                Pos.X := 0;
+                Pos.Y := 0;
+                Actions.AIAttackAdd(4, True, 48000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+                Actions.AIAttackAdd(5, True, 48000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+                Actions.AIAttackAdd(6, True, 42000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+                Actions.AIAttackAdd(9, True, 61000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+                Actions.AIAttackAdd(10, True, 42000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+                Actions.AIAttackAdd(11, True, 58000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+              end;
+
   end;
 end;
 
@@ -530,60 +567,60 @@ begin
   case States.MissionDifficulty of
 
     mdEasy1: begin
-               Actions.AIEquipRate(4, 0, 350);
-               Actions.AIEquipRate(4, 1, 350);
-               Actions.AIEquipRate(5, 0, 350);
-               Actions.AIEquipRate(5, 1, 350);
-               Actions.AIEquipRate(6, 0, 350);
-               Actions.AIEquipRate(6, 1, 350);
-               Actions.AIEquipRate(7, 0, 200);
-               Actions.AIEquipRate(7, 1, 200);
-               Actions.AIEquipRate(8, 0, 200);
-               Actions.AIEquipRate(8, 1, 200);
+               Actions.AIEquipRate(4, 0, 375);
+               Actions.AIEquipRate(4, 1, 375);
+               Actions.AIEquipRate(5, 0, 375);
+               Actions.AIEquipRate(5, 1, 375);
+               Actions.AIEquipRate(6, 0, 375);
+               Actions.AIEquipRate(6, 1, 375);
+               Actions.AIEquipRate(7, 0, 225);
+               Actions.AIEquipRate(7, 1, 225);
+               Actions.AIEquipRate(8, 0, 225);
+               Actions.AIEquipRate(8, 1, 225);
                Actions.AIEquipRate(9, 0, 450);
                Actions.AIEquipRate(9, 1, 450);
-               Actions.AIEquipRate(10, 0, 350);
-               Actions.AIEquipRate(10, 1, 350);
+               Actions.AIEquipRate(10, 0, 375);
+               Actions.AIEquipRate(10, 1, 375);
                Actions.AIEquipRate(11, 0, 450);
                Actions.AIEquipRate(11, 1, 450);
              end;
 
     mdNormal: begin
-                Actions.AIEquipRate(4, 0, 300);
-                Actions.AIEquipRate(4, 1, 300);
-                Actions.AIEquipRate(5, 0, 300);
-                Actions.AIEquipRate(5, 1, 300);
-                Actions.AIEquipRate(6, 0, 300);
-                Actions.AIEquipRate(6, 1, 300);
-                Actions.AIEquipRate(7, 0, 200);
-                Actions.AIEquipRate(7, 1, 200);
-                Actions.AIEquipRate(8, 0, 200);
-                Actions.AIEquipRate(8, 1, 200);
+                Actions.AIEquipRate(4, 0, 320);
+                Actions.AIEquipRate(4, 1, 320);
+                Actions.AIEquipRate(5, 0, 320);
+                Actions.AIEquipRate(5, 1, 320);
+                Actions.AIEquipRate(6, 0, 320);
+                Actions.AIEquipRate(6, 1, 320);
+                Actions.AIEquipRate(7, 0, 220);
+                Actions.AIEquipRate(7, 1, 220);
+                Actions.AIEquipRate(8, 0, 220);
+                Actions.AIEquipRate(8, 1, 220);
                 Actions.AIEquipRate(9, 0, 400);
                 Actions.AIEquipRate(9, 1, 400);
-                Actions.AIEquipRate(10, 0, 300);
-                Actions.AIEquipRate(10, 1, 300);
+                Actions.AIEquipRate(10, 0, 320);
+                Actions.AIEquipRate(10, 1, 320);
                 Actions.AIEquipRate(11, 0, 400);
                 Actions.AIEquipRate(11, 1, 400);
               end;
 
     mdHard1: begin
-               Actions.AIEquipRate(4, 0, 270);
-               Actions.AIEquipRate(4, 1, 270);
-               Actions.AIEquipRate(5, 0, 270);
-               Actions.AIEquipRate(5, 1, 270);
-               Actions.AIEquipRate(6, 0, 270);
-               Actions.AIEquipRate(6, 1, 270);
+               Actions.AIEquipRate(4, 0, 280);
+               Actions.AIEquipRate(4, 1, 280);
+               Actions.AIEquipRate(5, 0, 280);
+               Actions.AIEquipRate(5, 1, 280);
+               Actions.AIEquipRate(6, 0, 280);
+               Actions.AIEquipRate(6, 1, 280);
                Actions.AIEquipRate(7, 0, 100);
                Actions.AIEquipRate(7, 1, 100);
                Actions.AIEquipRate(8, 0, 100);
                Actions.AIEquipRate(8, 1, 100);
-               Actions.AIEquipRate(9, 0, 350);
-               Actions.AIEquipRate(9, 1, 350);
-               Actions.AIEquipRate(10, 0, 270);
-               Actions.AIEquipRate(10, 1, 270);
-               Actions.AIEquipRate(11, 0, 350);
-               Actions.AIEquipRate(11, 1, 350);
+               Actions.AIEquipRate(9, 0, 360);
+               Actions.AIEquipRate(9, 1, 360);
+               Actions.AIEquipRate(10, 0, 280);
+               Actions.AIEquipRate(10, 1, 280);
+               Actions.AIEquipRate(11, 0, 360);
+               Actions.AIEquipRate(11, 1, 360);
              end;
 
     mdHard2: begin
@@ -994,6 +1031,8 @@ begin
   end;
 
   UpdateAIEquipRates;
+
+  UpdateAttackTimers;
 
   GiveInitialTroops;
 
