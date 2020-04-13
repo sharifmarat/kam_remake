@@ -430,7 +430,7 @@ type
 
   TKMAllianceType = (atEnemy, atAlly);
 
-  TKMapFolder = (mfSP, mfMP, mfDL);
+  TKMapFolder = (mfSP, mfMP, mfCM, mfDL);
   TKMapFolderSet = set of TKMapFolder;
 
 

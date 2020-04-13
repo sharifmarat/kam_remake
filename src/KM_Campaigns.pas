@@ -13,9 +13,13 @@ const
 
 type
   TKMBriefingCorner = (bcBottomRight, bcBottomLeft);
-  //Unique campaign identification, stored as 3 ANSI letters (TSK, TPR, etc)
-  //3 bytes are used to avoid string types issues
-  TKMCampaignId = array [0..2] of Byte;
+
+  TKMCampaignMap = record
+    Flag: TKMPointW;
+    NodeCount: Byte;
+    Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
+    TextPos: TKMBriefingCorner;
+  end;
 
   TKMCampaignMapProgressData = record
     Completed: Boolean;
@@ -63,12 +67,7 @@ type
     procedure SetCampaignId(aCampaignId: TKMCampaignId);
     procedure UpdateShortName;
   public
-    Maps: array of record
-      Flag: TKMPointW;
-      NodeCount: Byte;
-      Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
-      TextPos: TKMBriefingCorner;
-    end;
+    Maps: array of TKMCampaignMap;
     constructor Create;
     destructor Destroy; override;
 
@@ -89,6 +88,7 @@ type
     function GetCampaignTitle: UnicodeString;
     function GetCampaignDescription: UnicodeString;
     function GetCampaignMissionTitle(aIndex: Byte): String;
+    function GetMissionIndex(aValue: string): Byte;
     function GetMissionFile(aIndex: Byte; const aExt: UnicodeString = '.dat'): String;
     function GetMissionName(aIndex: Byte): String;
     function GetMissionTitle(aIndex: Byte): String;
@@ -638,6 +638,16 @@ begin
   Result := fPath + GetMissionName(aIndex) + PathDelim + GetMissionName(aIndex) + aExt;
 end;
 
+function TKMCampaign.GetMissionIndex(aValue: string): Byte;
+var
+  I: Integer;
+begin
+  for I := 0 to fMapCount - 1 do
+    if GetMissionName(I) = aValue then
+      Exit(I);
+
+  Result := 0;
+end;
 
 function TKMCampaign.GetMissionName(aIndex: Byte): String;
 begin

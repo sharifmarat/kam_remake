@@ -113,6 +113,8 @@ var
 implementation
 {$R *.dfm}
 
+uses
+  KM_Maps;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
