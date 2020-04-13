@@ -31,6 +31,7 @@ type
   TKMHandID2Arr = array of TKMHandIDArray;
 
   TKMCombatStatus = (csNeutral = 0, csDefending, csAttackingCity, csAttackingEverything);
+  TKMCombatStatusArray = array[0..MAX_HANDS-1,0..MAX_HANDS-1] of TKMCombatStatus;
 
 // Supervisor <-> agent relation ... cooperating AI players are just an illusion, agents does not see each other
   TKMSupervisor = class
@@ -38,18 +39,17 @@ type
     fFFA: Boolean;
     fPL2Alli: TKMHandByteArr;
     fAlli2PL: TKMHandID2Arr;
-    fCombatStatus: array[0..MAX_HANDS-1,0..MAX_HANDS-1] of TKMCombatStatus;
+    fCombatStatus: TKMCombatStatusArray;
     fArmyPos: TArmyForwardFF;
 
     procedure UpdateFFA();
-    function CheckDefenceStatus(aTeam: Byte; var E: TKMUnitGroupArray; var H: TKMHouseArray): TKMCombatStatus;
-    procedure UpdateDefSupport(aTeamIdx: Byte);
-    procedure UpdateDefPos(aTeamIdx: Byte);
-    procedure UpdateAttack(aTeamIdx: Byte);
+    function UpdateCombatStatus(aTeam: Byte; var E: TKMUnitGroupArray; var H: TKMHouseArray): TKMCombatStatus;
+    procedure UpdateDefPos(aTeam: Byte);
+    procedure UpdateAttack(aTeam: Byte);
     procedure DivideResources();
     function GetInitPoints(var aPlayers: TKMHandIDArray): TKMPointArray;
     function IsNewAI(aID: TKMHandID): Boolean;
-    function NewAIInTeam(aIdxTeam: Byte; aAttack, aDefence: Boolean): Boolean;
+    function NewAIInTeam(aTeam: Byte; aAttack, aDefence: Boolean): Boolean;
     //procedure EvaluateArmies();
 
     procedure UpdateAttacks(aTeam: Byte; aTick: Cardinal);
@@ -62,6 +62,7 @@ type
 
     property PL2Alli: TKMHandByteArr read fPL2Alli;
     property Alli2PL: TKMHandID2Arr read fAlli2PL;
+    property CombatStatus: TKMCombatStatusArray read fCombatStatus;
     property FFA: boolean read fFFA;
 
     function FindClosestEnemies(var aPlayers: TKMHandIDArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
@@ -182,10 +183,6 @@ const
 var
   Modulo: Word;
 begin
-  // Defensive support should be updated often
-  Modulo := aTick mod DEFSUPPORT_DIVISION;
-  if (Modulo < Length(fAlli2PL)) then
-    UpdateDefSupport(Modulo);
   // Attack / defence can be updated slower
   Modulo := aTick mod DEF_OR_ATT_DIVISION;
   if (Modulo >= DEFENCES) AND (Modulo - DEFENCES < Length(fAlli2PL)) then
@@ -206,7 +203,7 @@ end;
 
 
 
-function TKMSupervisor.CheckDefenceStatus(aTeam: Byte; var E: TKMUnitGroupArray; var H: TKMHouseArray): TKMCombatStatus;
+function TKMSupervisor.UpdateCombatStatus(aTeam: Byte; var E: TKMUnitGroupArray; var H: TKMHouseArray): TKMCombatStatus;
   procedure AddEnemy(aG: TKMUnitGroup; var aCnt: Integer; var aEnemyIsClose: Boolean);
   var
     K: Integer;
@@ -236,9 +233,9 @@ const
   ARMY_IN_HOSTILE_CITY = 200;
   TARGET_HOUSE_IN_INFLUENCE = 150;
 var
-  InCombat: Boolean;
+  InCombat, HouseIsClose, EnemyIsClose: Boolean;
   PL: TKMHandID;
-  HouseIsClose, EnemyIsClose: Boolean;
+  CS: TKMCombatStatus;
   Idx, K, L, CntH, CntE: Integer;
   SelectedDistance: Single;
   P: TKMPoint;
@@ -248,15 +245,17 @@ var
 begin
   Result := csNeutral;
   // Check if team have newAI
-  if not NewAIInTeam(aTeam, True, True) OR (SP_OLD_ATTACK_AI = True) then
+  if not NewAIInTeam(aTeam, False, False) OR (SP_OLD_ATTACK_AI = True) then
     Exit;
   CntH := 0;
   CntE := 0;
   for Idx := 0 to Length(fAlli2PL[aTeam]) - 1 do
   begin
     Owner := fAlli2PL[aTeam,Idx];
+    CS := csNeutral;
     InCombat := gHands[Owner].AI.ArmyManagement.AttackNew.Count > 0;
     for PL := 0 to gHands.Count - 1 do
+    begin
       if (gHands[Owner].Alliances[PL] = atEnemy) then
       begin
         // Check if units are closer to enemy city and if so, then change status to attacker
@@ -323,8 +322,11 @@ begin
           end;
         end;
         fCombatStatus[Owner,PL] := TKMCombatStatus(  Byte(HouseIsClose OR EnemyIsClose) * Max( Byte(fCombatStatus[Owner,PL]), Byte(csDefending) )  );
+        CS := TKMCombatStatus(  Max( Byte(CS), Byte(fCombatStatus[Owner,PL]) )  );
         Result := TKMCombatStatus(  Max( Byte(fCombatStatus[Owner,PL]), Byte(Result) )  );
       end;
+      fCombatStatus[Owner,Owner] := CS; // Overall combat status of player
+    end;
   end;
   SetLength(H,CntH);
   SetLength(E,CntE);
@@ -629,15 +631,15 @@ var
 var
   PlayerInCombat, LineInCombat, TeamInCombat: Boolean;
   K, L, Cnt, Ready: Integer;
-  DefenceStatus: TKMCombatStatus;
-  NewGroups, EnemyGroups: TKMUnitGroupArray;
+  CS: TKMCombatStatus;
+  EnemyGroups: TKMUnitGroupArray;
   EnemyHouses: TKMHouseArray;
 begin
   // Check if team have newAI
-  if not NewAIInTeam(aTeam, True, True) OR (SP_OLD_ATTACK_AI = True) then
+  if not NewAIInTeam(aTeam, False, False) OR (SP_OLD_ATTACK_AI = True) then
     Exit;
   // Check if there are hostile units around
-  DefenceStatus := CheckDefenceStatus(aTeam, EnemyGroups, EnemyHouses);
+  CS := UpdateCombatStatus(aTeam, EnemyGroups, EnemyHouses);
   // Check if hostile units are around specific player (if not release combat groups)
   for K := 0 to Length(fAlli2PL[aTeam]) - 1 do
     if IsNewAI(fAlli2PL[aTeam,K]) then
@@ -648,21 +650,18 @@ begin
       if not PlayerInCombat then
         gHands[ fAlli2PL[aTeam,K] ].AI.ArmyManagement.AttackNew.ReleaseGroups();
     end;
-  if (DefenceStatus = csNeutral) OR ((DefenceStatus = csDefending) AND (Length(EnemyGroups) <= 0)) then
+  if (CS = csNeutral) OR ((CS = csDefending) AND (Length(EnemyGroups) <= 0)) then
     Exit;
-  // Add everything to defence
-  if (DefenceStatus = csDefending) then
-  begin
-    for K := 0 to Length(fAlli2PL[aTeam]) - 1 do
-      if IsNewAI(fAlli2PL[aTeam,K]) then
-        with gHands[ fAlli2PL[aTeam,K] ] do
+  // Add everything to defence if AI is defending
+  for K := 0 to Length(fAlli2PL[aTeam]) - 1 do
+    if IsNewAI(fAlli2PL[aTeam,K]) then
+      for L := Low(fCombatStatus) to High(fCombatStatus) do
+        if (fCombatStatus[ fAlli2PL[aTeam,K], L ] = csDefending) then
         begin
-          SetLength(NewGroups,UnitGroups.Count);
-          for L := 0 to UnitGroups.Count - 1 do
-            NewGroups[L] := UnitGroups.Groups[L];
-          AI.ArmyManagement.AttackNew.AddGroups(NewGroups);
+          with gHands[ fAlli2PL[aTeam,K] ].AI.ArmyManagement do
+            AttackNew.AddGroups( Defence.ReleaseAllGroups() );
+          break;
         end;
-  end;
   // Check if team have combat groups
   TeamInCombat := False;
   for K := 0 to Length(fAlli2PL[aTeam]) - 1 do
@@ -753,96 +752,7 @@ begin
 end;
 
 
-procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
-  // Get new AI players
-  function GetNewAIPlayers(var aNewAIPLs: TKMHandIDArray): Boolean;
-  var
-    I, Cnt: Integer;
-  begin
-    Cnt := 0;
-    SetLength(aNewAIPLs, Length(fAlli2PL[aTeamIdx]));
-    for I := 0 to Length(aNewAIPLs) - 1 do
-      with gHands[fAlli2PL[aTeamIdx,I] ] do
-        if (HandType = hndComputer) AND AI.Setup.NewAI then
-        begin
-          aNewAIPLs[Cnt] := fAlli2PL[aTeamIdx,I];
-          Inc(Cnt);
-        end;
-    SetLength(aNewAIPLs, Cnt);
-    Result := Cnt > 1; // We dont just need 1 new AI but also ally which will help him
-  end;
-  // Try find support
-  procedure FindAssistance(aAssistByInfluence: Boolean; aPoint: TKMPoint; aOwner: TKMHandID; var aNewAIPLs: TKMHandIDArray);
-  type
-    TKMAssistInfo = record
-      Assistance: Boolean;
-      Influence: Byte;
-      Player: TKMHandID;
-    end;
-    TKMAssistInfoArr = array of TKMAssistInfo;
-    procedure SortByInfluence(var aAssistArr: TKMAssistInfoArr);
-    var
-      I,K: Integer;
-      POM: TKMAssistInfo;
-    begin
-      for I := 0 to Length(aAssistArr) - 1 do
-        for K := 0 to Length(aAssistArr) - 2 - I do
-          if (aAssistArr[K].Influence > aAssistArr[K+1].Influence) then
-          begin
-            POM := aAssistArr[K];
-            aAssistArr[K] := aAssistArr[K + 1];
-            aAssistArr[K + 1] := POM;
-          end;
-    end;
-  const
-    ASSIST_BY_INFLUENCE_LIMIT = 50;
-  var
-    AllyAssist: Boolean;
-    I: Integer;
-    AssistArr: TKMAssistInfoArr;
-  begin
-    SetLength(AssistArr, Length(aNewAIPLs));
-    FillChar(AssistArr[0], SizeOf(AssistArr[0]) * Length(AssistArr), #0);
-    for I := 0 to Length(aNewAIPLs) - 1 do
-      with AssistArr[I] do
-      begin
-        Assistance := False;
-        Player := aNewAIPLs[I];
-        Influence := gAIFields.Influences.OwnPoint[Player, aPoint];
-      end;
-    SortByInfluence(AssistArr);
-    // Prefer to defend allies in range of influence
-    AllyAssist := False;
-    for I := 0 to Length(aNewAIPLs) - 1 do
-      with AssistArr[I] do
-        if (aOwner <> Player) AND (
-          (not aAssistByInfluence AND (Influence > 0)) OR (aAssistByInfluence AND (Influence > ASSIST_BY_INFLUENCE_LIMIT))
-        ) then
-        begin
-          Assistance := True;
-          AllyAssist := AllyAssist
-                        OR gHands[ Player ].AI.ArmyManagement.Defence.DefendPoint(aPoint, True, False);
-        end;
-    // If there is not ally nearby then try another allies
-    if not AllyAssist AND not aAssistByInfluence then
-      for I := 0 to Length(aNewAIPLs) - 1 do
-        with AssistArr[I] do
-          if (aOwner <> Player) AND not Assistance AND gHands[ Player ].AI.Setup.DefendAllies then
-            gHands[ Player ].AI.ArmyManagement.Defence.DefendPoint(aPoint, False, True);
-  end;
-var
-  I,K: Integer;
-  NewAIPLs: TKMHandIDArray;
-begin
-  if (Length(fAlli2PL) > 1) AND GetNewAIPlayers(NewAIPLs) then
-    for I := 0 to Length(NewAIPLs) - 1 do
-      with gHands[ NewAIPLs[I] ].AI.ArmyManagement.DefendRequest do
-        for K := 0 to PointsCnt - 1 do
-          FindAssistance(AssistByInfluence[K], Points[K], NewAIPLs[I], NewAIPLs);
-end;
-
-
-procedure TKMSupervisor.UpdateDefPos(aTeamIdx: Byte);
+procedure TKMSupervisor.UpdateDefPos(aTeam: Byte);
 type
   TKMDistDefPos = array[0..MAX_HANDS-1] of record
     Count: Word;
@@ -931,18 +841,18 @@ var
   DefPosReq: TKMWordArray;
   TeamDefPos: TKMTeamDefPos;
 begin
-  if NewAIInTeam(aTeamIdx, False, True) AND (Length(fAlli2PL) > 1) then
+  if NewAIInTeam(aTeam, False, True) AND (Length(fAlli2PL) > 1) then
   begin
-    SetLength(DefPosReq, Length( fAlli2PL[aTeamIdx] ) );
+    SetLength(DefPosReq, Length( fAlli2PL[aTeam] ) );
     for IdxPL := 0 to Length(DefPosReq) - 1 do
-      with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
+      with gHands[ fAlli2PL[aTeam, IdxPL] ] do
       begin
         Troops := Byte(HandType = hndComputer) * (Stats.GetUnitQty(utRecruit) + Stats.GetArmyCount); // Consider also recruits so after peace time the AI already have prepared defences
-        DefPosReq[IdxPL] := Round(Troops / 9) + RESERVE_DEF_POS; // Each group have 9 troops so we need max (Troops / 9) positions + reserves
+        DefPosReq[IdxPL] := Round(Troops / 8) + RESERVE_DEF_POS; // Each group have 9 troops so we need max (Troops / 9) positions + reserves
       end;
     SetLength(TeamDefPos,0);
-    gAIFields.NavMesh.Defences.FindTeamDefences(fAlli2PL[aTeamIdx], DefPosReq, TeamDefPos);
-    DivideDefences(fAlli2PL[aTeamIdx], DefPosReq, TeamDefPos);
+    gAIFields.NavMesh.Defences.FindTeamDefences(fAlli2PL[aTeam], DefPosReq, TeamDefPos);
+    DivideDefences(fAlli2PL[aTeam], DefPosReq, TeamDefPos);
   end;
 end;
 
@@ -994,7 +904,7 @@ end;
 
 
 // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
-procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
+procedure TKMSupervisor.UpdateAttack(aTeam: Byte);
 
   procedure GetBestComparison(aPlayer: TKMHandID; var aBestCmpIdx, aWorstCmpIdx: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray);
   const
@@ -1051,40 +961,40 @@ var
   EnemyStats: TKMEnemyStatisticsArray;
   AR: TKMAttackRequest;
 begin
-  if not NewAIInTeam(aTeamIdx, False, True) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
+  if not NewAIInTeam(aTeam, True, False) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
     Exit;
   // Check if alliance can attack (have available soldiers) in the FFA mode (if there are just 2 teams attack if we have advantage)
   if fFFA AND not (gGame.MissionMode = mmTactic) then
   begin
     DefRatio := 0;
-    for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
-      with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
+    for IdxPL := 0 to Length( fAlli2PL[aTeam] ) - 1 do
+      with gHands[ fAlli2PL[aTeam, IdxPL] ] do
         if (HandType = hndComputer) AND AI.Setup.NewAI AND AI.Setup.AutoAttack then
         begin
           DefRatio := Max(DefRatio, AI.ArmyManagement.Defence.DefenceStatus);
-          KMSwapInt(fAlli2PL[aTeamIdx, 0], fAlli2PL[aTeamIdx, IdxPL]); // Make sure that player in first index is new AI
+          KMSwapInt(fAlli2PL[aTeam, 0], fAlli2PL[aTeam, IdxPL]); // Make sure that player in first index is new AI
         end;
     // AI does not have enought soldiers
     if (DefRatio < MIN_DEF_RATIO) then
       Exit;
   end;
   // Try find enemies by influence area
-  if FindClosestEnemies(fAlli2PL[aTeamIdx], EnemyStats) then
+  if FindClosestEnemies(fAlli2PL[aTeam], EnemyStats) then
   begin
     // Calculate strength of alliance, find best comparison - value in interval <-1,1>, positive value = advantage, negative = disadvantage
-    GetBestComparison(fAlli2PL[aTeamIdx, 0], BestCmpIdx, WorstCmpIdx, BestCmp, WorstCmp, EnemyStats);
-    ArmyState := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[ fAlli2PL[aTeamIdx,0], atAlly ];
+    GetBestComparison(fAlli2PL[aTeam, 0], BestCmpIdx, WorstCmpIdx, BestCmp, WorstCmp, EnemyStats);
+    ArmyState := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[ fAlli2PL[aTeam,0], atAlly ];
     with ArmyState.FoodState do
       FoodLevel := (Full + Middle) / Max(1, (Full + Middle + Low));
     if (BestCmpIdx <> -1) AND ((BestCmp > MIN_ADVANTAGE) OR (FoodLevel < FOOD_THRESHOLD) OR (gGame.MissionMode = mmTactic)) then
     begin
       EnemyTeamIdx := fPL2Alli[ EnemyStats[BestCmpIdx].Player ];
-      for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
-        if gHands[ fAlli2PL[aTeamIdx,IdxPL] ].AI.Setup.AutoAttack then
+      for IdxPL := 0 to Length( fAlli2PL[aTeam] ) - 1 do
+        if gHands[ fAlli2PL[aTeam,IdxPL] ].AI.Setup.AutoAttack then
         begin
-          fCombatStatus[fAlli2PL[aTeamIdx,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttackingCity;
+          fCombatStatus[fAlli2PL[aTeam,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttackingCity;
           if (gGame.MissionMode = mmTactic) then
-            fCombatStatus[fAlli2PL[aTeamIdx,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttackingEverything;
+            fCombatStatus[fAlli2PL[aTeam,IdxPL],EnemyStats[BestCmpIdx].Player] := csAttackingEverything;
           with AR do
           begin
             Active := True;
@@ -1098,7 +1008,7 @@ begin
             SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
             Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
           end;
-          gHands[ fAlli2PL[aTeamIdx,IdxPL] ].AI.ArmyManagement.AttackRequest := AR;
+          gHands[ fAlli2PL[aTeam,IdxPL] ].AI.ArmyManagement.AttackRequest := AR;
         end;
     end;
   end;
@@ -1199,13 +1109,13 @@ begin
 end;
 
 
-function TKMSupervisor.NewAIInTeam(aIdxTeam: Byte; aAttack, aDefence: Boolean): Boolean;
+function TKMSupervisor.NewAIInTeam(aTeam: Byte; aAttack, aDefence: Boolean): Boolean;
 var
   IdxPL: Integer;
 begin
   Result := False;
-  for IdxPL := 0 to Length( fAlli2PL[aIdxTeam] ) - 1 do
-    with gHands[ fAlli2PL[aIdxTeam, IdxPL] ] do
+  for IdxPL := 0 to Length( fAlli2PL[aTeam] ) - 1 do
+    with gHands[ fAlli2PL[aTeam, IdxPL] ] do
       if (HandType = hndComputer)
         AND AI.Setup.NewAI
         AND (not aAttack OR AI.Setup.AutoAttack)
@@ -1243,15 +1153,16 @@ begin
       PL := Alli2PL[Team,K];
       Result := Format('%s|    [$%s] Player %s %d (Enabled %d; Defeated: %d)',[Result,IntToHex(gHands[PL].FlagColor AND $FFFFFF,6),COLOR_WHITE,PL,Byte(gHands[PL].Enabled),Byte(gHands[PL].AI.HasLost)]);
       for PL2 := Low(fCombatStatus[PL]) to High(fCombatStatus[PL]) do
-      begin
-        case fCombatStatus[PL,PL2] of
-          csNeutral: continue;
-          csDefending:            CombatStatusText := 'defending';
-          csAttackingCity:        CombatStatusText := 'attacking city';
-          csAttackingEverything:  CombatStatusText := 'attacking everything';
+        if (PL <> PL2) then
+        begin
+          case fCombatStatus[PL,PL2] of
+            csNeutral: continue;
+            csDefending:            CombatStatusText := 'defending';
+            csAttackingCity:        CombatStatusText := 'attacking city';
+            csAttackingEverything:  CombatStatusText := 'attacking everything';
+          end;
+          Result := Format('%s [$%s] %s %s %d,',[Result,IntToHex(gHands[PL2].FlagColor AND $FFFFFF,6),CombatStatusText,COLOR_WHITE,PL2]);
         end;
-        Result := Format('%s [$%s] %s %s %d,',[Result,IntToHex(gHands[PL2].FlagColor AND $FFFFFF,6),CombatStatusText,COLOR_WHITE,PL2]);
-      end;
     end;
   end;
 end;

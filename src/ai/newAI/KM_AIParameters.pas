@@ -16,32 +16,33 @@ uses
   
 // Global variables for AI
 // They are stored in this file so Runner and Parallel runner can access it
+{$IFDEF DEBUG_NewAI}
 var
-
+{$ELSE}
+const
+{$ENDIF}
 
 { KM_NavMeshArmyPositioning }
 //{ 2020-04-12
-  GA_ATTACK_NMAP_PrefillDistances_Houses             : Word =    5;
+  GA_ATTACK_NMAP_PrefillDistances_Houses              : Word =    5;
 
-  GA_ATTACK_NMAP_PrefillDistances_Groups              : Word =   20;
-  GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence       : Word =    8;
+  GA_ATTACK_NMAP_PrefillDistances_Groups              : Word =   29;
+  GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence       : Word =    4;
   GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence      : Word =   30;
-  GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence       : Word =    5;
-  GA_ATTACK_NMAP_EvaluateLine_QueueCnt                : Single =     0.0000000000;
-  GA_ATTACK_NMAP_EvaluateLine_MinDist                 : Single =     1.0906372070;
+  GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence       : Word =   15;
+  GA_ATTACK_NMAP_EvaluateLine_QueueCnt                : Single =     0.1092337593;
+  GA_ATTACK_NMAP_EvaluateLine_MinDist                 : Single =     0.4369973540;
 
-  GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup       : Single =     4.7476720810;
-  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee     : Single =     3.6055257320;
-  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse : Single =     1.6098828316;
-  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged    : Single =     1.6779685020;
-  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted   : Single =     2.8249523640;
-  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist  : Single =     4.1452937126;
-  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist      : Single =    25.5256671906;
-  GA_ATTACK_SUPERVISOR_EvalTarget_OportunityGain      : Single =     6.6960072517;
-  GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain  : Single =     6.4341087341;
-  GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold  : Single =     0.7516828954;
-
-
+  GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup       : Single =     1.2410084009;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee     : Single =     0.8641214371;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse : Single =     0.8289436817;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged    : Single =     2.0872707367;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted   : Single =     2.6811749935;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist  : Single =     3.9079263210;
+  GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist      : Single =     1.1296768188;
+  GA_ATTACK_SUPERVISOR_EvalTarget_OportunityGain      : Single =     2.6104888916;
+  GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain  : Single =     4.5673518181;
+  GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold  : Single =     0.7455104709;
 //}
 
 { KM_ArmyAttack }
@@ -321,8 +322,8 @@ var
 {  KM_NavMeshPathFinding }
 //{ 2019-12-25
   GA_PATHFINDING_AvoidTraffic                        : Single =     2.7351799011;
-  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     8.5770339966;
-  GA_PATHFINDING_AvoidEdges                          : Single =   147.4333343506;
+  GA_PATHFINDING_AvoidSpecEnemy                      : Single =     1.0583767891;
+  GA_PATHFINDING_AvoidEdges                          : Single =    85.0505981445;
 //}
 
 { 2019-12-15

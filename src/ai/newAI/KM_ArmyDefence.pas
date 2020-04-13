@@ -12,12 +12,6 @@ uses
 
 
 type
-  TKMDefendRequest = record
-    PointsCnt: Word;
-    Points: TKMPointArray;
-    AssistByInfluence: TBooleanArray;
-  end;
-
   TKMFormation = record NumUnits, UnitsPerRow: Integer; end;
 
   TKMDefencePosition = class
@@ -58,11 +52,11 @@ type
 
     function GetCount: Integer; inline;
     function GetPosition(aIndex: Integer): TKMDefencePosition; inline;
-    function FindGroupsAroundLoc(aMaxCnt, aMinSoldiers: Byte; aLoc: TKMPoint; aIgnoreFirstLine: Boolean): TKMUnitGroupArray;
+    function GetGroupsCount(): Word;
   public
     TroopFormations: array [TKMGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
 
-    constructor Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
+    constructor Create(aOwner: TKMHandID; aAttack: TKMArmyAttack);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -71,6 +65,7 @@ type
     property Count: Integer read GetCount;
     property Positions[aIndex: Integer]: TKMDefencePosition read GetPosition; default;
     property FirstLineCnt: Word read fFirstLineCnt;
+    property GroupsCount: Word read GetGroupsCount;
     property CityUnderAttack: Boolean read fCityUnderAttack;
 
     procedure OwnerUpdate(aOwner: TKMHandID);
@@ -81,8 +76,7 @@ type
     function FindPlaceForGroup(aGroup: TKMUnitGroup): Boolean;
     procedure ReleaseGroup(aGroup: TKMUnitGroup); overload;
     procedure ReleaseGroup(aDefPosIdx: Integer); overload;
-    function DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False; aIgnoreFirstLine: Boolean = False): Boolean;
-    procedure FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray; var aDefRequest: TKMDefendRequest);
+    function ReleaseAllGroups(): TKMUnitGroupArray;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -204,7 +198,7 @@ end;
 
 
 { TKMArmyDefence }
-constructor TKMArmyDefence.Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
+constructor TKMArmyDefence.Create(aOwner: TKMHandID; aAttack: TKMArmyAttack);
 var
   GT: TKMGroupType;
 begin
@@ -287,9 +281,19 @@ begin
 end;
 
 
+function TKMArmyDefence.GetGroupsCount(): Word;
+var
+  K: Integer;
+begin
+  Result := 0;
+  for K := 0 to Count - 1 do
+    Inc(Result, Byte(Positions[K].Group <> nil));
+end;
+
+
 function TKMArmyDefence.FindPlaceForGroup(aGroup: TKMUnitGroup): Boolean;
 var
-  I, BestIdx, Needed: Integer;
+  K, BestIdx, Needed: Integer;
   BestWeight: Word;
   UG: TKMUnitGroup;
 begin
@@ -298,12 +302,12 @@ begin
   //Try to link to existing group
   BestWeight := 0;
   BestIdx := -1;
-  for I := 0 to Count - 1 do
-    if Positions[I].CanAccept(aGroup, TroopFormations[aGroup.GroupType].NumUnits)
-      AND (BestWeight < Positions[I].Weight) then
+  for K := 0 to Count - 1 do
+    if Positions[K].CanAccept(aGroup, TroopFormations[aGroup.GroupType].NumUnits)
+      AND (BestWeight < Positions[K].Weight) then
     begin
-      BestIdx := I;
-      BestWeight := Positions[I].Weight;
+      BestIdx := K;
+      BestWeight := Positions[K].Weight;
     end;
 
   if (BestIdx <> -1) then
@@ -381,6 +385,22 @@ procedure TKMArmyDefence.ReleaseGroup(aDefPosIdx: Integer);
 begin
   if (aDefPosIdx < Count) then
     Positions[aDefPosIdx].Group := nil;
+end;
+
+
+function TKMArmyDefence.ReleaseAllGroups(): TKMUnitGroupArray;
+var
+  K, Cnt: Integer;
+begin
+  Cnt := GroupsCount;
+  SetLength(Result, Cnt);
+  for K := 0 to Count - 1 do
+    if (Positions[K].Group <> nil) then
+    begin
+      Dec(Cnt);
+      Result[Cnt] := Positions[K].Group;
+      ReleaseGroup(K);
+    end;
 end;
 
 
@@ -479,203 +499,6 @@ begin
     end;
     UpdateDefences(Count, aPNewDef);
   end;
-end;
-
-
-// Find defensive groups around specific loc
-function TKMArmyDefence.FindGroupsAroundLoc(aMaxCnt, aMinSoldiers: Byte; aLoc: TKMPoint; aIgnoreFirstLine: Boolean): TKMUnitGroupArray;
-const
-  INIT_PRICE = 10000000;
-var
-  I, K, Idx, Cnt, Soldiers: Integer;
-  Price: Single;
-  Group: TKMUnitGroup;
-  UGA: TKMUnitGroupArray;
-  IdxArr: TIntegerArray;
-  PriceArr: TSingleArray;
-begin
-  SetLength(IdxArr, aMaxCnt);
-  SetLength(PriceArr, aMaxCnt);
-  for I := 0 to Length(PriceArr) - 1 do
-    PriceArr[I] := INIT_PRICE;
-  // Find closest groups
-  Cnt := 0;
-  Soldiers := 0;
-  for I := 0 to fPositions.Count - 1 do
-    if not aIgnoreFirstLine OR (Positions[I].Line > FIRST_LINE_MAX_IDX) then
-    begin
-      Group := Positions[I].Group;
-      if (Group <> nil) AND not Group.IsDead then
-      begin
-        Cnt := Cnt + 1;
-        Soldiers := Soldiers + Group.Count;
-        Idx := I;
-        Price := KMDistanceSqr(aLoc, Positions[I].Position.Loc) - Group.Count * 10;
-        for K := 0 to Length(PriceArr) - 1 do
-          if (Price < PriceArr[K]) then
-          begin
-            KMSwapFloat(Price, PriceArr[K]);
-            KMSwapInt(Idx, IdxArr[K]);
-          end
-          else if (Price = INIT_PRICE) then
-            break;
-      end;
-    end;
-  // Release groups if we have enought soldiers
-  if (Soldiers < aMinSoldiers) then
-    Cnt := 0;
-  Cnt := Min( aMaxCnt, Cnt );
-  SetLength(UGA, Cnt);
-  for I := 0 to Cnt - 1 do
-  begin
-    UGA[I] := Positions[ IdxArr[I] ].Group;
-    ReleaseGroup( IdxArr[I] );
-  end;
-  Result := UGA;
-end;
-
-
-// Check if exists company with order to go at target point or create new defensive company
-function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False; aIgnoreFirstLine: Boolean = False): Boolean;
-  // Add more soldiers into company
-  function RestockCompany(aCompany: TAICompany): Boolean;
-  const
-    MIN_GROUPS = 5;
-    MIN_WARRIORS = 40;
-    RESERVE = 3;
-  var
-    I, SquadCnt: Integer;
-    Groups: TKMUnitGroupArray;
-  begin
-    Result := True;
-    SquadCnt := aCompany.SquadCnt();
-    if (SquadCnt < MIN_GROUPS) OR (aCompany.WarriorCnt() < MIN_WARRIORS) then
-    begin
-      SquadCnt := Max(0,MIN_GROUPS - SquadCnt) + RESERVE;
-      Groups := FindGroupsAroundLoc(SquadCnt, 0, aCompany.ScanPosition, False);
-      for I := 0 to Length(Groups) - 1 do
-        aCompany.AddSquad( Groups[I] );
-      Result := (Length(Groups) >= SquadCnt);
-    end;
-  end;
-  // Check if there is company around
-  function IsCompanyAround(aLoc: TKMPoint): Boolean;
-  const
-    SQR_MAX_DISTANCE = 20*20;
-  var
-    I: Integer;
-    Company: TAICompany;
-  begin
-    Result := False;
-    for I := 0 to fAttack.Count - 1 do
-    begin
-      Company := fAttack.Company[I];
-      if (KMDistanceSqr(aLoc, Company.ScanPosition) < SQR_MAX_DISTANCE)
-        OR ((Company.CompanyMode = cmDefence) AND (KMDistanceSqr(aLoc, Company.TargetPoint) < SQR_MAX_DISTANCE)) then
-      begin
-        // Actualize target point
-        if (Company.CompanyMode = cmDefence) then
-          Company.TargetPoint := aLoc;
-        if aRestockCompany AND not RestockCompany(Company) then
-        begin
-          // Company could not be restocked -> false
-        end
-        else
-          Result := True;
-        Exit;
-      end;
-    end;
-  end;
-const
-  MAX_GROUPS_PER_COMPANY = 8;
-  MIN_SOLDIERS = 3;
-var
-  UGA: TKMUnitGroupArray;
-begin
-  Result := IsCompanyAround(aTargetPoint);
-  if not Result then
-  begin
-    UGA := FindGroupsAroundLoc(MAX_GROUPS_PER_COMPANY, MIN_SOLDIERS * Byte(not aIgnoreFirstLine), aTargetPoint, aIgnoreFirstLine);
-    if (Length(UGA) > 0) then
-    begin
-      if SP_OLD_ATTACK_AI then
-        fAttack.CreateCompany(aTargetPoint, UGA, cmDefence);
-      Result := True;
-    end;
-  end;
-end;
-
-
-// Scan defence positions in first line and try to find hostile groups in specific radius
-procedure TKMArmyDefence.FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray; var aDefRequest: TKMDefendRequest);
-  // Add point with enemy presence
-  procedure AddTargetPoint(aPoint: TKMPoint; var aCnt: Integer; var aTargetPoints: TKMPointArray);
-  const
-    SQR_MIN_DISTANCE = 10*10;
-  var
-    I: Integer;
-  begin
-    for I := 0 to aCnt - 1 do
-      if (KMDistanceSqr(aTargetPoints[I],aPoint) < SQR_MIN_DISTANCE) then
-        Exit;
-    aTargetPoints[aCnt] := aPoint;
-    Inc(aCnt);
-  end;
-  // Add request for help
-  procedure AddDefRequest(aLoc: TKMPoint; aOnlyByInfluence: Boolean);
-  begin
-    with aDefRequest do
-    begin
-      if (PointsCnt >= Length(Points)) then
-      begin
-        SetLength(Points, PointsCnt + 10);
-        SetLength(AssistByInfluence, PointsCnt + 10);
-      end;
-      Points[PointsCnt] := aLoc;
-      AssistByInfluence[PointsCnt] := aOnlyByInfluence;
-      Inc(PointsCnt);
-    end;
-  end;
-var
-  I, Idx, Cnt: Integer;
-  Loc: TKMPoint;
-  Group: TKMUnitGroup;
-  GT: TKMGroupType;
-  TargetPoints: TKMPointArray;
-  UGA: TKMUnitGroupArray;
-begin
-  aDefRequest.PointsCnt := 0;
-  Cnt := 0;
-  SetLength(TargetPoints,fFirstLineCnt + Length(aEnemyGroups));
-  // Check defensive line
-  for I := 0 to fPositions.Count - 1 do
-    if (Positions[I].Line = 0) then
-    begin
-      Loc := Positions[I].Position.Loc;
-      Idx := gAIFields.NavMesh.KMPoint2Polygon[Loc];
-      for GT := Low(TKMGroupType) to High(TKMGroupType) do
-        if (gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ] > 0) then
-        begin
-          UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, atEnemy);
-          if (Length(UGA) > 0) then
-            AddTargetPoint(Loc, Cnt, TargetPoints);
-          break;
-        end;
-    end;
-  // Check every group
-  for I := 0 to Length(aEnemyGroups) - 1 do
-  begin
-    Group := aEnemyGroups[I];
-    if (Group <> nil) AND not Group.IsDead then
-      AddTargetPoint(Group.Position, Cnt, TargetPoints);
-  end;
-  // Try find existing defensive platoons or create new
-  for I := 0 to Cnt - 1 do
-    if not DefendPoint(TargetPoints[I], True, False) then
-      AddDefRequest(TargetPoints[I],False)
-    else
-      AddDefRequest(TargetPoints[I],True);
-  fCityUnderAttack := (Cnt > 0);
 end;
 
 
