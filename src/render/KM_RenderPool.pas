@@ -159,6 +159,19 @@ const
   DELETE_COLOR = $1616FF;
 
 
+function RoundToTilePixel(aVal: Single): Single; inline; overload;
+begin
+  Result := Round(aVal * CELL_SIZE_PX) / CELL_SIZE_PX;
+end;
+
+
+function RoundToTilePixel(aVal: TKMPointF): TKMPointF; inline; overload;
+begin
+  Result.X := RoundToTilePixel(aVal.X);
+  Result.Y := RoundToTilePixel(aVal.Y);
+end;
+
+
 constructor TRenderPool.Create(aViewport: TKMViewport; aRender: TRender);
 var
   RT: TRXType;
@@ -212,12 +225,20 @@ end;
 
 
 procedure TRenderPool.ApplyTransform;
+var
+  ViewportPosRound: TKMPointF;
 begin
+  //Need to round the viewport position so we only translate by whole pixels
+  ViewportPosRound := RoundToTilePixel(fViewport.Position);
+
   glLoadIdentity; // Reset The View
-  glTranslatef(fViewport.ViewportClip.X/2, fViewport.ViewportClip.Y/2, 0);
+
+  //Use integer division so we don't translate by half a pixel if clip is odd
+  glTranslatef(fViewport.ViewportClip.X div 2, fViewport.ViewportClip.Y div 2, 0);
+
   glScalef(fViewport.Zoom*CELL_SIZE_PX, fViewport.Zoom*CELL_SIZE_PX, 1 / 256);
 
-  glTranslatef(-fViewport.Position.X + gGame.ActiveInterface.ToolbarWidth/CELL_SIZE_PX/fViewport.Zoom, -fViewport.Position.Y, 0);
+  glTranslatef(-ViewportPosRound.X + gGame.ActiveInterface.ToolbarWidth/CELL_SIZE_PX/fViewport.Zoom, -ViewportPosRound.Y, 0);
 
   if RENDER_3D then
   begin
@@ -227,14 +248,14 @@ begin
     glRotatef(rHeading,1,0,0);
     glRotatef(rPitch  ,0,1,0);
     glRotatef(rBank   ,0,0,1);
-    glTranslatef(-fViewport.Position.X + gGame.ActiveInterface.ToolBarWidth/CELL_SIZE_PX/fViewport.Zoom, -fViewport.Position.Y - 8, 10);
+    glTranslatef(-ViewportPosRound.X + gGame.ActiveInterface.ToolBarWidth/CELL_SIZE_PX/fViewport.Zoom, -ViewportPosRound.Y - 8, 10);
     glScalef(fViewport.Zoom, fViewport.Zoom, 1);
   end;
 
   glRotatef(rHeading,1,0,0);
   glRotatef(rPitch  ,0,1,0);
   glRotatef(rBank   ,0,0,1);
-  glTranslatef(0, 0, -fViewport.Position.Y);
+  glTranslatef(0, 0, -ViewportPosRound.Y);
 end;
 
 
@@ -1131,6 +1152,9 @@ begin
   if not aForced and (gMySpectator.FogOfWar.CheckVerticeRenderRev(X,Y) <= FOG_OF_WAR_MIN) then
     Exit;
 
+  pX := RoundToTilePixel(pX);
+  pY := RoundToTilePixel(pY);
+
   with gGFXData[aRX, aId] do
   begin
     // FOW is rendered over the top so no need to make sprites black anymore
@@ -1178,7 +1202,13 @@ begin
   if (gMySpectator.FogOfWar.CheckVerticeRenderRev(X,Y) <= FOG_OF_WAR_MIN) then Exit;
   // Skip rendering if alphas are zero (occurs so non-started houses can still have child sprites)
   if (aWoodProgress = 0) and (aStoneProgress = 0) then Exit;
-  
+
+  pX := RoundToTilePixel(pX);
+  pY := RoundToTilePixel(pY);
+
+  X2 := RoundToTilePixel(X2);
+  Y2 := RoundToTilePixel(Y2);
+
   glClear(GL_STENCIL_BUFFER_BIT);
 
   // Setup stencil mask
