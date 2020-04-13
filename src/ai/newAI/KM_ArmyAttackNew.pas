@@ -89,9 +89,10 @@ type
     procedure OwnerUpdate(aPlayer: TKMHandID);
 
     function IsGroupInAction(aGroup: TKMUnitGroup): Boolean;
-    procedure AddGroups(aGroups: TKMUnitGroupArray);
+    procedure AddGroups(const aGroups: TKMUnitGroupArray);
     procedure ReleaseGroup(aGroup: TKMUnitGroup);
     procedure ReleaseGroups();
+    procedure LinkGroup(aGroup: TKMUnitGroup);
 
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
@@ -450,6 +451,7 @@ end;
 
 function TKMCombatGroup.PlanPath(aTick: Cardinal; var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False; aOrderDestroy: Boolean = False): Boolean;
 var
+  PathFound: Boolean;
   InitPolygon, ClosestPolygon, Distance: Word;
   I: Integer;
   SQRDist: Single;
@@ -473,7 +475,14 @@ begin
     Exit;
   end;
   // Plan path with respect to enemy presence
-  if gAIFields.NavMesh.Pathfinding.AvoidEnemyRoute(Group.Owner, Group.GroupType, aActualPosition, aTargetPosition, Distance, PointPath) then
+  if aOrderAttack then
+    PathFound := gAIFields.NavMesh.Pathfinding.AvoidEnemyRoute(Group.Owner, Group.GroupType, aActualPosition, aTargetPosition, Distance, PointPath)
+  else if aOrderDestroy then
+    PathFound := gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, aTargetPosition, Distance, PointPath)
+  else
+    PathFound := gAIFields.NavMesh.Pathfinding.AvoidTrafficRoute(Group.Owner, aActualPosition, aTargetPosition, Distance, PointPath);
+
+  if PathFound then
   begin
     if (Distance < 5) then
     begin
@@ -636,7 +645,7 @@ begin
 end;
 
 
-procedure TKMArmyAttackNew.AddGroups(aGroups: TKMUnitGroupArray);
+procedure TKMArmyAttackNew.AddGroups(const aGroups: TKMUnitGroupArray);
 var
   K: Integer;
 begin
@@ -659,6 +668,22 @@ end;
 procedure TKMArmyAttackNew.ReleaseGroups();
 begin
   fCombatGroups.Clear();
+end;
+
+
+procedure TKMArmyAttackNew.LinkGroup(aGroup: TKMUnitGroup);
+var
+  K: Integer;
+begin
+  for K := 0 to Count - 1 do
+    if (aGroup.GroupType = fCombatGroups[K].Group.GroupType) AND (fCombatGroups[K].Group.Count < 9) then
+    begin
+      if (fCombatGroups[K].Group.Count - 9 <= aGroup.Count) then
+        aGroup.OrderLinkTo(fCombatGroups[K].Group, True)
+      else
+        aGroup.OrderSplitLinkTo(fCombatGroups[K].Group, fCombatGroups[K].Group.Count - 9, True);
+      fCombatGroups[K].Group.UnitsPerRow := Max(3,fCombatGroups[K].Group.UnitsPerRow);
+    end;
 end;
 
 

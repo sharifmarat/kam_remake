@@ -243,8 +243,6 @@ begin
     begin
       gAIFields.Eye.OwnerUpdate(PL);
       CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-      if (PL = fOwner) AND (Length(CityCenterPoints) < 1) then
-        Exit;
       // Transform it to polygons
       SetLength(StartPolygons, Cnt + Length(CityCenterPoints));
       for I := 0 to Length(CityCenterPoints) - 1 do
