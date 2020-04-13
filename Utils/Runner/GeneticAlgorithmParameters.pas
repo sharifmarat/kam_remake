@@ -11,11 +11,12 @@ type
   private
     fLogPar: TKMLog;
     fClass: String;
-    function Incr(var Idx: Integer): Integer;
+    function Incr(var Idx: Word): Word;
     // Get count of parameters
     function GetParCnt_TestParRun(): Word;
     function GetParCnt_HandLogistics(): Word;
     function GetParCnt_Manager(): Word;
+    function GetParCnt_CityAllIn(): Word;
     function GetParCnt_CityBuilder(): Word;
     function GetParCnt_Farm(): Word;
     function GetParCnt_Quarry(): Word;
@@ -25,16 +26,17 @@ type
     function GetParCnt_ArmyAttack(): Word;
     function GetParCnt_ArmyAttackNew(): Word;
     // Set global parameters
-    procedure SetPar_HandLogistics(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_CityBuilder(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_Farm(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_Quarry(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_RoadPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_Forest(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_CityPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
-    procedure SetPar_ArmyAttackNew(aIdv: TGAIndividual; aLogIt: Boolean = False);
+    procedure SetPar_HandLogistics(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_Manager      (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_CityAllIn    (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_CityBuilder  (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_Farm         (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_Quarry       (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_RoadPlanner  (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_Forest       (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_CityPlanner  (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_ArmyAttack   (aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+    procedure SetPar_ArmyAttackNew(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
   public
     constructor Create();
     destructor Destroy(); override;
@@ -70,7 +72,7 @@ end;
 
 
 // Small helping function
-function TGAParameterization.Incr(var Idx: Integer): Integer;
+function TGAParameterization.Incr(var Idx: Word): Word;
 begin
   Result := Idx;
   Inc(Idx);
@@ -81,7 +83,8 @@ function TGAParameterization.GetParCnt(aNewClass: String = ''): Word;
 begin
   if not (CompareStr(aNewClass, '') = 0) then
     fClass := aNewClass;
-  if      (CompareStr(fClass, 'TKMRunnerGA_CityBuilder'  ) = 0) then Result := GetParCnt_CityBuilder
+  if      (CompareStr(fClass, 'TKMRunnerGA_CityAllIn'    ) = 0) then Result := GetParCnt_CityAllIn
+  else if (CompareStr(fClass, 'TKMRunnerGA_CityBuilder'  ) = 0) then Result := GetParCnt_CityBuilder
   else if (CompareStr(fClass, 'TKMRunnerGA_CityPlanner'  ) = 0) then Result := GetParCnt_CityPlanner
   else if (CompareStr(fClass, 'TKMRunnerGA_Farm'         ) = 0) then Result := GetParCnt_Farm
   else if (CompareStr(fClass, 'TKMRunnerGA_Forest'       ) = 0) then Result := GetParCnt_Forest
@@ -97,7 +100,8 @@ end;
 
 procedure TGAParameterization.SetPar(aIdv: TGAIndividual; aLogIt: Boolean = False);
 begin
-  if      (CompareStr(fClass, 'TKMRunnerGA_CityBuilder'  ) = 0) then SetPar_CityBuilder(aIdv, aLogIt)
+  if      (CompareStr(fClass, 'TKMRunnerGA_CityAllIn'    ) = 0) then SetPar_CityAllIn(aIdv, aLogIt)
+  else if (CompareStr(fClass, 'TKMRunnerGA_CityBuilder'  ) = 0) then SetPar_CityBuilder(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_CityPlanner'  ) = 0) then SetPar_CityPlanner(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Farm'         ) = 0) then SetPar_Farm(aIdv, aLogIt)
   else if (CompareStr(fClass, 'TKMRunnerGA_Forest'       ) = 0) then SetPar_Forest(aIdv, aLogIt)
@@ -124,7 +128,7 @@ begin
   Result := 0;
 end;
 
-procedure TGAParameterization.SetPar_HandLogistics(aIdv: TGAIndividual; aLogIt: Boolean = False);
+procedure TGAParameterization.SetPar_HandLogistics(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 //var
 //  I: Integer;
 begin
@@ -154,12 +158,8 @@ begin
   Result := 2+6;
 end;
 
-procedure TGAParameterization.SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_PREDICTOR_WareNeedPerAWorker_Stone              := aIdv.Gene[Incr(K)];
   GA_PREDICTOR_WareNeedPerAWorker_Wood               := aIdv.Gene[Incr(K)];
 
@@ -185,17 +185,39 @@ begin
 end;
 
 
+function TGAParameterization.GetParCnt_CityAllIn(): Word;
+begin
+  Result :=
+    +GetParCnt_Manager()
+    +GetParCnt_CityBuilder()
+    +GetParCnt_Farm()
+    +GetParCnt_Quarry()
+    +GetParCnt_RoadPlanner()
+    +GetParCnt_Forest()
+    +GetParCnt_CityPlanner()
+  ;
+end;
+
+procedure TGAParameterization.SetPar_CityAllIn(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
+begin
+  // Set global parameters
+  SetPar_Manager     (aIdv, aLogIt, K);   Inc(K,GetParCnt_Manager());
+  SetPar_CityBuilder (aIdv, aLogIt, K);   Inc(K,GetParCnt_CityBuilder());
+  SetPar_Farm        (aIdv, aLogIt, K);   Inc(K,GetParCnt_Farm());
+  SetPar_Quarry      (aIdv, aLogIt, K);   Inc(K,GetParCnt_Quarry());
+  SetPar_RoadPlanner (aIdv, aLogIt, K);   Inc(K,GetParCnt_RoadPlanner());
+  SetPar_Forest      (aIdv, aLogIt, K);   Inc(K,GetParCnt_Forest());
+  SetPar_CityPlanner (aIdv, aLogIt, K);   Inc(K,GetParCnt_CityPlanner());
+end;
+
+
 function TGAParameterization.GetParCnt_CityBuilder(): Word;
 begin
   Result := 4+5+5+2;
 end;
 
-procedure TGAParameterization.SetPar_CityBuilder(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_CityBuilder(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_BUILDER_BuildHouse_FieldMaxWork    := Max(1, aIdv.Gene[Incr(K)] * 3);
   GA_BUILDER_BuildHouse_RTPMaxWork      := Max(1, aIdv.Gene[Incr(K)] * 10);
   GA_BUILDER_BuildHouse_RoadMaxWork     := Max(1, aIdv.Gene[Incr(K)] * 30);
@@ -244,12 +266,8 @@ begin
   Result := 2+3+4;
 end;
 
-procedure TGAParameterization.SetPar_Farm(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_Farm(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_PATHFINDING_Field            :=  0 + Round( aIdv.Gene[Incr(K)] * 50 );
   GA_SHORTCUTS_Field              :=  0 + Round( aIdv.Gene[Incr(K)] * 50 );
 
@@ -282,12 +300,8 @@ begin
   Result := 5;
 end;
 
-procedure TGAParameterization.SetPar_Quarry(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_Quarry(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_PLANNER_FindPlaceForQuary_Obstacle	 := aIdv.Gene[Incr(K)] * 50;
   GA_PLANNER_FindPlaceForQuary_DistCity	 := aIdv.Gene[Incr(K)] * 50;
   GA_PLANNER_FindPlaceForQuary_DistTimer := aIdv.Gene[Incr(K)] * 30000;
@@ -310,12 +324,8 @@ begin
   Result := 8+8+2+5;
 end;
 
-procedure TGAParameterization.SetPar_RoadPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_RoadPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_PATHFINDING_BasePrice        := 30 + Round( aIdv.Gene[Incr(K)] * 50 );
   GA_PATHFINDING_TurnPenalization :=  0 + Round( aIdv.Gene[Incr(K)] * 50 );
   GA_PATHFINDING_Road             :=  0 + Min(GA_PATHFINDING_BasePrice,Round( aIdv.Gene[Incr(K)] * 50 ));
@@ -377,12 +387,8 @@ begin
   Result := 6+12+2;
 end;
 
-procedure TGAParameterization.SetPar_Forest(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_Forest(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_EYE_GetForests_MaxAB            :=   1 + aIdv.Gene[Incr(K)] * 200; // <0,201> Ignore trees in existing forest <0,255-AVOID_BUILDING_FOREST_MINIMUM)
   GA_EYE_GetForests_Radius           :=   6 + aIdv.Gene[Incr(K)] *   4; // Forest radius
   GA_EYE_GetForests_MinTrees         :=   3 + aIdv.Gene[Incr(K)] *   3; // Min trees in forest
@@ -437,12 +443,8 @@ begin
   Result := 2+3+5+11;
 end;
 
-procedure TGAParameterization.SetPar_CityPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_CityPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_PLANNER_ObstaclesInHousePlan_Tree       :=   0 + aIdv.Gene[Incr(K)] * 100 * 10; // 0-3+
   GA_PLANNER_ObstaclesInHousePlan_Road       := 200 + aIdv.Gene[Incr(K)] *  50 * 10; // 0-5+
 
@@ -503,12 +505,8 @@ begin
   Result := 3 +(7-1) +12 +4 +1;
 end;
 
-procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
-
   GA_PATHFINDING_AvoidTraffic                    :=   0 +       aIdv.Gene[Incr(K)] *    3; //    1.5
   GA_PATHFINDING_AvoidSpecEnemy                  :=   0 +       aIdv.Gene[Incr(K)] *    2; //    1
   GA_PATHFINDING_AvoidEdges                      :=  80 +       aIdv.Gene[Incr(K)] *   80; //    1
@@ -586,11 +584,8 @@ begin
   Result := 2 + 6 + 10;
 end;
 
-procedure TGAParameterization.SetPar_ArmyAttackNew(aIdv: TGAIndividual; aLogIt: Boolean = False);
-var
-  K: Integer;
+procedure TGAParameterization.SetPar_ArmyAttackNew(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
-  K := 0;
   GA_PATHFINDING_AvoidSpecEnemy                      :=   0 + aIdv.Gene[Incr(K)] * 10;
   GA_PATHFINDING_AvoidEdges                          :=  80 + aIdv.Gene[Incr(K)] * 80;
 
@@ -599,10 +594,10 @@ begin
   GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence      := Round( 0 + 10 * aIdv.Gene[Incr(K)] );
   GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence     := Round( 0 + 50 * aIdv.Gene[Incr(K)] );
   GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence      := Round( 0 + 50 * aIdv.Gene[Incr(K)] );
-  GA_ATTACK_NMAP_EvaluateLine_QueueCnt               :=  0 + 20 * aIdv.Gene[Incr(K)];
-  GA_ATTACK_NMAP_EvaluateLine_MinDist                :=  0 + 10 * aIdv.Gene[Incr(K)];
+  GA_ATTACK_NMAP_EvaluateLine_QueueCnt               :=  0 + 2 * aIdv.Gene[Incr(K)];
+  GA_ATTACK_NMAP_EvaluateLine_MinDist                :=  0 + 1 * aIdv.Gene[Incr(K)];
 
-  GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup      :=  0 + 50 * aIdv.Gene[Incr(K)];
+  GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup      :=  0 + 10 * aIdv.Gene[Incr(K)];
   GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee    :=  0 +  5 * aIdv.Gene[Incr(K)];
   GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse:=  0 +  5 * aIdv.Gene[Incr(K)];
   GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged   :=  0 +  5 * aIdv.Gene[Incr(K)];

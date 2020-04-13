@@ -22,18 +22,23 @@ type
 
   TKMComInterface = class // Communication Interface
   private
+    fLogFilePath: String;
     procedure LogInConsole(aString: AnsiString);
     procedure DebugLogString(const aString: String; const aFileName: String);
     function CaptureConsoleOutput(aWorkDir: String; aCommand: String): String;
+    function ReadFromFile(var aText, aFilePath: String): Boolean;
+    function WriteToFile(var aText, aFilePath: String): Boolean;
   public
     procedure DecryptSetup(aParams: String; var aSimSetup: TSimSetup; var aGASetup: TGASetup);
     function EncryptSetup(var aSimSetup: TSimSetup; var aGASetup: TGASetup; aIgnoreGenes, aIgnoreFitness: Boolean): String;
     procedure SetupSimulation(var aSimSetup: TSimSetup; var aGASetup: TGASetup);
     procedure LogSimulationResults(var aSimSetup: TSimSetup; var aGASetup: TGASetup);
-    function CreateNewSimulation(var aSimSetup: TSimSetup; var aGASetup: TGASetup): Boolean;
+    function CreateNewSimulation(const aThreadNumber: Word; var aSimSetup: TSimSetup; var aGASetup: TGASetup): Boolean;
   end;
 
 const
+  dir_PARAMETERS_FOR_RUNNER = 'ParametersForRunner';
+
   COMMAND_START = '{';
   COMMAND_END = '}';
   INT_START = '(';
@@ -371,6 +376,45 @@ begin
     raise Exception.Create('Can not CreatePipe ' + QuotedStr(aCommand));
 end;
 
+
+function TKMComInterface.WriteToFile(var aText, aFilePath: String): Boolean;
+var
+  dir: String;
+  fileWithParams: TextFile;
+begin
+  Result := True;
+  dir := Format('%s\..\%s',[ParamStr(0),dir_PARAMETERS_FOR_RUNNER]);
+  if not DirectoryExists(dir) then
+    CreateDir(dir);
+  AssignFile(fileWithParams, aFilePath);
+  try
+    Rewrite(fileWithParams);
+    Write(fileWithParams, aText);
+    CloseFile(fileWithParams);
+  except
+    Result := False;
+  end;
+end;
+
+
+function TKMComInterface.ReadFromFile(var aText, aFilePath: String): Boolean;
+var
+  fileWithParams: TextFile;
+begin
+  Result := SysUtils.FileExists(aFilePath);
+  if not Result then
+    Exit;
+  AssignFile(fileWithParams, aFilePath);
+  try
+    Reset(fileWithParams);
+    Readln(fileWithParams, aText);
+    CloseFile(fileWithParams);
+  except
+    Result := False;
+  end;
+end;
+
+
 procedure TKMComInterface.SetupSimulation(var aSimSetup: TSimSetup; var aGASetup: TGASetup);
   function GetDebugParams(): String;
   begin
@@ -390,19 +434,22 @@ procedure TKMComInterface.SetupSimulation(var aSimSetup: TSimSetup; var aGASetup
      '{'+IntToStr(CMND_GA_DONE     )+'}';
   end;
 var
-  I: Integer;
+  K: Integer;
   Params: String;
 begin
   Params := '';
   if DEBUG_INPUT then
     Params := GetDebugParams; // DEBUG LINE
 
-  for I := 1 to ParamCount do
-    Params := Params + ParamStr(I);
-
-  DebugLogString(Params, 'DEBUG_ComInterface_Receive.txt');
-
-  DecryptSetup(Params, aSimSetup, aGASetup);
+  for K := 1 to ParamCount do
+    if SysUtils.FileExists(ParamStr(K)) then
+    begin
+      fLogFilePath := ParamStr(K);
+      ReadFromFile(Params, fLogFilePath);
+      DebugLogString(Params, 'DEBUG_ComInterface_Receive.txt');
+      DecryptSetup(Params, aSimSetup, aGASetup);
+      break;
+    end;
 end;
 
 
@@ -412,22 +459,32 @@ var
 begin
   SetupString := EncryptSetup(aSimSetup, aGASetup, True, False);
   DebugLogString(SetupString, 'DEBUG_ComInterface_Send.txt');
-  LogInConsole(SetupString);
+
+  WriteToFile(SetupString,fLogFilePath);
+  LogInConsole(fLogFilePath);
 end;
 
 
-function TKMComInterface.CreateNewSimulation(var aSimSetup: TSimSetup; var aGASetup: TGASetup): Boolean;
+function TKMComInterface.CreateNewSimulation(const aThreadNumber: Word; var aSimSetup: TSimSetup; var aGASetup: TGASetup): Boolean;
 var
   SetupString, Params: String;
 begin
+  Result := False;
   SetupString := EncryptSetup(aSimSetup, aGASetup, False, True);
   DebugLogString(SetupString, 'DEBUG_ComInterface_Send.txt');
 
-  Params := CaptureConsoleOutput(aSimSetup.WorkDir, '"' + aSimSetup.WorkDir + '\' + aSimSetup.SimFile + '" ' + SetupString + '');
+  fLogFilePath := Format('%s\..\%s\%s_Thread_%d_%s.txt',[ParamStr(0),dir_PARAMETERS_FOR_RUNNER,aSimSetup.RunningClass,aThreadNumber,FormatDateTime('yy-mm-dd_hh-nn-ss-zzz',Now)]);
+  if not WriteToFile(SetupString, fLogFilePath) then
+    Exit;
 
-  DecryptSetup(Params, aSimSetup, aGASetup);
-  DebugLogString(Params, 'DEBUG_ComInterface_Receive.txt');
-  Result := not ('' = Params);
+  fLogFilePath := CaptureConsoleOutput(aSimSetup.WorkDir, '"' + aSimSetup.WorkDir + '\' + aSimSetup.SimFile + '" ' + fLogFilePath + '');
+
+  if ReadFromFile(Params,fLogFilePath) then
+  begin
+    DecryptSetup(Params, aSimSetup, aGASetup);
+    DebugLogString(Params, 'DEBUG_ComInterface_Receive.txt');
+    Result := not ('' = Params);
+  end;
 end;
 
 
