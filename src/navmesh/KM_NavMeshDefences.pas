@@ -235,7 +235,6 @@ var
   CityCenterPoints: TKMPointArray;
   StartPolygons: TKMWordArray;
 begin
-  Result := False;
   // Get center points of all allied cities
   Cnt := 0;
   for PL := 0 to gHands.Count - 1 do

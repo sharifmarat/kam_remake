@@ -98,9 +98,6 @@ end;
 
 
 procedure TKMArmyManagement.Save(SaveStream: TKMemoryStream);
-var
-  I: Integer;
-  UG: TKMUnitGroup;
 begin
   SaveStream.PlaceMarker('ArmyManagement');
   SaveStream.Write(fOwner);
@@ -130,8 +127,7 @@ end;
 
 procedure TKMArmyManagement.Load(LoadStream: TKMemoryStream);
 var
-  I, Count: Integer;
-  UG: TKMUnitGroup;
+  Count: Integer;
 begin
   LoadStream.CheckMarker('ArmyManagement');
   LoadStream.Read(fOwner);
