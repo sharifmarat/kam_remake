@@ -131,6 +131,8 @@ type
     function AIUsableLocs: TKMHandIDArray;
     function AdvancedAIUsableLocs: TKMHandIDArray;
     function FixedLocsColors: TKMCardinalArray;
+    function AIOnlyLocsColors: TKMCardinalArray;
+    function IsOnlyAILoc(aLoc: Integer): Boolean;
     property CRC: Cardinal read fCRC;
     property MapAndDatCRC : Cardinal read fMapAndDatCRC;
     function LocationName(aIndex: TKMHandID): string;
@@ -474,17 +476,50 @@ begin
 end;
 
 
+function TKMapInfo.IsOnlyAILoc(aLoc: Integer): Boolean;
+begin
+  Assert(aLoc < MAX_HANDS);
+  Result := not CanBeHuman[aLoc] and (CanBeAI[aLoc] or CanBeAdvancedAI[aLoc]);
+end;
+
+
+// Color is fixed for loc if map has BlockColorSelection attribute
+// or if its only AI loc, no available for player
 function TKMapInfo.FixedLocsColors: TKMCardinalArray;
 var
   I: Integer;
 begin
-  SetLength(Result, 0);
-  if not TxtInfo.BlockColorSelection then Exit; // No need fixed color if we don't block color selection
-
   SetLength(Result, MAX_HANDS);
 
   for I := 0 to MAX_HANDS - 1 do
-    Result[I] := FlagColors[I];
+    if TxtInfo.BlockColorSelection or IsOnlyAILoc(I) then
+      Result[I] := FlagColors[I]
+    else
+      Result[I] := 0;
+end;
+
+
+// Colors that are used by only AI locs
+function TKMapInfo.AIOnlyLocsColors: TKMCardinalArray;
+var
+  I, K: Integer;
+begin
+  SetLength(Result, 0);
+  if Self = nil then Exit;
+
+  SetLength(Result, LocCount);
+  K := 0;
+  for I := 0 to LocCount - 1 do
+  begin
+    if not CanBeHuman[I]
+      and (CanBeAI[I] or CanBeAdvancedAI[I]) then
+    begin
+      Result[K] := FlagColors[I];
+      Inc(K);
+    end;
+  end;
+
+  SetLength(Result, K);
 end;
 
 

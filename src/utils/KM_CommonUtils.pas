@@ -42,8 +42,9 @@ uses
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
   function MultiplyBrightnessByFactor(aColor: Cardinal; aBrightnessFactor: Single; aMinBrightness: Single = 0; aMaxBrightness: Single = 1): Cardinal;
   function ReduceBrightness(aColor: Cardinal; aBrightness: Byte): Cardinal;
-  function IsColorCloseToColors(aColor: Cardinal; aColors: TKMCardinalArray; aDist: Single): Boolean;
+  function IsColorCloseToColors(aColor: Cardinal; const aColors: TKMCardinalArray; aDist: Single): Boolean;
   function GetColorDistance(aColor1, aColor2: Cardinal): Single;
+  function GetRandomColor: Cardinal;
   function GetPingColor(aPing: Word): Cardinal;
   function GetFPSColor(aFPS: Word): Cardinal;
   function FlagColorToTextColor(aColor: Cardinal): Cardinal;
@@ -912,7 +913,7 @@ begin
 end;
 
 
-function IsColorCloseToColors(aColor: Cardinal; aColors: TKMCardinalArray; aDist: Single): Boolean;
+function IsColorCloseToColors(aColor: Cardinal; const aColors: TKMCardinalArray; aDist: Single): Boolean;
 var
   I: Integer;
 begin
@@ -920,6 +921,18 @@ begin
   for I := Low(aColors) to High(aColors) do
     if GetColorDistance(aColor, aColors[I]) < aDist then
       Exit(True);
+end;
+
+
+function GetRandomColor: Cardinal;
+var
+  R,G,B: Byte;
+begin
+  R := Random(255);
+  G := Random(255);
+  B := Random(255);
+
+  Result := (R + G shl 8 + B shl 16) or $FF000000;
 end;
 
 

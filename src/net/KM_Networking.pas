@@ -1083,6 +1083,7 @@ procedure TKMNetworking.SendPlayerListAndRefreshPlayersSetup(aPlayerIndex: TKMNe
 var
   I: Integer;
   M: TKMemoryStreamBinary;
+  AIOnlyColors: TKMCardinalArray;
 begin
   Assert(IsHost, 'Only host can send player list');
 
@@ -1102,6 +1103,19 @@ begin
           and SaveInfo.GameInfo.ColorUsed(NetPlayers[I].FlagColor) then
           NetPlayers[I].FlagColor := 0;
       end;
+
+  // Map change could casue, that some colors are not valid anymore
+  // Reset those colors then
+  if (fNetGameState = lgsLobby) and (fSelectGameKind = ngkMap) then
+  begin
+    AIOnlyColors := MapInfo.AIOnlyLocsColors; // save it locally to avoid multiple calculations
+    for I := 1 to NetPlayers.Count do
+    begin
+      if NetPlayers[I].IsColorSet
+        and IsColorCloseToColors(NetPlayers[I].FlagColor, AIOnlyColors, MIN_PLAYER_COLOR_DIST) then
+        NetPlayers[I].ResetColor;
+    end;
+  end;
 
   fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname); //The host's index can change when players are removed
   fHostIndex := fMyIndex;

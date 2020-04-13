@@ -374,6 +374,7 @@ var
   I: Integer;
   LastColor: Integer;
   MD: TKMMissionDifficulty;
+  AIColors: TKMCardinalArray;
 begin
   fMaps.Lock;
   try
@@ -477,9 +478,16 @@ begin
       DropBox_Color.Add(MakeListRow([''], [fMaps[MapId].FlagColors[fMaps[MapId].DefaultHuman]], [MakePic(rxGuiMain, 30)]));
       //Separator
       DropBox_Color.Add(MakeListRow([''], [$FF000000], [MakePic(rxGuiMain, 0)]));
+      AIColors := fMaps[MapId].AIOnlyLocsColors; // save it locally to avoid multiple calculations
       //MP colours
       for I := Low(MP_TEAM_COLORS) to High(MP_TEAM_COLORS) do
+      begin
+        // Do not add used AI colors to the list
+        if IsColorCloseToColors(MP_TEAM_COLORS[I], AIColors, MIN_PLAYER_COLOR_DIST) then
+          Continue;
+
         DropBox_Color.Add(MakeListRow([''], [MP_TEAM_COLORS[I]], [MakePic(rxGuiMain, 30)]));
+      end;
       DropBox_Color.ItemIndex := LastColor; //Keep previous selection
     end;
 

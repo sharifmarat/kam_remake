@@ -133,7 +133,7 @@ type
     procedure UpdateChatControls;
 
     procedure ResetDropColorRandom(aI: Integer);
-    procedure UpdateDropColor(I: Integer);
+    procedure UpdateDropColor_BlockColSel(I: Integer);
   protected
     Panel_Lobby: TKMPanel;
       Panel_Settings: TKMPanel;
@@ -1434,7 +1434,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.UpdateDropColor(I: Integer);
+procedure TKMMenuLobby.UpdateDropColor_BlockColSel(I: Integer);
 var
   ID: Integer;
   Color: Cardinal;
@@ -1521,9 +1521,11 @@ begin
       fNetworking.SelectTeam(DropBox_Team[I].ItemIndex, NetI);
 
     //Color
-    if (Sender = DropBox_Colors[I]) and DropBox_Colors[I].Enabled then
+    if (Sender = DropBox_Colors[I])
+      and DropBox_Colors[I].Enabled
+      and DropBox_Colors[I][DropBox_Colors[I].ItemIndex].Cells[0].Enabled then
     begin
-      if DropBox_Colors[I].ItemIndex = 0 then
+      if (DropBox_Colors[I].ItemIndex = 0) then
         Col := 0
       else
         Col := DropBox_Colors[I][DropBox_Colors[I].ItemIndex].Cells[0].Color;
@@ -1627,10 +1629,12 @@ procedure TKMMenuLobby.Lobby_OnPlayersSetup(Sender: TObject);
   end;
 
 var
-  I,K,ID,LocaleID,ColorID: Integer;
+  I,K,aiColorsCnt,freeColorsCnt,ID,LocaleID,ColorID: Integer;
   MyNik, CanEdit, HostCanEdit, IsSave, IsValid: Boolean;
   CurPlayer: TKMNetPlayerInfo;
   FirstUnused: Boolean;
+  AIOnlyColors: TKMCardinalArray;
+  colorDist: Single;
 begin
   UpdateMappings;
 
@@ -1646,6 +1650,8 @@ begin
   TrackBar_SpeedAfterPT.Range := ConvertSpeedRange(fNetworking.NetGameFilter.SpeedAfterPTRng);
 
   UpdateGameOptionsUI;
+
+  AIOnlyColors := fNetworking.MapInfo.AIOnlyLocsColors; // save it locally to avoid multiple calculations
 
   FirstUnused := True;
   for I := 1 to MAX_LOBBY_SLOTS do
@@ -1796,19 +1802,34 @@ begin
         DropBox_Team[I].ItemIndex := CurPlayer.Team;
 
       ColorID := FindMPColor(CurPlayer.FlagColor);
-      if (fNetworking.SelectGameKind <> ngkMap) or not fNetworking.MapInfo.TxtInfo.BlockColorSelection then
+      // Reset color to random, in case our color was too close to AI only locs colors
+      if (ColorID <> 0) and IsColorCloseToColors(MP_TEAM_COLORS[ColorID], AIOnlyColors, MIN_PLAYER_COLOR_DIST) then
+        ColorID := 0;
+      
+      if (fNetworking.SelectGameKind <> ngkMap)
+        or not fNetworking.MapInfo.TxtInfo.BlockColorSelection then
         DropBox_Colors[I].ItemIndex := ColorID;
 
-      UpdateDropColor(I);
+      UpdateDropColor_BlockColSel(I);
 
       //Disable colors that are unavailable
-      for K := 0 to DropBox_Colors[I].List.RowCount - 1 do
-        if (K <> ColorID) and (K <> 0)
-        and (not fNetworking.NetPlayers.ColorAvailable(MP_TEAM_COLORS[K])
-             or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.GameInfo.ColorUsed(K))) then
-          DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := False
-        else
-          DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := True;
+      colorDist := MIN_PLAYER_COLOR_DIST;
+      repeat
+        freeColorsCnt := 0;
+        for K := 0 to DropBox_Colors[I].List.RowCount - 1 do
+          if (K <> ColorID) and (K <> 0)
+          and (not fNetworking.NetPlayers.ColorAvailable(MP_TEAM_COLORS[K])
+               or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.GameInfo.ColorUsed(K))
+               or IsColorCloseToColors(MP_TEAM_COLORS[K], AIOnlyColors, MIN_PLAYER_COLOR_DIST)) then // Disable for AIOnly locs color (close to them)
+            DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := False
+          else
+          begin
+            DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := True;
+            if K <> 0 then
+              Inc(freeColorsCnt);
+          end;
+        colorDist := colorDist * 0.7; // color distance is reduced to find more colors, if needed
+      until (freeColorsCnt > 0) or (colorDist < 0.001); //Try to find at least 1 free color. Stop when its hard to do
 
       if CurPlayer.IsClosed then
         Image_Ready[I].TexID := 0
