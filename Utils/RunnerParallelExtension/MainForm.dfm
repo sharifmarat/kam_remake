@@ -430,6 +430,7 @@ object Paraller_Runner: TParaller_Runner
       ItemHeight = 13
       Items.Strings = (
         'TKMRunnerGA_ArmyAttack'
+        'TKMRunnerGA_ArmyAttackNew'
         'TKMRunnerGA_CityBuilder'
         'TKMRunnerGA_CityPlanner'
         'TKMRunnerGA_Farm'

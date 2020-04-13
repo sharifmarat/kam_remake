@@ -79,7 +79,7 @@ implementation
 uses
   SysUtils, Math,
   KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
-  KM_AIFields, KM_NavMesh, KM_CommonUtils;
+  KM_AIFields, KM_NavMesh, KM_CommonUtils, KM_AIParameters;
 
 type
   TByteArray = array [Word] of byte;
@@ -343,8 +343,6 @@ function TKMSupervisor.EvalTarget(aAttack: Boolean; var A, E: TKMUnitGroupArray;
 
 const
   NO_THREAT = -1E6;
-  sqr_RANGE = 12*12;
-  sqr_INTEREST_DISTANCE_Group = 30*30;
   sqr_INTEREST_DISTANCE_House = 20*20;
   sqr_MAX_DISTANCE_FROM_HOUSE = 10*10;
   MAX_ATTACKERS_PER_HOUSE = 12;
@@ -360,7 +358,7 @@ const
   OportunityArr: array [TKMGroupType,TKMGroupType] of Single = (
   // gtMelee, gtAntiHorse, gtRanged, gtMounted
     (    1.0,         2.0,      3.0,       0.5), // gtMelee
-    (    0.5,         1.0,      2.0,       3.0), // gtAntiHorse
+    (    0.5,         1.0,      2.0,       4.0), // gtAntiHorse
     (    1.0,         2.0,      3.0,       0.5), // gtRanged
     (    1.0,         0.2,      5.0,       1.0)  // gtMounted
   );
@@ -442,7 +440,13 @@ begin
           Threat[IdxE].Distance := Dist[ GetIdx(CntE,IdxA,IdxE) ];
       UW := E[IdxE].GetAliveMember;
       Threat[IdxE].WeightedCount := E[IdxE].Count * WarriorPrice[UW.UnitType];
-      Threat[IdxE].Risk := Threat[IdxE].WeightedCount * ThreatGain[E[IdxE].GroupType]; // + City influence - Group in combat
+      case E[IdxE].GroupType of // + City influence - Group in combat
+        gtMelee:     Threat[IdxE].Risk := Threat[IdxE].WeightedCount * GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee;
+        gtAntiHorse: Threat[IdxE].Risk := Threat[IdxE].WeightedCount * GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse;
+        gtRanged:    Threat[IdxE].Risk := Threat[IdxE].WeightedCount * GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged;
+        gtMounted:   Threat[IdxE].Risk := Threat[IdxE].WeightedCount * GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted;
+      end;
+      Threat[IdxE].Risk := Threat[IdxE].Risk + Threat[IdxE].DistRanged * GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist + Threat[IdxE].Distance * GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist;
     end;
 
     // Set targets
@@ -475,9 +479,8 @@ begin
       for IdxE := Low(Threat) to High(Threat) do
         if (Threat[IdxE].Risk > BestThreat) then
         begin
-
           BestIdxE := IdxE;
-          BestThreat := Threat[IdxE].Risk; // Consider also distance !!!!!!!!!!
+          BestThreat := Threat[IdxE].Risk;
         end;
       if (BestThreat <= NO_THREAT) then
         break;
@@ -485,14 +488,14 @@ begin
       with Threat[BestIdxE] do
       begin
         Overflow2 := 0;
-        while (WeightedCount > 0) AND (Min(DistRanged, Distance) < sqr_INTEREST_DISTANCE_Group) AND (Overflow2 < 1000) do
+        while (WeightedCount > 0) AND (Min(DistRanged, Distance) < sqr(GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup)) AND (Overflow2 < 1000) do
         begin
           Inc(Overflow2);
           BestOpportunity := NO_THREAT;
           for IdxA := 0 to CntA - 1 do
             if (A[IdxA] <> nil) then
             begin
-              Opportunity := OportunityArr[ A[IdxA].GroupType, E[BestIdxE].GroupType ] * 100 - NO_THREAT - Dist[ GetIdx(CntE,IdxA,BestIdxE) ];
+              Opportunity := OportunityArr[ A[IdxA].GroupType, E[BestIdxE].GroupType ] * GA_ATTACK_SUPERVISOR_EvalTarget_OportunityGain - Dist[ GetIdx(CntE,IdxA,BestIdxE) ] * GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain;
               if (BestOpportunity < Opportunity) then
               begin
                 BestIdxA := IdxA;
@@ -631,7 +634,7 @@ var
   EnemyHouses: TKMHouseArray;
 begin
   // Check if team have newAI
-  if not NewAIInTeam(aTeam, True, True) OR (SP_OLD_ATTACK_AI = True) then // (gGame.MissionMode <> mmTactic) then
+  if not NewAIInTeam(aTeam, True, True) OR (SP_OLD_ATTACK_AI = True) then
     Exit;
   // Check if there are hostile units around
   DefenceStatus := CheckDefenceStatus(aTeam, EnemyGroups, EnemyHouses);
@@ -695,13 +698,13 @@ begin
         if (CG[L] <> nil) then
         begin
           Inc(Cnt);
-          Inc(Ready, Byte(CG[L].OnPlace OR fArmyPos.InCombatLine[L] OR (fArmyPos.fDefInfo[ Ally.GroupsPoly[L] ].EnemyInfluence > 0)) );
+          Inc(Ready, Byte(CG[L].OnPlace OR fArmyPos.InCombatLine[L] OR (fArmyPos.fInflInfo[ Ally.GroupsPoly[L] ].EnemyInfluence > 0)) );
           LineInCombat := LineInCombat OR (CG[L].CombatPhase = cpAttack);
         end;
       end;
     end;
     // Launch attack or move groups
-    EvaluateEnemy((Ready > Cnt * 0.8) OR LineInCombat, BL.Lines[K]);
+    EvaluateEnemy((Ready > Cnt * GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold) OR LineInCombat, BL.Lines[K]);
   end;
   //}
 end;
