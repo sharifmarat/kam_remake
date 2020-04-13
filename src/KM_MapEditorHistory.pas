@@ -161,7 +161,7 @@ uses
   KM_Game, KM_CommonUtils, KM_Resource, KM_HouseTownhall, KM_HouseBarracks, KM_HouseMarket;
 
 const
-  CHECKPOINTS_MAX_CNT = 500;
+  CHECKPOINTS_MAX_CNT = 300;
 
 
 { TKMCheckpoint }
