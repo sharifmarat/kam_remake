@@ -2566,7 +2566,7 @@ begin
                         else
                         begin
                           fGameInputProcess.WaitingForConfirmation(fGameTick);
-                          if TKMGameInputProcess_Multi(fGameInputProcess).GetNumberConsecutiveWaits > 10 then
+                          if TKMGameInputProcess_Multi(fGameInputProcess).NumberConsecutiveWaits > Max(10, Round(fGameSpeedGIP)) then
                             WaitingPlayersDisplay(True);
                         end;
                         fGameInputProcess.UpdateState(fGameTick); //Do maintenance

@@ -73,7 +73,7 @@ type
     procedure AdjustDelay(aGameSpeed: Single);
     procedure PlayerTypeChange(aPlayer: TKMHandID; aType: TKMHandType);
     function GetNetworkDelay: Word;
-    property GetNumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
+    property NumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
     property LastSentCmdsTick: Cardinal read fLastSentCmdsTick;
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
     procedure RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
