@@ -318,13 +318,13 @@ procedure TKMMapEditor.UpdateField(aStageIncrement: Integer; aCheckPrevCell: Boo
 var
   P: TKMPoint;
   FieldStage: Integer;
-  fieldChanged: Boolean;
+  makeCheckpoint: Boolean;
   fieldStr: string;
 begin
   if aStageIncrement = 0 then Exit;
 
   FieldStage := -1;
-  fieldChanged := False;
+  makeCheckpoint := False;
   fieldStr := '';
   P := gGameCursor.Cell;
   case gGameCursor.Mode of
@@ -332,24 +332,20 @@ begin
                 if gTerrain.TileIsCornField(P) then
                 begin
                   if not KMSamePoint(P, gGameCursor.PrevCell) or not aCheckPrevCell then
-                  begin
                     FieldStage := (gTerrain.GetCornStage(P) + aStageIncrement + CORN_STAGES_COUNT) mod CORN_STAGES_COUNT;
-                    fieldChanged := True;
-                    fieldStr := Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_UPDATE_SMTH], [gResTexts[TX_WORD_CORN_FIELD], P.ToString]);
-                  end;
                 end
                 else
                 if gMySpectator.Hand.CanAddFieldPlan(P, ftCorn) then
                 begin
                   FieldStage := 0;
-                  fieldChanged := True;
+                  makeCheckpoint := True;
                   fieldStr := Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_ADD_SMTH], [gResTexts[TX_WORD_CORN_FIELD], P.ToString]);
                 end;
 
                 if FieldStage >= 0 then
                 begin
                   gMySpectator.Hand.AddField(P, ftCorn, FieldStage);
-                  if fieldChanged then
+                  if makeCheckpoint then
                     fHistory.MakeCheckpoint(caTerrain, fieldStr);
                 end;
               end;
@@ -357,24 +353,20 @@ begin
                 if gTerrain.TileIsWineField(P) then
                 begin
                   if not KMSamePoint(P, gGameCursor.PrevCell) or not aCheckPrevCell then
-                  begin
                     FieldStage := (gTerrain.GetWineStage(P) + aStageIncrement + WINE_STAGES_COUNT) mod WINE_STAGES_COUNT;
-                    fieldChanged := True;
-                    fieldStr := Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_UPDATE_SMTH], [gResTexts[TX_WORD_WINE_FIELD], P.ToString]);
-                  end;
                 end
                 else
                 if gMySpectator.Hand.CanAddFieldPlan(P, ftWine) then
                 begin
                   FieldStage := 0;
-                  fieldChanged := True;
+                  makeCheckpoint := True;
                   fieldStr := Format(gResTexts[TX_MAPED_HISTORY_CHPOINT_ADD_SMTH], [gResTexts[TX_WORD_WINE_FIELD], P.ToString]);
                 end;
 
                 if FieldStage >= 0 then
                 begin
                   gMySpectator.Hand.AddField(P, ftWine, FieldStage);
-                  if fieldChanged then
+                  if makeCheckpoint then
                     fHistory.MakeCheckpoint(caTerrain, fieldStr);
                 end;
               end;
