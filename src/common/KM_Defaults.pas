@@ -259,7 +259,8 @@ var
   HITPOINT_RESTORE_PACE: Word = 100;         //1 hitpoint is restored to units every X ticks (using Humbelum's advice)
 
 const
-  TERRAIN_MAX_BLENDING_LEVEL = 100;
+  TERRAIN_MAX_BLENDING_LEVEL = 16;
+  TERRAIN_DEF_BLENDING_LVL = TERRAIN_MAX_BLENDING_LEVEL div 2;
   MAPED_BRUSH_MAX_SIZE = 32;
 
   //Here we store options that are hidden somewhere in code

@@ -368,7 +368,6 @@ const
   OBJ_NONE = 255;
   OBJ_INVISIBLE = 254; //Special object without any attributes set
   HEIGHT_RAND_VALUE = 8;
-  DEFAULT_BLENDING_LVL = 50;
   //overlays, that considered as road: basically road and dig4, which looks almost like a finished road
   ROAD_LIKE_OVERLAYS: set of TKMTileOverlay = [toDig4, toRoad];
   TILE_OVERLAY_IDS: array[toNone..toRoad] of Integer = (0, 249, 251, 253, 255, 254);   //toNone, toDig1, toDig2, toDig3, toDig4, toRoad
@@ -448,7 +447,7 @@ begin
         BaseLayer.Rotation     := KaMRandom(4, 'TKMTerrain.MakeNewMap 4');  //Make it random
         Obj          := OBJ_NONE;             //none
         IsCustom     := False;
-        BlendingLvl  := DEFAULT_BLENDING_LVL;
+        BlendingLvl  := TERRAIN_DEF_BLENDING_LVL;
         //Uncomment to enable random trees, but we don't want that for the map editor by default
         //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
         TileOverlay  := toNone;
@@ -606,7 +605,7 @@ const
       TileBasic.Height    := EnsureRange(hMid - H_RND_HALF + Random(HEIGHT_RAND_VALUE), 0, 100);
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
-      TileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
+      TileBasic.BlendingLvl := TERRAIN_DEF_BLENDING_LVL;
       TileBasic.LayersCnt := 0;
       TileBasic.TileOverlay := toNone;
     end
@@ -5027,7 +5026,7 @@ begin
     aTileBasic.BaseLayer.SetCorners([0,1,2,3]);
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
-    aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL;
+    aTileBasic.BlendingLvl := TERRAIN_DEF_BLENDING_LVL;
     aTileBasic.TileOverlay := toNone;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
@@ -5036,7 +5035,7 @@ begin
     aStream.Read(aTileBasic.Height);            //4
     aStream.Read(aTileBasic.Obj);               //5
     aStream.Read(aTileBasic.IsCustom);          //7
-    aTileBasic.BlendingLvl := DEFAULT_BLENDING_LVL; //Default value;
+    aTileBasic.BlendingLvl := TERRAIN_DEF_BLENDING_LVL; //Default value;
 
     if aGameRev > 10968 then
       aStream.Read(aTileBasic.TileOverlay, SizeOf(aTileBasic.TileOverlay)) //8

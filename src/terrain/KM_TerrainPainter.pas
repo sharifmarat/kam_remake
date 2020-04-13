@@ -87,7 +87,7 @@ type
 
     procedure SetBrushParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
                              aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
-                             aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                             aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = TERRAIN_DEF_BLENDING_LVL;
                              aUseMagicBrush: Boolean = False);
     procedure SetHeightParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
                               aIsEqualize, aRaise: Boolean; aSlope, aSpeed: Byte);
@@ -1328,7 +1328,7 @@ end;
 
 procedure TKMTerrainPainter.SetBrushParams(X, Y: Single; aShape: TKMMapEdShape; aSize: Integer;
                                            aTerKind: TKMTerrainKind; aRandomTiles, aOverrideCustomTiles: Boolean;
-                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = DEFAULT_BLENDING_LVL;
+                                           aBrushMask: TKMTileMaskKind = mkNone; aBlendingLvl: Integer = TERRAIN_DEF_BLENDING_LVL;
                                            aUseMagicBrush: Boolean = False);
 begin
   SetCommonParams(X, Y, aShape);
