@@ -73,7 +73,7 @@ type
     procedure AdjustDelay(aGameSpeed: Single);
     procedure PlayerTypeChange(aPlayer: TKMHandID; aType: TKMHandType);
     function GetNetworkDelay: Word;
-    property GetNumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
+    property NumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
     property LastSentCmdsTick: Cardinal read fLastSentCmdsTick;
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
     procedure RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
@@ -261,7 +261,7 @@ begin
   // Half of the maximum round trip is a good guess for delay. +1.2 is our safety net to account
   // for processing the packet and random variations in ping. It's always better for commands to
   // be slightly delayed than for the game to freeze/lag regularly.
-  if gGame.IsMPGameSpeedChangeAllowed then
+  if (fNetworking.NetPlayers.GetNotDroppedCount = 1) then
     SetDelay(MIN_DELAY) //We can set the lowest delay if we are the only MP player
   else
     SetDelay(Ceil(aGameSpeed * (fNetworking.NetPlayers.GetMaxHighestRoundTripLatency / 200 + 1.2)));

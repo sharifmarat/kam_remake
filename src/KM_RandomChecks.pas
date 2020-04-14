@@ -44,6 +44,7 @@ type
 
 //    procedure ParseSaveStream;
     procedure ParseStreamToDict(aLoadStream: TKMemoryStream);
+    function GetEnabled: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -54,7 +55,7 @@ type
 
 //    property RngLogStream: TKMemoryStream read fRngLogStream;
 
-    property Enabled: Boolean read fEnabled write fEnabled;
+    property Enabled: Boolean read GetEnabled write fEnabled;
 
     procedure SaveToPath(aPath: String);
 //    procedure ParseSaveStreamAndSaveAsText(aPath: String);
@@ -78,7 +79,7 @@ uses
   KM_Log, Classes, SysUtils, KromUtils, KM_Defaults;
 
 var
-  MAX_TICKS_CNT: Integer = 45*60*10; // 30 minutes
+  MAX_TICKS_CNT: Integer = 10*60*10; // 10 minutes
 
 
 { TKMRandomLogger }
@@ -88,6 +89,7 @@ begin
   fCallers := TDictionary<Byte, AnsiString>.Create;
   fRngLog := TDictionary<Cardinal, TKMRLRecordList>.Create;
   fTickStreamQueue := TObjectQueue<TKMemoryStreamBinary>.Create;
+  fTickStreamQueue.OwnsObjects := True; // Set the OwnsObjects to true - the Queue will free them automatically
   fRngChecksInTick := TKMRLRecordList.Create;
   fSavedTicksCnt := 0;
   fEnabled := True;
@@ -126,10 +128,20 @@ begin
 end;
 
 
+function TKMRandomCheckLogger.GetEnabled: Boolean;
+begin
+  if Self = nil then Exit(False);
+
+  Result := fEnabled;
+end;
+
+
 procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Integer);
 var
   rec: TKMRngLogRecord;
 begin
+  if Self = nil then Exit;
+
   rec.ValueType := lrtInt;
   rec.ValueI := aValue;
   rec.CallerId := GetCallerID(aCaller, aValue, lrtInt);
@@ -141,6 +153,8 @@ procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Singl
 var
   rec: TKMRngLogRecord;
 begin
+  if Self = nil then Exit;
+
   rec.ValueType := lrtSingle;
   rec.ValueS := aValue;
   rec.CallerId := GetCallerID(aCaller, aValue, lrtInt);
@@ -152,6 +166,8 @@ procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Exten
 var
   rec: TKMRngLogRecord;
 begin
+  if Self = nil then Exit;
+
   rec.ValueType := lrtExt;
   rec.ValueE := aValue;
   rec.CallerId := GetCallerID(aCaller, aValue, lrtInt);
@@ -211,16 +227,15 @@ procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal);
 var
   tickStream: TKMemoryStreamBinary;
 begin
-  if not fEnabled then Exit;
+  if (Self = nil) or not fEnabled then Exit;
 
   fGameTick := aGameTick;
 
   // Delete oldest stream object from queue
   if fTickStreamQueue.Count > MAX_TICKS_CNT then
   begin
-    fTickStreamQueue.Extract;
-//    fTickStreamQueue.TrimExcess;
-//    FreeAndNil(tickStream);
+    fTickStreamQueue.Dequeue; // Will also automatically free an object, because of OwnObjects property
+    fTickStreamQueue.TrimExcess;
   end;
 
   tickStream := TKMemoryStreamBinary.Create;
@@ -258,6 +273,8 @@ var
   tickStreamSize: Cardinal;
   LoadStream, tickStream: TKMemoryStreamBinary;
 begin
+  if Self = nil then Exit;
+
   if not FileExists(aPath) then
   begin
     gLog.AddTime('RandomsChecks file ''' + aPath + ''' was not found. Skip load rng');
@@ -302,6 +319,8 @@ procedure TKMRandomCheckLogger.LoadFromPathAndParseToDict(aPath: String);
 var
   LoadStream: TKMemoryStreamBinary;
 begin
+  if Self = nil then Exit;
+
   if not FileExists(aPath) then
   begin
     gLog.AddTime('RandomsChecks file ''' + aPath + ''' was not found. Skip load rng');
@@ -388,7 +407,7 @@ var
   CallerPair: TPair<Byte, AnsiString>;
   enumerator: TEnumerator<TKMemoryStreamBinary>;
 begin
-  if not SAVE_RANDOM_CHECKS then
+  if (Self = nil) or not SAVE_RANDOM_CHECKS then
     Exit;
 
   SaveStream := TKMemoryStreamBinary.Create;
@@ -414,6 +433,8 @@ begin
     SaveStream.Write(Cardinal(TickStream.Size));
     SaveStream.CopyFrom(TickStream, 0);
   end;
+
+  enumerator.Free;
 
 //  SaveStream.CopyFrom(fSaveStream, 0);
 
@@ -449,6 +470,8 @@ var
   LogTicksList: TList<Cardinal>;
   LogRecList: TList<TKMRngLogRecord>;
 begin
+  if Self = nil then Exit;
+  
   Cnt := 0;
   SL := TStringList.Create;
   try
@@ -500,6 +523,8 @@ var
 //  TickStream: TKMemoryStreamBinary;
 //  enumerator: TEnumerator<TKMemoryStreamBinary>;
 begin
+  if Self = nil then Exit;
+
   fCallers.Clear;
   fCallers.TrimExcess;
 

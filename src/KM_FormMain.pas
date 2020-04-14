@@ -759,7 +759,10 @@ procedure TFormMain.ControlsReset;
 
   function SkipReset(aCtrl: TControl): Boolean;
   begin
-    Result := {$IFDEF WDC} aCtrl = chkSnowHouses; {$ENDIF}
+    Result := {$IFDEF WDC}
+                 (aCtrl = chkSnowHouses)
+              or (aCtrl = chkLoadUnsupSaves);
+              {$ENDIF}
               {$IFDEF FPC} False; {$ENDIF}
   end;
 
@@ -849,6 +852,7 @@ procedure TFormMain.ControlsRefill;
 begin
   {$IFDEF WDC}
   chkSnowHouses.Checked := gGameApp.GameSettings.AllowSnowHouses; // Snow houses checkbox could be updated before game
+  chkLoadUnsupSaves.Checked := ALLOW_LOAD_UNSUP_VERSION_SAVE;
   {$ENDIF}
 
   if (gGame = nil) or not gGame.IsMapEditor then Exit;

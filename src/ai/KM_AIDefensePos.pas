@@ -81,7 +81,7 @@ type
 
 implementation
 uses
-  Math,
+  Math, SysUtils,
   KM_Game, KM_HandsCollection, KM_RenderAux;
 
 
@@ -446,13 +446,23 @@ end;
 
 
 procedure TAIDefencePositions.Paint;
-var I: Integer;
+var
+  I: Integer;
+  str: string;
 begin
   for I := 0 to Count - 1 do
+  begin
     if Positions[I].fDefenceType = adtFrontLine then
       gRenderAux.Quad(Positions[I].fPosition.Loc.X, Positions[I].fPosition.Loc.Y, $FFFF0000)
     else
-      gRenderAux.Quad(Positions[I].fPosition.Loc.X, Positions[I].fPosition.Loc.Y, $FF00FF00)
+      gRenderAux.Quad(Positions[I].fPosition.Loc.X, Positions[I].fPosition.Loc.Y, $FF00FF00);
+
+    str := 'nil';
+    if Positions[I].CurrentGroup <> nil then
+      str := IntToStr(Positions[I].CurrentGroup.UID);
+
+    gRenderAux.Text(Positions[I].fPosition.Loc.X, Positions[I].fPosition.Loc.Y, str, icRed);
+  end;
 end;
 
 

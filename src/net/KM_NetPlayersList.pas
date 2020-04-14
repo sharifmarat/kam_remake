@@ -454,19 +454,26 @@ var
       end;
   end;
 
+  function IsFixedPlayerColor(aLocIndex: Integer): Boolean;
+  var
+    fixedColorsSet: Boolean;
+  begin
+    fixedColorsSet := Length(aFixedLocsColors) > 0;
+    Result := not fNetPlayers[aLocIndex].IsSpectator // we should always count on specs color
+              and fixedColorsSet
+              and (aFixedLocsColors[fNetPlayers[aLocIndex].HandIndex] <> 0);
+  end;
+
 var
-  I, K, ColorID, colorsNeeded: Integer;
+  I, K, colorID, colorsNeeded: Integer;
   colorDist: Single;
-  FixedColorsSet: Boolean;
 begin
-  FixedColorsSet := Length(aFixedLocsColors) > 0;
+
   // Set known fixed colors
   // Fixed are AI only locs colors
   // and every loc color, if BlockPlayerColor parametr is set
   for I := 1 to fCount do
-    if not fNetPlayers[I].IsSpectator
-      and FixedColorsSet
-      and (aFixedLocsColors[fNetPlayers[I].HandIndex] <> 0) then
+    if IsFixedPlayerColor(I) then
       fNetPlayers[I].FlagColor := aFixedLocsColors[fNetPlayers[I].HandIndex];
 
   //All wrong colors will be reset to random
@@ -484,18 +491,16 @@ begin
       Inc(colorsNeeded);
 
     // Ignore fixed colors for non-specs
-    if FixedColorsSet
-      and (aFixedLocsColors[fNetPlayers[I].HandIndex] <> 0)
-      and not fNetPlayers[I].IsSpectator then
+    if IsFixedPlayerColor(I) then
       Continue;
 
-    ColorID := FindMPColor(fNetPlayers[I].FlagColor);
+    colorID := FindMPColor(fNetPlayers[I].FlagColor);
 
-    if UsedColor[ColorID] then
+    if UsedColor[colorID] then
     begin
       fNetPlayers[I].ResetColor;
     end else begin
-      UsedColor[ColorID] := True;
+      UsedColor[colorID] := True;
     end;
   end;
 
@@ -515,9 +520,7 @@ begin
   for I := 1 to fCount do
   begin
     // Ignore fixed colors for non-specs
-    if FixedColorsSet
-      and (aFixedLocsColors[fNetPlayers[I].HandIndex] <> 0)
-      and not fNetPlayers[I].IsSpectator then
+    if IsFixedPlayerColor(I) then
       Continue;
 
     if not fNetPlayers[I].IsColorSet then

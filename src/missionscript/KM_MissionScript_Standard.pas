@@ -700,7 +700,7 @@ begin
                                 AddError('Goals messages are deprecated. Use .script instead')
                               else
                                 if InRange(P[3], 0, gHands.Count - 1) and fPlayerEnabled[P[3]] then
-                                  gHands[fLastHand].AI.Goals.AddGoal(gltVictory, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), 0, P[2], P[3]);
+                                  gHands[fLastHand].AI.Goals.AddGoal(gltVictory, TKMGoalCondition(P[0]), P[3]); //Ignore not used parameters
                         end;
 
     ctAddLostGoal:      if fLastHand <> PLAYER_NONE then
@@ -715,7 +715,7 @@ begin
                               AddError('LostGoal type ' + GoalConditionStr[TKMGoalCondition(P[0])] + ' is deprecated');
                             if (P[2] <> 0) then
                               AddError('LostGoals messages are deprecated. Use .script instead');
-                            gHands[fLastHand].AI.Goals.AddGoal(gltSurvive, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), 0, P[2], P[3]);
+                            gHands[fLastHand].AI.Goals.AddGoal(gltSurvive, TKMGoalCondition(P[0]), P[3]); //Ignore not used parameters
                           end;
                         end;
 

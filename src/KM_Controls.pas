@@ -6772,8 +6772,8 @@ end;
 
 destructor TKMListBox.Destroy;
 begin
-  fItems.Free;
   fSeparatorTexts.Free;
+  fItems.Free;
   inherited;
 end;
 
@@ -7903,6 +7903,7 @@ begin
     inherited DoClick(X, Y, Shift, Button);
     if Assigned(fOnChange)
       and not fOnChangeInvoked
+      and (fMouseOverCell <> KMPOINT_INVALID_TILE) //Only trigger ovew cells
       and Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled then // Only trigger for enabled cells
       fOnChange(Self);
   end;
@@ -7917,7 +7918,8 @@ begin
     Exit;
 
   // Do not do anything else, in case Cell we are working on is Disabled
-  if not Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled then
+  if (fMouseOverCell = KMPOINT_INVALID_TILE)
+    or not Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled then
     Exit;
 
   NewIndex := fMouseOverRow;
@@ -7935,7 +7937,8 @@ begin
     ItemIndex := NewIndex;
     if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE)
       and Columns[fMouseOverCell.X].TriggerOnChange
-      and Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled
+      and (fMouseOverCell <> KMPOINT_INVALID_TILE) //Only trigger ovew cells
+      and Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].Enabled // Only trigger for enabled cells
       and Assigned(fOnChange) then
     begin
       fOnChange(Self);
