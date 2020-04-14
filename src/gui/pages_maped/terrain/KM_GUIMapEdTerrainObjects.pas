@@ -276,11 +276,8 @@ end;
 
 
 function TKMMapEdTerrainObjects.UpdateObjAttributesAndDesc(aBtn: TKMButtonFlat; aObjID: Integer): TKMTerrainObjectAttributeSet;
-var
-  HintStr: String;
 begin
   Result := [];
-  HintStr := '';
 
   aBtn.CapColor := icWhite;
   aBtn.Hint := aBtn.Caption;
@@ -325,8 +322,6 @@ begin
         aBtn.CapColor := icRoyalYellow;
     end;
   end;
-
-  aBtn.Hint := aBtn.Hint + HintStr;
 end;
 
 
