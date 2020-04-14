@@ -62,7 +62,9 @@ type
     procedure Clear;
     property Count: Integer read fCount;
     property Item[aIndex: Integer]: TKMGoal read GetGoal write SetGoal; default;
-    procedure AddGoal(aType: TKMGoalType; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aTime: Cardinal; aMessageToShow: Integer; aHandIndex: TKMHandID); overload;
+    procedure AddGoal(aType: TKMGoalType; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aTime: Cardinal;
+                      aMessageToShow: Integer; aHandIndex: TKMHandID); overload; // Deprecated
+    procedure AddGoal(aType: TKMGoalType; aCondition: TKMGoalCondition; aHandIndex: TKMHandID); overload;
     procedure AddGoal(const aGoal: TKMGoal); overload;
     procedure Delete(aIndex: Integer);
     procedure RemoveReference(aHandIndex: TKMHandID);
@@ -95,7 +97,21 @@ begin
 end;
 
 
-procedure TKMGoals.AddGoal(aType: TKMGoalType; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aTime: Cardinal; aMessageToShow: Integer; aHandIndex: TKMHandID);
+procedure TKMGoals.AddGoal(aType: TKMGoalType; aCondition: TKMGoalCondition; aHandIndex: TKMHandID);
+var
+  status: TKMGoalStatus;
+begin
+  if aType = gltVictory then
+    status := gsFalse
+  else
+    status := gsTrue;
+
+  AddGoal(aType, aCondition, status, 0, 0, aHandIndex);
+end;
+
+
+procedure TKMGoals.AddGoal(aType: TKMGoalType; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aTime: Cardinal;
+                           aMessageToShow: Integer; aHandIndex: TKMHandID);
 begin
   SetLength(fGoals, fCount + 1);
   fGoals[fCount].GoalType := aType;
@@ -181,11 +197,11 @@ begin
     gc := gcTroops;
 
   // Default Defeat condition is to lose army/town
-  AddGoal(gltSurvive, gc, gsTrue, 0, 0, aOurPlayerIndex);
+  AddGoal(gltSurvive, gc, aOurPlayerIndex);
 
   // Default Victory conditions is to kill armies / destroy towns of all other players
   for I := 0 to Length(aEnemyIndexes) - 1 do
-    AddGoal(gltVictory, gc, gsFalse, 0, 0, aEnemyIndexes[I]);
+    AddGoal(gltVictory, gc, aEnemyIndexes[I]);
 end;
 
 
