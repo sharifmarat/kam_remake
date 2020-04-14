@@ -595,35 +595,38 @@ begin
     Exit;
 
   LocalePostfixes := TStringList.Create;
-  LocalePostfixes.Add('.' + UnicodeString(gResLocales.UserLocale));
-  LocalePostfixes.Add('.' + UnicodeString(gResLocales.FallbackLocale));
-  LocalePostfixes.Add('.' + UnicodeString(gResLocales.DefaultLocale));
-  LocalePostfixes.Add('');
+  try
+    LocalePostfixes.Add('.' + UnicodeString(gResLocales.UserLocale));
+    LocalePostfixes.Add('.' + UnicodeString(gResLocales.FallbackLocale));
+    LocalePostfixes.Add('.' + UnicodeString(gResLocales.DefaultLocale));
+    LocalePostfixes.Add('');
 
-  FileName := ExtractFileName(aPath);
-  for i := 0 to LocalePostfixes.Count - 1 do
-  begin
-    try
-      if FindFirst(Path + '*', faAnyFile, SearchRec) <> 0 then
-        Continue;
-
-      repeat
-        if (SearchRec.Name = '.') or (SearchRec.Name = '..') then
+    FileName := ExtractFileName(aPath);
+    for i := 0 to LocalePostfixes.Count - 1 do
+    begin
+      try
+        if FindFirst(Path + '*', faAnyFile, SearchRec) <> 0 then
           Continue;
 
-        f := FileName + LocalePostfixes[i] + ExtractFileExt(SearchRec.Name);
-        if CompareStr(SearchRec.Name, f) = 0 then
-        begin
-          aFileName := ExtractFilePath(ParamStr(0)) + Path + SearchRec.Name;
-          Exit(True);
-        end;
+        repeat
+          if (SearchRec.Name = '.') or (SearchRec.Name = '..') then
+            Continue;
 
-      until FindNext(SearchRec) <> 0;
-    finally
-      FindClose(SearchRec);
+          f := FileName + LocalePostfixes[i] + ExtractFileExt(SearchRec.Name);
+          if CompareStr(SearchRec.Name, f) = 0 then
+          begin
+            aFileName := ExtractFilePath(ParamStr(0)) + Path + SearchRec.Name;
+            Exit(True);
+          end;
+
+        until FindNext(SearchRec) <> 0;
+      finally
+        FindClose(SearchRec);
+      end;
     end;
+  finally
+    LocalePostfixes.Free;
   end;
-  LocalePostfixes.Free;
 end;
 
 procedure TKMVideoPlayer.SetTrackByLocale;
