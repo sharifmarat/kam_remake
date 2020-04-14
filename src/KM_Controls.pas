@@ -1070,6 +1070,8 @@ type
     function AllowScrollV: Boolean;
     function AllowScrollH: Boolean;
   protected
+    procedure SetVisible(aValue: Boolean); override;
+
     procedure SetLeft(aValue: Integer); override;
     procedure SetTop(aValue: Integer); override;
     procedure SetHeight(aValue: Integer); override;
@@ -5746,6 +5748,7 @@ begin
   fChildsPanel.AnchorsStretch;
   fChildsPanel.fIsHitTestUseDrawRect := True; // We want DrawRect to be used on the ScrollPanel
 
+  // We should create scroll bars on Parent panel, since we move panel there and back and scroll should not be scrolled as well
   fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, saHorizontal, aStyle, aScrollStyle);
   fScrollBarH.Hide;
   fScrollBarH.OnChange := ScrollChanged;
@@ -5988,6 +5991,16 @@ begin
   Inc(fClipRect.Bottom, Top - OldValue);
 
   UpdateScrolls(nil);
+end;
+
+
+procedure TKMScrollPanel.SetVisible(aValue: Boolean);
+begin
+  inherited;
+
+  // Sync ScrollBars visibility with ScrollPanel visibility
+  fScrollBarH.Visible := aValue;
+  fScrollBarV.Visible := aValue;
 end;
 
 
