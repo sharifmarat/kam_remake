@@ -79,7 +79,7 @@ uses
   KM_Log, Classes, SysUtils, KromUtils, KM_Defaults;
 
 var
-  MAX_TICKS_CNT: Integer = 45*60*10; // 30 minutes
+  MAX_TICKS_CNT: Integer = 10*60*10; // 10 minutes
 
 
 { TKMRandomLogger }
