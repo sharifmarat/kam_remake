@@ -113,6 +113,7 @@ type
     fAreas: array [TKMCheckpointArea] of TKMCheckpoint;
   public
     constructor Create(const aCaption: string);
+    destructor Destroy; override;
     procedure Apply(aArea: TKMCheckpointArea = caAll; aUpdateImmidiately: Boolean = True); override;
   end;
 
@@ -611,6 +612,18 @@ begin
   for I := Low(TKMCheckpointArea) to High(TKMCheckpointArea) do
   if I <> caAll then
     fAreas[I] := TKMCheckpoint.FactoryCreate(I, aCaption);
+end;
+
+
+destructor TKMCheckpointAll.Destroy;
+var
+  I: TKMCheckpointArea;
+begin
+  for I := Low(TKMCheckpointArea) to High(TKMCheckpointArea) do
+    if I <> caAll then
+      fAreas[I].Free;
+
+  inherited;
 end;
 
 
