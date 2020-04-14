@@ -1323,10 +1323,16 @@ end;
 
 
 procedure TKMBuildFF.Save(SaveStream: TKMemoryStream);
-var
-  Len: Integer;
+//var
+//  Len: Integer;
 begin
   SaveStream.PlaceMarker('BuildFF');
+
+  SaveStream.Write(fMapX);
+  SaveStream.Write(fMapY);
+
+
+{
 
   SaveStream.Write(fOwner);
   SaveStream.Write(fVisitIdx);
@@ -1334,8 +1340,6 @@ begin
   SaveStream.Write(fStartQueue);
   SaveStream.Write(fEndQueue);
   SaveStream.Write(fQueueCnt);
-  SaveStream.Write(fMapX);
-  SaveStream.Write(fMapY);
   SaveStream.Write(fUpdateTick);
 
   SaveStream.Write(fOwnerUpdateInfo, SizeOf(fOwnerUpdateInfo));
@@ -1351,11 +1355,20 @@ begin
 end;
 
 
+
+
 procedure TKMBuildFF.Load(LoadStream: TKMemoryStream);
-var
-  Len: Integer;
+//var
+//  Len: Integer;
 begin
   LoadStream.CheckMarker('BuildFF');
+
+  LoadStream.Read(fMapX);
+  LoadStream.Read(fMapY);
+  SetLength(fInfoArr, fMapX * fMapY);
+  fVisitIdx := 255;
+  fVisitIdxHouse := 255;
+{
 
   LoadStream.Read(fOwner);
   LoadStream.Read(fVisitIdx);
@@ -1363,8 +1376,6 @@ begin
   LoadStream.Read(fStartQueue);
   LoadStream.Read(fEndQueue);
   LoadStream.Read(fQueueCnt);
-  LoadStream.Read(fMapX);
-  LoadStream.Read(fMapY);
   LoadStream.Read(fUpdateTick);
 
   LoadStream.Read(fOwnerUpdateInfo, SizeOf(fOwnerUpdateInfo));
@@ -1449,23 +1460,27 @@ var
   K: Integer;
 begin
   fQueueCnt := 0;
-  if (fVisitIdx >= 254) then
-  begin
-    fVisitIdx := 0;
-    for K := 0 to Length(fInfoArr) - 1 do
-      fInfoArr[K].Visited := 0;
-    //FillChar(fInfoArr[0], SizeOf(TKMBuildInfo[0])*Length(fInfoArr), #0);
-  end;
-  if (fVisitIdxHouse >= 254) then
-  begin
-    fVisitIdxHouse := 0;
-    for K := 0 to Length(fInfoArr) - 1 do
-      fInfoArr[K].VisitedHouse := 0;
-  end;
   if aHouseFF then
+  begin
+    if (fVisitIdxHouse >= 254) then
+    begin
+      fVisitIdxHouse := 0;
+      for K := 0 to Length(fInfoArr) - 1 do
+        fInfoArr[K].VisitedHouse := 0;
+    end;
     fVisitIdxHouse := fVisitIdxHouse + 1
+  end
   else
+  begin
+    if (fVisitIdx >= 254) then
+    begin
+      fVisitIdx := 0;
+      for K := 0 to Length(fInfoArr) - 1 do
+        fInfoArr[K].Visited := 0;
+      //FillChar(fInfoArr[0], SizeOf(TKMBuildInfo[0])*Length(fInfoArr), #0);
+    end;
     fVisitIdx := fVisitIdx + 1;
+  end;
 end;
 
 
@@ -1499,7 +1514,8 @@ function TKMBuildFF.CanBeVisited(const aX,aY,aIdx: Word; const aHouseQueue: Bool
 begin
   // tpOwn - walkable tile + height evaluation
   if aHouseQueue then
-    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) ) AND (tpOwn in gTerrain.Land[aY,aX].Passability)
+    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND (tpOwn in gTerrain.Land[aY,aX].Passability)
+    //Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) ) AND (tpOwn in gTerrain.Land[aY,aX].Passability)
   else
     Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) );//(tpOwn in gTerrain.Land[aY,aX].Passability);
 end;
@@ -1580,8 +1596,8 @@ begin
     LeftSideFree := True;
     RightSideFree := True;
     for Dir := Low(Surroundings[DIST]) to High(Surroundings[DIST]) do
-      //for K := Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
-      for K := Low(Surroundings[DIST,Dir]) + Byte(Dir = dirS) to High(Surroundings[DIST,Dir]) - Byte(Dir = dirS) do
+      for K := Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
+      //for K := Low(Surroundings[DIST,Dir]) + Byte(Dir = dirS) to High(Surroundings[DIST,Dir]) - Byte(Dir = dirS) do
       begin
         Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,K]);
         if fHouseReq.IgnoreAvoidBuilding AND (State[Point.Y, Point.X] in [bsReserved, bsHousePlan]) then
@@ -1746,7 +1762,6 @@ begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
   SetLength(fInfoArr, fMapX * fMapY);
-  FillChar(fInfoArr[0], SizeOf(fInfoArr[0])*Length(fInfoArr), #0);
   fVisitIdx := 255;
   fVisitIdxHouse := 255;
 end;
