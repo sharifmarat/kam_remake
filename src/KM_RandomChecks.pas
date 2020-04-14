@@ -88,6 +88,7 @@ begin
   fCallers := TDictionary<Byte, AnsiString>.Create;
   fRngLog := TDictionary<Cardinal, TKMRLRecordList>.Create;
   fTickStreamQueue := TObjectQueue<TKMemoryStreamBinary>.Create;
+  fTickStreamQueue.OwnsObjects := True; // Set the OwnsObjects to true - the Queue will free them automatically
   fRngChecksInTick := TKMRLRecordList.Create;
   fSavedTicksCnt := 0;
   fEnabled := True;
@@ -218,9 +219,8 @@ begin
   // Delete oldest stream object from queue
   if fTickStreamQueue.Count > MAX_TICKS_CNT then
   begin
-    fTickStreamQueue.Extract;
-//    fTickStreamQueue.TrimExcess;
-//    FreeAndNil(tickStream);
+    fTickStreamQueue.Dequeue; // Will also automatically free an object, because of OwnObjects property
+    fTickStreamQueue.TrimExcess;
   end;
 
   tickStream := TKMemoryStreamBinary.Create;
