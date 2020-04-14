@@ -6772,8 +6772,8 @@ end;
 
 destructor TKMListBox.Destroy;
 begin
-  fItems.Free;
   fSeparatorTexts.Free;
+  fItems.Free;
   inherited;
 end;
 
