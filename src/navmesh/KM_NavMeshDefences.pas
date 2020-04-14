@@ -235,7 +235,6 @@ var
   CityCenterPoints: TKMPointArray;
   StartPolygons: TKMWordArray;
 begin
-  Result := False;
   // Get center points of all allied cities
   Cnt := 0;
   for PL := 0 to gHands.Count - 1 do
@@ -243,8 +242,6 @@ begin
     begin
       gAIFields.Eye.OwnerUpdate(PL);
       CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-      if (PL = fOwner) AND (Length(CityCenterPoints) < 1) then
-        Exit;
       // Transform it to polygons
       SetLength(StartPolygons, Cnt + Length(CityCenterPoints));
       for I := 0 to Length(CityCenterPoints) - 1 do

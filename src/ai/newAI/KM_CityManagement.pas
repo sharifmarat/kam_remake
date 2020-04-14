@@ -412,7 +412,7 @@ var
     end;
   end;
 
-  procedure CheckMarketplaces();
+  procedure CheckTrades();
   const
     WARE_RESERVE = 3;
   var
@@ -491,7 +491,7 @@ begin
   if MarketCnt = 0 then
     Exit
   else
-    CheckMarketplaces();
+    CheckTrades();
 
   RequiedCnt := 0;
   SetLength(RequiredWares,4);

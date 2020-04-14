@@ -30,9 +30,7 @@ type
     fSetup: TKMHandAISetup;
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fAttackRequest: TKMAttackRequest;
-    fDefendRequest: TKMDefendRequest;
 
-    fHostileGroups: TList;
     fAttack: TKMArmyAttack;
     fAttackNew: TKMArmyAttackNew;
     fDefence: TKMArmyDefence;
@@ -42,8 +40,6 @@ type
     procedure RecruitSoldiers();
     procedure CheckGroupsState();
     procedure CheckAttack();
-    procedure AddNewThreat(aAttacker: TKMUnitWarrior; aUnit: TKMUnit = nil);
-    procedure CheckThreats();
     procedure SetAttackRequest(aAttackRequest: TKMAttackRequest);
 
     function CombineBalanceStrings(): UnicodeString;
@@ -58,15 +54,12 @@ type
     property AttackNew: TKMArmyAttackNew read fAttackNew;
     property Defence: TKMArmyDefence read fDefence write fDefence;
     property AttackRequest: TKMAttackRequest read fAttackRequest write SetAttackRequest;
-    property DefendRequest: TKMDefendRequest read fDefendRequest;
     property BalanceText: UnicodeString read CombineBalanceStrings;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
-    procedure CheckNewThreat(aHouse: TKMHouse; aAttacker: TKMUnitWarrior); overload;
-    procedure CheckNewThreat(aUnit: TKMUnit; aAttacker: TKMUnit); overload;
 
     procedure Paint();
   end;
@@ -75,7 +68,7 @@ type
 implementation
 uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
-  KM_HouseBarracks,
+  KM_HouseBarracks, KM_Supervisor,
   KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_RenderAux,
   KM_AIParameters, KM_DevPerfLog, KM_DevPerfLogTypes;
 
@@ -88,26 +81,14 @@ begin
   fOwner := aPlayer;
   fSetup := aSetup;
 
-  fHostileGroups := TList.Create();
   fAttack := TKMArmyAttack.Create(aPlayer);
   fAttackNew := TKMArmyAttackNew.Create(aPlayer);
-  fDefence := TKMArmyDefence.Create(aPlayer, fAttack, fHostileGroups);
+  fDefence := TKMArmyDefence.Create(aPlayer, fAttack);
 end;
 
 
 destructor TKMArmyManagement.Destroy();
-var
-  I: Integer;
-  UG: TKMUnitGroup;
 begin
-  //We don't have to release unit pointers, because the group is only destroyed when the game is canceled
-  for I := fHostileGroups.Count - 1 downto 0 do
-  begin
-    UG := fHostileGroups.Items[I];
-    gHands.CleanUpGroupPointer( UG );
-    //fHostileGroups.Delete(I);
-  end;
-  fHostileGroups.Free;
   fAttack.Free;
   fAttackNew.Free;
   fDefence.Free;
@@ -117,9 +98,6 @@ end;
 
 
 procedure TKMArmyManagement.Save(SaveStream: TKMemoryStream);
-var
-  I: Integer;
-  UG: TKMUnitGroup;
 begin
   SaveStream.PlaceMarker('ArmyManagement');
   SaveStream.Write(fOwner);
@@ -141,25 +119,6 @@ begin
       SaveStream.Write(Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
   end;
 
-  with fDefendRequest do
-  begin
-    SaveStream.Write(PointsCnt);
-    if (Length(Points) > 0) then
-      SaveStream.Write(Points[0], SizeOf(Points[0])*PointsCnt);
-    if (Length(AssistByInfluence) > 0) then
-      SaveStream.Write(AssistByInfluence[0], SizeOf(AssistByInfluence[0])*PointsCnt);
-  end;
-
-  SaveStream.Write( Integer(fHostileGroups.Count) );
-  for I := 0 to fHostileGroups.Count - 1 do
-  begin
-    UG := fHostileGroups.Items[I];
-    if (UG <> nil) then
-      SaveStream.Write(UG.UID) //Store ID
-    else
-      SaveStream.Write(Integer(0));
-  end;
-
   fAttack.Save(SaveStream);
   fAttackNew.Save(SaveStream);
   fDefence.Save(SaveStream);
@@ -168,8 +127,7 @@ end;
 
 procedure TKMArmyManagement.Load(LoadStream: TKMemoryStream);
 var
-  I, Count: Integer;
-  UG: TKMUnitGroup;
+  Count: Integer;
 begin
   LoadStream.CheckMarker('ArmyManagement');
   LoadStream.Read(fOwner);
@@ -192,24 +150,6 @@ begin
       LoadStream.Read(Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
   end;
 
-  with fDefendRequest do
-  begin
-    LoadStream.Read(PointsCnt);
-    SetLength(Points,PointsCnt);
-    if (Length(Points) > 0) then
-      LoadStream.Read(Points[0], SizeOf(Points[0])*PointsCnt);
-    SetLength(AssistByInfluence,PointsCnt);
-    if (Length(AssistByInfluence) > 0) then
-      LoadStream.Write(AssistByInfluence[0], SizeOf(AssistByInfluence[0])*PointsCnt);
-  end;
-
-  LoadStream.Read(Count);
-  for I := 0 to Count - 1 do
-  begin
-    LoadStream.Read(UG, 4);
-    fHostileGroups.Add(UG);
-  end;
-
   fAttack.Load(LoadStream);
   fAttackNew.Load(LoadStream);
   fDefence.Load(LoadStream);
@@ -217,12 +157,7 @@ end;
 
 
 procedure TKMArmyManagement.SyncLoad();
-var
-  I: Integer;
 begin
-  for I := 0 to fHostileGroups.Count - 1 do
-    fHostileGroups.Items[I] := gHands.GetGroupByUID( Cardinal(fHostileGroups.Items[I]) );
-
   fAttack.SyncLoad();
   fAttackNew.SyncLoad();
   fDefence.SyncLoad();
@@ -248,7 +183,11 @@ end;
 
 procedure TKMArmyManagement.WarriorEquipped(aGroup: TKMUnitGroup);
 begin
-  fDefence.FindPlaceForGroup(aGroup);
+  //if (gAIFields.Supervisor.CombatStatus[fOwner,fOwner] = csDefending) AND (fDefence.GroupsCount = 0) AND (fAttackNew.Count > 0) then
+  if (fDefence.GroupsCount = 0) AND (fAttackNew.Count > 0) then
+    fAttackNew.LinkGroup(aGroup);
+  if (aGroup.Count > 0) then
+    fDefence.FindPlaceForGroup(aGroup);
 end;
 
 
@@ -287,7 +226,7 @@ begin
       if (AITroopTrainOrder[GT,K] <> utNone) then
         Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,K] ] + 1); // Always recruit something
 
-  //Find barracks
+  // Find barracks
   SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(htBarracks));
   for K := 0 to Length(Barracks) - 1 do
     Barracks[K] := nil; // Just to be sure
@@ -302,16 +241,16 @@ begin
     end;
   end;
 
-  //Train troops where possible in each barracks
+  // Train troops where possible in each barracks
   for K := Low(Barracks) to High(Barracks) do
     if (Barracks[K] <> nil) then
     begin
-      //Chose a random group type that we are going to attempt to train (so we don't always train certain group types first)
+      // Chose a random group type that we are going to attempt to train (so we don't always train certain group types first)
       L := 0;
       repeat
         GT := TKMGroupType(KaMRandom(4, 'TKMArmyManagement.RecruitSoldiers')); //Pick random from overall count
         Inc(L);
-      until (GroupReq[GT] > 0) OR (L > 9); //Limit number of attempts to guarantee it doesn't loop forever
+      until (GroupReq[GT] > 0) OR (L > 9); // Limit number of attempts to guarantee it doesn't loop forever
 
       if (GroupReq[GT] = 0) then
         continue; // Don't train
@@ -333,7 +272,7 @@ begin
           begin
             Barracks[K].Equip(UT, 1);
             Dec(GroupReq[GT]);
-            pEquippedTime^ := gGame.GameTick; //Only reset it when we actually trained something (in IronThenLeather mode we don't count them separately)
+            pEquippedTime^ := gGame.GameTick; // Only reset it when we actually trained something (in IronThenLeather mode we don't count them separately)
           end;
         end;
       end;
@@ -344,15 +283,15 @@ end;
 //Check army food level and positioning
 procedure TKMArmyManagement.CheckGroupsState();
 var
-  I: Integer;
+  K: Integer;
   Group: TKMUnitGroup;
 begin
   // Feed army and find unused groups
-  for I := 0 to gHands[fOwner].UnitGroups.Count - 1 do
+  for K := 0 to gHands[fOwner].UnitGroups.Count - 1 do
   begin
-    Group := gHands[fOwner].UnitGroups[I];
+    Group := gHands[fOwner].UnitGroups[K];
 
-    if not Group.IsDead AND Group.IsIdleToAI then
+    if (Group <> nil) AND not Group.IsDead AND not Group.InFight then
     begin
       // Check hunger and order food
       if (Group.Condition < UNIT_MIN_CONDITION) then
@@ -371,8 +310,11 @@ begin
       if (fDefence.FindPositionOf(Group) <> nil) then
         Continue;
 
-      // Find a place
-      fDefence.FindPlaceForGroup(Group);
+    if (fDefence.GroupsCount = 0) AND (fAttackNew.Count > 0) then
+      fAttackNew.LinkGroup(Group);
+
+      if (Group.Count > 0) then
+        fDefence.FindPlaceForGroup(Group);
     end;
   end;
 end;
@@ -576,35 +518,36 @@ type
       Inc(  GTArr[ aAG.GroupArr[K].GroupType ]  );
     end;
 
-    CompaniesCnt := Max(1, Ceil(aAG.Count / Max(1,GA_ARMY_MaxGgroupsInCompany)));
-    HighAG := aAG.Count - 1;
-    for I := 0 to CompaniesCnt - 1 do
+    if not SP_OLD_ATTACK_AI then
+      fAttackNew.AddGroups(aAG.GroupArr)
+    else
     begin
-      GCnt := 0;
-      for GT := Low(TKMGroupType) to High(TKMGroupType) do
+      CompaniesCnt := Max(1, Ceil(aAG.Count / Max(1,GA_ARMY_MaxGgroupsInCompany)));
+      HighAG := aAG.Count - 1;
+      for I := 0 to CompaniesCnt - 1 do
       begin
-        GTMaxCnt := Max(0, Round(GTArr[GT] / (CompaniesCnt - I)));
-        GTArr[GT] := GTArr[GT] - GTMaxCnt;
-        for K := HighAG downto 0 do
-          if (GTMaxCnt <= 0) then
-            break
-          else if (aAG.GroupArr[K].GroupType = GT) then
-          begin
-            if (Length(Groups) <= GCnt) then
-              SetLength(Groups, GCnt + GA_ARMY_MaxGgroupsInCompany);
-            Groups[GCnt] := aAG.GroupArr[K];
-            GCnt := GCnt + 1;
-            aAG.GroupArr[K] := aAG.GroupArr[HighAG];
-            HighAG := HighAG - 1;
-            GTMaxCnt := GTMaxCnt - 1;
-          end;
+        GCnt := 0;
+        for GT := Low(TKMGroupType) to High(TKMGroupType) do
+        begin
+          GTMaxCnt := Max(0, Round(GTArr[GT] / (CompaniesCnt - I)));
+          GTArr[GT] := GTArr[GT] - GTMaxCnt;
+          for K := HighAG downto 0 do
+            if (GTMaxCnt <= 0) then
+              break
+            else if (aAG.GroupArr[K].GroupType = GT) then
+            begin
+              if (Length(Groups) <= GCnt) then
+                SetLength(Groups, GCnt + GA_ARMY_MaxGgroupsInCompany);
+              Groups[GCnt] := aAG.GroupArr[K];
+              GCnt := GCnt + 1;
+              aAG.GroupArr[K] := aAG.GroupArr[HighAG];
+              HighAG := HighAG - 1;
+              GTMaxCnt := GTMaxCnt - 1;
+            end;
+        end;
+        SetLength(Groups, GCnt);
+        fAttack.CreateCompany(aTargetPoint, Groups);
       end;
-
-      SetLength(Groups, GCnt);
-      if SP_OLD_ATTACK_AI then
-        fAttack.CreateCompany(aTargetPoint, Groups)
-      else
-        fAttackNew.AddGroups(Groups);
     end;
   end;
 const
@@ -646,7 +589,7 @@ begin
     // If we dont have enought groups then exit (if we should take all check if there are already some combat groups)
     if ((MobilizationCoef < 1) OR (fAttack.Count > 2)) AND (AG.Count < MIN_GROUPS_IN_ATTACK) then
       Exit;
-        // Find best target of owner and order attack
+    // Find best target of owner and order attack
     if FindBestTarget(fAttackRequest.BestEnemy, TargetPoint, MobilizationCoef = 1) then
       OrderAttack(TargetPoint, AG);
   end
@@ -666,68 +609,6 @@ begin
           end;
         end;
     end;
-end;
-
-
-procedure TKMArmyManagement.CheckNewThreat(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
-begin
-  //Attacker may be already dying (e.g. killed by script)
-  if (aAttacker = nil) OR aAttacker.IsDeadOrDying then
-    Exit;
-  AddNewThreat(aAttacker);
-end;
-
-
-procedure TKMArmyManagement.CheckNewThreat(aUnit: TKMUnit; aAttacker: TKMUnit);
-begin
-  //Attacker may be already dying (e.g. killed by script)
-  if (aAttacker = nil) OR aAttacker.IsDeadOrDying OR not (aAttacker is TKMUnitWarrior) OR aUnit.IsDeadOrDying  then
-    Exit;
-  AddNewThreat( TKMUnitWarrior(aAttacker), aUnit );
-end;
-
-
-procedure TKMArmyManagement.AddNewThreat(aAttacker: TKMUnitWarrior; aUnit: TKMUnit = nil);
-var
-  Group, DefenceGroup: TKMUnitGroup;
-begin
-  Group := gHands[ aAttacker.Owner ].UnitGroups.GetGroupByMember( aAttacker );
-  if (Group = nil) OR Group.IsDead then
-    Exit;
-  if (fHostileGroups.IndexOf(Group) = -1) then // Is this attacking group already in list?
-  begin
-    if (aUnit = nil) // Does attacker attack house
-      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.OwnPoint[fOwner,aUnit.CurrPosition] > 50)) then // Or citizen which is inside of city?
-      fHostileGroups.Add( Group.GetGroupPointer() )
-    else // Does attacker attack at soldier in defence position?
-    begin
-      DefenceGroup := gHands[ aUnit.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(aUnit) );
-      if (DefenceGroup <> nil) AND not DefenceGroup.IsDead AND (fDefence.FindPositionOf(DefenceGroup) <> nil) then
-        fHostileGroups.Add( Group.GetGroupPointer() );
-    end;
-  end;
-end;
-
-
-procedure TKMArmyManagement.CheckThreats();
-var
-  I: Integer;
-  Group: TKMUnitGroup;
-  UGA: TKMUnitGroupArray;
-begin
-  SetLength(UGA,fHostileGroups.Count);
-  for I := fHostileGroups.Count - 1 downto 0 do
-  begin
-    UGA[I] := nil;
-    Group := fHostileGroups.Items[I];
-    fHostileGroups.Delete(I);
-    if (Group <> nil) then
-    begin
-      UGA[I] := Group;
-      gHands.CleanUpGroupPointer(Group);
-    end;
-  end;
-  fDefence.FindEnemyInDefLine(UGA, fDefendRequest);
 end;
 
 
@@ -754,9 +635,6 @@ begin
   try
     if (aTick mod MAX_HANDS = fOwner) then
     begin
-      //SP_OLD_ATTACK_AI := fOwner <> 1;
-      //SP_OLD_ATTACK_AI := (gGame.MissionMode <> mmTactic);
-      CheckThreats();
       if not gGame.IsPeaceTime then
       begin
         CheckAttack();
@@ -768,7 +646,6 @@ begin
       else
         fAttackNew.UpdateState(aTick);
       fDefence.UpdateState(aTick);
-      //SP_OLD_ATTACK_AI := False;
     end;
   finally
     {$IFDEF PERFLOG}

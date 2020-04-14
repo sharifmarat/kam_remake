@@ -1,7 +1,7 @@
 object Paraller_Runner: TParaller_Runner
   Left = 0
   Top = 0
-  Caption = 'Paraller_Runner'
+  Caption = 'Parallel_Runner'
   ClientHeight = 779
   ClientWidth = 1408
   Color = 8553090
@@ -431,6 +431,7 @@ object Paraller_Runner: TParaller_Runner
       Items.Strings = (
         'TKMRunnerGA_ArmyAttack'
         'TKMRunnerGA_ArmyAttackNew'
+        'TKMRunnerGA_CityAllIn'
         'TKMRunnerGA_CityBuilder'
         'TKMRunnerGA_CityPlanner'
         'TKMRunnerGA_Farm'

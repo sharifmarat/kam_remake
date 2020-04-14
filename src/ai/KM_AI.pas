@@ -330,7 +330,7 @@ begin
         begin
           if fSetup.NewAI then
           begin
-            fArmyManagement.CheckNewThreat(aHouse, aAttacker);
+            // Do nothing (too CPU demanding)
           end
           else
           begin
@@ -351,13 +351,15 @@ end;
 
 procedure TKMHandAI.UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 begin
+  {
   if not (WonOrLost <> wolNone) then
   begin
     if fSetup.NewAI AND (gHands[fOwner].HandType <> hndHuman) then // Make sure that it is not player
     begin
-      fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+      // Do nothing (too CPU demanding)
     end;
   end;
+  //}
   if aNotifyScript then
     gScriptEvents.ProcUnitWounded(aUnit, aAttacker); //At the end since it could kill the unit
 end;
@@ -384,8 +386,7 @@ begin
         begin
           if fSetup.NewAI then
           begin
-            // Calls too often
-            //fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+            // Do nothing (too CPU demanding)
           end
           else
           begin

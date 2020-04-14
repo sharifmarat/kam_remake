@@ -67,6 +67,11 @@ type
     procedure InitGAParameters(); override;
   end;
 
+  TKMRunnerGA_CityAllIn = class(TKMRunnerGA_Common)
+  protected
+    procedure InitGAParameters(); override;
+  end;
+
   TKMRunnerGA_CityBuilder = class(TKMRunnerGA_Common)
   protected
     procedure InitGAParameters(); override;
@@ -205,7 +210,7 @@ begin
   f_SIM_SimulationTimeInMin      := 10;
   f_SIM_NumberOfMaps             := 20;
   f_SIM_MapNamePrefix            := 'GA_S1_%.3d';
-  f_GA_POPULATION_CNT            := 30;
+  f_GA_POPULATION_CNT            := 3;
   f_GA_GENE_CNT                  := 5; // It will be overriden by class
   f_GA_START_TOURNAMENT_IndividualsCnt := 3;
   f_GA_FINAL_TOURNAMENT_IndividualsCnt := 4;
@@ -531,6 +536,14 @@ begin
 end;
 
 
+{ TKMRunnerGA_CityAllIn }
+procedure TKMRunnerGA_CityAllIn.InitGAParameters();
+begin
+  inherited;
+  f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_CityAllIn');
+end;
+
+
 { TKMRunnerGA_CityBuilder }
 procedure TKMRunnerGA_CityBuilder.InitGAParameters();
 begin
@@ -731,7 +744,6 @@ procedure TKMRunnerCombatAITest.Execute(aRun: Integer);
   const
     PL = 1;
   var
-    K: Integer;
     UT: TKMUnitType;
   begin
     Result := 0;
@@ -1276,6 +1288,7 @@ initialization
   RegisterRunner(TKMRunnerGA_Farm);
   RegisterRunner(TKMRunnerGA_Quarry);
   RegisterRunner(TKMRunnerGA_Forest);
+  RegisterRunner(TKMRunnerGA_CityAllIn);
   RegisterRunner(TKMRunnerGA_CityBuilder);
   RegisterRunner(TKMRunnerGA_CityPlanner);
   RegisterRunner(TKMRunnerGA_ArmyAttack);

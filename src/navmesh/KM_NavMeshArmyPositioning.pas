@@ -120,7 +120,7 @@ type
   public
     constructor Create(aSorted: Boolean = False); override;
 
-    function FindTeamDefences(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
+    function FindTeamBattleLine(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
 
     procedure Paint();
   end;
@@ -398,7 +398,7 @@ begin
           TargetEnemy.HousesPoly[TargetEnemy.HousesCount] := Enemy.HousesPoly[K];
           Inc(TargetEnemy.HousesCount);
         end;
-    BattleLines := fBackwardFF.FindTeamDefences(TargetEnemy, aOwners, fInflInfo, fQueueArray);
+    BattleLines := fBackwardFF.FindTeamBattleLine(TargetEnemy, aOwners, fInflInfo, fQueueArray);
     Result := BattleLines.Count > 0;
     if Result then
       AssignDefencePositions();
@@ -975,7 +975,7 @@ end;
 {$ENDIF}
 
 
-function TArmyBackwardFF.FindTeamDefences(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
+function TArmyBackwardFF.FindTeamBattleLine(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
 begin
   fOwner := aOwners[0];
   fInflInfo := aDefInfo;
