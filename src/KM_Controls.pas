@@ -5998,9 +5998,12 @@ procedure TKMScrollPanel.SetVisible(aValue: Boolean);
 begin
   inherited;
 
-  // Sync ScrollBars visibility with ScrollPanel visibility
-  fScrollBarH.Visible := aValue;
-  fScrollBarV.Visible := aValue;
+  // Hide ScrollBars with if we hide ScrollPanel
+  if not aValue then
+  begin
+    fScrollBarH.Visible := aValue;
+    fScrollBarV.Visible := aValue;
+  end;
 end;
 
 
