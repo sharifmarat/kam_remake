@@ -4,7 +4,7 @@ interface
 uses
   Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
   KM_RenderControl, KM_Settings, KM_Video, KM_CommonTypes,
-  KM_GameTypes,
+
   {$IFDEF FPC} LResources, {$ENDIF}
   {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType; {$ENDIF}
@@ -265,7 +265,7 @@ uses
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
   KM_RandomChecks,
-  KM_Log, KM_CommonClasses, KM_DevPerfLog;
+  KM_Log, KM_CommonClasses;
 
 
 //Remove VCL panel and use flicker-free TMyPanel instead

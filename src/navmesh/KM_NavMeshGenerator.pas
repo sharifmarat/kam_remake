@@ -12,8 +12,8 @@ uses
     Windows,
   {$ENDIF}
   // System.Diagnostics, System.TimeSpan,
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
-  KromUtils, KM_CommonUtils;
+  KM_CommonClasses, KM_Defaults, KM_Points,
+  KromUtils;
 
 const
   MAX_NODES = 10000; // Max nodes in NavMesh array
@@ -103,8 +103,8 @@ type
 implementation
 uses
   SysUtils, Math,
-  KM_Terrain, KM_HandsCollection, KM_RenderAux,
-  KM_NavMesh,
+  KM_Terrain,
+
   Dialogs;
 
 
