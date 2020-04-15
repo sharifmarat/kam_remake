@@ -721,6 +721,9 @@ begin
     if fGuiMarkerReveal.Visible then Exit;
   end;
 
+  // We rotate tile on RMB
+  if gGameCursor.Mode = cmTiles then Exit;
+
   fGuiTerrain.RightClickCancel;
 
   //Reset cursor
