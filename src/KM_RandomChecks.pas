@@ -16,11 +16,11 @@ type
     ValueS: Single;
     ValueE: Extended;
     CallerId: Byte;
-//    Tick: Cardinal;
   end;
 
   TKMRLRecordList = TList<TKMRngLogRecord>;
 
+  // Logger for random check calls
   TKMRandomCheckLogger = class
   private
     fEnabled: Boolean;
