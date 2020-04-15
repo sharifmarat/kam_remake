@@ -713,6 +713,8 @@ var
   I: Integer;
   s: string;
 begin
+  if (Self = nil) or (aList = nil) then Exit;
+
   aList.Clear;
 
   for I := 0 to fCheckpoints.Count - 1 do
