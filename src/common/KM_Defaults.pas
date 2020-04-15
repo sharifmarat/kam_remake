@@ -315,7 +315,7 @@ const
   LOC_SPECTATE = -1;
   LOC_ANY = -1000;
 
-  MIN_PLAYER_COLOR_DIST = 0.3; // Minimun color distance between players
+  MIN_PLAYER_COLOR_DIST = 0.15; // Minimun color distance between players
 
   EXT_SAVE_TXT_DOT = '.txt';
 
