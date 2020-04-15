@@ -168,7 +168,7 @@ begin
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);
 
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.LoadTranslation;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}gExceptions.LoadTranslation;{$ENDIF}
 
   //Show the message if user has old OpenGL drivers (pre-1.4)
   if gRender.IsOldGLVersion then
@@ -292,7 +292,7 @@ begin
   if not gRes.Sprites.GameResLoadCompleted then
     gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
 
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.LoadTranslation;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}gExceptions.LoadTranslation;{$ENDIF}
 
   //Campaigns use single locale
   fCampaigns := TKMCampaignsCollection.Create;

@@ -97,8 +97,9 @@ const
 constructor TKMMain.Create;
 begin
   inherited;
-  //Create exception handler as soon as possible in case it crashes early on
-  {$IFDEF USE_MAD_EXCEPT}fExceptions := TKMExceptions.Create;{$ENDIF}
+
+  // Create exception handler as soon as possible in case it crashes early on
+  {$IFDEF USE_MAD_EXCEPT}gExceptions := TKMExceptions.Create;{$ENDIF}
 
   //Form created first will be on taskbar
   Application.CreateForm(TFormMain, fFormMain);
@@ -106,7 +107,7 @@ begin
 
   {$IFDEF PERFLOG}
   gPerfLogs := TKMPerfLogs.Create([], True);
-  gPerfLogs.ShowForm( fFormMain.cpPerfLogs );
+  gPerfLogs.ShowForm(fFormMain.cpPerfLogs);
   fFormMain.cpPerfLogs.Height := gPerfLogs.FormHeight;
   {$ELSE}
   fFormMain.cpPerfLogs.Hide;
@@ -118,7 +119,7 @@ destructor TKMMain.Destroy;
 begin
   {$IFDEF PERFLOG}gPerfLogs.Free;{$ENDIF}
 
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}FreeAndNil(gExceptions);{$ENDIF}
 
   inherited;
 end;

@@ -17,7 +17,7 @@ type
   procedure DoCreateAssistant(const assistant: INVAssistant; const exception: IUnknown);
 
 var
-  fExceptions: TKMExceptions;
+  gExceptions: TKMExceptions;
 
 
 implementation
@@ -33,12 +33,14 @@ begin
   inherited;
   OnAssistantCreate := DoCreateAssistant;
   RegisterExceptionHandler(DoException, stTrySyncCallAlways);
-  MESettings.HttpServer := 'http://master.kamremake.com/crashupload.php?rev='+GAME_REVISION;
+  MESettings.HttpServer := 'http://master.kamremake.com/crashupload.php?rev=' + GAME_REVISION;
 end;
 
 
 procedure TKMExceptions.LoadTranslation;
 begin
+  if gResTexts = nil then Exit; // If the exception happens before translations are loaded
+
   MESettings.ExceptMsg          := gResTexts[TX_ERROR_MESSAGE];
   MESettings.SendBtnCaption     := gResTexts[TX_ERROR_SEND];
   MESettings.ShowBtnCaption     := gResTexts[TX_ERROR_SHOW_DATA];
@@ -56,10 +58,11 @@ begin
 end;
 
 
-//We have to load the translations for the send assistant when it is created, that's the only way
+// We have to load the translations for the send assistant when it is created, that's the only way
 procedure DoCreateAssistant(const assistant: INVAssistant; const exception: IUnknown);
 begin
-  if gResTexts = nil then Exit; //If the exception happens before translations are loaded
+  if gResTexts = nil then Exit; // If the exception happens before translations are loaded
+
   if assistant.FormCount = 3 then //That's how we know it's the send assistant, not one of the others (which we currently don't use)
   begin
     assistant.Title := gResTexts[TX_ERROR_SEND];
