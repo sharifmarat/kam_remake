@@ -2459,7 +2459,9 @@ begin
 
   if fUIMode in [umSpectate, umReplay] then
   begin
-    Checkbox_ReplayFOW.Checked := False;
+    //In singleplayer replays, start with fog enabled so replays can be watched without spoilers
+    Checkbox_ReplayFOW.Checked := gGame.IsSingleplayer and gGame.IsReplay;
+    ReplayClick(Checkbox_ReplayFOW); //Apply FOW
     Dropbox_ReplayFOW.Clear;
 
     // Set dropbox in different ways
