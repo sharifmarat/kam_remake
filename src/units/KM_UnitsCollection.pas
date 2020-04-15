@@ -27,6 +27,7 @@ type
     property Units[aIndex: Integer]: TKMUnit read GetUnit; default; //Use instead of Items[.]
     procedure RemoveUnit(aUnit: TKMUnit);
     procedure RemoveAllUnits;
+    procedure RemoveUnitsOutOfBounds(const aInsetRect: TKMRect);
     procedure DeleteUnitFromList(aUnit: TKMUnit);
     procedure OwnerUpdate(aOwner: TKMHandID);
     function HitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit;
@@ -147,6 +148,22 @@ procedure TKMUnitsCollection.RemoveUnit(aUnit: TKMUnit);
 begin
   aUnit.CloseUnit; //Should free up the unit properly (freeing terrain usage and memory)
   fUnits.Remove(aUnit); //Will free the unit
+end;
+
+
+procedure TKMUnitsCollection.RemoveUnitsOutOfBounds(const aInsetRect: TKMRect);
+var
+  I: Integer;
+  newMapRect: TKMRect;
+begin
+  Assert(gGame.IsMapEditor);
+  if Count <= 0 then Exit;
+
+  newMapRect := KMRectGrow(gTerrain.MapRect, aInsetRect);
+
+  for I := 0 to Count - 1 do
+    if not KMInRect(Units[I].CurrPosition, newMapRect) then
+      Units[I].CloseUnit;
 end;
 
 

@@ -1277,7 +1277,13 @@ var
 begin
   if aPathName = '' then exit;
 
-  //Prepare and save
+  // Prepare and save
+
+  // Remove assets out of map bounds first (units / houses)
+  // Those 'fake' assets, that will not be loaded could affectsaved assets,
+  // F.e. if we have 'fake' first storehouse, then commands will add second storehouse as a second one
+  // and its wares will be corrupted
+  gHands.RemoveAssetsOutOfBounds(aInsetRect);
   gHands.RemoveEmptyPlayers;
 
   ForceDirectories(ExtractFilePath(aPathName));

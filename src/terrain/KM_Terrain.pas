@@ -185,6 +185,7 @@ type
     function CanPlaceIronMine(X, Y: Word): Boolean;
     function CanPlaceHouse(Loc: TKMPoint; aHouseType: TKMHouseType): Boolean;
     function CanPlaceHouseFromScript(aHouseType: TKMHouseType; const Loc: TKMPoint): Boolean;
+    function CheckHouseBounds(aHouseType: TKMHouseType; const Loc: TKMPoint; aInsetRect: TKMRect): Boolean;
     function CanAddField(aX, aY: Word; aFieldType: TKMFieldType): Boolean;
     function CheckHeightPass(const aLoc: TKMPoint; aPass: TKMHeightPass): Boolean;
     procedure AddHouseRemainder(const Loc: TKMPoint; aHouseType: TKMHouseType; aBuildState: TKMHouseBuildState);
@@ -258,6 +259,7 @@ type
 
     function TileInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
     function TileInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
+    function TileInMapCoords(X,Y: Integer; InsetRect: TKMRect): Boolean; overload;
     function VerticeInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
     function VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function EnsureTileInMapCoords(X, Y: Integer; Inset: Byte = 0): TKMPoint;
@@ -1111,6 +1113,13 @@ end;
 function TKMTerrain.TileInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean;
 begin
   Result := TileInMapCoords(aCell.X, aCell.Y, Inset);
+end;
+
+
+function TKMTerrain.TileInMapCoords(X,Y: Integer; InsetRect: TKMRect): Boolean;
+begin
+  Result :=     InRange(X, 1 + InsetRect.Left, fMapX - 1 + InsetRect.Right)
+            and InRange(Y, 1 + InsetRect.Top,  fMapY - 1 + InsetRect.Bottom);
 end;
 
 
@@ -4301,6 +4310,31 @@ begin
         else         Result := Result and (tpBuild in Land[Y,X].Passability);
       end;
     end;
+end;
+
+
+//Simple check if house could exists on terrain, with only boundaries check
+//aInsetRect - insetRect for map rect
+function TKMTerrain.CheckHouseBounds(aHouseType: TKMHouseType; const Loc: TKMPoint; aInsetRect: TKMRect): Boolean;
+var
+  I, K: Integer;
+  HA: THouseArea;
+  TX, TY: Integer;
+  mapHouseInsetRect: TKMRect;
+begin
+  Result := True;
+  HA := gRes.Houses[aHouseType].BuildArea;
+
+  mapHouseInsetRect := KMRect(aInsetRect.Left + 1, aInsetRect.Top + 1, aInsetRect.Right - 1, aInsetRect.Bottom - 1);
+
+  for I := 1 to 4 do
+  for K := 1 to 4 do
+  if (HA[I,K] <> 0) then
+  begin
+    TX := Loc.X + K - 3;
+    TY := Loc.Y + I - 4;
+    Result := Result and TileInMapCoords(TX, TY, mapHouseInsetRect); //Inset one tile from map edges
+  end;
 end;
 
 

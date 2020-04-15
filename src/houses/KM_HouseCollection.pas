@@ -40,6 +40,7 @@ type
     procedure UpdateResRequest; //Change resource requested counts for all houses
     procedure DeleteHouseFromList(aHouse: TKMHouse);
     procedure RemoveAllHouses;
+    procedure RemoveHousesOutOfBounds(const aInsetRect: TKMRect);
 
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
@@ -145,6 +146,23 @@ begin
 
   if (aHouse <> nil) then
     fHouses.Extract(aHouse);
+end;
+
+
+procedure TKMHousesCollection.RemoveHousesOutOfBounds(const aInsetRect: TKMRect);
+var
+  I: Integer;
+  newMapRect: TKMRect;
+begin
+  Assert(gGame.IsMapEditor);
+  if Count <= 0 then Exit;
+
+  newMapRect := KMRectGrow(gTerrain.MapRect, aInsetRect);
+
+  for I := 0 to Count - 1 do
+    if not KMInRect(Houses[I].Position, newMapRect)
+      or not gTerrain.CheckHouseBounds(Houses[I].HouseType, Houses[I].Position, aInsetRect) then
+      Houses[I].DemolishHouse(Houses[I].Owner, True);
 end;
 
 
