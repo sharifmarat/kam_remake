@@ -67,6 +67,7 @@ type
     fVBONeedsFlush: array [TVBOArrayType] of Boolean;
     fVBOLastClipRect: TKMRect;
     fVBOLastGameTick: Cardinal;
+    fVBOLastFOW: TKMFogOfWarCommon;
     function GetTileUV(Index: Word; Rot: Byte): TUVRect; inline;
     procedure BindVBOArray(aVBOArrayType: TVBOArrayType); inline;
     procedure UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
@@ -381,6 +382,7 @@ begin
   //Skip updating VBOs if GameTick and ClipRect haven't changed
   if not gGame.IsMapEditor
     and (fClipRect = fVBOLastClipRect)
+    and (fVBOLastFOW = aFOW)
     and (gGame.GameTick = fVBOLastGameTick) then
     Exit;
   {$IFDEF PERFLOG}
@@ -389,6 +391,7 @@ begin
 
   fVBOLastClipRect := fClipRect;
   fVBOLastGameTick := gGame.GameTick;
+  fVBOLastFOW := aFOW;
 
   fLastBindVBOArrayType := vatNone;
 
