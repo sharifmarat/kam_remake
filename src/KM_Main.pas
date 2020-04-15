@@ -400,17 +400,24 @@ end;
 
 // Check game execution dir generic permissions
 function TKMMain.DoHaveGenericPermission: Boolean;
+{$IFDEF WDC}
 const
   GRANTED: array[Boolean] of string = ('blocked', 'granted');
 var
   readAcc, writeAcc, execAcc: Boolean;
+{$ENDIF}
 begin
+  {$IFDEF WDC}
   readAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_READ) = FILE_GENERIC_READ);
   writeAcc  := (CheckFileAccess(ExeDir, FILE_GENERIC_WRITE) = FILE_GENERIC_WRITE);
   execAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_EXECUTE) = FILE_GENERIC_EXECUTE);
   gLog.AddTime(Format('Check game folder ''%s'' generic permissions: READ: %s; WRITE: %s; EXECUTE: %s',
                       [ExeDir, GRANTED[readAcc], GRANTED[writeAcc], GRANTED[execAcc]]));
   Result := readAcc and writeAcc and execAcc;
+  {$ENDIF}
+  {$IFDEF FPC}
+  Result := True; // No folder permissions check for FPC yet
+  {$ENDIF}
 end;
 
 
