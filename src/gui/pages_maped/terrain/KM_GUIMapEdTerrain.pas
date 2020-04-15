@@ -1,4 +1,4 @@
-unit KM_GUIMapEdTerrain;
+﻿unit KM_GUIMapEdTerrain;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -50,7 +50,7 @@ type
     function Visible: Boolean;  override;
     procedure Resize;
     procedure UpdateState;
-    procedure RightClickCancel;
+    procedure Cancel_Clicked(var aHandled: Boolean);
   end;
 
 
@@ -229,10 +229,12 @@ begin
 end;
 
 
-procedure TKMMapEdTerrain.RightClickCancel;
+procedure TKMMapEdTerrain.Cancel_Clicked(var aHandled: Boolean);
 begin
-  fGuiObjects.RightClickCancel;
-  fGuiBrushes.RightClickCancel;
+  if aHandled then Exit;
+
+  fGuiObjects.Cancel_Clicked(aHandled);
+  fGuiBrushes.RightClickCancel(aHandled);
 end;
 
 

@@ -40,7 +40,7 @@ type
     function Visible: Boolean; override;
     procedure MouseWheel(Shift: TShiftState; WheelSteps: Integer; X,Y: Integer; var aHandled: Boolean);
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
-    procedure RightClickCancel;
+    procedure Cancel_Clicked(var aHandled: Boolean);
     procedure UpdateState;
   end;
 
@@ -327,14 +327,17 @@ begin
 end;
 
 
-procedure TKMMapEdTerrainBrushes.RightClickCancel;
+procedure TKMMapEdTerrainBrushes.Cancel_Clicked(var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   // Reset last object on RMB click
   if gGameCursor.Mode = cmBrush then
   begin
     fLastShape := hsCircle;
     fLastBrush := -1;
     fLastMagicBrush := False;
+    aHandled := True;
   end;
 end;
 
