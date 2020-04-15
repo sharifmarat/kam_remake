@@ -4,7 +4,7 @@ interface
 uses
   Classes, Generics.Collections, SysUtils,
   KM_Defaults, KM_Points, KM_CommonTypes, KM_Houses,
-  KM_ResWares, KM_ResHouses, KM_ResTileset, KM_MapEdTypes, KM_Terrain, KM_UnitGroup;
+  KM_ResWares, KM_ResHouses, KM_MapEdTypes, KM_Terrain, KM_UnitGroup;
 
 
 type
@@ -113,6 +113,7 @@ type
     fAreas: array [TKMCheckpointArea] of TKMCheckpoint;
   public
     constructor Create(const aCaption: string);
+    destructor Destroy; override;
     procedure Apply(aArea: TKMCheckpointArea = caAll; aUpdateImmidiately: Boolean = True); override;
   end;
 
@@ -157,8 +158,8 @@ type
 implementation
 uses
   Math,
-  KM_HandsCollection, KM_Hand, KM_Units, KM_UnitsCollection, KM_CommonClasses, KM_UnitWarrior, KM_Utils,
-  KM_Game, KM_CommonUtils, KM_Resource, KM_HouseTownhall, KM_HouseBarracks, KM_HouseMarket;
+  KM_HandsCollection, KM_Hand, KM_Units, KM_UnitsCollection,
+  KM_Game, KM_CommonUtils, KM_Resource, KM_HouseTownhall, KM_HouseBarracks;
 
 const
   CHECKPOINTS_MAX_CNT = 500;
@@ -614,6 +615,18 @@ begin
 end;
 
 
+destructor TKMCheckpointAll.Destroy;
+var
+  I: TKMCheckpointArea;
+begin
+  for I := Low(TKMCheckpointArea) to High(TKMCheckpointArea) do
+    if I <> caAll then
+      fAreas[I].Free;
+
+  inherited;
+end;
+
+
 procedure TKMCheckpointAll.Apply(aArea: TKMCheckpointArea = caAll; aUpdateImmidiately: Boolean = True);
 var
   I: TKMCheckpointArea;
@@ -700,6 +713,8 @@ var
   I: Integer;
   s: string;
 begin
+  if (Self = nil) or (aList = nil) then Exit;
+
   aList.Clear;
 
   for I := 0 to fCheckpoints.Count - 1 do

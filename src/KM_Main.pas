@@ -53,7 +53,7 @@ type
     property FormMain: TFormMain read fFormMain;
 
     procedure ApplyCursorRestriction;
-    function GetScreenBounds(out Bounds: TRect): Boolean;
+    function GetScreenBounds(out aBounds: TRect): Boolean;
     function IsFormActive: Boolean;
     function ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
     function ClientToScreen(aPoint: TPoint): TPoint;
@@ -86,7 +86,7 @@ uses
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils, KM_FileIO,
   KM_GameApp, KM_Helpers,
-  KM_Log, KM_CommonUtils, KM_Defaults, KM_Points, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_Log, KM_CommonUtils, KM_Defaults, KM_Points, KM_DevPerfLog;
 
 
 const
@@ -97,8 +97,9 @@ const
 constructor TKMMain.Create;
 begin
   inherited;
-  //Create exception handler as soon as possible in case it crashes early on
-  {$IFDEF USE_MAD_EXCEPT}fExceptions := TKMExceptions.Create;{$ENDIF}
+
+  // Create exception handler as soon as possible in case it crashes early on
+  {$IFDEF USE_MAD_EXCEPT}gExceptions := TKMExceptions.Create;{$ENDIF}
 
   //Form created first will be on taskbar
   Application.CreateForm(TFormMain, fFormMain);
@@ -106,7 +107,7 @@ begin
 
   {$IFDEF PERFLOG}
   gPerfLogs := TKMPerfLogs.Create([], True);
-  gPerfLogs.ShowForm( fFormMain.cpPerfLogs );
+  gPerfLogs.ShowForm(fFormMain.cpPerfLogs);
   fFormMain.cpPerfLogs.Height := gPerfLogs.FormHeight;
   {$ELSE}
   fFormMain.cpPerfLogs.Hide;
@@ -118,7 +119,7 @@ destructor TKMMain.Destroy;
 begin
   {$IFDEF PERFLOG}gPerfLogs.Free;{$ENDIF}
 
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}FreeAndNil(gExceptions);{$ENDIF}
 
   inherited;
 end;
@@ -400,17 +401,24 @@ end;
 
 // Check game execution dir generic permissions
 function TKMMain.DoHaveGenericPermission: Boolean;
+{$IFDEF WDC}
 const
   GRANTED: array[Boolean] of string = ('blocked', 'granted');
 var
   readAcc, writeAcc, execAcc: Boolean;
+{$ENDIF}
 begin
+  {$IFDEF WDC}
   readAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_READ) = FILE_GENERIC_READ);
   writeAcc  := (CheckFileAccess(ExeDir, FILE_GENERIC_WRITE) = FILE_GENERIC_WRITE);
   execAcc   := (CheckFileAccess(ExeDir, FILE_GENERIC_EXECUTE) = FILE_GENERIC_EXECUTE);
   gLog.AddTime(Format('Check game folder ''%s'' generic permissions: READ: %s; WRITE: %s; EXECUTE: %s',
                       [ExeDir, GRANTED[readAcc], GRANTED[writeAcc], GRANTED[execAcc]]));
   Result := readAcc and writeAcc and execAcc;
+  {$ENDIF}
+  {$IFDEF FPC}
+  Result := True; // No folder permissions check for FPC yet
+  {$ENDIF}
 end;
 
 
@@ -576,52 +584,53 @@ end;
 
 
 //Can be invalid very breifly if you change resolutions (this is possible in Windowed mode)
-function TKMMain.GetScreenBounds(out Bounds: TRect): Boolean;
-var I: Integer;
+function TKMMain.GetScreenBounds(out aBounds: TRect): Boolean;
+var
+  I: Integer;
 begin
   Result := False;
-  Bounds := Classes.Rect(-1,-1,-1,-1);
+  aBounds := Classes.Rect(-1,-1,-1,-1);
   fFormMain.Monitor; //This forces Delphi to reload Screen.Monitors (only if necessary) and so fixes crashes when using multiple monitors
   //Maximized is a special case, it can only be on one monitor. This is required because when maximized form.left = -9 (on Windows 7 anyway)
   if fFormMain.WindowState = wsMaximized then
   begin
     for I:=0 to Screen.MonitorCount-1 do
       //Find the monitor with the left closest to the left of the form
-      if (I = 0) or
-         ((abs(fFormMain.Left - Screen.Monitors[I].Left) <= abs(fFormMain.Left - Bounds.Left)) and
-          (abs(fFormMain.Top  - Screen.Monitors[I].Top ) <= abs(fFormMain.Top  - Bounds.Top))) then
+      if (I = 0)
+      or ((Abs(fFormMain.Left - Screen.Monitors[I].Left) <= Abs(fFormMain.Left - aBounds.Left)) and
+          (Abs(fFormMain.Top  - Screen.Monitors[I].Top ) <= Abs(fFormMain.Top  - aBounds.Top))) then
       begin
         Result := True;
-        Bounds.Left  := Screen.Monitors[I].Left;
-        Bounds.Right := Screen.Monitors[I].Width+Screen.Monitors[I].Left;
-        Bounds.Top   := Screen.Monitors[I].Top;
-        Bounds.Bottom:= Screen.Monitors[I].Height+Screen.Monitors[I].Top;
+        aBounds.Left  := Screen.Monitors[I].Left;
+        aBounds.Right := Screen.Monitors[I].Width+Screen.Monitors[I].Left;
+        aBounds.Top   := Screen.Monitors[I].Top;
+        aBounds.Bottom:= Screen.Monitors[I].Height+Screen.Monitors[I].Top;
       end;
   end
   else
     for I:=0 to Screen.MonitorCount-1 do
       //See if our form is within the boundaries of this monitor (I.e. when it is not outside the boundaries)
-      if not ((fFormMain.Left               >= Screen.Monitors[I].Width + Screen.Monitors[I].Left) or
+      if not ((fFormMain.Left                   >= Screen.Monitors[I].Width + Screen.Monitors[I].Left) or
               (fFormMain.Width + fFormMain.Left <= Screen.Monitors[I].Left) or
-              (fFormMain.Top                >= Screen.Monitors[I].Height + Screen.Monitors[I].Top) or
+              (fFormMain.Top                    >= Screen.Monitors[I].Height + Screen.Monitors[I].Top) or
               (fFormMain.Height + fFormMain.Top <= Screen.Monitors[I].Top)) then
       begin
         if not Result then
         begin
           //First time we have to initialise the result
           Result := True;
-          Bounds.Left  := Screen.Monitors[I].Left;
-          Bounds.Right := Screen.Monitors[I].Width+Screen.Monitors[I].Left;
-          Bounds.Top   := Screen.Monitors[I].Top;
-          Bounds.Bottom:= Screen.Monitors[I].Height+Screen.Monitors[I].Top;
+          aBounds.Left  := Screen.Monitors[I].Left;
+          aBounds.Right := Screen.Monitors[I].Width+Screen.Monitors[I].Left;
+          aBounds.Top   := Screen.Monitors[I].Top;
+          aBounds.Bottom:= Screen.Monitors[I].Height+Screen.Monitors[I].Top;
         end
         else
         begin
           //After the first time we compare it with the previous result and take the largest possible area
-          Bounds.Left  := Math.Min(Bounds.Left,  Screen.Monitors[I].Left);
-          Bounds.Right := Math.Max(Bounds.Right, Screen.Monitors[I].Width+Screen.Monitors[I].Left);
-          Bounds.Top   := Math.Min(Bounds.Top,   Screen.Monitors[I].Top);
-          Bounds.Bottom:= Math.Max(Bounds.Bottom,Screen.Monitors[I].Height+Screen.Monitors[I].Top);
+          aBounds.Left  := Math.Min(aBounds.Left,  Screen.Monitors[I].Left);
+          aBounds.Right := Math.Max(aBounds.Right, Screen.Monitors[I].Width+Screen.Monitors[I].Left);
+          aBounds.Top   := Math.Min(aBounds.Top,   Screen.Monitors[I].Top);
+          aBounds.Bottom:= Math.Max(aBounds.Bottom,Screen.Monitors[I].Height+Screen.Monitors[I].Top);
         end;
       end;
 end;

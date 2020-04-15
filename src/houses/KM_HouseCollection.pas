@@ -40,6 +40,7 @@ type
     procedure UpdateResRequest; //Change resource requested counts for all houses
     procedure DeleteHouseFromList(aHouse: TKMHouse);
     procedure RemoveAllHouses;
+    procedure RemoveHousesOutOfBounds(const aInsetRect: TKMRect);
 
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
@@ -148,10 +149,28 @@ begin
 end;
 
 
-procedure TKMHousesCollection.RemoveAllHouses;
-var I: Integer;
+procedure TKMHousesCollection.RemoveHousesOutOfBounds(const aInsetRect: TKMRect);
+var
+  I: Integer;
+  newMapRect: TKMRect;
 begin
-  Assert(gGame.GameMode = gmMapEd);
+  Assert(gGame.IsMapEditor);
+  if Count <= 0 then Exit;
+
+  newMapRect := KMRectGrow(gTerrain.MapRect, aInsetRect);
+
+  for I := 0 to Count - 1 do
+    if not KMInRect(Houses[I].Position, newMapRect)
+      or not gTerrain.CheckHouseBounds(Houses[I].HouseType, Houses[I].Position, aInsetRect) then
+      Houses[I].DemolishHouse(Houses[I].Owner, True);
+end;
+
+
+procedure TKMHousesCollection.RemoveAllHouses;
+var
+  I: Integer;
+begin
+  Assert(gGame.IsMapEditor);
   if Count <= 0 then Exit;
 
   for I := 0 to Count - 1 do
@@ -162,7 +181,8 @@ end;
 
 
 procedure TKMHousesCollection.OwnerUpdate(aOwner: TKMHandID);
-var I: Integer;
+var
+  I: Integer;
 begin
   for I := 0 to Count - 1 do
     Houses[I].OwnerUpdate(aOwner);
@@ -170,7 +190,8 @@ end;
 
 
 function TKMHousesCollection.HitTest(X, Y: Integer): TKMHouse;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result:= nil;
   for I := 0 to Count - 1 do
@@ -183,7 +204,8 @@ end;
 
 
 function TKMHousesCollection.GetHouseByUID(aUID: Integer): TKMHouse;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := nil;
   for I := 0 to Count - 1 do

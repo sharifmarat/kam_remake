@@ -50,6 +50,8 @@ Bugs:
  +  MapEd: fixed unit delete - unit was highlighted and deleted not right under the cursor, but on the cell under the cursor, so when you could not delete unit by pointing on its head
  +  MapEd: place some houses, then delete them - hand still have assets (so you could make an ally to it, show center screen etc)
  +  MapEd: do not allow empty name while map saving
+ +  MapEd: unequalizer tool was not working on absolutely flat terrain
+ +  MapEd: terrain flattener tool: node marks were flicker with almost flat terrain
  +  Dynamic scripts: Scripting action OnHousePlanRemove was invoked with wrong coordinates
  +  Dynamic scripts: Notify script OnUnitAttacked only once for attacked unit, do not add self notify on unit attacked
 
@@ -106,11 +108,16 @@ Improvements:
  +  M  Terrain render improvement. Use openGL VBO to render tiles and animated tiles (water/falls/swamp). FPS increased up to 2 times
  +     Render optimisation: do not render anything under the FOW
  +  M  Texture atlases size increased from 512 upto 2048 (if supported)
+ AI:
+      New advanced AI was added, written from scratch
  Game: 
  +    Added TownHall
+ +    Added ability to use snow houses sprites on the snow terrain
  +    Select area to work in for woodcutters
  +    Woodcutter's house new woodcutter mode - Plant only
  +    New house delivery mode (ability to take ware out of the house, using house same as storage)
+ +    Fixed unit hitbox. Now there are no gaps between units who stay next to each other
+ +    Delivery: redispatch delivery when demand should be cancelled (closed house/ware distribution change/market changed goods)
  +    Added ability to specify what wares has to stay in the Barracks during evacuation (new "red triangle" on right mouse click was added there)
  +    Ability to dismiss citizens. They will go to school and leave town forever
  +    Redispatch serf with ware when delivery target was destroyed (house demolished or warrior died)
@@ -124,6 +131,7 @@ Improvements:
  +    House closed for worker feature
  +    Slight route optimization for warriors attacking house
  +    Ability to forbid recruits to enter the barracks
+ +    Limit max number of food to eat in the Inn to 2
  +    Change unit training order in School on Ctrl+click, Shift+click
  +    Holding shift while destroy house will keep destroy mode on
  +  L Pressing LMB over placed plans and dragging it - will remove plans
@@ -148,6 +156,7 @@ Improvements:
  +    Limit max number of equpped units at once to 100
  +    Idle units now will try to free popular routes after being pushed
  +    Mines (and other resource gathering houses) should display they're depleted when you click the building
+ +    Fix AI can build after being defeated
  +    Reduce AttackAlert 'Fight distance' from 24 to 12 and duration from 6 to 5 sec (to avoid markers at locs, where battle is over for a long time already)
  +    Game statistics:
         Ability to see stats while watching replay / spectating. Or allied players stats while playing
@@ -210,10 +219,13 @@ Improvements:
  +    Highlight players flags in lobby, when they are clickable
  +    MP game description improvement
  +    Replays list - significally improved replays list loading speed (about 10 times faster on average), by skipping CRC calc
+ +    fixed various menu render issues related to 4k resolutions
  +    Lobby reset bans - added cooldown 1s, to prohibit annoying spam with it
  +    Lobby: added new button to the lobby setting menu, to notify not ready players
  +    Lobby: added lock icon, when password is set
  +    Lobby: Show progress bar for those who is downloading map or save
+ +    Lobby: new game mode - random map
+ +    Lobby: players can't choose same or similar colors as only-AI locs has
  +    SinglePlayer menu: added separatation by map type: scenario/build/fight/special. Also added PlayableBySp map tag, to make it possible to play MP maps from singleplayer menu (against AI)
       Map Editor page:
         + added map description and 'view PDF' button, same as in lobby
@@ -245,6 +257,7 @@ Improvements:
  +    Allow to see players beacons while spectating/watching replay
  +    New option - replay autopause on PT end
  +    New view mode - 'teams'
+ +    game speed, that game was played is now shown. Its also possible to set it via F5-F8 toggle
  +    Unblock Build button (F1) to try test house build (show house / field marks)
  +    Enable 'Quit mission' (renamed to 'Quit Replay') button when watching replay
  
@@ -277,14 +290,20 @@ Improvements:
  +    Added new automatic transitions between different terrain kinds via masks
  +    Added support for up to 65k tiles and objects
  +    Added 50+ new tiles
+ +    Added tiles palette
+ +    Added objects palette
+ +    Added history window
+ +    Added new terrain page 'Tile overlays'
+ +    Added ability to set neutral roads as map overlays
  +  L Eyedropper tool like in Photoshop to select the type of tile under the cursor
  +  L Allow to set troops order destination with mouse on map (Shift+RMB)
- +    Added objects palette
+
  +    New tool - universal eraser
  +    Map resize feature
  +    Quick Play feature - to start map directly from editor
  +    House damage addition/reduction by 1/10/100/1000 instead of 5/50/500
  +    Shortcut to change row count in group (same as for numbers, orders etc)
+ +    added shortcuts to turn groups on 90/180 degrees (with RMB / shift)
  +    Set default 'center screen' position of all players in the center of screen for new map
  +    Ability to change owner for objects
  +  L Allow to rotate tiles on the map like in Krom's editor
@@ -302,10 +321,13 @@ Improvements:
  +    Added posibility to change warrior conditions to arbitrary value
  +    Added new hotkeys maped pages actions (defaults are q-w-e-r-t-y-u)
  +    New terrain pass layer - tbBuildNoObj - shows when its possible to build house on a tile after removing object (tree f.e.) from it or house near it.
+ +    Added ability to lock map player colors in the map parameters
+ +    Added Version tag for map parameters. Tags author and Version are shown at the end of map big description (on MapEd menu and in Lobby)
  +    Added ability to setup player color via RGB/BGR color code
  +    Load menu at toolbar - load map on double click
  +    Change brush sizes on Ctrl+Mouse wheel/Height trackbars on Ctrl/Alt/Shift+Mouse wheel
  +    Added ability to setup map text parameters (which are stored in %MAP_NAME%.txt file)
+ +    added object 246 (looks like a wooden deck)
  +    Added 'Remove player button' - completely delete existing player from the map
  +    Added Z coordinate for corner between tiles - its vertex height (0-100)
  +    New in extras menu:
@@ -321,13 +343,15 @@ Improvements:
  
  Dynamic scripts:
  +    Update to current version of remObjects PascalScript. 
+ +    improved error positioning (row:col)
  +    Added ability to include scripts. Added pascal style directives. Show exact error position in script. 
  +    Added support for ogg audio format with similar functions as for WAV (PlayOGG/PlayOGGAtLocation/PlayOGGAtLocationLooped/PlayOGGFadeMusic/PlayOGGLooped/StopLoopedOGG)
  +    Added ability to declare custom event handlers
  +    Added support to declare custom player console commands
  +    New MapTilesArraySet function
- +    Added 32 utility functions into new scripts unit 'Utils'. Check wiki for details
+ +    Added 30+ utility functions into new scripts unit 'Utils'. Check wiki for details
  +    Added 4 procedures: OnGroupOrderAttackHouse/OnGroupOrderAttackUnit/OnGroupOrderLink/OnGroupOrderSplit
+ +    added 6 new actions to work with terrain brushes as we do in the MapEd
  +    Added ShareFogCompliment function (Sets whether players A and B share their vision (both ways))
  +    Added command to stop playing sound
  +    Added States commands to check plans (house / road / field / winefield)
@@ -339,8 +363,20 @@ Improvements:
  +    Added action HouseTownHallEquip
  +    Added event OnHouseWareChange
  +    Added actions HouseAllowAllyToView/HouseAllowAllyToViewAll, state HouseAllowAllyToView
+ +    Added event GroupOrderBeforeSplit with ability to setup split command parameters for new group: number of units, leader unit type, is it allows mixed unit types
+ +    Added actions PlayerGoalsRemoveAll, Peacetime, GameSpeed, GameSpeedChangeAllowed
+ +    Added states: GameSpeed, GroupManualFormation, 
+ +    Added events: OnGroupOrderBeforeSplit / OnGameSpeedChanged / OnPeacetime
+ +    Added dozen of new States related to terrain tile type (IsSoil/IsSnow etc)
  
  Other: 
+ +    added original game videos
+ +    added ability to add your custom videos for campaign and its missions
+ +    added dev perf log 
+ +    added Scripting Editor tool
+ +    minimum resolution was increased to 720px 
+ +    do not render game under statistics pages with charts
+ +    perform autosave deletion/renaming in an async worker thread
  +  L Saving and restoring games window position on restart
  +    Async game resource loading, which increases first map loading time
  +    All save files are placed in 1 folder. Same as for maps
@@ -357,6 +393,8 @@ Improvements:
  +    All maps were resaved to the new format, so they can't be open in older game version. Back compatibility is stored
  +    Render game at least 1 frame per second, usefull to check game state on superfast game speeds (x300). Max time between renders could be adjusted in the ini parameter NoRenderMaxTime
  +    Prevent game to update unit/house pointers while out of the tick. It prevents possible desyncs
+ +    Added game folder permissions checks. If there are not enought permissions then error message is shown with request to install game to another folder
+ +    map goals - ignore GoalStatus parameter from static script, since it depends on GoalType (Victory or Defeat)
  
    
    

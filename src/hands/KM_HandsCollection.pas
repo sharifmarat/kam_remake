@@ -37,6 +37,7 @@ type
 
     procedure RemoveEmptyPlayers;
     procedure RemoveEmptyPlayer(aIndex: TKMHandID);
+    procedure RemoveAssetsOutOfBounds(const aInsetRect: TKMRect);
     procedure AfterMissionInit(aFlattenRoads: Boolean);
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
@@ -102,7 +103,7 @@ implementation
 uses
   SysUtils,
   KromUtils,
-  KM_Supervisor,
+
   KM_Game, KM_Terrain, KM_AIFields,
   KM_UnitsCollection, KM_MapEditorHistory,
   KM_Resource, KM_ResUnits, KM_ResTexts,
@@ -190,6 +191,28 @@ begin
 
   for I := 0 to fCount - 1 do
     fHandsList[I].AfterMissionInit(aFlattenRoads);
+end;
+
+
+// Remove hand assets aout of bounds first (units / houses)
+procedure TKMHandsCollection.RemoveAssetsOutOfBounds(const aInsetRect: TKMRect);
+var
+  I: Integer;
+begin
+  if aInsetRect = KMRECT_ZERO then Exit; //We have no bounds restriction - nothing to remove
+  if    (aInsetRect.Left   <= 0)
+    and (aInsetRect.Top    <= 0)
+    and (aInsetRect.Right  >= 0)
+    and (aInsetRect.Bottom >= 0) then Exit; //InsetRect enlarges current map rect - nothing to remove
+
+
+  for I := 0 to Count - 1 do
+  begin
+    if not fHandsList[I].HasAssets then Continue;
+
+    fHandsList[I].Houses.RemoveHousesOutOfBounds(aInsetRect);
+    fHandsList[I].Units.RemoveUnitsOutOfBounds(aInsetRect);
+  end;
 end;
 
 

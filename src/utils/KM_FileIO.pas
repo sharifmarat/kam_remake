@@ -33,6 +33,7 @@ uses
 
   function IsFilePath(const aPath: UnicodeString): Boolean;
 
+{$IFDEF WDC}
 const
   FILE_READ_DATA = $0001;
   FILE_WRITE_DATA = $0002;
@@ -52,6 +53,7 @@ const
 
   // example from https://stackoverflow.com/questions/6908152/how-to-get-permission-level-of-a-folder
   function CheckFileAccess(const FileName: string; const CheckedAccess: Cardinal): Cardinal;
+{$ENDIF}
 
 
 
@@ -284,6 +286,7 @@ begin
 end;
 
 
+{$IFDEF WDC}
 function CheckFileAccess(const FileName: string; const CheckedAccess: Cardinal): Cardinal;
 var Token: THandle;
     Status: LongBool;
@@ -320,6 +323,7 @@ begin
 
   FreeMem(SecDesc, SecDescSize);
 end;
+{$ENDIF}
 
 
 end.

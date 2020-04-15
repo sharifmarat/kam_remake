@@ -3,7 +3,7 @@ unit KM_Game;
 interface
 uses
   ExtCtrls,
-  {$IFDEF USE_MAD_EXCEPT} MadExcept, KM_Exceptions, {$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT} MadExcept, {$ENDIF}
   KM_Networking,
   KM_PathFinding,
   KM_GameInputProcess, KM_GameSavedReplays, KM_GameOptions, KM_Scripting, KM_MapEditor, KM_Campaigns, KM_Render, KM_Sound,
@@ -279,11 +279,11 @@ uses
   Classes, Controls, Dialogs, SysUtils, KromUtils, Math, TypInfo,
   {$IFDEF WDC} UITypes, System.Threading, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
-  KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
+  KM_Projectiles, KM_AIFields,
   KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo, KM_GameClasses,
   KM_Terrain, KM_HandsCollection, KM_HandSpectator, KM_MapEditorHistory,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
-  KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults, KM_Supervisor,
+  KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults,
   KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_RandomChecks, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
@@ -1277,7 +1277,13 @@ var
 begin
   if aPathName = '' then exit;
 
-  //Prepare and save
+  // Prepare and save
+
+  // Remove assets out of map bounds first (units / houses)
+  // Those 'fake' assets, that will not be loaded could affectsaved assets,
+  // F.e. if we have 'fake' first storehouse, then commands will add second storehouse as a second one
+  // and its wares will be corrupted
+  gHands.RemoveAssetsOutOfBounds(aInsetRect);
   gHands.RemoveEmptyPlayers;
 
   ForceDirectories(ExtractFilePath(aPathName));

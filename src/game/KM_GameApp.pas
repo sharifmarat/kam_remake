@@ -8,7 +8,7 @@ uses
   KM_CommonTypes, KM_Defaults, KM_RenderControl, KM_Video,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
   KM_Music, KM_Maps, KM_MapTypes, KM_Networking, KM_Settings, KM_Render,
-  KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
+  KM_GameTypes, KM_Points, KM_Console;
 
 type
   //Methods relevant to gameplay
@@ -168,7 +168,7 @@ begin
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);
 
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.LoadTranslation;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}gExceptions.LoadTranslation;{$ENDIF}
 
   //Show the message if user has old OpenGL drivers (pre-1.4)
   if gRender.IsOldGLVersion then
@@ -292,7 +292,7 @@ begin
   if not gRes.Sprites.GameResLoadCompleted then
     gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
 
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.LoadTranslation;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}gExceptions.LoadTranslation;{$ENDIF}
 
   //Campaigns use single locale
   fCampaigns := TKMCampaignsCollection.Create;

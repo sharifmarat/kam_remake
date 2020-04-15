@@ -5,7 +5,7 @@ uses
   {$IFDEF FPC}zstream, {$ENDIF}
   {$IFDEF WDC}ZLib, {$ENDIF}
   Generics.Collections,
-  KM_CommonTypes, KM_CommonClasses, KM_GameTypes;
+  KM_CommonClasses;
 
 type
   TKMLogRngType = (lrtNone, lrtInt, lrtSingle, lrtExt);
@@ -16,11 +16,11 @@ type
     ValueS: Single;
     ValueE: Extended;
     CallerId: Byte;
-//    Tick: Cardinal;
   end;
 
   TKMRLRecordList = TList<TKMRngLogRecord>;
 
+  // Logger for random check calls
   TKMRandomCheckLogger = class
   private
     fEnabled: Boolean;
@@ -76,7 +76,7 @@ var
 implementation
 uses
   Math,
-  KM_Log, Classes, SysUtils, KromUtils, KM_Defaults;
+  KM_Log, Classes, SysUtils, KM_Defaults;
 
 var
   MAX_TICKS_CNT: Integer = 10*60*10; // 10 minutes

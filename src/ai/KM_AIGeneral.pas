@@ -46,13 +46,18 @@ uses
   Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_Houses, KM_HouseBarracks,
-  KM_ResHouses, KM_NavMesh, KM_CommonUtils, KM_DevPerfLog, KM_DevPerfLogTypes;
+  KM_ResHouses, KM_CommonUtils, KM_DevPerfLog, KM_DevPerfLogTypes;
 
 
 const
   //For compatibility with KaM these must be false. We can add a !REMAKE_AI command later
   //to make them more "intelligent", but for now these are required for the campaigns to be playable.
-  AI_FILL_CLOSEST = False;
+
+  //On the other hand, no need to reproduce KaM's flaws, so fill closest defence
+  //positions to avoid swapping. This shouldn't cause incorrect behaviour in
+  //campaigns since either way the priority order of positions will be respected
+
+  AI_FILL_CLOSEST = True;
   AI_LINK_IDLE = False;
 
 
