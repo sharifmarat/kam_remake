@@ -137,7 +137,7 @@ end;
 
 procedure TKMUnitsCollection.AddUnitToList(aUnit: TKMUnit);
 begin
-  Assert(gGame.GameMode = gmMapEd); // Allow to add existing Unit directly only in MapEd
+  Assert(gGame.IsMapEditor); // Allow to add existing Unit directly only in MapEd
   if aUnit <> nil then
     fUnits.Add(aUnit);
 end;
@@ -151,10 +151,12 @@ end;
 
 
 procedure TKMUnitsCollection.RemoveAllUnits;
-var I: Integer;
+var
+  I: Integer;
 begin
-  Assert(gGame.GameMode = gmMapEd);
+  Assert(gGame.IsMapEditor);
   if Count <= 0 then Exit;
+
   for I := 0 to Count - 1 do
     Units[I].CloseUnit;
   fUnits.Clear;
@@ -163,7 +165,7 @@ end;
 
 procedure TKMUnitsCollection.DeleteUnitFromList(aUnit: TKMUnit);
 begin
-  Assert(gGame.GameMode = gmMapEd); // Allow to delete existing Unit directly only in MapEd
+  Assert(gGame.IsMapEditor); // Allow to delete existing Unit directly only in MapEd
   if (aUnit <> nil) then
     fUnits.Extract(aUnit);  // use Extract instead of Delete, cause Delete nils inner objects somehow
 end;

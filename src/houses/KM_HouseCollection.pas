@@ -149,9 +149,10 @@ end;
 
 
 procedure TKMHousesCollection.RemoveAllHouses;
-var I: Integer;
+var
+  I: Integer;
 begin
-  Assert(gGame.GameMode = gmMapEd);
+  Assert(gGame.IsMapEditor);
   if Count <= 0 then Exit;
 
   for I := 0 to Count - 1 do
@@ -162,7 +163,8 @@ end;
 
 
 procedure TKMHousesCollection.OwnerUpdate(aOwner: TKMHandID);
-var I: Integer;
+var
+  I: Integer;
 begin
   for I := 0 to Count - 1 do
     Houses[I].OwnerUpdate(aOwner);
@@ -170,7 +172,8 @@ end;
 
 
 function TKMHousesCollection.HitTest(X, Y: Integer): TKMHouse;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result:= nil;
   for I := 0 to Count - 1 do
@@ -183,7 +186,8 @@ end;
 
 
 function TKMHousesCollection.GetHouseByUID(aUID: Integer): TKMHouse;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := nil;
   for I := 0 to Count - 1 do
