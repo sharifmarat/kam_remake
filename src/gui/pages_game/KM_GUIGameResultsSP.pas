@@ -171,14 +171,14 @@ begin
   if fGameMode = gmCampaign then
   begin
     case fGameResultMsg of
-      grWin: gVideoPlayer.AddMissionVideo(fRepeatMission, 'Victory');
+      grWin:              gVideoPlayer.AddMissionVideo(fRepeatMission, 'Victory');
       grDefeat, grCancel: gVideoPlayer.AddMissionVideo(fRepeatMission, 'Defeat');
     end;
   end
   else
   begin
     case fGameResultMsg of
-      grWin: gVideoPlayer.AddVideo('Victory');
+      grWin:              gVideoPlayer.AddVideo('Victory');
       grDefeat, grCancel: gVideoPlayer.AddVideo('Defeat');
     end;
   end;
@@ -191,7 +191,8 @@ begin
     grCancel:        Cap := gResTexts[TX_MENU_MISSION_CANCELED];
     grReplayEnd:     Cap := gResTexts[TX_MENU_REPLAY_ENDED];
     grGameContinues: Cap := ''; //Do not show game result, as game is still going
-    else              Cap := NO_TEXT;
+  else
+    Cap := NO_TEXT;
   end;
   Label_Results.Caption := Cap;
 
@@ -353,8 +354,7 @@ end;
 
 procedure TKMGameResultsSP.UpdateState(aTick: Cardinal);
 begin
-  if Visible
-    and not gGame.ReadyToStop then
+  if Visible and not gGame.ReadyToStop then
     Reinit;
 end;
 
@@ -362,10 +362,10 @@ end;
 procedure TKMGameResultsSP.Create_Results(aParent: TKMPanel);
 const
   LEGEND_WIDTH = 150;
-  StatText: array [1..9] of Word = (
-    TX_RESULTS_UNITS_LOST,      TX_RESULTS_UNITS_DEFEATED,  TX_RESULTS_HOUSES_LOST,
-    TX_RESULTS_HOUSES_DESTROYED,TX_RESULTS_HOUSES_BUILT,    TX_RESULTS_UNITS_TRAINED,
-    TX_RESULTS_WEAPONS_MADE,    TX_RESULTS_SOLDIERS_TRAINED,TX_RESULTS_MISSION_TIME);
+  STAT_TEXT: array [1..9] of Word = (
+    TX_RESULTS_UNITS_LOST,       TX_RESULTS_UNITS_DEFEATED,   TX_RESULTS_HOUSES_LOST,
+    TX_RESULTS_HOUSES_DESTROYED, TX_RESULTS_HOUSES_BUILT,     TX_RESULTS_UNITS_TRAINED,
+    TX_RESULTS_WEAPONS_MADE,     TX_RESULTS_SOLDIERS_TRAINED, TX_RESULTS_MISSION_TIME);
 var
   I, Adv: Integer;
 begin
@@ -403,7 +403,7 @@ begin
         Inc(Adv, 25);
         if I in [3,6,7] then inc(Adv, 15);
         if I = 9 then inc(Adv, 45); //Last one goes right at the bottom of the scroll
-        TKMLabel.Create(Panel_Stats,20,Adv,240,20,gResTexts[StatText[I]],fntMetal,taLeft);
+        TKMLabel.Create(Panel_Stats, 20, Adv, 240, 20, gResTexts[STAT_TEXT[I]], fntMetal, taLeft);
         Label_Stat[I] := TKMLabel.Create(Panel_Stats,260,Adv,80,20,'00',fntMetal,taRight);
       end;
 
@@ -518,7 +518,7 @@ end;
 
 procedure TKMGameResultsSP.RepeatClick(Sender: TObject);
 begin
-  //Means replay last map
+  // Means replay last map
   gGameApp.NewRestartLast(fRepeatGameName, fRepeatMission, fRepeatSave, fGameMode, fRepeatCampName, fRepeatCampMap,
                           fRepeatLocation, fRepeatColor, fRepeatDifficulty, fRepeatAIType);
 end;
