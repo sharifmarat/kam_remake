@@ -17,6 +17,7 @@ type
   TKMRunnerGA_Common = class(TKMRunnerCommon)
   private
     fCrashDetectionMode: Boolean; // only for single thread
+    fSaveGame: Boolean;
     fAlgorithm: TGAAlgorithm;
     fParametrization: TGAParameterization;
     fOldPopulation, fNewPopulation: TGAPopulation;
@@ -25,6 +26,7 @@ type
 
     f_SIM_SimulationTimeInMin: Single; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
     f_SIM_NumberOfMaps: Word; // Count of simulated maps for each invididual
+    f_SIM_PeaceTime: Word; // Peace time
     f_SIM_MapNamePrefix: String; // Prefix of map names
     f_GA_POPULATION_CNT: Word; // Population count
     f_GA_GENE_CNT: Word; // Count of genes
@@ -207,10 +209,12 @@ uses KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection;
 { TKMRunnerGA_Common }
 procedure TKMRunnerGA_Common.InitGAParameters();
 begin
-  f_SIM_SimulationTimeInMin      := 10;
-  f_SIM_NumberOfMaps             := 20;
+  fSaveGame := False;
+  f_SIM_SimulationTimeInMin      := 60;
+  f_SIM_NumberOfMaps             := 1;
+  f_SIM_PeaceTime                := 60;
   f_SIM_MapNamePrefix            := 'GA_S1_%.3d';
-  f_GA_POPULATION_CNT            := 3;
+  f_GA_POPULATION_CNT            := 1;
   f_GA_GENE_CNT                  := 5; // It will be overriden by class
   f_GA_START_TOURNAMENT_IndividualsCnt := 3;
   f_GA_FINAL_TOURNAMENT_IndividualsCnt := 4;
@@ -244,6 +248,7 @@ begin
   begin
     fCrashDetectionMode := False;
     f_SIM_SimulationTimeInMin := SimSetup.SimTimeInMin;
+    f_SIM_PeaceTime := SimSetup.PeaceTime;
     f_SIM_NumberOfMaps := IOData.MapCnt;
     Pop := IOData.Population;
     if (Pop <> nil) then
@@ -316,11 +321,11 @@ end;
 procedure TKMRunnerGA_Common.SimulateMap(aRun, aIdx, Seed: Integer; aSinglePLMapName: String; aSaveGame: Boolean = False);
 begin
   gGameApp.NewSingleMap(Format('%s..\..\Maps\%s\%s.dat',[ExtractFilePath(ParamStr(0)),aSinglePLMapName,aSinglePLMapName]), 'GA');
-
+  gGameApp.Game.GameOptions.Peacetime := f_SIM_PeaceTime;
   //gMySpectator.Hand.FogOfWar.RevealEverything;
   //gGameApp.Game.GamePlayInterface.Viewport.PanTo(KMPointF(0, 60), 0);
   //gGameApp.Game.GamePlayInterface.Viewport.Zoom := 0.25;
-  if fCrashDetectionMode then
+  if not PARALLEL_RUN AND fCrashDetectionMode then
     gGameApp.Game.Save('GA Test', Now);
 
   //SetKaMSeed(Max(1,Seed));
@@ -329,7 +334,7 @@ begin
   except
     SimulateMap(aRun + 1, aIdx, Round(Random()*10000)+1, aSinglePLMapName);
   end;
-  if aSaveGame then
+  if not PARALLEL_RUN AND aSaveGame then
     gGameApp.Game.Save(Format('GA Test #%dn%d',[aRun,aIdx]), Now);
 end;
 
@@ -455,7 +460,7 @@ begin
         fLogPar := TKMLog.Create(Format('%s\Utils\Runner\LOG_GA_PAR.log',[ExeDir]));
         fParametrization.SetPar(fOldPopulation[K], True);
       end;
-      SimulateMap(aRun, K, aRun, Format(f_SIM_MapNamePrefix,[MapNum]));// Name of maps are GA_001, GA_002 so use %.3d to fill zeros
+      SimulateMap(aRun, K, aRun, Format(f_SIM_MapNamePrefix,[MapNum]), fSaveGame);// Name of maps are GA_001, GA_002 so use %.3d to fill zeros
       fOldPopulation[K].Fitness[MapNum-1] := CostFunction();
     end;
 
@@ -591,7 +596,8 @@ procedure TKMRunnerGA_ArmyAttack.InitGAParameters();
 begin
   inherited;
   f_SIM_SimulationTimeInMin := 10;
-  f_SIM_NumberOfMaps  := 2;
+  f_SIM_PeaceTime := 0;
+  f_SIM_NumberOfMaps  := 20;
   f_SIM_MapNamePrefix := 'GA_S2_%.3d';
   f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_ArmyAttack');
 end;
@@ -601,6 +607,7 @@ procedure TKMRunnerGA_ArmyAttackNew.InitGAParameters();
 begin
   inherited;
   f_SIM_SimulationTimeInMin := 10;
+  f_SIM_PeaceTime := 0;
   f_SIM_NumberOfMaps  := 20;
   f_SIM_MapNamePrefix := 'GA_S2_%.3d';
   f_GA_GENE_CNT := fParametrization.GetParCnt('TKMRunnerGA_ArmyAttackNew');

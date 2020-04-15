@@ -17,7 +17,7 @@ type
   end;
   TSimSetup = record
     SimFile, WorkDir, RunningClass: String;
-    SimTimeInMin, SimNumber: Integer;
+    SimTimeInMin, SimNumber, PeaceTime: Word;
   end;
 
   TKMComInterface = class // Communication Interface
@@ -49,15 +49,16 @@ const
   STRING_END = '>';
   CMND_RunningClass = 0;
   CMND_SimTimeInMin = 1;
-  CMND_SimNumber = 2;
+  CMND_PeaceTime = 2;
+  CMND_SimNumber = 3;
 
-  CMND_GA_GenCnt = 3;
-  CMND_GA_MapCnt = 4;
-  CMND_GA_IdvCnt = 5;
-  CMND_GA_NewIdv = 6;
-  CMND_GA_Fit = 7;
-  CMND_GA_Genes = 8;
-  CMND_GA_DONE = 9;
+  CMND_GA_GenCnt = 4;
+  CMND_GA_MapCnt = 5;
+  CMND_GA_IdvCnt = 6;
+  CMND_GA_NewIdv = 7;
+  CMND_GA_Fit = 8;
+  CMND_GA_Genes = 9;
+  CMND_GA_DONE = 10;
 
   DEBUG_LOG = False;
   DEBUG_INPUT = False;
@@ -177,6 +178,7 @@ var
     case Command of
       CMND_RunningClass: aSimSetup.RunningClass := Str;
       CMND_SimTimeInMin: aSimSetup.SimTimeInMin := Int;
+      CMND_PeaceTime: aSimSetup.PeaceTime := Int;
       CMND_SimNumber: aSimSetup.SimNumber := Int;
       CMND_GA_MapCnt: aGASetup.MapCnt := Int;
       CMND_GA_IdvCnt: GA_IdvCnt := Int;
@@ -270,6 +272,7 @@ var
 begin
   Str := CreateCommand(CMND_RunningClass) + CreateString(aSimSetup.RunningClass);
   Str := Str + CreateCommand(CMND_SimTimeInMin) + CreateInt(aSimSetup.SimTimeInMin);
+  Str := Str + CreateCommand(CMND_PeaceTime) + CreateInt(aSimSetup.PeaceTime);
   Str := Str + CreateCommand(CMND_SimNumber) + CreateInt(aSimSetup.SimNumber);
   Str := Str + EncryptGA() + CreateCommand(CMND_GA_DONE);
   Result := Str;
@@ -291,7 +294,7 @@ end;
 
 function TKMComInterface.CaptureConsoleOutput(aWorkDir: String; aCommand: String): String;
 const
-  CReadBuffer = 540000; // Maybe overkill but I have 16GB so who cares
+  CReadBuffer = 5000;
 var
   saSecurity: TSecurityAttributes;
   hRead, hWrite: THandle;
@@ -421,6 +424,7 @@ procedure TKMComInterface.SetupSimulation(var aSimSetup: TSimSetup; var aGASetup
     Result :=
      '{'+IntToStr(CMND_RunningClass)+'}<TKMRunnerGA_CityRoadPlanner>'+
      '{'+IntToStr(CMND_SimTimeInMin)+'}(10)'+
+     '{'+IntToStr(CMND_PeaceTime   )+'}(60)'+
      '{'+IntToStr(CMND_SimNumber   )+'}(1)'+
      '{'+IntToStr(CMND_GA_MapCnt   )+'}(2)'+
      '{'+IntToStr(CMND_GA_IdvCnt   )+'}(3)'+
@@ -445,6 +449,7 @@ begin
     if SysUtils.FileExists(ParamStr(K)) then
     begin
       fLogFilePath := ParamStr(K);
+      DebugLogString(fLogFilePath, 'DEBUG_ComInterface_Path.txt');
       ReadFromFile(Params, fLogFilePath);
       DebugLogString(Params, 'DEBUG_ComInterface_Receive.txt');
       DecryptSetup(Params, aSimSetup, aGASetup);
@@ -477,7 +482,7 @@ begin
   if not WriteToFile(SetupString, fLogFilePath) then
     Exit;
 
-  fLogFilePath := CaptureConsoleOutput(aSimSetup.WorkDir, '"' + aSimSetup.WorkDir + '\' + aSimSetup.SimFile + '" ' + fLogFilePath + '');
+  fLogFilePath := CaptureConsoleOutput(aSimSetup.WorkDir, Format('"%s\%s" "%s"', [aSimSetup.WorkDir, aSimSetup.SimFile, fLogFilePath]));
 
   if ReadFromFile(Params,fLogFilePath) then
   begin
