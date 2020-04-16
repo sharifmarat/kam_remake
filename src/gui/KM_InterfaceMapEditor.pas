@@ -727,8 +727,9 @@ begin
 
   fGuiTerrain.Cancel_Clicked(aHandled);
 
-  //Reset cursor
-  aHandled := aHandled or DoResetCursorMode;
+  // Reset cursor
+  // Call for DoResetCursorMode first to do cancel the cursor even if we already handled event earlier
+  aHandled := DoResetCursorMode or aHandled;
   //Reset drag object fields
   ResetDragObject;
   gRes.Cursors.Cursor := kmcDefault;
