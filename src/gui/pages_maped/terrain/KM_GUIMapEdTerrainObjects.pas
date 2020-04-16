@@ -72,7 +72,7 @@ type
     function Visible: Boolean; override;
     procedure Hide;
     procedure Resize;
-    procedure RightClickCancel;
+    procedure Cancel_Clicked(var aHandled: Boolean);
     procedure UpdateState;
   end;
 
@@ -618,11 +618,16 @@ begin
 end;
 
 
-procedure TKMMapEdTerrainObjects.RightClickCancel;
+procedure TKMMapEdTerrainObjects.Cancel_Clicked(var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   // Reset last object on RMB click
   if gGameCursor.Mode = cmObjects then
+  begin
     fLastObjectIndex := -1;
+    aHandled := True;
+  end;
 end;
 
 

@@ -237,9 +237,9 @@ end;
 
 procedure VLCUnloadLibrary;
 begin
-  if libvlccore <> 0 then
-    FreeLibrary(libvlccore);
-  libvlccore := 0;
+//  if libvlccore <> 0 then
+//    FreeLibrary(libvlccore);
+//  libvlccore := 0;
 
   if libvlc <> 0 then
     FreeLibrary(libvlc);

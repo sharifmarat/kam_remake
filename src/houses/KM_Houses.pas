@@ -1770,7 +1770,7 @@ begin
     end;
 
     //Keep track of how many are ordered
-    ResDeliveryCnt[I] := ResDeliveryCnt[I] - aCount;
+    ResDeliveryCnt[I] := EnsureRange(ResDeliveryCnt[I] - aCount, 0, High(Word));
 
     Assert(ResIn[I] >= aCount, 'fResourceIn[i] < 0');
     ResIn[I] := ResIn[I] - aCount;

@@ -165,6 +165,7 @@ type
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind); overload;
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aStream: TKMemoryStreamBinary); overload;
     procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aParam: Integer); overload;
+    procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aParam: Cardinal); overload;
 //    procedure PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aParams: array of Integer);
     procedure PacketSendInd(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aIndexOnServer: TKMNetHandleIndex);
     procedure PacketSendA(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; const aText: AnsiString);
@@ -1652,7 +1653,7 @@ var
   tmpStringA: AnsiString;
   tmpStringW, replyStringW: UnicodeString;
   tmpChatMode: TKMChatMode;
-  I,LocID,TeamID,Color,PlayerIndex: Integer;
+  I,LocID,TeamID,PlayerIndex: Integer;
   ChatSound: TKMChatSound;
 begin
   Assert(aLength >= 1, 'Unexpectedly short message'); //Kind, Message
@@ -2161,12 +2162,11 @@ begin
               if IsHost then
               begin
                 M.Read(tmpCardinal);
-                Color := tmpCardinal;
                 //The player list could have changed since the joiner sent this request (over slow connection)
-                if fNetPlayers.ColorAvailable(Color)
-                and ((fSelectGameKind <> ngkSave) or not SaveInfo.IsValid or not SaveInfo.GameInfo.ColorUsed(Color)) then
+                if fNetPlayers.ColorAvailable(tmpCardinal)
+                and ((fSelectGameKind <> ngkSave) or not SaveInfo.IsValid or not SaveInfo.GameInfo.ColorUsed(tmpCardinal)) then
                 begin
-                  fNetPlayers[fNetPlayers.ServerToLocal(aSenderIndex)].FlagColor := Color;
+                  fNetPlayers[fNetPlayers.ServerToLocal(aSenderIndex)].FlagColor := tmpCardinal;
                   SendPlayerListAndRefreshPlayersSetup;
                 end
                 else //Quietly refuse
@@ -2396,6 +2396,24 @@ begin
 
   aStream.Position := 0;
   M.CopyFrom(aStream, aStream.Size);
+
+  fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
+  M.Free;
+end;
+
+
+procedure TKMNetworking.PacketSend(aRecipient: TKMNetHandleIndex; aKind: TKMessageKind; aParam: Cardinal);
+var
+  M: TKMemoryStreamBinary;
+begin
+  Assert(NetPacketType[aKind] = pfNumber);
+
+  LogPacket(True, aKind, aRecipient);
+
+  M := TKMemoryStreamBinary.Create;
+  M.Write(aKind, SizeOf(TKMessageKind));
+
+  M.Write(aParam);
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
   M.Free;

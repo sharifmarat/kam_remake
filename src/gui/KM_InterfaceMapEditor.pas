@@ -37,8 +37,6 @@ type
     fDragObject: TObject;        // Object to drag
     fDragHouseOffset: TKMPoint;  // Offset for house position, to let grab house with any of its points
 
-    fIgnoreMouseUp: Boolean;     // Ignore Mouse Up in case we have just done RightClick_Cancel
-
     fGuiHouse: TKMMapEdHouse;
     fGuiUnit: TKMMapEdUnit;
     fGuiTerrain: TKMMapEdTerrain;
@@ -68,7 +66,7 @@ type
     procedure UpdateCursor(X, Y: Integer; Shift: TShiftState);
     procedure Main_ButtonClick(Sender: TObject);
     procedure HidePages;
-    procedure RightClick_Cancel;
+    procedure Cancel_Clicked(aIsRMB: Boolean; var aHandled: Boolean);
     procedure ShowMarkerInfo(aMarker: TKMMapEdMarker);
     procedure Player_SetActive(aIndex: TKMHandID);
     procedure Player_UpdatePages;
@@ -82,7 +80,7 @@ type
     procedure DragHouseModeEnd;
     function IsDragHouseModeOn: Boolean;
     procedure ResetDragObject;
-    procedure ResetCursorMode;
+    function DoResetCursorMode: Boolean;
     procedure ShowSubMenu(aIndex: Byte);
     procedure ExecuteSubMenuAction(aIndex: Byte);
     procedure Update_Label_Coordinates;
@@ -205,7 +203,7 @@ begin
 
   Button_History := TKMButtonFlat.Create(Panel_Main, Button_PlayerSelect[5].Right + 3, 190, 31, 32, 677);
   Button_History.TexOffsetX := -1;
-  Button_History.Down := True; // History is opened by default
+  Button_History.Down := False; // History is hidden by default
   Button_History.OnClick := History_Click;
   Button_History.Hint := GetHintWHotKey(TX_MAPED_HISTORY_HINT, SC_MAPEDIT_HISTORY);
 
@@ -300,7 +298,7 @@ begin
   PopUp_History.Left := Panel_Main.Width - PopUp_History.Width;
   PopUp_History.Top  := 0;
   PopUp_History.DragEnabled := True;
-  PopUp_History.DoSetVisible; // History is visible by default
+  PopUp_History.Hide; // History is hidden by default
   PopUp_History.OnMouseWheel := History_MouseWheel;
   PopUp_History.OnClose := History_Close;
 
@@ -703,34 +701,38 @@ end;
 
 
 //This function will be called if the user right clicks on the screen.
-procedure TKMapEdInterface.RightClick_Cancel;
+procedure TKMapEdInterface.Cancel_Clicked(aIsRMB: Boolean; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
   //We should drop the tool but don't close opened tab. This allows eg:
   //Place a warrior, right click so you are not placing more warriors,
   //select the placed warrior.
-
-  // When global tools are used, just cancel the tool, even if some page is open
-  if not (gGameCursor.Mode in [cmPaintBucket, cmUniversalEraser]) then
+  if aIsRMB then
   begin
-    //These pages use RMB
-    if fGuiTerrain.IsVisible(ttHeights) then Exit;
-    if fGuiTerrain.IsVisible(ttTile) then Exit;
-    if fGuiUnit.Visible then Exit;
-    if fGuiHouse.Visible then Exit;
-    if fGuiMarkerDefence.Visible then Exit;
-    if fGuiMarkerReveal.Visible then Exit;
+    // When global tools are used, just cancel the tool, even if some page is open
+    if not (gGameCursor.Mode in [cmPaintBucket, cmUniversalEraser]) then
+    begin
+      //These pages use RMB
+      if fGuiTerrain.IsVisible(ttHeights) then Exit;
+      if fGuiTerrain.IsVisible(ttTile) then Exit;
+      if fGuiUnit.Visible then Exit;
+      if fGuiHouse.Visible then Exit;
+      if fGuiMarkerDefence.Visible then Exit;
+      if fGuiMarkerReveal.Visible then Exit;
+    end;
+
+    // We rotate tile on RMB
+    if gGameCursor.Mode = cmTiles then Exit;
   end;
 
-  // We rotate tile on RMB
-  if gGameCursor.Mode = cmTiles then Exit;
+  fGuiTerrain.Cancel_Clicked(aHandled);
 
-  fGuiTerrain.RightClickCancel;
-
-  //Reset cursor
-  ResetCursorMode;
+  // Reset cursor
+  // Call for DoResetCursorMode first to do cancel the cursor even if we already handled event earlier
+  aHandled := DoResetCursorMode or aHandled;
   //Reset drag object fields
   ResetDragObject;
-  fIgnoreMouseUp := True;
+  gRes.Cursors.Cursor := kmcDefault;
 end;
 
 
@@ -873,8 +875,15 @@ begin
   // If modals are closed or they did not handle key
   if not KeyPassedToModal and (Key = gResKeys[SC_CLOSE_MENU].Key) then
   begin
-    if fGuiMessage.Visible then fGuiMessage.Hide;
-    if fGuiExtras.Visible then fGuiExtras.Hide;
+    Cancel_Clicked(False, KeyHandled);
+    if not KeyHandled then
+    begin
+      if fGuiMessage.Visible then
+        fGuiMessage.Hide
+      else
+      if fGuiExtras.Visible then
+        fGuiExtras.Hide;
+    end;
   end;
 end;
 
@@ -966,6 +975,7 @@ end;
 procedure TKMapEdInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 var
   Obj: TObject;
+  keyHandled: Boolean;
 begin
   fMyControls.MouseDown(X,Y,Shift,Button);
 
@@ -986,13 +996,15 @@ begin
     end;
   end;
 
+  keyHandled := False;
   if Button = mbRight then
-    RightClick_Cancel;
+    Cancel_Clicked(True, keyHandled);
 
   //So terrain brushes start on mouse down not mouse move
   UpdateCursor(X, Y, Shift);
 
-  gGame.MapEditor.MouseDown(Button);
+  if not keyHandled then
+    gGame.MapEditor.MouseDown(Button);
 end;
 
 
@@ -1140,8 +1152,10 @@ begin
   History_ListChange(nil);
 end;
 
-procedure TKMapEdInterface.ResetCursorMode;
+
+function TKMapEdInterface.DoResetCursorMode: Boolean;
 begin
+  Result := gGameCursor.Mode <> cmNone;
   gGameCursor.Mode := cmNone;
 end;
 
@@ -1175,7 +1189,7 @@ begin
   begin
     H := TKMHouse(fDragObject);
     H.SetPosition(KMPointAdd(gGameCursor.Cell, fDragHouseOffset));
-    ResetCursorMode;
+    DoResetCursorMode;
   end;
 end;
 
@@ -1262,7 +1276,7 @@ begin
     gRes.Cursors.Cursor := kmcDefault;
 
   if gGameCursor.Mode = cmHouses then
-    ResetCursorMode;
+    DoResetCursorMode;
 end;
 
 
@@ -1274,12 +1288,6 @@ var
   U: TKMUnit;
   H: TKMHouse;
 begin
-  if fIgnoreMouseUp then
-  begin
-    fIgnoreMouseUp := False; //Ignore mouse up only once
-    Exit;
-  end;
-
   if fDragingObject then
   begin
     DragHouseModeEnd;

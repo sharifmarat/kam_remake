@@ -49,7 +49,6 @@ REM ============================================================
 @REM Adding * to the file name supresses the "Is it a file or a folder" query
 @REM xcopy ..\data.pack .\"%kam_folder%"\data.pack* /y /r /i
 xcopy ..\KaM_Remake.exe "%kam_folder%"\KaM_Remake.exe* /y /r /i
-xcopy ..\KM_TextIDs.inc "%kam_folder%"\KM_TextIDs.inc* /y /r /i
 xcopy ..\libzplay.dll "%kam_folder%"\libzplay.dll* /y /r /i
 xcopy ..\ogg.dll "%kam_folder%"\ogg.dll* /y /r /i
 xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
@@ -64,13 +63,14 @@ xcopy "%ScriptingEditorDir%"\bin\ScriptingEditor.exe* "%kam_folder%"\Utils\Scrip
 xcopy "%ScriptingEditorDir%"\bin\SE_Data_KMR "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ /y /r /s
 xcopy "%ScriptingEditorDir%"\bin\SE_Data\Examples "%kam_folder%"\Utils\ScriptingEditor\SE_Data\Examples\ /y /r /s
 xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ScriptValidator.exe* /y /r /i
-@REM no need for OLD folder there
-rmdir /S /Q "%kam_folder%"\bin\SE_Data\OLD
-rmdir /S /Q "%kam_folder%"\bin\SE_Data\Logs
+@REM no need for OLD and Logs folders there
+rmdir /S /Q "%kam_folder%"\Utils\ScriptingEditor\SE_Data\OLD
+rmdir /S /Q "%kam_folder%"\Utils\ScriptingEditor\SE_Data\Logs
 )
 
 
 @REM copy utility applications exe files
+xcopy ..\KM_TextIDs.inc "%kam_folder%"\Utils\KM_TextIDs.inc* /y /r /i
 xcopy "..\Utils\Campaign builder\KaM_Remake_Settings_ini_readme.txt" "%kam_folder%"\Utils\KaM_Remake_Settings_ini_readme.txt* /y /r /i
 xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\Utils\CampaignBuilder.exe* /y /r /i
 xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\Utils\KaM_Remake_Server_win32.exe* /y /r /i
