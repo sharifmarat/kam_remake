@@ -125,10 +125,13 @@ begin
 {$ENDIF}
 end;
 
+
 destructor TKMVideoPlayer.Destroy;
 begin
 {$IFDEF VIDEOS}
-  StopVideo;
+  if Assigned(FMediaPlayer) then
+    libvlc_media_player_stop(FMediaPlayer); //Stop VLC
+
   VLCUnloadLibrary;
   FVideoList.Free;
   FTrackList.Free;
