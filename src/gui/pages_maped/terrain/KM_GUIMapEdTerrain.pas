@@ -234,7 +234,7 @@ begin
   if aHandled then Exit;
 
   fGuiObjects.Cancel_Clicked(aHandled);
-  fGuiBrushes.RightClickCancel(aHandled);
+  fGuiBrushes.Cancel_Clicked(aHandled);
 end;
 
 
