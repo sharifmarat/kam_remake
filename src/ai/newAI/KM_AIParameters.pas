@@ -8,12 +8,17 @@ unit KM_AIParameters;
 
 interface
 uses
-  SysUtils;
+  SysUtils, KM_CommonClasses;
+
+{$IFDEF PARALLEL_RUNNER}
+  procedure LoadGAParameters(LoadStream: TKMemoryStream);
+  procedure SaveGAParameters(SaveStream: TKMemoryStream);
+{$ENDIF}
 
 // Global constants for AI
 //const
 
-  
+
 // Global variables for AI
 // They are stored in this file so Runner and Parallel runner can access it
 {$IFDEF DEBUG_NewAI}
@@ -340,6 +345,359 @@ const
 { KM_Supervisor }
 
 
+
 implementation
+
+{$IFDEF PARALLEL_RUNNER}
+
+procedure LoadGAParameters(LoadStream: TKMemoryStream);
+begin
+  LoadStream.CheckMarker('LoadGAParameters');
+{ KM_NavMeshArmyPositioning }
+  LoadStream.Read(GA_ATTACK_NMAP_PrefillDistances_Houses             );
+
+  LoadStream.Read(GA_ATTACK_NMAP_PrefillDistances_Groups             );
+  LoadStream.Read(GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence      );
+  LoadStream.Read(GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence     );
+  LoadStream.Read(GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence      );
+  LoadStream.Read(GA_ATTACK_NMAP_EvaluateLine_QueueCnt               );
+  LoadStream.Read(GA_ATTACK_NMAP_EvaluateLine_MinDist                );
+
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup      );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee    );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse);
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged   );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted  );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist     );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_OportunityGain     );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain );
+  LoadStream.Read(GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold );
+
+{ KM_ArmyAttack }
+  LoadStream.Read(GA_ATTACK_SQUAD_ChangeTarget_DistTolerance   );
+  LoadStream.Read(GA_ATTACK_SQUAD_ChangeTarget_Delay           );
+  LoadStream.Read(GA_ATTACK_SQUAD_TargetReached_Position       );
+  LoadStream.Read(GA_ATTACK_SQUAD_TargetReached_Unit           );
+  LoadStream.Read(GA_ATTACK_SQUAD_TargetReached_House          );
+  LoadStream.Read(GA_ATTACK_SQUAD_TargetReached_RangedSquad    );
+  LoadStream.Read(GA_ATTACK_SQUAD_MinWalkingDistance           );
+
+  LoadStream.Read(GA_ATTACK_COMPANY_AttackRadius               );
+  LoadStream.Read(GA_ATTACK_COMPANY_ProtectRangedRadius        );
+  LoadStream.Read(GA_ATTACK_COMPANY_AttackRangedGain           );
+  LoadStream.Read(GA_ATTACK_COMPANY_ProtectRangedGain          );
+  LoadStream.Read(GA_ATTACK_COMPANY_ProtectRangedAllInDist     );
+  LoadStream.Read(GA_ATTACK_COMPANY_GroupTypePenalization      );
+  LoadStream.Read(GA_ATTACK_COMPANY_DecreaseThreat_Prio1       );
+  LoadStream.Read(GA_ATTACK_COMPANY_DecreaseThreat_Prio2       );
+  LoadStream.Read(GA_ATTACK_COMPANY_DecreaseThreat_Prio3       );
+  LoadStream.Read(GA_ATTACK_COMPANY_DecreaseThreat_Prio4       );
+  LoadStream.Read(GA_ATTACK_COMPANY_TimePerATile_Slow          );
+  LoadStream.Read(GA_ATTACK_COMPANY_TimePerATile_Fast          );
+
+  LoadStream.Read(GA_ATTACK_COMPANY_MinCombatSpacing           );
+  LoadStream.Read(GA_ATTACK_COMPANY_MinWalkSpacing             );
+  LoadStream.Read(GA_ATTACK_COMPANY_MinimumMovement            );
+  LoadStream.Read(GA_ATTACK_COMPANY_Positioning_InitPolyCnt    );
+
+
+{ KM_ArmyManagement }
+  LoadStream.Read(GA_ARMY_MaxGgroupsInCompany              );
+
+
+{ KM_CityBuilder }
+  LoadStream.Read(GA_BUILDER_BuildHouse_FieldMaxWork      );
+  LoadStream.Read(GA_BUILDER_BuildHouse_RTPMaxWork        );
+  LoadStream.Read(GA_BUILDER_BuildHouse_RoadMaxWork       );
+  LoadStream.Read(GA_BUILDER_CreateShortcuts_MaxWork      );
+  LoadStream.Read(GA_BUILDER_ChHTB_FractionCoef           );
+  LoadStream.Read(GA_BUILDER_ChHTB_TrunkFactor            );
+  LoadStream.Read(GA_BUILDER_ChHTB_TrunkBalance           );
+  LoadStream.Read(GA_BUILDER_ChHTB_AllWorkerCoef          );
+  LoadStream.Read(GA_BUILDER_ChHTB_FreeWorkerCoef         );
+  LoadStream.Read(GA_BUILDER_Shortage_StoneReserve        );
+  LoadStream.Read(GA_BUILDER_Shortage_Stone               );
+  LoadStream.Read(GA_BUILDER_Shortage_Gold                );
+  LoadStream.Read(GA_BUILDER_Shortage_Trunk               );
+  LoadStream.Read(GA_BUILDER_Shortage_Wood                );
+
+
+{ KM_CityManagement }
+  LoadStream.Read(GA_MANAGEMENT_GoldShortage                  );
+  LoadStream.Read(GA_MANAGEMENT_CheckUnitCount_SerfLimit1     );
+  LoadStream.Read(GA_MANAGEMENT_CheckUnitCount_SerfLimit2     );
+  LoadStream.Read(GA_MANAGEMENT_CheckUnitCount_SerfLimit3     );
+  LoadStream.Read(GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef );
+  LoadStream.Read(GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef   );
+
+
+{ KM_CityPlanner }
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_AllyInfluence        );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_EnemyInfluence       );
+  LoadStream.Read(GA_PLANNER_FindForestAndWoodcutter_AllyInfluence  );
+  LoadStream.Read(GA_PLANNER_FindForestAndWoodcutter_EnemyInfluence );
+
+  LoadStream.Read(GA_PLANNER_ObstaclesInHousePlan_Tree           );
+  LoadStream.Read(GA_PLANNER_ObstaclesInHousePlan_Road           );
+  LoadStream.Read(GA_PLANNER_FieldCrit_PolyRoute                 );
+  LoadStream.Read(GA_PLANNER_FieldCrit_FlatArea                  );
+  LoadStream.Read(GA_PLANNER_FieldCrit_Soil                      );
+  LoadStream.Read(GA_PLANNER_SnapCrit_SnapToHouse                );
+  LoadStream.Read(GA_PLANNER_SnapCrit_SnapToFields               );
+  LoadStream.Read(GA_PLANNER_SnapCrit_SnapToRoads                );
+  LoadStream.Read(GA_PLANNER_SnapCrit_ObstacleInEntrance         );
+  LoadStream.Read(GA_PLANNER_SnapCrit_RoadInEntrance             );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_SnapCrit          );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_HouseDist         );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_SeedDist          );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_CityCenter        );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_Route             );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_FlatArea          );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_RouteFarm         );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_FlatAreaFarm      );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_HouseDistFarm     );
+  LoadStream.Read(GA_PLANNER_FindPlaceForHouse_CityCenterFarm    );
+  LoadStream.Read(GA_PLANNER_PlaceWoodcutter_DistFromForest      );
+
+  LoadStream.Read(GA_PLANNER_PlanFields_CanBuild                 );
+  LoadStream.Read(GA_PLANNER_PlanFields_Dist                     );
+  LoadStream.Read(GA_PLANNER_PlanFields_ExistField               );
+
+  LoadStream.Read(GA_PLANNER_FindPlaceForQuary_Obstacle          );
+  LoadStream.Read(GA_PLANNER_FindPlaceForQuary_DistCity          );
+  LoadStream.Read(GA_PLANNER_FindPlaceForQuary_DistTimer         );
+  LoadStream.Read(GA_PLANNER_FindPlaceForQuary_DistStone         );
+  LoadStream.Read(GA_PLANNER_FindPlaceForQuary_SnapCrit          );
+
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_TreeCnt      );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_ExistForest  );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_Routes       );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_FlatArea     );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_Soil         );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_DistCrit     );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_DistTimer    );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_FreeTiles    );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_ABRange      );
+  LoadStream.Read(GA_PLANNER_FindPlaceForWoodcutter_Radius       );
+  LoadStream.Read(GA_PLANNER_FindForestAround_MaxDist            );
+
+  LoadStream.Read(GA_PATHFINDING_BasePrice                       );
+  LoadStream.Read(GA_PATHFINDING_TurnPenalization                );
+  LoadStream.Read(GA_PATHFINDING_Road                            );
+  LoadStream.Read(GA_PATHFINDING_noBuildArea                     );
+  LoadStream.Read(GA_PATHFINDING_Field                           );
+  LoadStream.Read(GA_PATHFINDING_Coal                            );
+  LoadStream.Read(GA_PATHFINDING_Forest                          );
+  LoadStream.Read(GA_PATHFINDING_OtherCase                       );
+
+  LoadStream.Read(GA_SHORTCUTS_BasePrice                         );
+  LoadStream.Read(GA_SHORTCUTS_TurnPenalization                  );
+  LoadStream.Read(GA_SHORTCUTS_Road                              );
+  LoadStream.Read(GA_SHORTCUTS_noBuildArea                       );
+  LoadStream.Read(GA_SHORTCUTS_Field                             );
+  LoadStream.Read(GA_SHORTCUTS_Coal                              );
+  LoadStream.Read(GA_SHORTCUTS_Forest                            );
+  LoadStream.Read(GA_SHORTCUTS_OtherCase                         );
+
+
+{ KM_CityPredictor }
+  LoadStream.Read(GA_PREDICTOR_WareNeedPerAWorker_StoneOffset );
+  LoadStream.Read(GA_PREDICTOR_WareNeedPerAWorker_Stone       );
+  LoadStream.Read(GA_PREDICTOR_WareNeedPerAWorker_Wood        );
+  LoadStream.Read(GA_PREDICTOR_SecondSchool_MinRequiredUnits  );
+
+
+{ KM_Eye }
+  LoadStream.Read(GA_EYE_GetForests_MaxAB          );
+  LoadStream.Read(GA_EYE_GetForests_Radius         );
+  LoadStream.Read(GA_EYE_GetForests_MinTrees       );
+  LoadStream.Read(GA_EYE_GetForests_SPRndOwnLimMin );
+  LoadStream.Read(GA_EYE_GetForests_SPRndOwnLimMax );
+  LoadStream.Read(GA_EYE_GetForests_MinRndSoil     );
+
+
+{  KM_NavMeshPathFinding }
+  LoadStream.Read(GA_PATHFINDING_AvoidTraffic      );
+  LoadStream.Read(GA_PATHFINDING_AvoidSpecEnemy    );
+  LoadStream.Read(GA_PATHFINDING_AvoidEdges        );
+end;
+
+
+procedure SaveGAParameters(SaveStream: TKMemoryStream);
+begin
+  SaveStream.PlaceMarker('LoadGAParameters');
+{ KM_NavMeshArmyPositioning }
+  SaveStream.Write(GA_ATTACK_NMAP_PrefillDistances_Houses             );
+
+  SaveStream.Write(GA_ATTACK_NMAP_PrefillDistances_Groups             );
+  SaveStream.Write(GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence      );
+  SaveStream.Write(GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence     );
+  SaveStream.Write(GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence      );
+  SaveStream.Write(GA_ATTACK_NMAP_EvaluateLine_QueueCnt               );
+  SaveStream.Write(GA_ATTACK_NMAP_EvaluateLine_MinDist                );
+
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_DistanceGroup      );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMelee    );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainAntiHorse);
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged   );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted  );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist     );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_OportunityGain     );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain );
+  SaveStream.Write(GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold );
+
+{ KM_ArmyAttack }
+  SaveStream.Write(GA_ATTACK_SQUAD_ChangeTarget_DistTolerance   );
+  SaveStream.Write(GA_ATTACK_SQUAD_ChangeTarget_Delay           );
+  SaveStream.Write(GA_ATTACK_SQUAD_TargetReached_Position       );
+  SaveStream.Write(GA_ATTACK_SQUAD_TargetReached_Unit           );
+  SaveStream.Write(GA_ATTACK_SQUAD_TargetReached_House          );
+  SaveStream.Write(GA_ATTACK_SQUAD_TargetReached_RangedSquad    );
+  SaveStream.Write(GA_ATTACK_SQUAD_MinWalkingDistance           );
+
+  SaveStream.Write(GA_ATTACK_COMPANY_AttackRadius               );
+  SaveStream.Write(GA_ATTACK_COMPANY_ProtectRangedRadius        );
+  SaveStream.Write(GA_ATTACK_COMPANY_AttackRangedGain           );
+  SaveStream.Write(GA_ATTACK_COMPANY_ProtectRangedGain          );
+  SaveStream.Write(GA_ATTACK_COMPANY_ProtectRangedAllInDist     );
+  SaveStream.Write(GA_ATTACK_COMPANY_GroupTypePenalization      );
+  SaveStream.Write(GA_ATTACK_COMPANY_DecreaseThreat_Prio1       );
+  SaveStream.Write(GA_ATTACK_COMPANY_DecreaseThreat_Prio2       );
+  SaveStream.Write(GA_ATTACK_COMPANY_DecreaseThreat_Prio3       );
+  SaveStream.Write(GA_ATTACK_COMPANY_DecreaseThreat_Prio4       );
+  SaveStream.Write(GA_ATTACK_COMPANY_TimePerATile_Slow          );
+  SaveStream.Write(GA_ATTACK_COMPANY_TimePerATile_Fast          );
+
+  SaveStream.Write(GA_ATTACK_COMPANY_MinCombatSpacing           );
+  SaveStream.Write(GA_ATTACK_COMPANY_MinWalkSpacing             );
+  SaveStream.Write(GA_ATTACK_COMPANY_MinimumMovement            );
+  SaveStream.Write(GA_ATTACK_COMPANY_Positioning_InitPolyCnt    );
+
+
+{ KM_ArmyManagement }
+  SaveStream.Write(GA_ARMY_MaxGgroupsInCompany              );
+
+
+{ KM_CityBuilder }
+  SaveStream.Write(GA_BUILDER_BuildHouse_FieldMaxWork      );
+  SaveStream.Write(GA_BUILDER_BuildHouse_RTPMaxWork        );
+  SaveStream.Write(GA_BUILDER_BuildHouse_RoadMaxWork       );
+  SaveStream.Write(GA_BUILDER_CreateShortcuts_MaxWork      );
+  SaveStream.Write(GA_BUILDER_ChHTB_FractionCoef           );
+  SaveStream.Write(GA_BUILDER_ChHTB_TrunkFactor            );
+  SaveStream.Write(GA_BUILDER_ChHTB_TrunkBalance           );
+  SaveStream.Write(GA_BUILDER_ChHTB_AllWorkerCoef          );
+  SaveStream.Write(GA_BUILDER_ChHTB_FreeWorkerCoef         );
+  SaveStream.Write(GA_BUILDER_Shortage_StoneReserve        );
+  SaveStream.Write(GA_BUILDER_Shortage_Stone               );
+  SaveStream.Write(GA_BUILDER_Shortage_Gold                );
+  SaveStream.Write(GA_BUILDER_Shortage_Trunk               );
+  SaveStream.Write(GA_BUILDER_Shortage_Wood                );
+
+
+{ KM_CityManagement }
+  SaveStream.Write(GA_MANAGEMENT_GoldShortage                  );
+  SaveStream.Write(GA_MANAGEMENT_CheckUnitCount_SerfLimit1     );
+  SaveStream.Write(GA_MANAGEMENT_CheckUnitCount_SerfLimit2     );
+  SaveStream.Write(GA_MANAGEMENT_CheckUnitCount_SerfLimit3     );
+  SaveStream.Write(GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef );
+  SaveStream.Write(GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef   );
+
+
+{ KM_CityPlanner }
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_AllyInfluence        );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_EnemyInfluence       );
+  SaveStream.Write(GA_PLANNER_FindForestAndWoodcutter_AllyInfluence  );
+  SaveStream.Write(GA_PLANNER_FindForestAndWoodcutter_EnemyInfluence );
+
+  SaveStream.Write(GA_PLANNER_ObstaclesInHousePlan_Tree           );
+  SaveStream.Write(GA_PLANNER_ObstaclesInHousePlan_Road           );
+  SaveStream.Write(GA_PLANNER_FieldCrit_PolyRoute                 );
+  SaveStream.Write(GA_PLANNER_FieldCrit_FlatArea                  );
+  SaveStream.Write(GA_PLANNER_FieldCrit_Soil                      );
+  SaveStream.Write(GA_PLANNER_SnapCrit_SnapToHouse                );
+  SaveStream.Write(GA_PLANNER_SnapCrit_SnapToFields               );
+  SaveStream.Write(GA_PLANNER_SnapCrit_SnapToRoads                );
+  SaveStream.Write(GA_PLANNER_SnapCrit_ObstacleInEntrance         );
+  SaveStream.Write(GA_PLANNER_SnapCrit_RoadInEntrance             );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_SnapCrit          );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_HouseDist         );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_SeedDist          );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_CityCenter        );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_Route             );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_FlatArea          );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_RouteFarm         );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_FlatAreaFarm      );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_HouseDistFarm     );
+  SaveStream.Write(GA_PLANNER_FindPlaceForHouse_CityCenterFarm    );
+  SaveStream.Write(GA_PLANNER_PlaceWoodcutter_DistFromForest      );
+
+  SaveStream.Write(GA_PLANNER_PlanFields_CanBuild                 );
+  SaveStream.Write(GA_PLANNER_PlanFields_Dist                     );
+  SaveStream.Write(GA_PLANNER_PlanFields_ExistField               );
+
+  SaveStream.Write(GA_PLANNER_FindPlaceForQuary_Obstacle          );
+  SaveStream.Write(GA_PLANNER_FindPlaceForQuary_DistCity          );
+  SaveStream.Write(GA_PLANNER_FindPlaceForQuary_DistTimer         );
+  SaveStream.Write(GA_PLANNER_FindPlaceForQuary_DistStone         );
+  SaveStream.Write(GA_PLANNER_FindPlaceForQuary_SnapCrit          );
+
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_TreeCnt      );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_ExistForest  );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_Routes       );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_FlatArea     );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_Soil         );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_DistCrit     );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_DistTimer    );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_FreeTiles    );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_ABRange      );
+  SaveStream.Write(GA_PLANNER_FindPlaceForWoodcutter_Radius       );
+  SaveStream.Write(GA_PLANNER_FindForestAround_MaxDist            );
+
+  SaveStream.Write(GA_PATHFINDING_BasePrice                       );
+  SaveStream.Write(GA_PATHFINDING_TurnPenalization                );
+  SaveStream.Write(GA_PATHFINDING_Road                            );
+  SaveStream.Write(GA_PATHFINDING_noBuildArea                     );
+  SaveStream.Write(GA_PATHFINDING_Field                           );
+  SaveStream.Write(GA_PATHFINDING_Coal                            );
+  SaveStream.Write(GA_PATHFINDING_Forest                          );
+  SaveStream.Write(GA_PATHFINDING_OtherCase                       );
+
+  SaveStream.Write(GA_SHORTCUTS_BasePrice                         );
+  SaveStream.Write(GA_SHORTCUTS_TurnPenalization                  );
+  SaveStream.Write(GA_SHORTCUTS_Road                              );
+  SaveStream.Write(GA_SHORTCUTS_noBuildArea                       );
+  SaveStream.Write(GA_SHORTCUTS_Field                             );
+  SaveStream.Write(GA_SHORTCUTS_Coal                              );
+  SaveStream.Write(GA_SHORTCUTS_Forest                            );
+  SaveStream.Write(GA_SHORTCUTS_OtherCase                         );
+
+
+{ KM_CityPredictor }
+  SaveStream.Write(GA_PREDICTOR_WareNeedPerAWorker_StoneOffset );
+  SaveStream.Write(GA_PREDICTOR_WareNeedPerAWorker_Stone       );
+  SaveStream.Write(GA_PREDICTOR_WareNeedPerAWorker_Wood        );
+  SaveStream.Write(GA_PREDICTOR_SecondSchool_MinRequiredUnits  );
+
+
+{ KM_Eye }
+  SaveStream.Write(GA_EYE_GetForests_MaxAB          );
+  SaveStream.Write(GA_EYE_GetForests_Radius         );
+  SaveStream.Write(GA_EYE_GetForests_MinTrees       );
+  SaveStream.Write(GA_EYE_GetForests_SPRndOwnLimMin );
+  SaveStream.Write(GA_EYE_GetForests_SPRndOwnLimMax );
+  SaveStream.Write(GA_EYE_GetForests_MinRndSoil     );
+
+
+{  KM_NavMeshPathFinding }
+  SaveStream.Write(GA_PATHFINDING_AvoidTraffic      );
+  SaveStream.Write(GA_PATHFINDING_AvoidSpecEnemy    );
+  SaveStream.Write(GA_PATHFINDING_AvoidEdges        );
+end;
+{$ENDIF}
 
 end.

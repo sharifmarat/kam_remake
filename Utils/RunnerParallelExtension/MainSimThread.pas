@@ -190,6 +190,7 @@ begin
   begin
     // Create thread
     ThreadArr[K] := TSimThread.Create(K,True);
+    fSimSetup.ThreadNumber := K + 1;
     // Init data
     ThreadArr[K].SimSetup := fSimSetup;
     ThreadArr[K].GASetup := SplitPopulation(ActualIdx, CntInThread);

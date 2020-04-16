@@ -98,11 +98,15 @@ var
   WARFARE_ORDER_PROPORTIONAL  :Boolean = False; //New proportional way (looks like a bad idea)
 
   //These are debug things, should be False
+  {Runner}
+  {$IFDEF PARALLEL_RUNNER}
+    THREAD_NUMBER         :Word = 1; // Thread number for parallel runner and saves
+  {$ENDIF}
+  DEFAULT_PEACE_TIME      :Word = 0; //Default peacetime for SP games when SP_DEFAULT_ADVANCED_AI set to True
   {AI}
   SP_BOOST_AI_BUILD       :Boolean = False; //Boost build algorithm of the new AI (performance impact)
   SP_DEFAULT_ADVANCED_AI  :Boolean = False; //Set advanced AI as default for SP games
   SP_OLD_ATTACK_AI        :Boolean = False; //Set old algorithm of advanced AI as default
-  SP_DEFAULT_PEACETIME    :Integer = 70;    //Default peacetime for SP games when SP_DEFAULT_ADVANCED_AI set to True
   {User interface options}
   DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
   DEBUG_LOGS              :Boolean = True;  //Log debug info

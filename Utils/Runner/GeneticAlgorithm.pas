@@ -264,8 +264,10 @@ constructor TGAIndividual.Create(aGeneCount,aMapsCount: Integer);
 begin
   SetLength(fGenes,aGeneCount);
   SetLength(fFitness,aMapsCount);
-  FillChar(fGenes[0], SizeOf(fGenes[0])*aGeneCount, #0);
-  FillChar(fFitness[0], SizeOf(fFitness[0])*aMapsCount, #0);
+  if (aGeneCount > 0) then
+    FillChar(fGenes[0], SizeOf(fGenes[0])*aGeneCount, #0);
+  if (aMapsCount > 0) then
+    FillChar(fFitness[0], SizeOf(fFitness[0])*aMapsCount, #0);
 end;
 
 
