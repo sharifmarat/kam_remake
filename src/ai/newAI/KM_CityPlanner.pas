@@ -2296,8 +2296,8 @@ begin
     if (gAIFields.Influences.GetBestAllianceOwner(fOwner, FI.Forests[K].Loc, atEnemy) > 10)
       OR (gAIFields.Influences.GetBestOwner(FI.Forests[K].Loc.X, FI.Forests[K].Loc.Y) <> fOwner) then
     begin
-      FI.Forests[K] := FI.Forests[ FI.Count-1 ];
       Dec(FI.Count);
+      FI.Forests[K] := FI.Forests[ FI.Count ];
       continue;
     end;
     // Delete forests around chop-only woodcutters
@@ -2305,9 +2305,9 @@ begin
       with fPlannedHouses[htWoodcutters].Plans[L] do
         if ChopOnly AND (KMDistanceSqr(FI.Forests[K].Loc, SpecPoint) < SQR_MIN_DIST_FROM_CHOP_ONLY) then
         begin
-          FI.Forests[K] := FI.Forests[ FI.Count-1 ];
           Dec(FI.Count);
-          continue;
+          FI.Forests[K] := FI.Forests[ FI.Count ];
+          break;
         end;
   end;
 
