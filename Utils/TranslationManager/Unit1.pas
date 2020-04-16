@@ -222,8 +222,10 @@ const
   MSG_WARNING: string = 'You have unsaved changes that will be lost, load new libx anyway?';
   PATH_TEXT = 'data\text\text.%s.libx';
   PATH_CONST = 'KM_TextIDs.inc';
+  PATH_UTILS = 'Utils\' + PATH_CONST;
 var
   ID: Integer;
+  constsPath: string;
 begin
   //Let the user abort and save edited translations
   if mnuSave.Enabled
@@ -239,8 +241,13 @@ begin
 
   // Special case for ingame text library
   if SameText(lbFolders.Items[ID], PATH_TEXT) then
-    fTextManager.Load(fWorkDir + PATH_TEXT, fWorkDir + PATH_CONST)
-  else
+  begin
+    if FileExists(fWorkDir + PATH_CONST) then
+      constsPath := fWorkDir + PATH_CONST
+    else if FileExists(fWorkDir + PATH_UTILS) then
+      constsPath := fWorkDir + PATH_UTILS;
+    fTextManager.Load(fWorkDir + PATH_TEXT, constsPath);
+  end else
     fTextManager.Load(fWorkDir + lbFolders.Items[ID], '');
 
   RefreshFilter;
