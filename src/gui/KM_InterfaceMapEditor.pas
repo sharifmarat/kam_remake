@@ -203,7 +203,7 @@ begin
 
   Button_History := TKMButtonFlat.Create(Panel_Main, Button_PlayerSelect[5].Right + 3, 190, 31, 32, 677);
   Button_History.TexOffsetX := -1;
-  Button_History.Down := True; // History is opened by default
+  Button_History.Down := False; // History is hidden by default
   Button_History.OnClick := History_Click;
   Button_History.Hint := GetHintWHotKey(TX_MAPED_HISTORY_HINT, SC_MAPEDIT_HISTORY);
 
@@ -298,7 +298,7 @@ begin
   PopUp_History.Left := Panel_Main.Width - PopUp_History.Width;
   PopUp_History.Top  := 0;
   PopUp_History.DragEnabled := True;
-  PopUp_History.DoSetVisible; // History is visible by default
+  PopUp_History.Hide; // History is hidden by default
   PopUp_History.OnMouseWheel := History_MouseWheel;
   PopUp_History.OnClose := History_Close;
 
