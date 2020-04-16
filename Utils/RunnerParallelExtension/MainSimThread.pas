@@ -38,6 +38,7 @@ type
   public
     SIM_Class: String;
     SIM_TimeInMin: Integer; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
+    SIM_PeaceTime: Word;
     SIM_CountThreads: Word;
     GA_Generations: Word;
     GA_CountIndividuals: Word; // Population count
@@ -96,6 +97,7 @@ begin
   fParametrization.CurrentClass := 'TKMRunnerGA_TestParRun';
   SIM_Class           := fParametrization.CurrentClass;
   SIM_TimeInMin       := 15; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
+  SIM_PeaceTime       := 60; // Peace time
   SIM_CountThreads    := 3; //3;
   GA_Generations      := 50; //40; // Count of generations
   GA_CountIndividuals := 30; // Count of individuals in population
@@ -254,6 +256,7 @@ begin
     Result := True;
     SIM_Class := fSimSetup.RunningClass;
     SIM_TimeInMin := fSimSetup.SimTimeInMin;
+    SIM_PeaceTime := fSimSetup.PeaceTime;
     GA_CountIndividuals := fGASetup.Population.Count;
     GA_CountGenes := fGASetup.Population.Individual[0].GenesCount;
     GA_CountMaps := fGASetup.Population.Individual[0].FitnessCount;
@@ -273,6 +276,7 @@ begin
   begin
     fSimSetup.RunningClass := SIM_Class;
     fSimSetup.SimTimeInMin := SIM_TimeInMin;
+    fSimSetup.PeaceTime := SIM_PeaceTime;
     with fGASetup do
     begin
       MapCnt := GA_CountMaps; // MapCnt is property of GASetup

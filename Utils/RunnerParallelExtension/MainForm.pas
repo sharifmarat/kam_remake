@@ -26,6 +26,7 @@ type
       lThreads: TLabel;
       seMaps: TSpinEdit;
       seDuration: TSpinEdit;
+      sePeaceTime: TSpinEdit;
       seThreads: TSpinEdit;
 
     gbGA: TGroupBox;
@@ -55,6 +56,7 @@ type
     lbClasses: TListBox;
     bRunSimulation: TButton;
     lClasses: TLabel;
+    lPeaceTime: TLabel;
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -131,6 +133,7 @@ begin
           lbClasses.ItemIndex := K;
       seMaps.Value            := GA_CountMaps;
       seDuration.Value        := SIM_TimeInMin;
+      sePeaceTime.Value       := SIM_PeaceTime;
       seThreads.Value         := SIM_CountThreads;
 
       sePopulation.Value      := GA_CountIndividuals;
@@ -250,6 +253,7 @@ begin
       GA_CountGenes                          := Parametrization.GetParCnt(SIM_Class);
       GA_CountMaps	                         := seMaps.Value;
       SIM_TimeInMin                          := seDuration.Value;
+      SIM_PeaceTime                          := sePeaceTime.Value;
       SIM_CountThreads                       := seThreads.Value;
 
       GA_CountIndividuals                    := sePopulation.Value;

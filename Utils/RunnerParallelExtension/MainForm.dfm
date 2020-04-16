@@ -365,6 +365,13 @@ object Paraller_Runner: TParaller_Runner
       Height = 13
       Caption = 'Classes:'
     end
+    object lPeaceTime: TLabel
+      Left = 93
+      Top = 205
+      Width = 83
+      Height = 13
+      Caption = 'Peace time (min):'
+    end
     object seThreads: TSpinEdit
       Left = 3
       Top = 221
@@ -443,6 +450,23 @@ object Paraller_Runner: TParaller_Runner
         'TKMRunnerGA_TestParRun')
       ParentFont = False
       TabOrder = 3
+    end
+    object sePeaceTime: TSpinEdit
+      Left = 93
+      Top = 221
+      Width = 89
+      Height = 22
+      Color = 2631720
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWhite
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      MaxValue = 1000000
+      MinValue = 0
+      ParentFont = False
+      TabOrder = 4
+      Value = 60
     end
   end
   object gbLoad: TGroupBox
