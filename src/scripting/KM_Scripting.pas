@@ -2375,7 +2375,10 @@ begin
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
   if not fScriptFilesInfo.fHasDefDirectives
     and Active
-    and ((DirectiveName = 'IFDEF') or (DirectiveName = 'IFNDEF')) then
+    and ((DirectiveName = 'IFDEF')
+      or (DirectiveName = 'IFNDEF')
+      or (DirectiveName = 'DEFINE')
+      or (DirectiveName = 'UNDEF')) then
     fScriptFilesInfo.fHasDefDirectives := True;
 
   LoadCustomEventDirectives;
