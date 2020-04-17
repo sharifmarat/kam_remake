@@ -125,10 +125,13 @@ begin
 {$ENDIF}
 end;
 
+
 destructor TKMVideoPlayer.Destroy;
 begin
 {$IFDEF VIDEOS}
-  StopVideo;
+  if Assigned(FMediaPlayer) then
+    libvlc_media_player_stop(FMediaPlayer); //Stop VLC
+
   VLCUnloadLibrary;
   FVideoList.Free;
   FTrackList.Free;
@@ -461,12 +464,12 @@ begin
 {$ENDIF}
 end;
 
-
+{$IFDEF VIDEOS}
 procedure TKMVideoPlayer.StopVideo;
 begin
   if Self = nil then
     Exit;
-{$IFDEF VIDEOS}
+
   if Assigned(FMediaPlayer) then
   begin
     libvlc_media_player_stop(FMediaPlayer);
@@ -489,8 +492,8 @@ begin
     FTexture.Tex := 0;
   end;
   SetLength(FBuffer, 0);
-{$ENDIF}
 end;
+{$ENDIF}
 
 procedure TKMVideoPlayer.Stop;
 begin

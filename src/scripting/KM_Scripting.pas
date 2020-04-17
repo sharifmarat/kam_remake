@@ -90,7 +90,7 @@ type
     fValidationIssues: TScriptValidatorResult;
 
     fCustomScriptParams: TKMCustomScriptParamDataArray;
-    fPreProcessor: TPSPreProcessor;
+    fPSPreProcessor: TPSPreProcessor;
 
     function GetCustomScriptParamData(aParam: TKMCustomScriptParam): TKMCustomScriptParamData;
 
@@ -262,7 +262,7 @@ begin
   fErrorHandler := TKMScriptErrorHandler.Create(aOnScriptError);
   fPreProcessor := TKMScriptingPreProcessor.Create(aOnScriptError, fErrorHandler); //Use same error handler for PreProcessor and Scripting
 
-  gScriptEvents := TKMScriptEvents.Create(fExec, fPreProcessor.fPreProcessor, fIDCache);
+  gScriptEvents := TKMScriptEvents.Create(fExec, fPreProcessor.fPSPreProcessor, fIDCache);
   fStates := TKMScriptStates.Create(fIDCache);
   fActions := TKMScriptActions.Create(fIDCache);
   fUtils := TKMScriptUtils.Create(fIDCache);
@@ -988,7 +988,7 @@ begin
 
     compileSuccess := Compiler.Compile(fScriptCode); // Compile the Pascal script into bytecode
 
-    fPreProcessor.fPreProcessor.AdjustMessages(Compiler);
+    fPreProcessor.fPSPreProcessor.AdjustMessages(Compiler);
 
     for I := 0 to Compiler.MsgCount - 1 do
     begin
@@ -2023,9 +2023,9 @@ constructor TKMScriptingPreProcessor.Create(aOnScriptError: TUnicodeStringEvent;
 begin
   inherited Create;
 
-  fPreProcessor := TPSPreProcessor.Create;
-  fPreProcessor.OnNeedFile := ScriptOnNeedFile;
-  fPreProcessor.OnProcessDirective := ScriptOnProcessDirective;
+  fPSPreProcessor := TPSPreProcessor.Create;
+  fPSPreProcessor.OnNeedFile := ScriptOnNeedFile;
+  fPSPreProcessor.OnProcessDirective := ScriptOnProcessDirective;
 
   fScriptFilesInfo := TKMScriptFilesCollection.Create;
 
@@ -2041,7 +2041,7 @@ begin
   if fDestroyErrorHandler then
     FreeAndNil(fErrorHandler);
 
-  FreeAndNil(fPreProcessor);
+  FreeAndNil(fPSPreProcessor);
   inherited;
 end;
 
@@ -2105,11 +2105,11 @@ begin
 
   MainScriptCode := ReadTextA(aFileName);
 
-  fPreProcessor.MainFileName := AnsiString(aFileName);
-  fPreProcessor.MainFile := MainScriptCode;
+  fPSPreProcessor.MainFileName := AnsiString(aFileName);
+  fPSPreProcessor.MainFile := MainScriptCode;
   BeforePreProcess(aFileName, MainScriptCode);
   try
-    fPreProcessor.PreProcess(fPreProcessor.MainFileName, aScriptCode);
+    fPSPreProcessor.PreProcess(fPSPreProcessor.MainFileName, aScriptCode);
     AfterPreProcess;
     Result := True; // If PreProcess has been done succesfully
   except
@@ -2375,7 +2375,10 @@ begin
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
   if not fScriptFilesInfo.fHasDefDirectives
     and Active
-    and ((DirectiveName = 'IFDEF') or (DirectiveName = 'IFNDEF')) then
+    and ((DirectiveName = 'IFDEF')
+      or (DirectiveName = 'IFNDEF')
+      or (DirectiveName = 'DEFINE')
+      or (DirectiveName = 'UNDEF')) then
     fScriptFilesInfo.fHasDefDirectives := True;
 
   LoadCustomEventDirectives;
