@@ -47,7 +47,7 @@ type
     procedure TearDown(); override;
     procedure InitGAParameters(); virtual;
     procedure SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False); virtual; abstract;
-    procedure SimulateMap(aRun, aIdx, Seed: Integer; aSinglePLMapName: String; aSaveGame: Boolean = False); virtual;
+    procedure SimulateMap(aRun, aIdx, Seed: Integer; aSinglePLMapName: String); virtual;
     function CostFunction(): Single; virtual;
     procedure Execute(aRun: Integer); override;
   public
@@ -203,7 +203,7 @@ type
 
 
 implementation
-uses KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection;
+uses KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection, KM_FileIO;
 
 
 
@@ -213,8 +213,8 @@ procedure TKMRunnerGA_Common.InitGAParameters();
 begin
   fSaveGame := False;
   fCrashDetectionMode := True;
-  f_SIM_SimulationTimeInMin      := 60;
-  f_SIM_NumberOfMaps             := 5;
+  f_SIM_SimulationTimeInMin      := 70;
+  f_SIM_NumberOfMaps             := 3;
   f_SIM_PeaceTime                := 70;
   f_SIM_ThreadNumber             := 1;
   f_SIM_SimulationNumber         := 1;
@@ -326,13 +326,13 @@ begin
 end;
 
 
-procedure TKMRunnerGA_Common.SimulateMap(aRun, aIdx, Seed: Integer; aSinglePLMapName: String; aSaveGame: Boolean = False);
+procedure TKMRunnerGA_Common.SimulateMap(aRun, aIdx, Seed: Integer; aSinglePLMapName: String);
 var
   pathToSave: String;
 begin
   DEFAULT_PEACE_TIME := f_SIM_PeaceTime;
   pathToSave := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))))));
-  gGameApp.NewSingleMap(Format('%s\Maps\%s\%s.dat',[pathToSave,aSinglePLMapName,aSinglePLMapName]), 'GA');
+  gGameApp.NewSingleMap(Format('%sMaps\%s\%s.dat',[pathToSave,aSinglePLMapName,aSinglePLMapName]), 'GA');
   //gGameApp.Game.GameOptions.Peacetime := f_SIM_PeaceTime;
 
   //gMySpectator.Hand.FogOfWar.RevealEverything;
@@ -345,10 +345,12 @@ begin
     if fCrashDetectionMode then
       gGameApp.Game.Save(Format('GA_S%.2d_T%.2d_%s',[f_SIM_SimulationNumber, f_SIM_ThreadNumber, aSinglePLMapName]), Now);
     SimulateGame(100, -1);
+    if fCrashDetectionMode then
+      KMDeleteFolder(Format('%sSaves\GA_S%.2d_T%.2d_%s',[pathToSave,f_SIM_SimulationNumber, f_SIM_ThreadNumber, aSinglePLMapName]));
   except
     // We have problem
   end;
-  if aSaveGame then
+  if fSaveGame then
     gGameApp.Game.Save(Format('GA_end_S%.2d_T%.2d_%s',[f_SIM_SimulationNumber, f_SIM_ThreadNumber, aSinglePLMapName]), Now);
 end;
 
@@ -476,7 +478,7 @@ begin
         fLogPar := TKMLog.Create(Format('%s\Utils\Runner\LOG_GA_PAR.log',[ExeDir]));
         fParametrization.SetPar(fOldPopulation[K], True);
       end;
-      SimulateMap(aRun, K, aRun, Format(f_SIM_MapNamePrefix,[MapNum]), fSaveGame);// Name of maps are GA_001, GA_002 so use %.3d to fill zeros
+      SimulateMap(aRun, K, aRun, Format(f_SIM_MapNamePrefix,[MapNum]));// Name of maps are GA_001, GA_002 so use %.3d to fill zeros
       fOldPopulation[K].Fitness[MapNum-1] := CostFunction();
     end;
 
@@ -702,6 +704,7 @@ var
   Score: Double;
   MapName: String;
 begin
+  DEFAULT_PEACE_TIME := 60;
   for K := Low(MAPS) to High(MAPS) do
   begin
     fBestScore := -1e30;
