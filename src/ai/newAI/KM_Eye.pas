@@ -563,10 +563,10 @@ begin
     // Scan Resources - gold, iron
     MineLocs := FindSeparateMineLocs(false, htIronMine);
     for K := 0 to Length(MineLocs) - 1 do
-      ScanLocArea(CenterPointArr[0], MineLocs[K]);
+      ScanLocArea(CenterPointArr[0], KMPointBelow(MineLocs[K]));
     MineLocs := FindSeparateMineLocs(false, htGoldMine);
     for K := 0 to Length(MineLocs) - 1 do
-      ScanLocArea(CenterPointArr[0], MineLocs[K]);
+      ScanLocArea(CenterPointArr[0], KMPointBelow(MineLocs[K]));
     // Scan Resources - coal
     //TagList := TKMPointTagList.Create();
     //try
