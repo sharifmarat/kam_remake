@@ -43,3 +43,5 @@
 
 //Enable perflog (should be disabled for release / release candidate versions)
 {$DEFINE PERFLOG}
+
+{.$DEFINE DEBUG}
