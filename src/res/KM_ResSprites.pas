@@ -112,16 +112,20 @@ type
     fGenTerrainToTerKindLegacy: array of TKMGenTerrainInfo;
 
     fGameRXTypes: TStringList; //list of TRXType for game resources
+    {$IFDEF LOAD_GAME_RES_ASYNC}
     fGameResLoader: TTGameResourceLoader; // thread of game resource loader
     fGameResLoadCompleted: Boolean;
+    {$ENDIF}
 
     function GetRXFileName(aRX: TRXType): string;
     function GetSprites(aRT: TRXType): TKMSpritePack;
 
+    {$IFDEF LOAD_GAME_RES_ASYNC}
     procedure ManageResLoader;
     procedure StopResourceLoader;
     procedure GenerateTextureAtlasForGameRes(aRT: TRXType);
     function GetNextLoadRxTypeIndex(aRT: TRXType): Integer;
+    {$ENDIF}
   public
     constructor Create(aStepProgress: TEvent; aStepCaption: TUnicodeStringEvent);
     destructor Destroy; override;
@@ -139,7 +143,10 @@ type
     function GetGenTerrainInfoLegacy(aTerrain: Integer): TKMGenTerrainInfo;
 
     property Sprites[aRT: TRXType]: TKMSpritePack read GetSprites; default;
+
+    {$IFDEF LOAD_GAME_RES_ASYNC}
     property GameResLoadCompleted: Boolean read fGameResLoadCompleted;
+    {$ENDIF}
 
     //Used externally to access raw RGBA data (e.g. by ExportAnim)
     function LoadSprites(aRT: TRXType; aAlphaShadows: Boolean): Boolean;
@@ -1107,9 +1114,11 @@ var
   RT: TRXType;
 begin
   fGameRXTypes.Free;
+  {$IFDEF LOAD_GAME_RES_ASYNC}
   // Stop resource loader before Freeing SpritePack, as loader use fRXData and could get an exception there on game exit
   if fGameResLoader <> nil then
     StopResourceLoader;
+  {$ENDIF}
 
   for RT := Low(TRXType) to High(TRXType) do
     fSprites[RT].Free;
@@ -1127,6 +1136,7 @@ begin
 end;
 
 
+{$IFDEF LOAD_GAME_RES_ASYNC}
 //Get next game resource RXType to load. Returns -1 if its the last one
 function TKMResSprites.GetNextLoadRxTypeIndex(aRT: TRXType): Integer;
 var
@@ -1144,6 +1154,7 @@ begin
       end;
     end;
 end;
+{$ENDIF}
 
 
 //aLegacyGeneration - support for maps with rev <= r10745, where transitions were written as generated terrain Id
@@ -1372,6 +1383,7 @@ begin
 end;
 
 
+{$IFDEF LOAD_GAME_RES_ASYNC}
 procedure TKMResSprites.StopResourceLoader;
 begin
 //  fGameResLoader.DoTerminate := True;
@@ -1381,10 +1393,16 @@ begin
   if gLog <> nil then //could be nil in some Utils, f.e.
     gLog.MultithreadLogging := False;
 end;
+{$ENDIF}
 
 
 procedure TKMResSprites.LoadGameResources(aAlphaShadows: Boolean; aForceReload: Boolean = False);
+{$IFNDEF LOAD_GAME_RES_ASYNC}
+var
+  RT: TRXType;
+{$ENDIF}
 begin
+  {$IFDEF LOAD_GAME_RES_ASYNC}
   //Remember which version we load, so if it changes inbetween games we reload it
   fAlphaShadows := aAlphaShadows;
 
@@ -1409,6 +1427,21 @@ begin
       gLog.MultithreadLogging := True;
     fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
   end;
+
+  {$ELSE}
+
+  //Remember which version we load, so if it changes inbetween games we reload it
+  fAlphaShadows := aAlphaShadows;
+
+  for RT := Low(TRXType) to High(TRXType) do
+  if RXInfo[RT].Usage = ruGame then
+  begin
+    fStepCaption(gResTexts[RXInfo[RT].LoadingTextID]);
+    gLog.AddTime('Reading ' + RXInfo[RT].FileName + '.rx');
+    LoadSprites(RT, fAlphaShadows);
+    fSprites[RT].MakeGFX(fAlphaShadows);
+  end;
+  {$ENDIF}
 end;
 
 
@@ -1420,7 +1453,7 @@ begin
     SetLength(gGFXPrepData[SAT], 0);
 end;
 
-
+{$IFDEF LOAD_GAME_RES_ASYNC}
 // Generate texture atlases from previosly prepared SpriteInfo data (loaded from RXX, Bin Packed, copied to atlas)
 // Preparation was done asynchroniously by TTGameResourceLoader thread
 // Texture generating task can be done only by main thread, as OpenGL does not work with multiple threads
@@ -1451,6 +1484,7 @@ begin
       end;
     end;
 end;
+{$ENDIF}
 
 
 //Try to load RXX first, then RX, then use Folder
@@ -1493,6 +1527,7 @@ begin
 end;
 
 
+{$IFDEF LOAD_GAME_RES_ASYNC}
 procedure TKMResSprites.ManageResLoader;
 var
   NextRXTypeI: Integer;
@@ -1518,11 +1553,14 @@ begin
     end;
   end;
 end;
+{$ENDIF}
 
 
 procedure TKMResSprites.UpdateStateIdle;
 begin
+  {$IFDEF LOAD_GAME_RES_ASYNC}
   ManageResLoader;
+  {$ENDIF}
 end;
 
 
