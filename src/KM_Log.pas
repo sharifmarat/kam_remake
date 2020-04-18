@@ -113,6 +113,10 @@ begin
   //so Create(False) may be put in front as well
   inherited Create(False);
 
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('OldLogsDeleter', ThreadID);
+  {$ENDIF}
+
   //Must set these values BEFORE starting the thread
   FreeOnTerminate := True; //object can be automatically removed after its termination
   fPathToLogs := aPathToLogs;

@@ -1540,6 +1540,11 @@ end;
 constructor TTGameResourceLoader.Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
 begin
   inherited Create(False);
+
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('GameResourceLoader', ThreadID);
+  {$ENDIF}
+
   fResSprites := aResSprites;
   fAlphaShadows := aAlphaShadows;
   RXType := aRxType;

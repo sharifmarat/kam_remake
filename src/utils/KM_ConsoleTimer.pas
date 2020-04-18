@@ -42,6 +42,11 @@ uses
 constructor TKMConsoleTimer.Create;
 begin
   inherited Create(false);
+
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('ConsoleTimer', ThreadID);
+  {$ENDIF}
+
   FTimerEnabledFlag := TSimpleEvent.Create;
   FCancelFlag := TSimpleEvent.Create;
   FTimerProc := nil;
