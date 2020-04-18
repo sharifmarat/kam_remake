@@ -165,6 +165,9 @@ type
     fServerLimitSpeedFrom, fServerLimitSpeedTo: Single;
     fServerLimitSpeedAfterPTFrom, fServerLimitSpeedAfterPTTo: Single;
 
+    //Misc
+    fAsyncGameResLoad: Boolean;
+
     //Menu
     fMenu_FavouriteMapsStr: UnicodeString;
     fMenu_MapSPType: Byte;
@@ -384,6 +387,9 @@ type
     property ServerLimitSpeedAfterPTFrom: Single read fServerLimitSpeedAfterPTFrom;
     property ServerLimitSpeedAfterPTTo: Single read fServerLimitSpeedAfterPTTo;
 
+    //Misc
+    property AsyncGameResLoad: Boolean read fAsyncGameResLoad;
+
     //Menu
     property MenuMapSPType: Byte read fMenu_MapSPType write SetMenuMapSPType;
     property MenuReplaysType: Byte read fMenu_ReplaysType write SetMenuReplaysType;
@@ -477,7 +483,7 @@ begin
     end else
       fWindowParams.fNeedResetToDefaults := True;
 
-    fNoRenderMaxTime        := F.ReadInteger('Misc', 'NoRenderMaxTime', NO_RENDER_MAX_TIME_DEFAULT);
+    fNoRenderMaxTime := F.ReadInteger('Misc', 'NoRenderMaxTime', NO_RENDER_MAX_TIME_DEFAULT);
     if fNoRenderMaxTime < NO_RENDER_MAX_TIME_MIN then
       fNoRenderMaxTime := NO_RENDER_MAX_TIME_UNDEF;
 
@@ -515,7 +521,7 @@ begin
     F.WriteInteger('Window','WindowTop',      fWindowParams.Top);
     F.WriteInteger('Window','WindowState',    Ord(fWindowParams.State));
 
-    F.WriteInteger('Misc', 'NoRenderMaxTime', fNoRenderMaxTime);
+    F.WriteInteger('Misc', 'NoRenderMaxTime',  fNoRenderMaxTime);
 
     F.UpdateFile; //Write changes to file
   finally
@@ -736,6 +742,8 @@ begin
     fServerLimitSpeedAfterPTFrom  := F.ReadFloat('Server', 'LimitSpeedAfterPTFrom', 0);
     fServerLimitSpeedAfterPTTo    := F.ReadFloat('Server', 'LimitSpeedAfterPTTo',   10);
 
+    fAsyncGameResLoad := F.ReadBool('Misc', 'AsyncGameResLoad', False);
+
     fMenu_FavouriteMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
     fFavouriteMaps.LoadFromString(fMenu_FavouriteMapsStr);
 
@@ -863,6 +871,8 @@ begin
     F.WriteFloat  ('Server','LimitSpeedTo',           fServerLimitSpeedTo);
     F.WriteFloat  ('Server','LimitSpeedAfterPTFrom',  fServerLimitSpeedAfterPTFrom);
     F.WriteFloat  ('Server','LimitSpeedAfterPTTo',    fServerLimitSpeedAfterPTTo);
+
+    F.WriteBool   ('Misc', 'AsyncGameResLoad', fAsyncGameResLoad);
 
     F.WriteString ('Menu',  'FavouriteMaps',      fMenu_FavouriteMapsStr);
     F.WriteInteger('Menu',  'MapSPType',          fMenu_MapSPType);

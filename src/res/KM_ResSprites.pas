@@ -200,6 +200,9 @@ var
 implementation
 uses
   KromUtils,
+  {$IFDEF LOAD_GAME_RES_ASYNC}
+  KM_GameApp,
+  {$ENDIF}
   KM_SoftShadows, KM_Resource, KM_ResUnits,
   KM_Log, KM_BinPacking, KM_CommonUtils, KM_Points;
 
@@ -1397,50 +1400,54 @@ end;
 
 
 procedure TKMResSprites.LoadGameResources(aAlphaShadows: Boolean; aForceReload: Boolean = False);
-{$IFNDEF LOAD_GAME_RES_ASYNC}
-var
-  RT: TRXType;
-{$ENDIF}
-begin
-  {$IFDEF LOAD_GAME_RES_ASYNC}
-  //Remember which version we load, so if it changes inbetween games we reload it
-  fAlphaShadows := aAlphaShadows;
 
-  if fGameResLoader <> nil then
+  procedure LoadAllResources;
+  var
+    RT: TRXType;
   begin
-    if aForceReload then
-      StopResourceLoader
-    else begin
-      while not fGameResLoadCompleted do
+    for RT := Low(TRXType) to High(TRXType) do
+      if RXInfo[RT].Usage = ruGame then
       begin
-        ManageResLoader; //check if we have some work to do in this thread
-        Sleep(5); // wait till load will be completed by fGameResLoader thread
+        fStepCaption(gResTexts[RXInfo[RT].LoadingTextID]);
+        gLog.AddTime('Reading ' + RXInfo[RT].FileName + '.rx');
+        LoadSprites(RT, fAlphaShadows);
+        fSprites[RT].MakeGFX(fAlphaShadows);
       end;
-      Exit;
-    end;
   end;
 
-  if aForceReload then
-  begin
-    fGameResLoadCompleted := False;
-    if gLog <> nil then //could be nil in some Utils, f.e.
-      gLog.MultithreadLogging := True;
-    fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
-  end;
-
-  {$ELSE}
-
+begin
   //Remember which version we load, so if it changes inbetween games we reload it
   fAlphaShadows := aAlphaShadows;
-
-  for RT := Low(TRXType) to High(TRXType) do
-  if RXInfo[RT].Usage = ruGame then
+  {$IFDEF LOAD_GAME_RES_ASYNC}
+  if gGameApp.GameSettings.AsyncGameResLoad then
   begin
-    fStepCaption(gResTexts[RXInfo[RT].LoadingTextID]);
-    gLog.AddTime('Reading ' + RXInfo[RT].FileName + '.rx');
-    LoadSprites(RT, fAlphaShadows);
-    fSprites[RT].MakeGFX(fAlphaShadows);
-  end;
+    if fGameResLoader <> nil then
+    begin
+      if aForceReload then
+        StopResourceLoader
+      else begin
+        while not fGameResLoadCompleted do
+        begin
+          ManageResLoader; //check if we have some work to do in this thread
+          Sleep(5); // wait till load will be completed by fGameResLoader thread
+        end;
+        Exit;
+      end;
+    end;
+
+    if aForceReload then
+    begin
+      fGameResLoadCompleted := False;
+      if gLog <> nil then //could be nil in some Utils, f.e.
+        gLog.MultithreadLogging := True;
+      fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
+    end;
+  end
+  else
+    LoadAllResources;
+    
+  {$ELSE}
+  LoadAllResources;
   {$ENDIF}
 end;
 
@@ -1532,7 +1539,9 @@ procedure TKMResSprites.ManageResLoader;
 var
   NextRXTypeI: Integer;
 begin
-  if (fGameResLoader <> nil) and fGameResLoader.LoadStepDone then
+  if gGameApp.GameSettings.AsyncGameResLoad
+    and (fGameResLoader <> nil)
+    and fGameResLoader.LoadStepDone then
   begin
     // Generate texture atlas from prepared data for game resources
     // OpenGL work mainly with 1 thread only, so we have to call gl functions only from main thread

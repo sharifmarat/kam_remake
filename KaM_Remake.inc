@@ -45,7 +45,7 @@
 {$DEFINE PERFLOG}
 
 //Enable asynchronius game resource loading
-{.$DEFINE LOAD_GAME_RES_ASYNC}
+{$DEFINE LOAD_GAME_RES_ASYNC}
 
 //Enable some debug features
 {.$DEFINE DEBUG}
