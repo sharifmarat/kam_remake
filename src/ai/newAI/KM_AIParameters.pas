@@ -147,6 +147,12 @@ const
   GA_PLANNER_FindPlaceForHouse_EnemyInfluence        : Single = 10; // 0..255
   GA_PLANNER_FindForestAndWoodcutter_AllyInfluence   : Single =  3; // 0..255
   GA_PLANNER_FindForestAndWoodcutter_EnemyInfluence  : Single = 10; // 0..255
+  
+
+  GA_PLANNER_SnapCrit_HouseOrRoad                    : Single = 18;
+  GA_PLANNER_SnapCrit_NoBuild                        : Single = 27;
+  GA_PLANNER_SnapCrit_Road                           : Single = 23;
+  GA_PLANNER_SnapCrit_Field                          : Single = 23;
 
 //{ 2019-11-25
   GA_PLANNER_ObstaclesInHousePlan_Tree               : Single =   717.8121337891;
@@ -464,6 +470,11 @@ begin
   LoadStream.Read(GA_PLANNER_PlanFields_Dist                     );
   LoadStream.Read(GA_PLANNER_PlanFields_ExistField               );
 
+  LoadStream.Read(GA_PLANNER_SnapCrit_HouseOrRoad                );
+  LoadStream.Read(GA_PLANNER_SnapCrit_NoBuild                    );
+  LoadStream.Read(GA_PLANNER_SnapCrit_Road                       );
+  LoadStream.Read(GA_PLANNER_SnapCrit_Field                      );
+
   LoadStream.Read(GA_PLANNER_FindPlaceForQuary_Obstacle          );
   LoadStream.Read(GA_PLANNER_FindPlaceForQuary_DistCity          );
   LoadStream.Read(GA_PLANNER_FindPlaceForQuary_DistTimer         );
@@ -638,6 +649,11 @@ begin
   SaveStream.Write(GA_PLANNER_PlanFields_CanBuild                 );
   SaveStream.Write(GA_PLANNER_PlanFields_Dist                     );
   SaveStream.Write(GA_PLANNER_PlanFields_ExistField               );
+
+  SaveStream.Write(GA_PLANNER_SnapCrit_HouseOrRoad                );
+  SaveStream.Write(GA_PLANNER_SnapCrit_NoBuild                    );
+  SaveStream.Write(GA_PLANNER_SnapCrit_Road                       );
+  SaveStream.Write(GA_PLANNER_SnapCrit_Field                      );
 
   SaveStream.Write(GA_PLANNER_FindPlaceForQuary_Obstacle          );
   SaveStream.Write(GA_PLANNER_FindPlaceForQuary_DistCity          );

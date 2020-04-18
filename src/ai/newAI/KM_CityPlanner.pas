@@ -1315,17 +1315,18 @@ end;
 
 function TKMCityPlanner.ObstaclesInHousePlan(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 var
-  I,X,Y,Road,Tree: Integer;
+  K,X,Y,Road,Tree: Integer;
 begin
   Road := 0;
   Tree := 0;
-  for I := Low(gAIFields.Eye.HousesMapping[aHT].Tiles) to High(gAIFields.Eye.HousesMapping[aHT].Tiles) do
-  begin
-    X := aLoc.X + gAIFields.Eye.HousesMapping[aHT].Tiles[I].X;
-    Y := aLoc.Y + gAIFields.Eye.HousesMapping[aHT].Tiles[I].Y;
-    Tree := Tree + Byte(gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]));
-    Road := Road + Byte(tpWalkRoad in gTerrain.Land[Y, X].Passability);
-  end;
+  with gAIFields.Eye.HousesMapping[aHT] do
+    for K := Low(Tiles) to High(Tiles) do
+    begin
+      X := aLoc.X + Tiles[K].X;
+      Y := aLoc.Y + Tiles[K].Y;
+      Tree := Tree + Byte(gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]));
+      Road := Road + Byte(tpWalkRoad in gTerrain.Land[Y, X].Passability);
+    end;
   Result := Tree * GA_PLANNER_ObstaclesInHousePlan_Tree + Road * GA_PLANNER_ObstaclesInHousePlan_Road;
 end;
 
@@ -1340,17 +1341,18 @@ var
   Dir: TDirection;
 begin
   Fields := 0;
-  for Dist := 1 to (Byte(aHT = htWineyard) * 2) + (Byte(aHT = htFarm) * 5) do
-    for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist]) do
-      for I := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) + Dist to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir]) - Dist + 1 do
-      begin
-        X := aLoc.X + gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I].X;
-        Y := aLoc.Y + gAIFields.Eye.HousesMapping[aHT].Surroundings[Dist,Dir,I].Y;
-        if gTerrain.TileInMapCoords(X,Y)
-          AND (gAIFields.Influences.AvoidBuilding[Y,X] = 0) // Tile is not reserved (house / road / field / forest)
-          AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
-            Fields := Fields + 1;
-      end;
+  with gAIFields.Eye.HousesMapping[aHT] do
+    for Dist := 1 to (Byte(aHT = htWineyard) * 2) + (Byte(aHT = htFarm) * 5) do
+      for Dir := Low(Surroundings[Dist]) to High(Surroundings[Dist]) do
+        for I := Low(Surroundings[Dist,Dir]) + Dist to High(Surroundings[Dist,Dir]) - Dist + 1 do
+        begin
+          X := aLoc.X + Surroundings[Dist,Dir,I].X;
+          Y := aLoc.Y + Surroundings[Dist,Dir,I].Y;
+          if gTerrain.TileInMapCoords(X,Y)
+            AND (gAIFields.Influences.AvoidBuilding[Y,X] = 0) // Tile is not reserved (house / road / field / forest)
+            AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
+              Fields := Fields + 1;
+        end;
   Result := - (
               + Max(0, MIN_WINE_FIELDS - Fields) * Byte(aHT = htWineyard) * DECREASE_CRIT
               + Max(0, MIN_CORN_FIELDS - Fields) * Byte(aHT = htFarm) * DECREASE_CRIT
@@ -1385,6 +1387,7 @@ function TKMCityPlanner.SnapCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
   begin
     Result := (aAvoidBuilding = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)
               OR not (tpBuild in gTerrain.Land[aPoint.Y,aPoint.X].Passability);
+    //Result := gAIFields.Eye.BuildFF.State
   end;
   function IsReservedField(aAvoidBuilding: Byte): Boolean; inline;
   begin
@@ -1400,17 +1403,22 @@ var
   Dir: TDirection;
 begin
   Output := 0;
-  for Dir := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST]) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST]) do
-    // Skip edges in specific direction (these points are shared in 2 directions)
-    for K := Low(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST,Dir]) + Byte((Dir = dirE) OR (Dir = dirW)) to High(gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST,Dir]) - Byte((Dir = dirE) OR (Dir = dirW)) do
-    begin
-      Point := KMPointAdd(aLoc, gAIFields.Eye.HousesMapping[aHT].Surroundings[DIST,Dir,K]);
-      AvoidBuilding := gAIFields.Influences.AvoidBuilding[Point.Y, Point.X];
-      Output := Output
-                + Byte(IsNearHouse(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToHouse
-                + Byte(IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_SnapToFields // OR IsCornField(Point) OR IsWineField(Point)
-                + Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToRoads;
-    end;
+  with gAIFields.Eye.HousesMapping[aHT] do
+    for Dir := Low(Surroundings[DIST]) to High(Surroundings[DIST]) do
+      // Skip edges in specific direction (these points are shared in 2 directions)
+      for K := Low(Surroundings[DIST,Dir]) + Byte((Dir = dirE) OR (Dir = dirW)) to High(Surroundings[DIST,Dir]) - Byte((Dir = dirE) OR (Dir = dirW)) do
+      begin
+        Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,K]);
+        AvoidBuilding := gAIFields.Influences.AvoidBuilding[Point.Y, Point.X];
+        Output := Output
+                  + Byte(gAIFields.Eye.BuildFF.State[Point.Y,Point.X] in [bsRoad, bsRoadPlan]) * GA_PLANNER_SnapCrit_HouseOrRoad
+                  + Byte(gAIFields.Eye.BuildFF.State[Point.Y,Point.X] in [bsNoBuild]) * GA_PLANNER_SnapCrit_NoBuild
+                  + Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_Road
+                  + Byte(IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_Field;
+                  //+ Byte(IsNearHouse(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToHouse
+                  //+ Byte(IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_SnapToFields // OR IsCornField(Point) OR IsWineField(Point)
+                  //+ Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToRoads;
+      end;
   Output := Output
             - Byte(IsReservedField( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X] )) * GA_PLANNER_SnapCrit_ObstacleInEntrance
             + Byte(IsRoad( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X], aLoc )) * GA_PLANNER_SnapCrit_RoadInEntrance;

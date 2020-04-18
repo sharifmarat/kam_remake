@@ -822,12 +822,12 @@ var
   H: TKMHouse;
 begin
   // Analyze basic force stats (max possible plans, construction ware, gold)
-  aMaxPlans := Ceil(fFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef);
+  aMaxPlans := Ceil(fFreeWorkersCnt / Max(0.01,GA_BUILDER_ChHTB_FreeWorkerCoef));
   // Use "rapid construction" in case that we have resources
   if   (fPredictor.WareBalance[wtStone].Exhaustion > 60) then // Some stone mines are too far so AI must slow down with expansion
     //AND (fPredictor.WareBalance[wtWood].Exhaustion > 60)
     //AND (fPredictor.WareBalance[wtGold].Exhaustion > 60) then
-    aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
+    aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / Max(0.01,GA_BUILDER_ChHTB_AllWorkerCoef)) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wtStone is OK
   fStoneShortage := (fPredictor.WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
@@ -1417,7 +1417,7 @@ begin
   RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(not(fTrunkShortage OR (MaxPlace < 3)));
 
   // Find place for chop-only woodcutters when we start to be out of wood
-  if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then
+  if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / Max(1,GA_BUILDER_ChHTB_TrunkFactor) - GetChopOnlyCnt() > 0) then
     fPlanner.FindForestAround(KMPOINT_ZERO, True);
 
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
