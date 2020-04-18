@@ -2487,6 +2487,9 @@ end;
 
 
 function TKMGame.PlayNextTick: Boolean;
+var
+  gameSaveCRC: Cardinal;
+  stream: TKMemoryStreamBinary;
 begin
   Result := False;
   //Some PCs seem to change 8087CW randomly between events like Timers and OnMouse*,
@@ -2561,7 +2564,15 @@ begin
                             Result := True;
 
                             if DoSaveRandomChecks then
-                              gRandomCheckLogger.UpdateState(fGameTick);
+                            begin
+                              gPerfLogs.SectionEnter(psGameTickSave, fGameTick);
+                              stream := TKMemoryStreamBinary.Create;
+                              SaveGameToStream(0, stream);
+                              gameSaveCRC := Adler32CRC(stream);
+                              gRandomCheckLogger.UpdateState(fGameTick, gameSaveCRC);
+                              stream.Free;
+                              gPerfLogs.SectionLeave(psGameTickSave);
+                            end;
                           finally
                             {$IFDEF PERFLOG}
                             gPerfLogs.SectionLeave(psGameTick);

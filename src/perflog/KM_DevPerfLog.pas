@@ -58,6 +58,7 @@ const
   end = (
     (Name: 'All';                     ClassName: TKMPerfLogSingleCPU; Color: (R:0;G:0;B:0);),
     (Name: 'GameTick';                ClassName: TKMPerfLogSingleCPU; Color: (R:1.0;G:1;B:0);),
+    (Name: '  GameTick';              ClassName: TKMPerfLogSingleCPU; Color: (R:0.7;G:0.2;B:0.5);),
     (Name: '   Hands';                ClassName: TKMPerfLogSingleCPU; Color: (R:1;G:0.25;B:0);),
     (Name: '     Units';              ClassName: TKMPerfLogSingleCPU; Color: (R:0;G:0.5;B:0.5);),
     (Name: '     Deliveries';         ClassName: TKMPerfLogSingleCPU; Color: (R:0.75;G:0.25;B:0.25);),

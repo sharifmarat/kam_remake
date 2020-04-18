@@ -6,6 +6,7 @@ type
   TPerfSectionDev = (
     psNone,
     psGameTick,
+      psGameTickSave,
       psHands,
         psUnits,
         psDelivery,

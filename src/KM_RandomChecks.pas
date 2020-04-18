@@ -64,7 +64,7 @@ type
     procedure LoadFromPathAndParseToDict(aPath: String);
     procedure Clear;
 
-    procedure UpdateState(aGameTick: Cardinal);
+    procedure UpdateState(aGameTick: Cardinal; aGameSaveCRC: Cardinal);
   end;
 
 
@@ -223,7 +223,7 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal);
+procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal; aGameSaveCRC: Cardinal);
 var
   tickStream: TKMemoryStreamBinary;
 begin
@@ -239,6 +239,7 @@ begin
   end;
 
   tickStream := TKMemoryStreamBinary.Create;
+  tickStream.Write(aGameSaveCRC);
   SaveTickToStream(tickStream, fRngChecksInTick);
   fTickStreamQueue.Enqueue(tickStream);
 
@@ -270,7 +271,7 @@ end;
 procedure TKMRandomCheckLogger.LoadFromPath(aPath: String);
 var
   I: Integer;
-  tickStreamSize: Cardinal;
+  tickStreamSize, gameSaveCRC: Cardinal;
   LoadStream, tickStream: TKMemoryStreamBinary;
 begin
   if Self = nil then Exit;
@@ -292,6 +293,7 @@ begin
     begin
       tickStream := TKMemoryStreamBinary.Create;
 
+      LoadStream.Read(gameSaveCRC);
       LoadStream.Read(tickStreamSize);
       tickStream.CopyFrom(LoadStream, tickStreamSize);
 
@@ -367,12 +369,13 @@ var
 
 var
   I, K, CountInTick: Integer;
-  Tick, tickStreamSize: Cardinal;
+  Tick, tickStreamSize, gameSaveCRC: Cardinal;
 begin
   for I := 0 to fSavedTicksCnt - 1 do
   begin
     aLoadStream.Read(tickStreamSize); // load tick stream size and omit it, we don't use it here
 
+    aLoadStream.Read(gameSaveCRC);
     aLoadStream.Read(Tick);
     aLoadStream.Read(CountInTick);
 
