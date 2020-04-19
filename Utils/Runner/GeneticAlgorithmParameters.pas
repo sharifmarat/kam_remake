@@ -210,7 +210,7 @@ end;
 
 function TGAParameterization.GetParCnt_CityBuilder(): Word;
 begin
-  Result := 4+5+5+2;
+  Result := 4+5+5+3;
 end;
 
 procedure TGAParameterization.SetPar_CityBuilder(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
