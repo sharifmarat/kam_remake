@@ -12,6 +12,7 @@ type
     X,Y: Integer;
     class operator Equal(const A, B: TKMPoint): Boolean;
     class operator NotEqual(const A, B: TKMPoint): Boolean;
+//    class operator Positive(const A: TKMPoint): TKMPoint;
     function ToString: String;
     constructor New(aX, aY: Integer);
   end;
@@ -232,6 +233,11 @@ class operator TKMPoint.NotEqual(const A, B: TKMPoint): Boolean;
 begin
   Result := not KMSamePoint(A,B);
 end;
+
+//class operator TKMPoint.Positive(const A: TKMPoint): TKMPoint;
+//begin
+//  Result := KMPoint(X + A.X,Y + A.Y);
+//end;
 
 function TKMPoint.ToString: String;
 begin

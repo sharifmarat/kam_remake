@@ -148,6 +148,7 @@ type
 
     procedure PostLoadMission;
 
+    function IsAnimal: Boolean;
     function IsHuman: Boolean;
     function IsComputer: Boolean;
 
@@ -593,6 +594,12 @@ end;
 function TKMHand.IsHuman: Boolean;
 begin
   Result := fHandType = hndHuman;
+end;
+
+
+function TKMHand.IsAnimal: Boolean;
+begin
+  Result := fID = PLAYER_ANIMAL;
 end;
 
 

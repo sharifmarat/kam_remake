@@ -25,11 +25,12 @@ object Form2: TForm2
     Caption = 'Cycles:'
   end
   object Label2: TLabel
-    Left = 168
+    Left = 177
     Top = 235
-    Width = 24
+    Width = 15
     Height = 13
     Alignment = taRightJustify
+    Caption = '     '
   end
   object Label4: TLabel
     Left = 103
@@ -39,11 +40,20 @@ object Form2: TForm2
     Caption = 'Duration (min):'
   end
   object Label5: TLabel
-    Left = 168
+    Left = 177
     Top = 216
-    Width = 24
+    Width = 15
     Height = 13
     Alignment = taRightJustify
+    Caption = '     '
+  end
+  object Label6: TLabel
+    Left = 177
+    Top = 263
+    Width = 15
+    Height = 13
+    Alignment = taRightJustify
+    Caption = '      '
   end
   object Button1: TButton
     Left = 103
@@ -76,7 +86,7 @@ object Form2: TForm2
   end
   object Memo2: TMemo
     Left = 8
-    Top = 256
+    Top = 296
     Width = 185
     Height = 137
     BorderStyle = bsNone

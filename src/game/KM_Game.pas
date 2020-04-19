@@ -1811,6 +1811,7 @@ procedure TKMGame.SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryS
 var
   GameInfo: TKMGameInfo;
   I, netIndex: Integer;
+  gameRes: TKMGameResultMsg;
 begin
   if aReplayStream then
   begin
@@ -1896,12 +1897,19 @@ begin
   //We need to know which mission/savegame to try to restart. This is unused in MP
   if not IsMultiPlayerOrSpec then
     aSaveStream.WriteW(fMissionFileSP);
-
+    
   aSaveStream.Write(fUIDTracker); //Units-Houses ID tracker
   aSaveStream.Write(GetKaMSeed); //Include the random seed in the save file to ensure consistency in replays
 
   if not IsMultiPlayerOrSpec then
-    aSaveStream.Write(GameResult, SizeOf(GameResult));
+  begin
+    if GAME_COMPARE_SAVE_MODE then
+      gameRes := grCancel
+    else
+      gameRes := GameResult;
+      
+    aSaveStream.Write(gameRes, SizeOf(GameResult));    
+  end;
 
   gTerrain.Save(aSaveStream); //Saves the map
   fTerrainPainter.Save(aSaveStream);
@@ -2169,7 +2177,7 @@ begin
 
   LoadStream.Read(fUIDTracker);
   LoadStream.Read(LoadedSeed);
-
+  
   if not SaveIsMultiplayer then
     LoadStream.Read(GameResult, SizeOf(GameResult));
 
@@ -2419,8 +2427,6 @@ var
 
 begin
   DoUpdateGame;
-
-//  if GAME_UPD_ONLY_ONE_TICK then Exit;
   
   if CALC_EXPECTED_TICK then
   begin

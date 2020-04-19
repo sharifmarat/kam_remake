@@ -39,6 +39,7 @@ type
     Duration: Integer;
     OnProgress: TUnicodeStringEvent;
     OnProgress2: TUnicodeStringEvent;
+    OnProgress3: TUnicodeStringEvent;
     constructor Create(aRenderTarget: TKMRenderControl); reintroduce;
     function Run(aCount: Integer): TKMRunResults;
   end;
@@ -204,6 +205,7 @@ begin
     aEndTick := fResults.TimesCount - 1
   else
     aEndTick := min(aEndTick,fResults.TimesCount - 1);
+
   for I := aStartTick to aEndTick do
   begin
     fResults.Times[fRun, I] := TimeGet;
