@@ -83,7 +83,7 @@ object FormMain: TFormMain
     ParentDoubleBuffered = False
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 384
+      Top = 544
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
@@ -160,7 +160,7 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 360
+      Top = 520
       Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
@@ -262,7 +262,7 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 336
+      Top = 496
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
@@ -298,14 +298,12 @@ object FormMain: TFormMain
     end
     object cpAI: TCategoryPanel
       Top = 312
-      Height = 24
+      Height = 184
       Caption = 'AI'
-      Collapsed = True
       TabOrder = 3
-      ExpandedHeight = 166
       object Label5: TLabel
         Left = 106
-        Top = 111
+        Top = 123
         Width = 32
         Height = 13
         Caption = 'Margin'
@@ -313,7 +311,7 @@ object FormMain: TFormMain
       end
       object Label6: TLabel
         Left = 106
-        Top = 127
+        Top = 146
         Width = 47
         Height = 13
         Caption = 'Threshold'
@@ -321,15 +319,15 @@ object FormMain: TFormMain
       end
       object chkAIEye: TCheckBox
         Left = 120
-        Top = 24
-        Width = 97
+        Top = 57
+        Width = 58
         Height = 17
-        Caption = 'AI Eye'
+        Caption = 'Eye'
         TabOrder = 0
         OnClick = ControlsUpdate
       end
       object chkBevel: TCheckBox
-        Left = 120
+        Left = 184
         Top = 8
         Width = 88
         Height = 17
@@ -339,27 +337,27 @@ object FormMain: TFormMain
         TabOrder = 1
         OnClick = ControlsUpdate
       end
-      object chkBuildAI: TCheckBox
-        Left = 8
-        Top = 24
-        Width = 86
+      object chkBuild: TCheckBox
+        Left = 120
+        Top = 41
+        Width = 58
         Height = 17
-        Caption = 'Build AI'
+        Caption = 'Build'
         TabOrder = 2
         OnClick = ControlsUpdate
       end
-      object chkCombatAI: TCheckBox
+      object chkCombat: TCheckBox
         Left = 8
-        Top = 88
+        Top = 41
         Width = 86
         Height = 17
-        Caption = 'Combat AI'
+        Caption = 'Combat'
         TabOrder = 3
         OnClick = ControlsUpdate
       end
       object chkShowAvoid: TCheckBox
-        Left = 8
-        Top = 56
+        Left = 120
+        Top = 25
         Width = 86
         Height = 17
         Caption = 'Avoid building'
@@ -367,17 +365,17 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowBalance: TCheckBox
-        Left = 8
+        Left = 120
         Top = 8
-        Width = 88
+        Width = 58
         Height = 17
-        Caption = 'AI balance text'
+        Caption = 'Balance'
         TabOrder = 5
         OnClick = ControlsUpdate
       end
       object chkShowDefences: TCheckBox
-        Left = 120
-        Top = 88
+        Left = 8
+        Top = 57
         Width = 97
         Height = 17
         Caption = 'Defences'
@@ -385,18 +383,18 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowEyeRoutes: TCheckBox
-        Left = 120
-        Top = 72
-        Width = 88
+        Left = 184
+        Top = 88
+        Width = 65
         Height = 17
         Caption = 'Routes'
         TabOrder = 7
         OnClick = ControlsUpdate
       end
       object chkShowFlatArea: TCheckBox
-        Left = 120
-        Top = 56
-        Width = 88
+        Left = 184
+        Top = 73
+        Width = 65
         Height = 17
         Caption = 'Flat area'
         TabOrder = 8
@@ -404,7 +402,7 @@ object FormMain: TFormMain
       end
       object chkShowNavMesh: TCheckBox
         Left = 8
-        Top = 72
+        Top = 8
         Width = 86
         Height = 17
         Caption = 'Navmesh'
@@ -413,7 +411,7 @@ object FormMain: TFormMain
       end
       object chkShowOwnership: TCheckBox
         Left = 8
-        Top = 40
+        Top = 24
         Width = 86
         Height = 17
         Caption = 'Ownership'
@@ -421,17 +419,17 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowSoil: TCheckBox
-        Left = 120
-        Top = 40
-        Width = 88
+        Left = 184
+        Top = 57
+        Width = 65
         Height = 17
         Caption = 'Soil'
         TabOrder = 11
         OnClick = ControlsUpdate
       end
       object tbOwnMargin: TTrackBar
-        Left = 2
-        Top = 111
+        Left = -1
+        Top = 123
         Width = 101
         Height = 17
         Max = 255
@@ -445,8 +443,8 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
       object tbOwnThresh: TTrackBar
-        Left = 2
-        Top = 127
+        Left = -1
+        Top = 146
         Width = 101
         Height = 17
         Max = 255
@@ -459,6 +457,15 @@ object FormMain: TFormMain
         Visible = False
         OnChange = ControlsUpdate
       end
+      object chkSupervisor: TCheckBox
+        Left = 8
+        Top = 73
+        Width = 97
+        Height = 17
+        Caption = 'Supervisor'
+        TabOrder = 14
+        OnClick = ControlsUpdate
+      end
     end
     object cpPerfLogs: TCategoryPanel
       Top = 288
@@ -466,7 +473,6 @@ object FormMain: TFormMain
       Caption = 'Perf Logs'
       Collapsed = True
       TabOrder = 4
-      ExplicitWidth = 241
       ExpandedHeight = 660
     end
     object cpDebugRender: TCategoryPanel
@@ -476,7 +482,6 @@ object FormMain: TFormMain
       DoubleBuffered = True
       ParentDoubleBuffered = False
       TabOrder = 5
-      ExplicitWidth = 241
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -648,7 +653,6 @@ object FormMain: TFormMain
       Caption = 'Game additional'
       Collapsed = True
       TabOrder = 6
-      ExplicitWidth = 241
       ExpandedHeight = 136
       object chkLoadUnsupSaves: TCheckBox
         Left = 12
@@ -697,7 +701,6 @@ object FormMain: TFormMain
       Height = 49
       Caption = 'Game '
       TabOrder = 7
-      ExplicitWidth = 241
       object chkSuperSpeed: TCheckBox
         Left = 8
         Top = 5
