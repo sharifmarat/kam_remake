@@ -156,7 +156,8 @@ begin
   for Idx := Low(AI_Par) to High(AI_Par) do
   begin
     enumName := GetEnumName(TypeInfo(TAIPar), Integer(Idx));
-    fLogPar.AddTime(Format('%13.7f%s, // %s',[AI_Par[Idx], StringOfChar(' ', Max(1,50 - Length(enumName))), enumName ]));
+    fLogPar.AddTime(Format('%13.7f, // %s',[AI_Par[Idx], enumName ]));
+    //fLogPar.AddTime(Format('%13.7f%s, // %s',[AI_Par[Idx], StringOfChar(' ', Max(1,50 - Length(enumName))), enumName ]));
   end;
   fLogPar.AddTime('  );');
 end;
