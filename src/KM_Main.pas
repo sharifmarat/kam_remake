@@ -459,8 +459,10 @@ begin
 
   gGameApp.OnGameSpeedActualChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
+
   //Preload game resources while in menu to make 1st game start faster
   gGameApp.PreloadGameResources;
+
   gGameApp.OnOptionsChange := fFormMain.ControlsRefill;
   fFormMain.OnControlsUpdated := gGameApp.DebugControlsUpdated;
 

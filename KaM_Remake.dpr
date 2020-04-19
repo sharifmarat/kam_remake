@@ -20,6 +20,7 @@ uses
   KromUtils in 'src\ext\KromUtils.pas',
 	KromShellUtils in 'src\ext\KromShellUtils.pas',
   ScriptValidatorResult in 'src\ext\ScriptValidatorResult.pas',
+  iaWin.NameDelphiThreads in 'src\ext\iaWin.NameDelphiThreads.pas',
 
   KM_AI in 'src\ai\KM_AI.pas',
   KM_AIArmyEvaluation in 'src\ai\KM_AIArmyEvaluation.pas',
