@@ -160,6 +160,7 @@ end;
 
 procedure TGAParameterization.SetPar_Manager(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_MANAGEMENT_GoldShortage                         := 10 + Round( aIdv.Gene[Incr(K)] * 15);
   GA_MANAGEMENT_CheckUnitCount_SerfLimit1            :=  0 + Round( aIdv.Gene[Incr(K)] * 20);
   GA_MANAGEMENT_CheckUnitCount_SerfLimit2            := 20 + Round( aIdv.Gene[Incr(K)] * 20);
@@ -179,6 +180,7 @@ begin
     fLogPar.AddTime(Format('GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef          : Single = %16.10f;',[ GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef   ]));
     fLogPar.AddTime(Format('GA_PREDICTOR_SecondSchool_MinRequiredUnits         : Word = %4d;',[ GA_PREDICTOR_SecondSchool_MinRequiredUnits  ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -215,6 +217,7 @@ end;
 
 procedure TGAParameterization.SetPar_CityBuilder(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_BUILDER_BuildHouse_FieldMaxWork    := Max(1, 0 + aIdv.Gene[Incr(K)] * 2);
   GA_BUILDER_BuildHouse_RTPMaxWork      := Max(1, 0 + aIdv.Gene[Incr(K)] * 15);
   GA_BUILDER_BuildHouse_RoadMaxWork     := Max(1, 5 + aIdv.Gene[Incr(K)] * 20);
@@ -256,7 +259,7 @@ begin
     fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_StoneOffset        : Word = %4d;',      [ GA_PREDICTOR_WareNeedPerAWorker_StoneOffset ]));
     fLogPar.AddTime(Format('GA_PREDICTOR_WareNeedPerAWorker_Wood               : Single = %16.10f;',[ GA_PREDICTOR_WareNeedPerAWorker_Wood        ]));
   end;
-
+{$ENDIF}
 end;
 
 
@@ -267,6 +270,7 @@ end;
 
 procedure TGAParameterization.SetPar_Farm(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_PLANNER_PlanFields_CanBuild   :=  0 + Round(aIdv.Gene[Incr(K)] * 75);
   GA_PLANNER_PlanFields_Dist       :=  0 + Round(aIdv.Gene[Incr(K)] * 75);
   GA_PLANNER_PlanFields_ExistField := 25 + Round(aIdv.Gene[Incr(K)] * 75);
@@ -286,6 +290,7 @@ begin
     fLogPar.AddTime(Format('GA_PLANNER_FindPlaceForHouse_HouseDistFarm         : Single = %16.10f;',[ GA_PLANNER_FindPlaceForHouse_HouseDistFarm  ]));
     fLogPar.AddTime(Format('GA_PLANNER_FindPlaceForHouse_CityCenterFarm        : Single = %16.10f;',[ GA_PLANNER_FindPlaceForHouse_CityCenterFarm ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -296,6 +301,7 @@ end;
 
 procedure TGAParameterization.SetPar_Quarry(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_PLANNER_FindPlaceForQuary_Obstacle	 := 40 + aIdv.Gene[Incr(K)] * 50;
   GA_PLANNER_FindPlaceForQuary_DistCity	 :=  0 + aIdv.Gene[Incr(K)] * 50;
   GA_PLANNER_FindPlaceForQuary_DistTimer :=  0 + aIdv.Gene[Incr(K)] * 15000;
@@ -310,6 +316,7 @@ begin
     fLogPar.AddTime(Format('GA_PLANNER_FindPlaceForQuary_DistStone             : Single = %16.10f;',[ GA_PLANNER_FindPlaceForQuary_DistStone ]));
     fLogPar.AddTime(Format('GA_PLANNER_FindPlaceForQuary_SnapCrit              : Single = %16.10f;',[ GA_PLANNER_FindPlaceForQuary_SnapCrit  ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -320,6 +327,7 @@ end;
 
 procedure TGAParameterization.SetPar_RoadPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_PATHFINDING_BasePrice        := 25 + Round( aIdv.Gene[Incr(K)] * 30 );
   GA_PATHFINDING_TurnPenalization :=  0 + Round( aIdv.Gene[Incr(K)] * 50 );
   GA_PATHFINDING_Road             := Min(GA_PATHFINDING_BasePrice, Round( aIdv.Gene[Incr(K)] * 50 ));
@@ -357,6 +365,7 @@ begin
     fLogPar.AddTime(Format('GA_SHORTCUTS_Forest                                : Word = %4d;',[ GA_SHORTCUTS_Forest             ]));
     fLogPar.AddTime(Format('GA_SHORTCUTS_OtherCase                             : Word = %4d;',[ GA_SHORTCUTS_OtherCase          ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -367,6 +376,7 @@ end;
 
 procedure TGAParameterization.SetPar_Forest(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_EYE_GetForests_MaxAB            :=   1 + aIdv.Gene[Incr(K)] * 200; // <0,201> Ignore trees in existing forest <0,255-AVOID_BUILDING_FOREST_MINIMUM)
   GA_EYE_GetForests_Radius           :=   3 + aIdv.Gene[Incr(K)] *   4; // Forest radius
   GA_EYE_GetForests_MinTrees         :=   1 + aIdv.Gene[Incr(K)] *   4; // Min trees in forest
@@ -408,6 +418,7 @@ begin
     fLogPar.AddTime(Format('GA_PLANNER_FindPlaceForWoodcutter_Radius           : Single = %16.10f;',[ GA_PLANNER_FindPlaceForWoodcutter_Radius       ]));
     fLogPar.AddTime(Format('GA_PLANNER_FindForestAround_MaxDist                : Single = %16.10f;',[ GA_PLANNER_FindForestAround_MaxDist            ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -418,6 +429,7 @@ end;
 
 procedure TGAParameterization.SetPar_CityPlanner(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_PLANNER_ObstaclesInHousePlan_Tree       := 500 + aIdv.Gene[Incr(K)] * 100 * 10; // 0-3+
   GA_PLANNER_ObstaclesInHousePlan_Road       := 200 + aIdv.Gene[Incr(K)] *  50 * 10; // 0-5+
 
@@ -469,6 +481,7 @@ begin
     fLogPar.AddTime(Format('GA_PLANNER_FindPlaceForHouse_FlatArea              : Single = %16.10f;',[ GA_PLANNER_FindPlaceForHouse_FlatArea       ]));
     fLogPar.AddTime(Format('GA_PLANNER_PlaceWoodcutter_DistFromForest          : Single = %16.10f;',[ GA_PLANNER_PlaceWoodcutter_DistFromForest   ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -481,6 +494,7 @@ end;
 
 procedure TGAParameterization.SetPar_ArmyAttack(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_PATHFINDING_AvoidTraffic                    :=   0 +       aIdv.Gene[Incr(K)] *    3; //    1.5
   GA_PATHFINDING_AvoidSpecEnemy                  :=   0 +       aIdv.Gene[Incr(K)] *    2; //    1
   GA_PATHFINDING_AvoidEdges                      :=  80 +       aIdv.Gene[Incr(K)] *   80; //    1
@@ -548,6 +562,7 @@ begin
 
     fLogPar.AddTime(Format('GA_ARMY_MaxGgroupsInCompany                        : Word = %4d;',      [ GA_ARMY_MaxGgroupsInCompany                ]));
   end;
+{$ENDIF}
 end;
 
 
@@ -560,6 +575,7 @@ end;
 
 procedure TGAParameterization.SetPar_ArmyAttackNew(aIdv: TGAIndividual; aLogIt: Boolean = False; K: Word = 0);
 begin
+{$IFDEF DEBUG_NewAI}
   GA_PATHFINDING_AvoidSpecEnemy                      :=   0 + aIdv.Gene[Incr(K)] * 10;
   GA_PATHFINDING_AvoidEdges                          :=  80 + aIdv.Gene[Incr(K)] * 80;
 
@@ -604,6 +620,7 @@ begin
     fLogPar.AddTime(Format('GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain  : Single = %16.10f;',[ GA_ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain   ]));
     fLogPar.AddTime(Format('GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold  : Single = %16.10f;',[ GA_ATTACK_SUPERVISOR_UpdateAttacks_AttackThreshold   ]));
   end;
+{$ENDIF}
 end;
 
 end.

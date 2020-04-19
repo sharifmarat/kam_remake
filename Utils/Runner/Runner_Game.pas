@@ -7,7 +7,7 @@ uses
   KM_GameApp, KM_ResLocales, KM_Log, KM_HandsCollection, KM_HouseCollection, KM_ResTexts, KM_Resource,
   KM_Terrain, KM_Units, KM_UnitWarrior, KM_Campaigns, KM_AIFields, KM_Houses,
   GeneticAlgorithm, GeneticAlgorithmParameters, KM_AIParameters,
-  ComInterface;
+  ComInterface, Generics.Collections, KM_RenderControl;
 
 
 type
@@ -143,6 +143,25 @@ type
     procedure Execute(aRun: Integer); override;
   end;
 
+  TKMRunnerDesyncTest = class(TKMRunnerCommon)
+  private
+    fSaveName: string;
+    fSaveDir: String;
+    fGameSim: Boolean;
+    fRun: Integer;
+    fMap: string;
+    fDesyncFound: Boolean;
+    fDesyncTick: Cardinal;
+    fBestScore, fWorstScore, fAverageScore: Double;
+//    fTickCRC: TList<Cardinal>;
+    fTickCRC: array of Cardinal;
+    function Tick(aTick: Cardinal): Boolean;
+  protected
+    procedure SetUp(); override;
+    procedure TearDown(); override;
+    procedure Execute(aRun: Integer); override;
+  end;
+
   TKMRunnerStone = class(TKMRunnerCommon)
   protected
     procedure SetUp; override;
@@ -203,7 +222,9 @@ type
 
 
 implementation
-uses KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection, KM_FileIO;
+uses
+  KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection,
+  KM_CommonTypes, KM_MapTypes, KM_RandomChecks, KM_FileIO, KM_Game;
 
 
 
@@ -907,6 +928,175 @@ begin
 end;
 
 
+{ TKMRunnerDesyncTest }
+procedure TKMRunnerDesyncTest.SetUp();
+begin
+  inherited;
+
+//  fTickCRC := TList<Cardinal>.Create;
+  SetLength(fTickCRC, fResults.TimesCount);
+
+  fOnTick := Tick;
+
+  // Deactivate KaM log
+  if (gLog = nil) then
+    gLog := TKMLog.Create(Format('%sUtils\Runner\Runner_Log.log',[ExeDir]));
+//  gLog.MessageTypes := [];
+
+  gLog.SetDefaultMessageTypes;
+
+//  Include(gLog.MessageTypes, lmtRandomChecks);
+//  Include(gLog.MessageTypes, lmtCommands);
+
+//  LOG_GAME_TICK := True;
+  USE_CUSTOM_SEED := True;
+
+  CALC_EXPECTED_TICK := False;
+  CRASH_ON_REPLAY := False;
+  SAVE_GAME_AS_TEXT := True;
+  ALLOW_SAVE_IN_REPLAY := True;
+  GAME_NO_TIMER := True;
+
+  ForceDirectories(Format('%s..\..\Desync\',[ExtractFilePath(ParamStr(0))]));
+//  Include(gLog.MessageTypes, lmtRandomChecks)
+end;
+
+
+procedure TKMRunnerDesyncTest.TearDown();
+begin
+//  fTickCRC.Free; 
+
+  inherited;
+end;
+
+
+function TKMRunnerDesyncTest.Tick(aTick: Cardinal): Boolean;
+var
+  stream: TKMemoryStreamBinary;
+  tickCRC: Cardinal;
+  gameType: string;
+begin
+  Result := True;
+
+  if fGameSim then
+  begin
+    gameType := 'Game';
+//    gLog.AddTime('Game TKMRunnerDesyncTest.Tick: ' + IntToStr(aTick) + '_' + IntToStr(gGame.GameTick));
+    tickCRC := gGameApp.Game.GetCurrectTickSaveCRC;
+//    if aTick = 0 then    
+//      gGameApp.Game.Save(fSaveName + '_GAM_' + IntToStr(aTick) + '_' + IntToStr(gGame.GameTick));
+//    fTickCRC.Add(tickCRC);
+    fTickCRC[aTick] := tickCRC;
+  end else
+  begin
+    gameType := 'Rpl';
+//    gLog.AddTime('Rpl TKMRunnerDesyncTest.Tick: ' + IntToStr(aTick) + '_' + IntToStr(gGameApp.Game.GameTick));
+    tickCRC := gGameApp.Game.GetCurrectTickSaveCRC;
+    if tickCRC <> fTickCRC[aTick] then
+    begin
+      Result := False;
+      gGameApp.Game.Save(fSaveName + '_RPL_' + IntToStr(aTick) + '_' + IntToStr(gGameApp.Game.GameTick));
+      fDesyncFound := True;
+      fDesyncTick := aTick;
+    end;
+  end;
+
+  OnProgress2(Format('%s: %s Run %d T %d', [gameType, fMap, fRun, aTick]));
+end;
+
+
+procedure TKMRunnerDesyncTest.Execute(aRun: Integer);
+const
+  // Maps for simulation (I dont use for loop in this array)
+  //MAPS: array [1..27] of String = ('GA_S1_001','GA_S1_002','GA_S1_003','GA_S1_004','GA_S1_005','GA_S1_006','GA_S1_007','GA_S1_008','GA_S1_009','GA_S1_010','GA_S1_011','GA_S1_012','GA_S1_013','GA_S1_014','GA_S1_015','GA_S1_016','GA_S1_017','GA_S1_018','GA_S1_019','GA_S1_020','GA_S1_021','GA_S1_022','GA_S1_023','GA_S1_024','GA_S1_025','GA_S1_026','GA_S1_027');
+  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
+                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
+                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
+//  MAPS_V: array [1..13] of Integer = (10, 10, 10, 20, 20, 20, 10, 10, 10, 10, 10, 10,
+//                                      120);
+  cnt_MAP_SIMULATIONS = 1;
+var
+  K,L: Integer;
+  Score: Double;
+begin
+  for K := Low(MAPS) to 1 do//High(MAPS) do
+  begin
+    fBestScore := -1e30;
+    fAverageScore := 0;
+    fWorstScore := 1e30;
+    fMap := MAPS[K];
+//    fIntParam := 0;
+//    fIntParam2 := 0;
+//    if K <= 12 then
+//      fIntParam := MAPS_V[K]
+//    else
+//      fIntParam2 := MAPS_V[K];
+    fSaveName := Format('%s__No_%.3d',[fMap, K]);
+    fSaveDir := Format('%s..\..\Saves\%s\',[ExtractFilePath(ParamStr(0)),fSaveName]);
+    fGameSim := True;
+
+    for L := 1 to cnt_MAP_SIMULATIONS do
+    begin
+      fRun := L;
+      CUSTOM_SEED_VALUE := Max(1,L);
+//      SetKaMSeed(Max(1,L));
+      gGameApp.NewSingleMap(Format('%s..\..\MapsMP\%s\%s.dat',[ExtractFilePath(ParamStr(0)),fMap,fMap]), fMap, -1, 0, mdNone, aitAdvanced);
+
+      
+      SimulateGame();
+//      Score := gGameApp.Game.GameTick;//Max(0,EvalGame());
+      
+      gGameApp.Game.Save(fSaveName);
+
+
+      fGameSim := False;
+      fDesyncFound := False;
+
+      gGameApp.NewReplay(Format('%s..\..\Saves\%s\%s.bas',[ExtractFilePath(ParamStr(0)),fSaveName,fSaveName]));
+      SimulateGame();
+      
+      if fDesyncFound then
+        KMMoveFolder(fSaveDir, Format('%s..\..\Desync\%s_%d',[ExtractFilePath(ParamStr(0)),fSaveName, fDesyncTick]))
+      else
+        KMDeleteFolder(fSaveDir);
+
+//      Score := gGameApp.Game.GameTick;//Max(0,EvalGame());
+//      fAverageScore := fAverageScore + Score;
+//      //gGameApp.Game.Save(Format('%s__No_%.3d__Score_%.6d',[MapName, K, Round(Score)]), Now);
+//      if (Score < fWorstScore) AND (cnt_MAP_SIMULATIONS > 1) then
+//      begin
+//        fWorstScore := Score;
+////        gGameApp.Game.Save(Format('W__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
+//      end;
+//      if (Score > fBestScore) AND (cnt_MAP_SIMULATIONS > 1) then
+//      begin
+//        fBestScore := Score;
+////        gGameApp.Game.Save(Format('B__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
+//      end;
+      OnProgress2(fMap + ' Run ' + IntToStr(L));
+    end;
+
+    
+    
+//    for L := 1 to cnt_MAP_SIMULATIONS do
+//    begin
+//      fRun := L;
+//      
+//      
+//    end;
+      
+    
+    fAverageScore := fAverageScore / cnt_MAP_SIMULATIONS;
+//    gGameApp.Game.Save(Format('AVRG_%s__%.6d',[MapName, Round(fAverageScore)]), Now);
+    gLog.SetDefaultMessageTypes;
+    gLog.AddNoTime(Format('%d;%d;%d', [{MAPS[K], }Round(fAverageScore), Round(fWorstScore), Round(fBestScore)]), False);
+    gLog.MessageTypes := [];
+  end;
+
+  gGameApp.StopGame(grSilent);
+end;
+
+
 
 
 { TKMRunnerStone }
@@ -1306,6 +1496,7 @@ end;
 
 
 initialization
+  RegisterRunner(TKMRunnerDesyncTest);
   RegisterRunner(TKMRunnerPushModes);
   RegisterRunner(TKMRunnerGA_TestParRun);
   RegisterRunner(TKMRunnerGA_HandLogistics);

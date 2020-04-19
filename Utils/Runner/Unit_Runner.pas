@@ -1,4 +1,4 @@
-﻿unit Unit_Runner;
+unit Unit_Runner;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -28,6 +28,8 @@ type
     fResults: TKMRunResults;
     fIntParam: Integer;
     fIntParam2: Integer;
+    fOnStopSimulation: TBooleanFuncSimple;
+    fOnTick: TBoolCardFuncSimple;
     procedure SetUp; virtual;
     procedure TearDown; virtual;
     procedure Execute(aRun: Integer); virtual; abstract;
@@ -208,26 +210,14 @@ begin
 
     gGameApp.Game.UpdateGame(nil);
     gGameApp.Render(False);
-    IntParam := -1;
-    TestParam := -1;
 
-    if (fIntParam <> 0) then
-    begin
-      IntParam := fIntParam;
-      TestParam := TKMHouseInn(gHands.HousesHitTest(24,32)).GetFoodCnt;
-    end
-    else
-    if (fIntParam2 <> 0) then
-    begin
-      IntParam := fIntParam2;
-      TestParam := TKMHouseBarracks(gHands.HousesHitTest(24,32)).GetTotalWaresCnt;
-    end;
-
-    if (IntParam <> -1) and (IntParam = TestParam) then
-    begin
-//      fResults.Value[fRun, 0] := gGameApp.Game.TickCount;
+    if Assigned(fOnTick)
+      and not fOnTick(I) then
       Exit;
-    end;
+
+    if Assigned(fOnStopSimulation)
+      and fOnStopSimulation then
+      Exit;
 
     fResults.Times[fRun, I] := TimeGet - fResults.Times[fRun, I];
 

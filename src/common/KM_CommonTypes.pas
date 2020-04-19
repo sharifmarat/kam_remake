@@ -60,6 +60,7 @@ type
   TBooleanStringFunc = function (aValue: String): Boolean of object;
   TBooleanFuncSimple = function: Boolean of object;
   TBoolIntFuncSimple = function (aValue: Integer): Boolean of object;
+  TBoolCardFuncSimple = function (aValue: Cardinal): Boolean of object;
   TObjectIntBoolEvent = procedure (Sender: TObject; aIntValue: Integer; aBoolValue: Boolean) of object;
 
   TKMAnimLoop = packed record

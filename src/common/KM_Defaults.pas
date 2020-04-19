@@ -113,6 +113,9 @@ var
   SKIP_RNG_CHECKS_FOR_SOME_GIC: Boolean = True; //Skip rng checks for Autosave and few other commands to have same AI city with predefined seed + mapconfig
   ALLOW_SELECT_ALLY_UNITS :Boolean = DEBUG_CFG; //Do we allow to select ally units or groups
   ALLOW_SELECT_ENEMIES    :Boolean = DEBUG_CFG; //Do we allow to select enemies houses/units/groups
+  REPLAY_AUTOSAVE         :Boolean = True;
+//  GAME_UPD_ONLY_ONE_TICK  :Boolean = True;
+  GAME_NO_TIMER           :Boolean = False;
   ALLOW_LOAD_UNSUP_VERSION_SAVE:
                            Boolean = True;  //Allow to try load saves / replay with unsupported version
   SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
@@ -127,7 +130,8 @@ var
   LOCAL_SERVER_LIST       :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
   SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
   LOG_GAME_TICK           :Boolean = False; //Log game tick
-  SAVE_RANDOM_CHECKS      :Boolean = True; //Save random checks data to separate file
+  SAVE_RANDOM_CHECKS      :Boolean = False; //Save random checks data to separate file
+  SAVE_GAME_TICK_CRC      :Boolean = False; //Save random checks data to separate file
   MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = True; //Show condition Inc/Dec buttons for citizen units in MapEd
   {Gameplay display}
   SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic

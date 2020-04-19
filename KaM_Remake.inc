@@ -48,4 +48,6 @@
 {$DEFINE LOAD_GAME_RES_ASYNC}
 
 //Enable some debug features
-{.$DEFINE DEBUG}
+{$DEFINE DEBUG}
+
+

@@ -64,13 +64,12 @@ type
     procedure LoadFromPathAndParseToDict(aPath: String);
     procedure Clear;
 
-    procedure UpdateState(aGameTick: Cardinal; aGameSaveCRC: Cardinal);
+    procedure UpdateState(aGameTick: Cardinal; aGameSaveCRC: Cardinal = 0);
   end;
 
 
 var
   gRandomCheckLogger: TKMRandomCheckLogger;
-
 
 
 implementation
@@ -223,7 +222,7 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal; aGameSaveCRC: Cardinal);
+procedure TKMRandomCheckLogger.UpdateState(aGameTick: Cardinal; aGameSaveCRC: Cardinal = 0);
 var
   tickStream: TKMemoryStreamBinary;
 begin
@@ -239,8 +238,12 @@ begin
   end;
 
   tickStream := TKMemoryStreamBinary.Create;
-  tickStream.Write(aGameSaveCRC);
-  SaveTickToStream(tickStream, fRngChecksInTick);
+
+  if SAVE_GAME_TICK_CRC then
+    tickStream.Write(aGameSaveCRC)
+  else
+    SaveTickToStream(tickStream, fRngChecksInTick);
+
   fTickStreamQueue.Enqueue(tickStream);
 
   fRngChecksInTick.Clear;
@@ -293,9 +296,11 @@ begin
     begin
       tickStream := TKMemoryStreamBinary.Create;
 
-      LoadStream.Read(gameSaveCRC);
-      LoadStream.Read(tickStreamSize);
-      tickStream.CopyFrom(LoadStream, tickStreamSize);
+      if SAVE_GAME_TICK_CRC then
+        LoadStream.Read(gameSaveCRC)
+      else
+        LoadStream.Read(tickStreamSize);
+        tickStream.CopyFrom(LoadStream, tickStreamSize);
 
       fTickStreamQueue.Enqueue(tickStream);
     end;
@@ -375,22 +380,26 @@ begin
   begin
     aLoadStream.Read(tickStreamSize); // load tick stream size and omit it, we don't use it here
 
-    aLoadStream.Read(gameSaveCRC);
-    aLoadStream.Read(Tick);
-    aLoadStream.Read(CountInTick);
-
-    for K := 0 to CountInTick - 1 do
+    if SAVE_GAME_TICK_CRC then
+      aLoadStream.Read(gameSaveCRC)
+    else
     begin
-      ClearLogRec;
-      aLoadStream.Read(LogRec.ValueType, SizeOf(LogRec.ValueType));
-      aLoadStream.Read(LogRec.CallerId);
+      aLoadStream.Read(Tick);
+      aLoadStream.Read(CountInTick);
 
-      case LogRec.ValueType of
-        lrtInt:     aLoadStream.Read(LogRec.ValueI);
-        lrtSingle:  aLoadStream.Read(LogRec.ValueS);
-        lrtExt:     aLoadStream.Read(LogRec.ValueE);
+      for K := 0 to CountInTick - 1 do
+      begin
+        ClearLogRec;
+        aLoadStream.Read(LogRec.ValueType, SizeOf(LogRec.ValueType));
+        aLoadStream.Read(LogRec.CallerId);
+
+        case LogRec.ValueType of
+          lrtInt:     aLoadStream.Read(LogRec.ValueI);
+          lrtSingle:  aLoadStream.Read(LogRec.ValueS);
+          lrtExt:     aLoadStream.Read(LogRec.ValueE);
+        end;
+        AddRecordToDict(Tick, LogRec);
       end;
-      AddRecordToDict(Tick, LogRec);
     end;
   end;
 end;

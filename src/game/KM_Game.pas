@@ -257,6 +257,8 @@ type
 
     procedure Save(const aSaveName: UnicodeString); overload;
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
+
+    function GetCurrectTickSaveCRC: Cardinal;
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
@@ -350,7 +352,7 @@ begin
   //pseudo GIP command, since we just want to initialize speed with default values
   SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
   fTimerGame.OnTimer := UpdateGame;
-  fTimerGame.Enabled := True;
+  fTimerGame.Enabled := not GAME_NO_TIMER;
 
   fGameSpeedChangeTime := TimeGet;
 
@@ -1768,6 +1770,20 @@ begin
 end;
 
 
+function TKMGame.GetCurrectTickSaveCRC: Cardinal;
+var
+  stream: TKMemoryStreamBinary;
+begin
+  stream := TKMemoryStreamBinary.Create;
+  try
+    SaveGameToStream(0, stream);
+    Result := Adler32CRC(stream);
+  finally
+    stream.Free;
+  end;
+end;
+
+
 procedure TKMGame.SetIsPaused(aValue: Boolean);
 begin
   fIsPaused := aValue;
@@ -2404,6 +2420,8 @@ var
 begin
   DoUpdateGame;
 
+//  if GAME_UPD_ONLY_ONE_TICK then Exit;
+  
   if CALC_EXPECTED_TICK then
   begin
     TicksBehindCnt := GetTicksBehindCnt;
@@ -2594,13 +2612,18 @@ begin
 
                             if DoSaveRandomChecks then
                             begin
-                              gPerfLogs.SectionEnter(psGameTickSave, fGameTick);
-                              stream := TKMemoryStreamBinary.Create;
-                              SaveGameToStream(0, stream);
-                              gameSaveCRC := Adler32CRC(stream);
-                              gRandomCheckLogger.UpdateState(fGameTick, gameSaveCRC);
-                              stream.Free;
-                              gPerfLogs.SectionLeave(psGameTickSave);
+                              if SAVE_GAME_TICK_CRC then
+                              begin
+                                gPerfLogs.SectionEnter(psGameTickSave, fGameTick);
+                                stream := TKMemoryStreamBinary.Create;
+                                SaveGameToStream(0, stream);
+                                gameSaveCRC := Adler32CRC(stream);
+                                gRandomCheckLogger.UpdateState(fGameTick, gameSaveCRC);
+                                stream.Free;
+                                gPerfLogs.SectionLeave(psGameTickSave);
+                              end
+                              else
+                                gRandomCheckLogger.UpdateState(fGameTick);
                             end;
                           finally
                             {$IFDEF PERFLOG}
@@ -2648,7 +2671,8 @@ begin
 
                           //Save replay to memory (to be able to load it later)
                           //Make replay save only after everything is updated (UpdateState)
-                          if gGameApp.GameSettings.ReplayAutosave
+                          if REPLAY_AUTOSAVE
+                            and gGameApp.GameSettings.ReplayAutosave
                             and (fSavedReplays.Count <= REPLAY_AUTOSAVE_MAX_SAVE_POINTS) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
                             and ((fGameTick = 1) //First tick
                               or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
@@ -2702,9 +2726,9 @@ end;
 
 function TKMGame.DoSaveRandomChecks: Boolean;
 begin
-  Result := gGameApp.GameSettings.DebugSaveRandomChecks
-            and SAVE_RANDOM_CHECKS
-            and (gRandomCheckLogger <> nil);
+  Result := SAVE_GAME_TICK_CRC
+            or (gGameApp.GameSettings.DebugSaveRandomChecks
+              and SAVE_RANDOM_CHECKS);
 end;
 
 
