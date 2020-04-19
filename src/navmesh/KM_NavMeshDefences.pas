@@ -433,7 +433,7 @@ procedure TBackwardFF.EvaluateDefence(const aIdx: Word);
   procedure AddDefence(aDefIdx1: Word);
   var
     SecondIndice: Boolean;
-    I,K, DefIdx2: Word;
+    I,K, DefIdx2: Integer;
   begin
     fBestDefLines.Lines[ fBestDefLines.Count ].Polygon := aDefIdx1;
     // For defensive position we dont need proper defensive lines only border polygon for position flood fill
@@ -457,7 +457,7 @@ procedure TBackwardFF.EvaluateDefence(const aIdx: Word);
       Inc(fBestDefLines.Count);
   end;
 var
-  I, QueueIdx: Word;
+  I, QueueIdx: Integer;
   Evaluation: Single;
 begin
   // Calculate evaluation of actual defensive position
@@ -542,7 +542,7 @@ procedure TBackwardFF.BackwardFlood(aOwners: TKMHandIDArray);
   // Prepare init polygons for backward flood fill (polygons near enemy)
   procedure CreateBorders();
   var
-    I, K, QueueIdx, NearbyIdx: Word;
+    I, K, QueueIdx, NearbyIdx: Integer;
   begin
     QueueIdx := fStartQueue;
     for I := 1 to fQueueCnt do // Enemy polygons are prepared in Queue

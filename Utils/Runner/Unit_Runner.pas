@@ -31,7 +31,7 @@ type
     procedure SetUp; virtual;
     procedure TearDown; virtual;
     procedure Execute(aRun: Integer); virtual; abstract;
-    procedure SimulateGame;
+    procedure SimulateGame(aStartTick: Word = 0; aEndTick: Integer = -1);
     procedure ProcessRunResults;
   public
     Duration: Integer;
@@ -140,7 +140,8 @@ begin
   SKIP_RENDER := (fRenderTarget = nil);
   SKIP_SOUND := True;
   SKIP_LOADING_CURSOR := True;
-  ExeDir := ExtractFilePath(ParamStr(0)) + '..\..\';
+  //ExeDir := ExtractFilePath(ParamStr(0)) + '..\..\';
+  ExeDir := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))))));
   //gLog := TKMLog.Create(ExtractFilePath(ParamStr(0)) + 'temp.log');
 
   fResults.TimesCount := Duration*60*10;
@@ -193,11 +194,15 @@ end;
 //end;
 
 
-procedure TKMRunnerCommon.SimulateGame;
+procedure TKMRunnerCommon.SimulateGame(aStartTick: Word = 0; aEndTick: Integer = -1);
 var
   I, IntParam, TestParam: Integer;
 begin
-  for I := 0 to fResults.TimesCount - 1 do
+  if (aEndTick = -1) then
+    aEndTick := fResults.TimesCount - 1
+  else
+    aEndTick := min(aEndTick,fResults.TimesCount - 1);
+  for I := aStartTick to aEndTick do
   begin
     fResults.Times[fRun, I] := TimeGet;
 

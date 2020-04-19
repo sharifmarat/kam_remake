@@ -137,7 +137,6 @@ procedure TKMCityManagement.AfterMissionInit();
 begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
-    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
     fSetup.EnableAdvancedAI(True);
   end;
 

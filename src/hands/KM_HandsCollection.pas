@@ -104,7 +104,7 @@ uses
   SysUtils,
   KromUtils,
 
-  KM_Game, KM_Terrain, KM_AIFields,
+  KM_Game, KM_Terrain, KM_AIFields, KM_AIParameters,
   KM_UnitsCollection, KM_MapEditorHistory,
   KM_Resource, KM_ResUnits, KM_ResTexts,
   KM_Log, KM_CommonUtils, KM_DevPerfLog, KM_DevPerfLogTypes;
@@ -974,6 +974,9 @@ procedure TKMHandsCollection.Save(SaveStream: TKMemoryStream; aMultiplayer: Bool
 var
   I: Integer;
 begin
+  {$IFDEF PARALLEL_RUNNER}
+    SaveGAParameters(SaveStream);
+  {$ENDIF}
   SaveStream.PlaceMarker('Players');
   SaveStream.Write(fCount);
   SaveStream.Write(fCheckGoals);
@@ -987,6 +990,9 @@ procedure TKMHandsCollection.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin
+  {$IFDEF PARALLEL_RUNNER}
+    LoadGAParameters(LoadStream);
+  {$ENDIF}
   LoadStream.CheckMarker('Players');
   LoadStream.Read(fCount);
   LoadStream.Read(fCheckGoals);
