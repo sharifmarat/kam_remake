@@ -134,7 +134,7 @@ begin
   if PARALLEL_RUN then
   begin
     BLOCK_FILE_WRITE := True;
-    BLOCK_SAVE := True;
+    BLOCK_SAVE := False; // Runner now supports parallel saves
   end;
 
   SKIP_RENDER := (fRenderTarget = nil);

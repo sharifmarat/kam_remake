@@ -522,7 +522,7 @@ type
       fAttackNew.AddGroups(aAG.GroupArr)
     else
     begin
-      CompaniesCnt := Max(1, Ceil(aAG.Count / Max(1,GA_ARMY_MaxGgroupsInCompany)));
+      CompaniesCnt := Max(1, Ceil(aAG.Count / Max(1,AI_Par[ARMY_MaxGgroupsInCompany])));
       HighAG := aAG.Count - 1;
       for I := 0 to CompaniesCnt - 1 do
       begin
@@ -537,7 +537,7 @@ type
             else if (aAG.GroupArr[K].GroupType = GT) then
             begin
               if (Length(Groups) <= GCnt) then
-                SetLength(Groups, GCnt + GA_ARMY_MaxGgroupsInCompany);
+                SetLength(Groups, GCnt + Round(AI_Par[ARMY_MaxGgroupsInCompany]));
               Groups[GCnt] := aAG.GroupArr[K];
               GCnt := GCnt + 1;
               aAG.GroupArr[K] := aAG.GroupArr[HighAG];

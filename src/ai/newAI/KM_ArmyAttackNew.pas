@@ -403,7 +403,7 @@ begin
         OR (fAttackTimeLimit < aTick) // Make sure that unit is not stuck
         then
       begin
-        fAttackTimeLimit := aTick + GA_ATTACK_SQUAD_ChangeTarget_Delay;
+        fAttackTimeLimit := aTick + Round(AI_Par[ATTACK_SQUAD_ChangeTarget_Delay]);
         fTargetChanged := False;
         Group.OrderAttackUnit(fTargetUnit, True);
       end;
@@ -416,7 +416,7 @@ begin
       Group.OrderWalk(fTargetAim, True, wtokAISquad, TargetPosition.Dir)
     else if (fGroup.GroupType <> gtRanged) OR fTargetChanged OR (fAttackTimeLimit < aTick) then
     begin
-      fAttackTimeLimit := aTick + GA_ATTACK_SQUAD_ChangeTarget_Delay;
+      fAttackTimeLimit := aTick + Round(AI_Par[ATTACK_SQUAD_ChangeTarget_Delay]);
       fTargetChanged := False;
       Group.OrderAttackHouse(fTargetHouse, True);
     end;
@@ -462,13 +462,13 @@ begin
   // Time limit (time limit MUST be always set by higher rank (platoon))
   if (not (aOrderAttack OR aOrderDestroy) AND (fWalkTimeLimit < aTick)) // Time limit is set to 0 in case that unit attack something
     // Target position is reached
-    OR (SQRDist < sqr(GA_ATTACK_SQUAD_TargetReached_Position))
+    OR (SQRDist < sqr(AI_Par[ATTACK_SQUAD_TargetReached_Position]))
     // Target unit is close
-    OR (aOrderAttack AND (SQRDist < sqr(GA_ATTACK_SQUAD_TargetReached_Unit)))
+    OR (aOrderAttack AND (SQRDist < sqr(AI_Par[ATTACK_SQUAD_TargetReached_Unit])))
     // Target house is close
-    OR (aOrderDestroy AND (SQRDist < sqr(GA_ATTACK_SQUAD_TargetReached_House)))
+    OR (aOrderDestroy AND (SQRDist < sqr(AI_Par[ATTACK_SQUAD_TargetReached_House])))
     // Archers should start fire as soon as possible
-    OR ((aOrderAttack OR aOrderDestroy) AND (fGroup.GroupType = gtRanged) AND (SQRDist < sqr(GA_ATTACK_SQUAD_TargetReached_RangedSquad))) then
+    OR ((aOrderAttack OR aOrderDestroy) AND (fGroup.GroupType = gtRanged) AND (SQRDist < sqr(AI_Par[ATTACK_SQUAD_TargetReached_RangedSquad]))) then
   begin
     fOnPlace := True;
     Exit;
@@ -498,7 +498,7 @@ begin
         I := I - 1;
       until (I < 0) OR ( (InitPolygon <> ClosestPolygon)
                          AND (tpWalk in gTerrain.Land[aTargetPosition.Y, aTargetPosition.X].Passability)
-                         AND (KMDistanceSqr(aActualPosition, aTargetPosition) > sqr(GA_ATTACK_SQUAD_MinWalkingDistance)));
+                         AND (KMDistanceSqr(aActualPosition, aTargetPosition) > sqr(AI_Par[ATTACK_SQUAD_MinWalkingDistance])));
 
       {$IFDEF DEBUG_NewAI}
       DEBUGPointPath := PointPath;

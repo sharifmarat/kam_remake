@@ -213,13 +213,13 @@ procedure TKMRunnerGA_Common.InitGAParameters();
 begin
   fSaveGame := False;
   fCrashDetectionMode := True;
-  f_SIM_SimulationTimeInMin      := 70;
+  f_SIM_SimulationTimeInMin      := 40;
   f_SIM_NumberOfMaps             := 3;
   f_SIM_PeaceTime                := 70;
   f_SIM_ThreadNumber             := 1;
   f_SIM_SimulationNumber         := 1;
   f_SIM_MapNamePrefix            := 'GA_S1_%.3d';
-  f_GA_POPULATION_CNT            := 1;
+  f_GA_POPULATION_CNT            := 4;
   f_GA_GENE_CNT                  := 5; // It will be overriden by class
   f_GA_START_TOURNAMENT_IndividualsCnt := 3;
   f_GA_FINAL_TOURNAMENT_IndividualsCnt := 4;
@@ -344,7 +344,7 @@ begin
     SimulateGame(0, 100);
     if fCrashDetectionMode then
       gGameApp.Game.Save(Format('GA_S%.2d_T%.2d_%s',[f_SIM_SimulationNumber, f_SIM_ThreadNumber, aSinglePLMapName]), Now);
-    SimulateGame(100, -1);
+    SimulateGame(101, -1);
     if fCrashDetectionMode then
       KMDeleteFolder(Format('%sSaves\GA_S%.2d_T%.2d_%s',[pathToSave,f_SIM_SimulationNumber, f_SIM_ThreadNumber, aSinglePLMapName]));
   except
