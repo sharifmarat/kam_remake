@@ -1994,24 +1994,6 @@ end;
 
 //Saves game by provided name
 procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
-  function WriteToFile(aText, aFilePath: String): Boolean;
-  var
-    dir: String;
-    fileWithParams: TextFile;
-  begin
-    Result := True;
-    dir := Format('%s\..\Tst',[ParamStr(0)]);
-    if not DirectoryExists(dir) then
-      CreateDir(dir);
-    AssignFile(fileWithParams, aFilePath);
-    try
-      Rewrite(fileWithParams);
-      Write(fileWithParams, aText);
-      CloseFile(fileWithParams);
-    except
-      Result := False;
-    end;
-  end;
 var
   fullPath, RngPath, mpLocalDataPath, NewSaveName: UnicodeString;
 begin
@@ -2043,12 +2025,10 @@ begin
       KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
     {$ENDIF}
 
-  WriteToFile('asd','fillPathKM_Test5.txt');
   //Save replay queue
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
-  WriteToFile(mpLocalDataPath,'fillPathKM_Test6.txt');
   if DoSaveRandomChecks then
     try
       RngPath := ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT);
@@ -2058,7 +2038,6 @@ begin
         gLog.AddTime('Error saving random checks to ' + RngPath); //Silently log error, don't propagate error further
     end;
 
-  WriteToFile(mpLocalDataPath,'fillPathKM_Test6.txt');
   gLog.AddTime('Saving game', True);
 end;
 
