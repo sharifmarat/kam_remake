@@ -690,6 +690,10 @@ begin
 
   Assert(Assigned(aOnSaveAdd));
 
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('SavesScanner', ThreadID);
+  {$ENDIF}
+
   fMultiplayerPath := aMultiplayerPath;
   fOnSaveAdd := aOnSaveAdd;
   fOnSaveAddDone := aOnSaveAddDone;

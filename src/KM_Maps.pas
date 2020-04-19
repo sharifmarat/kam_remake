@@ -1734,6 +1734,10 @@ begin
 
   Assert(Assigned(aOnMapAdd));
 
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('MapsScanner', ThreadID);
+  {$ENDIF}
+
   fOnMapAdd := aOnMapAdd;
   fOnMapAddDone := aOnMapAddDone;
   OnTerminate := aOnTerminate;
@@ -1759,6 +1763,11 @@ end;
 constructor TTMapsCacheUpdater.Create(aMapFolders: TKMapFolderSet);
 begin
   inherited Create(aMapFolders);
+
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('MapsCacheUpdater', ThreadID);
+  {$ENDIF}
+
   FreeOnTerminate := True;
 end;
 

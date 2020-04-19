@@ -289,8 +289,10 @@ begin
   //Force reload game resources, if they during loading process,
   //as that could cause an error in the loading thread
   //(did not figure it out why. Its easier just to reload game resources in that rare case)
-  if not gRes.Sprites.GameResLoadCompleted then
+  {$IFDEF LOAD_GAME_RES_ASYNC}
+  if fGameSettings.AsyncGameResLoad and not gRes.Sprites.GameResLoadCompleted then
     gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
+  {$ENDIF}
 
   {$IFDEF USE_MAD_EXCEPT}gExceptions.LoadTranslation;{$ENDIF}
 
@@ -307,8 +309,11 @@ end;
 //Preload game resources while in menu
 procedure TKMGameApp.PreloadGameResources;
 begin
+  {$IFDEF LOAD_GAME_RES_ASYNC}
   //Load game resources asychronously (by other thread)
-  gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
+  if fGameSettings.AsyncGameResLoad then
+    gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
+  {$ENDIF}
 end;
 
 

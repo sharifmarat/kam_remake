@@ -112,16 +112,20 @@ type
     fGenTerrainToTerKindLegacy: array of TKMGenTerrainInfo;
 
     fGameRXTypes: TStringList; //list of TRXType for game resources
+    {$IFDEF LOAD_GAME_RES_ASYNC}
     fGameResLoader: TTGameResourceLoader; // thread of game resource loader
     fGameResLoadCompleted: Boolean;
+    {$ENDIF}
 
     function GetRXFileName(aRX: TRXType): string;
     function GetSprites(aRT: TRXType): TKMSpritePack;
 
+    {$IFDEF LOAD_GAME_RES_ASYNC}
     procedure ManageResLoader;
     procedure StopResourceLoader;
     procedure GenerateTextureAtlasForGameRes(aRT: TRXType);
     function GetNextLoadRxTypeIndex(aRT: TRXType): Integer;
+    {$ENDIF}
   public
     constructor Create(aStepProgress: TEvent; aStepCaption: TUnicodeStringEvent);
     destructor Destroy; override;
@@ -139,7 +143,10 @@ type
     function GetGenTerrainInfoLegacy(aTerrain: Integer): TKMGenTerrainInfo;
 
     property Sprites[aRT: TRXType]: TKMSpritePack read GetSprites; default;
+
+    {$IFDEF LOAD_GAME_RES_ASYNC}
     property GameResLoadCompleted: Boolean read fGameResLoadCompleted;
+    {$ENDIF}
 
     //Used externally to access raw RGBA data (e.g. by ExportAnim)
     function LoadSprites(aRT: TRXType; aAlphaShadows: Boolean): Boolean;
@@ -193,6 +200,9 @@ var
 implementation
 uses
   KromUtils,
+  {$IFDEF LOAD_GAME_RES_ASYNC}
+  KM_GameApp,
+  {$ENDIF}
   KM_SoftShadows, KM_Resource, KM_ResUnits,
   KM_Log, KM_BinPacking, KM_CommonUtils, KM_Points;
 
@@ -1107,9 +1117,11 @@ var
   RT: TRXType;
 begin
   fGameRXTypes.Free;
+  {$IFDEF LOAD_GAME_RES_ASYNC}
   // Stop resource loader before Freeing SpritePack, as loader use fRXData and could get an exception there on game exit
   if fGameResLoader <> nil then
     StopResourceLoader;
+  {$ENDIF}
 
   for RT := Low(TRXType) to High(TRXType) do
     fSprites[RT].Free;
@@ -1127,6 +1139,7 @@ begin
 end;
 
 
+{$IFDEF LOAD_GAME_RES_ASYNC}
 //Get next game resource RXType to load. Returns -1 if its the last one
 function TKMResSprites.GetNextLoadRxTypeIndex(aRT: TRXType): Integer;
 var
@@ -1144,6 +1157,7 @@ begin
       end;
     end;
 end;
+{$ENDIF}
 
 
 //aLegacyGeneration - support for maps with rev <= r10745, where transitions were written as generated terrain Id
@@ -1372,6 +1386,7 @@ begin
 end;
 
 
+{$IFDEF LOAD_GAME_RES_ASYNC}
 procedure TKMResSprites.StopResourceLoader;
 begin
 //  fGameResLoader.DoTerminate := True;
@@ -1381,34 +1396,59 @@ begin
   if gLog <> nil then //could be nil in some Utils, f.e.
     gLog.MultithreadLogging := False;
 end;
+{$ENDIF}
 
 
 procedure TKMResSprites.LoadGameResources(aAlphaShadows: Boolean; aForceReload: Boolean = False);
+
+  procedure LoadAllResources;
+  var
+    RT: TRXType;
+  begin
+    for RT := Low(TRXType) to High(TRXType) do
+      if RXInfo[RT].Usage = ruGame then
+      begin
+        fStepCaption(gResTexts[RXInfo[RT].LoadingTextID]);
+        gLog.AddTime('Reading ' + RXInfo[RT].FileName + '.rx');
+        LoadSprites(RT, fAlphaShadows);
+        fSprites[RT].MakeGFX(fAlphaShadows);
+      end;
+  end;
+
 begin
   //Remember which version we load, so if it changes inbetween games we reload it
   fAlphaShadows := aAlphaShadows;
-
-  if fGameResLoader <> nil then
+  {$IFDEF LOAD_GAME_RES_ASYNC}
+  if gGameApp.GameSettings.AsyncGameResLoad then
   begin
-    if aForceReload then
-      StopResourceLoader
-    else begin
-      while not fGameResLoadCompleted do
-      begin
-        ManageResLoader; //check if we have some work to do in this thread
-        Sleep(5); // wait till load will be completed by fGameResLoader thread
+    if fGameResLoader <> nil then
+    begin
+      if aForceReload then
+        StopResourceLoader
+      else begin
+        while not fGameResLoadCompleted do
+        begin
+          ManageResLoader; //check if we have some work to do in this thread
+          Sleep(5); // wait till load will be completed by fGameResLoader thread
+        end;
+        Exit;
       end;
-      Exit;
     end;
-  end;
 
-  if aForceReload then
-  begin
-    fGameResLoadCompleted := False;
-    if gLog <> nil then //could be nil in some Utils, f.e.
-      gLog.MultithreadLogging := True;
-    fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
-  end;
+    if aForceReload then
+    begin
+      fGameResLoadCompleted := False;
+      if gLog <> nil then //could be nil in some Utils, f.e.
+        gLog.MultithreadLogging := True;
+      fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
+    end;
+  end
+  else
+    LoadAllResources;
+    
+  {$ELSE}
+  LoadAllResources;
+  {$ENDIF}
 end;
 
 
@@ -1420,7 +1460,7 @@ begin
     SetLength(gGFXPrepData[SAT], 0);
 end;
 
-
+{$IFDEF LOAD_GAME_RES_ASYNC}
 // Generate texture atlases from previosly prepared SpriteInfo data (loaded from RXX, Bin Packed, copied to atlas)
 // Preparation was done asynchroniously by TTGameResourceLoader thread
 // Texture generating task can be done only by main thread, as OpenGL does not work with multiple threads
@@ -1451,6 +1491,7 @@ begin
       end;
     end;
 end;
+{$ENDIF}
 
 
 //Try to load RXX first, then RX, then use Folder
@@ -1493,11 +1534,14 @@ begin
 end;
 
 
+{$IFDEF LOAD_GAME_RES_ASYNC}
 procedure TKMResSprites.ManageResLoader;
 var
   NextRXTypeI: Integer;
 begin
-  if (fGameResLoader <> nil) and fGameResLoader.LoadStepDone then
+  if gGameApp.GameSettings.AsyncGameResLoad
+    and (fGameResLoader <> nil)
+    and fGameResLoader.LoadStepDone then
   begin
     // Generate texture atlas from prepared data for game resources
     // OpenGL work mainly with 1 thread only, so we have to call gl functions only from main thread
@@ -1518,11 +1562,14 @@ begin
     end;
   end;
 end;
+{$ENDIF}
 
 
 procedure TKMResSprites.UpdateStateIdle;
 begin
+  {$IFDEF LOAD_GAME_RES_ASYNC}
   ManageResLoader;
+  {$ENDIF}
 end;
 
 
@@ -1540,6 +1587,11 @@ end;
 constructor TTGameResourceLoader.Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
 begin
   inherited Create(False);
+
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('GameResourceLoader', ThreadID);
+  {$ENDIF}
+
   fResSprites := aResSprites;
   fAlphaShadows := aAlphaShadows;
   RXType := aRxType;
