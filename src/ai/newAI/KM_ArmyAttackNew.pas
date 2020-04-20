@@ -80,6 +80,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
+    property CG: TObjectList<TKMCombatGroup> read fCombatGroups;
     property Count: Integer read GetCount;
     property CombatGroup[aGroup: TKMUnitGroup]: TKMCombatGroup read GetCombatGroup;
 
@@ -372,6 +373,7 @@ begin
   begin
     if (fTargetGroup <> nil) then
     begin
+      ChangeTargetUnit( fTargetGroup.GetAliveMember() );
       fTargetAim := GetTargetUnitPosition();
       // New target is out of range -> wait for supervisor to update target group to the closest
       if KMDistanceSqr(fTargetAim,Position) > Sqr(Group.GetAliveMember.GetFightMaxRange) then
@@ -767,8 +769,8 @@ begin
     CG := fCombatGroups[K];
 
     // Opacity
-    Op1 := $30;
-    Op2 := $50;
+    Op1 := $20;
+    Op2 := $30;
     if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = CG.Group) then
     begin
       //Col1 := gMySpectator.Hand.FlagColor;
