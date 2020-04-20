@@ -66,8 +66,8 @@ type
     property ErrorString: TKMScriptErrorMessage read fErrorString;
     property WarningsString: TKMScriptErrorMessage read fWarningsString;
 
-    procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
-    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString;
+    procedure HandleScriptError(aType: TKMScriptErrorType; const aError: TKMScriptErrorMessage);
+    procedure HandleScriptErrorString(aType: TKMScriptErrorType; const aErrorString: UnicodeString;
                                       const aDetailedErrorString: UnicodeString = '');
     function HasErrors: Boolean;
     function HasWarnings: Boolean;
@@ -1940,17 +1940,17 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
+procedure TKMScriptErrorHandler.HandleScriptError(aType: TKMScriptErrorType; const aError: TKMScriptErrorMessage);
 begin
   HandleScriptErrorString(aType, aError.GameMessage, aError.LogMessage);
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString;
+procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; const aErrorString: UnicodeString;
                                                         const aDetailedErrorString: UnicodeString = '');
 var
   fl: TextFile;
-  LogErrorMsg: UnicodeString;
+  LogErrorMsg, errorStr: UnicodeString;
 begin
   if BLOCK_FILE_WRITE then Exit;
 
@@ -1984,11 +1984,11 @@ begin
     CloseFile(fl);
   end;
 
-  aErrorString := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
+  errorStr := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
 
   //Display compile errors in-game
   if (aType in [seCompileError, sePreprocessorError]) and Assigned(fOnScriptError) then
-    fOnScriptError(aErrorString);
+    fOnScriptError(errorStr);
 
   //Serious runtime errors should be shown to the player
   if aType in [seException] then
@@ -1996,7 +1996,7 @@ begin
     //Only show the first message in-game to avoid spamming the player
     if not fHasErrorOccured and Assigned(fOnScriptError) then
       fOnScriptError('Error(s) have occured in the mission script. ' +
-                     'Please check the log file for further details. First error:|' + aErrorString);
+                     'Please check the log file for further details. First error:|' + errorStr);
     fHasErrorOccured := True;
   end;
 end;
