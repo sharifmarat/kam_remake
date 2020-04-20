@@ -122,7 +122,7 @@ type
     fCampaignDataTypeCode: AnsiString;
     fByteCode: AnsiString;
     fDebugByteCode: AnsiString;
-    fExec: TPSDebugExec;
+    fExec: TPSExec;
 
     fValidationIssues: TScriptValidatorResult;
     fErrorHandler: TKMScriptErrorHandler;
@@ -255,7 +255,11 @@ begin
   inherited Create;
 
   // Create an instance of the script executer
-  fExec := TPSDebugExec.Create;
+  if DEBUG_SCRIPTING_EXEC then
+    fExec := TPSDebugExec.Create //Use slow debug executor (about 3 times slower! never use on release version)
+  else
+    fExec := TPSExec.Create;
+
   fIDCache := TKMScriptingIdCache.Create;
 
   // Global object to get events
@@ -1515,8 +1519,8 @@ begin
       Exit;
     end;
 
-    if fExec.DebugEnabled then
-      fExec.LoadDebugData(fDebugByteCode);
+    if (fExec is TPSDebugExec) and TPSDebugExec(fExec).DebugEnabled then
+      TPSDebugExec(fExec).LoadDebugData(fDebugByteCode);
 
     //Check global variables in script to be only of supported type
     for I := 0 to fExec.GetVarCount - 1 do

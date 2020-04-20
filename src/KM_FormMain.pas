@@ -151,6 +151,8 @@ type
     Debug_UnlockCmpMissions: TMenuItem;
     N11: TMenuItem;
     mnExportRngChecks: TMenuItem;
+    cpScripting: TCategoryPanel;
+    chkDebugScripting: TCheckBox;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -761,7 +763,8 @@ procedure TFormMain.ControlsReset;
   begin
     Result := {$IFDEF WDC}
                  (aCtrl = chkSnowHouses)
-              or (aCtrl = chkLoadUnsupSaves);
+              or (aCtrl = chkLoadUnsupSaves)
+              or (aCtrl = chkDebugScripting);
               {$ENDIF}
               {$IFDEF FPC} False; {$ENDIF}
   end;
@@ -853,6 +856,7 @@ begin
   {$IFDEF WDC}
   chkSnowHouses.Checked := gGameApp.GameSettings.AllowSnowHouses; // Snow houses checkbox could be updated before game
   chkLoadUnsupSaves.Checked := ALLOW_LOAD_UNSUP_VERSION_SAVE;
+  chkDebugScripting.Checked := DEBUG_SCRIPTING_EXEC;
   {$ENDIF}
 
   if (gGame = nil) or not gGame.IsMapEditor then Exit;
@@ -942,6 +946,7 @@ begin
     {$IFDEF WDC} //one day update .lfm for lazarus...
     SHOW_JAM_METER := chkJamMeter.Checked;
     SHOW_TERRAIN_OVERLAYS := chkShowTerrainOverlays.Checked;
+    DEBUG_SCRIPTING_EXEC := chkDebugScripting.Checked;
     {$ENDIF}
 
     SKIP_RENDER := chkSkipRender.Checked;

@@ -83,10 +83,12 @@ object FormMain: TFormMain
     ParentDoubleBuffered = False
     TabOrder = 1
     object cpLogs: TCategoryPanel
-      Top = 384
+      Top = 408
       Height = 179
       Caption = 'Logs'
       TabOrder = 0
+      ExplicitTop = 434
+      ExplicitWidth = 241
       object chkLogCommands: TCheckBox
         Left = 120
         Top = 8
@@ -160,11 +162,13 @@ object FormMain: TFormMain
       end
     end
     object cpGraphicTweaks: TCategoryPanel
-      Top = 360
+      Top = 384
       Height = 24
       Caption = 'Graphic tweaks'
       Collapsed = True
       TabOrder = 1
+      ExplicitTop = 410
+      ExplicitWidth = 241
       ExpandedHeight = 124
       object Label1: TLabel
         Left = 101
@@ -262,11 +266,13 @@ object FormMain: TFormMain
       end
     end
     object cpUserInreface: TCategoryPanel
-      Top = 336
+      Top = 360
       Height = 24
       Caption = 'User Interface'
       Collapsed = True
       TabOrder = 2
+      ExplicitTop = 386
+      ExplicitWidth = 241
       ExpandedHeight = 72
       object chkUIControlsBounds: TCheckBox
         Left = 8
@@ -297,11 +303,13 @@ object FormMain: TFormMain
       end
     end
     object cpAI: TCategoryPanel
-      Top = 312
+      Top = 336
       Height = 24
       Caption = 'AI'
       Collapsed = True
       TabOrder = 3
+      ExplicitTop = 362
+      ExplicitWidth = 241
       ExpandedHeight = 166
       object Label5: TLabel
         Left = 106
@@ -461,11 +469,12 @@ object FormMain: TFormMain
       end
     end
     object cpPerfLogs: TCategoryPanel
-      Top = 288
+      Top = 312
       Height = 24
       Caption = 'Perf Logs'
       Collapsed = True
       TabOrder = 4
+      ExplicitTop = 338
       ExplicitWidth = 241
       ExpandedHeight = 660
     end
@@ -716,6 +725,28 @@ object FormMain: TFormMain
         Caption = 'Stop the game'
         TabOrder = 1
         OnClick = Button_StopClick
+      end
+    end
+    object cpScripting: TCategoryPanel
+      Top = 288
+      Height = 24
+      Caption = 'Scripting'
+      Collapsed = True
+      TabOrder = 8
+      ExpandedHeight = 50
+      object chkDebugScripting: TCheckBox
+        Left = 8
+        Top = 8
+        Width = 97
+        Height = 17
+        Hint = 
+          'Show exect error position (col/row/module), but significantly sl' +
+          'ow down script execution'
+        Caption = 'Debug Scripting '
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 0
+        OnClick = ControlsUpdate
       end
     end
   end
