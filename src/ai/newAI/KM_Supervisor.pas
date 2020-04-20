@@ -42,6 +42,7 @@ type
       TargetHouses: array[0..MAX_HANDS-1] of TKMHouseArray;
     end;
     TArmyAttackDebug = record
+      Groups: TKMUnitGroupArray;
       Threat: TThreatArray;
     end;
 
@@ -450,7 +451,9 @@ begin
           begin
             Inc(AttackingHouseCnt[IdxE],A[IdxA].Count);
             Dec(CntA);
+            G := A[IdxA];
             A[IdxA] := A[CntA];
+            A[CntA] := G;
             break;
           end;
     end;
@@ -469,15 +472,17 @@ begin
           CG := gHands[ A[IdxA].Owner ].AI.ArmyManagement.AttackNew.CombatGroup[ A[IdxA] ];
           CG.TargetGroup := TKMUnitWarrior(U).Group;
           Dec(CntA);
+          G := A[IdxA];
           A[IdxA] := A[CntA];
+          A[CntA] := G;
         end;
       end;
 
 
-    // Compute distances
+    // Compute distances (it is used for threat so compute it for all groups)
     SetLength(Dist, Length(A)*Length(E));
-    for IdxA := 0 to CntA - 1 do
-    for IdxE := 0 to CntE - 1 do
+    for IdxA := 0 to Length(A) - 1 do
+    for IdxE := 0 to Length(E) - 1 do
       Dist[ GetIdx(CntE,IdxA,IdxE) ] := KMDistanceSqr(A[IdxA].Position,E[IdxE].Position);
 
     // Compute threat
@@ -486,7 +491,7 @@ begin
     begin
       Threat[IdxE].Distance := 1E6;
       Threat[IdxE].DistRanged := 1E6;
-      for IdxA := Low(A) to High(A) do
+      for IdxA := 0 to Length(A) - 1 do // Over all groups
         if (A[IdxA].GroupType = gtRanged) AND (Dist[ GetIdx(CntE,IdxA,IdxE) ] < Threat[IdxE].DistRanged) then
           Threat[IdxE].DistRanged := Dist[ GetIdx(CntE,IdxA,IdxE) ]
         else if (Dist[ GetIdx(CntE,IdxA,IdxE) ] < Threat[IdxE].Distance) then
@@ -499,12 +504,19 @@ begin
         gtRanged:    Threat[IdxE].Risk := Threat[IdxE].WeightedCount * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainRanged];
         gtMounted:   Threat[IdxE].Risk := Threat[IdxE].WeightedCount * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted];
       end;
-      Threat[IdxE].Risk := Threat[IdxE].Risk + Threat[IdxE].DistRanged * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist] + Threat[IdxE].Distance * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist];
+      Threat[IdxE].Risk := + Threat[IdxE].Risk
+                           - Threat[IdxE].DistRanged * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist]
+                           - Threat[IdxE].Distance   * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist];
     end;
 
     {$IFDEF DEBUG_BattleLines}
+      SetLength(fArmyAttackDebug.Groups, Length(Threat));
       SetLength(fArmyAttackDebug.Threat, Length(Threat));
-      Move(Threat[0], fArmyAttackDebug.Threat[0], Length(Threat) * SizeOf(Threat[0]));
+      if (Length(Threat) > 0) then
+      begin
+        Move(E[0],      fArmyAttackDebug.Groups[0], Length(E) * SizeOf(E[0]));
+        Move(Threat[0], fArmyAttackDebug.Threat[0], Length(Threat) * SizeOf(Threat[0]));
+      end;
     {$ENDIF}
 
     // Set targets
@@ -546,14 +558,15 @@ begin
       with Threat[BestIdxE] do
       begin
         Overflow2 := 0;
-        while (WeightedCount > 0) AND (Min(DistRanged, Distance) < sqr(AI_Par[ATTACK_SUPERVISOR_EvalTarget_DistanceGroup])) AND (Overflow2 < 1000) do
+        while (WeightedCount > 0) AND (Min(DistRanged, Distance) < sqr(AI_Par[ATTACK_SUPERVISOR_EvalTarget_DistanceGroup])) AND (Overflow2 < 100) do
         begin
           Inc(Overflow2);
           BestOpportunity := NO_THREAT;
           for IdxA := 0 to CntA - 1 do
             if (A[IdxA] <> nil) then
             begin
-              Opportunity := OportunityArr[ A[IdxA].GroupType, E[BestIdxE].GroupType ] * AI_Par[ATTACK_SUPERVISOR_EvalTarget_OportunityGain] - Dist[ GetIdx(CntE,IdxA,BestIdxE) ] * AI_Par[ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain];
+              Opportunity := + OportunityArr[ A[IdxA].GroupType, E[BestIdxE].GroupType ] * AI_Par[ATTACK_SUPERVISOR_EvalTarget_OportunityGain]
+                             - Dist[ GetIdx(CntE,IdxA,BestIdxE) ]                        * AI_Par[ATTACK_SUPERVISOR_EvalTarget_OportunityDistGain];
               if (BestOpportunity < Opportunity) then
               begin
                 BestIdxA := IdxA;
@@ -578,8 +591,6 @@ begin
         Risk := NO_THREAT;
       end;
     end;
-
-
   end;
 
   for IdxE := 0 to Length(H) - 1 do
@@ -1208,7 +1219,7 @@ begin
   Cnt := 0;
   for PL := 0 to gHands.Count-1 do
     Cnt := Cnt + Byte(gHands[PL].Enabled);
-  Result := Format('Supervisor (FFA = %d; Teams = %d); Players = %d',[Byte(fFFA), Length(fAlli2PL), Cnt]);
+  Result := Format('Supervisor (FFA = %d; T = %d; PL = %d)',[Byte(fFFA), Length(fAlli2PL), Cnt]);
   // Diplomacy + combat status
   for Team := Low(fAlli2PL) to High(fAlli2PL) do
   begin
@@ -1230,6 +1241,16 @@ begin
         end;
     end;
   end;
+  {$IFDEF DEBUG_BattleLines}
+    if (gMySpectator.Selected is TKMUnitGroup) then
+      for K := 0 to Length(fArmyAttackDebug.Groups) - 1 do
+        if (TKMUnitGroup(gMySpectator.Selected) = fArmyAttackDebug.Groups[K]) then
+          with fArmyAttackDebug.Threat[K] do
+          begin
+            Result := Format('%s||Selected unit:|  Distance ranged = %f;|  Distance = %f;|  Risk = %f;|  Weighted count = %f;',[Result, DistRanged, Distance, Risk, WeightedCount]);
+            break;
+          end;
+  {$ENDIF}
 end;
 
 
@@ -1243,9 +1264,11 @@ const
   COLOR_BLUE = $FF0000;
 {$IFDEF DEBUG_BattleLines}
   var
-    K, L, PL: Integer;
+    K, L, M, PL: Integer;
+    MaxThreat,MinThreat: Single;
     Owner: TKMHandID;
     G: TKMUnitGroup;
+    CG: TKMCombatGroup;
 {$ENDIF}
 begin
   //EvaluateArmies();
@@ -1255,18 +1278,55 @@ begin
     Owner := gMySpectator.HandID;
     if (Owner = PLAYER_NONE) then
       Exit;
-    with fCombatStatusDebug do
+
+    MaxThreat := -1E10;
+    MinThreat := +1E10;
+    for K := 0 to Length(fArmyAttackDebug.Threat) - 1 do
     begin
-      for K := Low(TargetGroups[Owner]) to High(TargetGroups[Owner]) do
-        for PL := 0 to gHands.Count - 1 do
-          if (gHands[Owner].Alliances[PL] = atEnemy) then
-            for L := 0 to gHands[PL].UnitGroups.Count - 1 do
-              if (TargetGroups[Owner,K] = gHands[PL].UnitGroups.Groups[L]) then
-              begin
-                G := gHands[PL].UnitGroups.Groups[L];
-                gRenderAux.CircleOnTerrain(G.Position.X, G.Position.Y, 2, $09FFFFFF, $BBFFFFFF);
-                break;
-              end;
+      MaxThreat := Max(MaxThreat,fArmyAttackDebug.Threat[K].Risk);
+      MinThreat := Min(MinThreat,fArmyAttackDebug.Threat[K].Risk);
+    end;
+    with fCombatStatusDebug do
+      if (MaxThreat <> 0) then
+        for K := Low(TargetGroups[Owner]) to High(TargetGroups[Owner]) do
+          for PL := 0 to gHands.Count - 1 do
+            if (gHands[Owner].Alliances[PL] = atEnemy) then
+              for L := 0 to gHands[PL].UnitGroups.Count - 1 do
+                if (TargetGroups[Owner,K] = gHands[PL].UnitGroups.Groups[L]) then
+                  for M := 0 to Length(fArmyAttackDebug.Groups) - 1 do
+                    if (TargetGroups[Owner,K] = fArmyAttackDebug.Groups[M]) then
+                    begin
+                      G := TargetGroups[Owner,K];
+                      gRenderAux.CircleOnTerrain(G.Position.X, G.Position.Y, 0.5, (Round(255 - (fArmyAttackDebug.Threat[M].Risk-MinThreat)/(MaxThreat-MinThreat)*220) shl 24) OR COLOR_RED, $11FFFFFF);
+                      break;
+                    end;
+                {
+    TCombatStatusDebug = record
+      TargetGroups: array[0..MAX_HANDS-1] of TKMUnitGroupArray;
+      TargetHouses: array[0..MAX_HANDS-1] of TKMHouseArray;
+    end;
+    TArmyAttackDebug = record
+      Threat: TThreatArray;
+        TThreatArray = array of record
+    DistRanged, Distance, Risk, WeightedCount: Single;
+  end;
+    end;
+    }
+
+    //fCombatStatusDebug: TCombatStatusDebug;
+    //fArmyAttackDebug: TArmyAttackDebug;
+
+    if (gMySpectator.Selected is TKMUnitGroup) then
+    begin
+      G := TKMUnitGroup(gMySpectator.Selected);
+      for PL := 0 to gHands.Count - 1 do
+        if (gHands[G.Owner].Alliances[PL] = atEnemy) AND gHands[PL].AI.Setup.NewAI then
+          for K := 0 to gHands[PL].AI.ArmyManagement.AttackNew.Count - 1 do
+          begin
+            CG := gHands[PL].AI.ArmyManagement.AttackNew.CG[K];
+            if (G = CG.TargetGroup) then
+              gRenderAux.Line(CG.Position.X, CG.Position.Y, G.Position.X, G.Position.Y, $FF000000 OR COLOR_RED);
+          end;
     end;
   {$ENDIF}
 end;

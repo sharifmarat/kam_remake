@@ -496,7 +496,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
           end;
         end;
 
-        MinMark := MinMark - 3;
+        MinMark := MinMark - 1;
       end;
     end;
     SetLength(Result, Cnt);
@@ -546,7 +546,7 @@ begin
         begin
           Idx := BattleLines.Lines[L].Polygons[M];
           LinePoint := gAIFields.NavMesh.Polygons[ Idx ].CenterPoint;
-          Price := KMDistanceSqr(LinePoint, GroupPoint) - fInflInfo[Idx].Mark * 32;
+          Price := KMDistanceSqr(LinePoint, GroupPoint) - fInflInfo[Idx].Mark * 32;  // Price := KMDistanceSqr(LinePoint, GroupPoint) - (High(Word) - fInflInfo[Idx].Mark) * 32;
           if (Price < BestPrice) then
           begin
             BestPrice := Price;
@@ -1037,7 +1037,7 @@ begin
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
       with fBestBattleLines.Lines[K] do
       begin
-        DrawPolygon(Polygons[L], -2, 25, COLOR_MIX[K mod Length(COLOR_MIX)], IntToStr(High(Word) - fInflInfo[ Polygons[L] ].Mark));
+        DrawPolygon(Polygons[L], -2, 50, COLOR_MIX[K mod Length(COLOR_MIX)], IntToStr(High(Word) - fInflInfo[ Polygons[L] ].Mark));
         //DrawPolygon(Polygons[L], -1, 25, COLOR_MIX[K mod Length(COLOR_MIX)], IntToStr(High(Word) - fQueueArray[ Polygons[L] ].Distance));
       end;
   //}
