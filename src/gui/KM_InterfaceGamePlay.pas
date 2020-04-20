@@ -1105,7 +1105,7 @@ begin
     Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 30, 185, 20, fntMetal, '', bsGame, False, 0.5);
     Dropbox_ReplayFOW.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
     Dropbox_ReplayFOW.OnChange := ReplayClick;
-    Dropbox_ReplayFOW.DropCount := MAX_LOBBY_PLAYERS;
+    Dropbox_ReplayFOW.DropCount := MAX_HANDS; //There could be only AI hands as well, not only Lobby players
     Dropbox_ReplayFOW.List.AutoFocusable := False;
     Dropbox_ReplayFOW.List.OnKeyUp := Replay_ListKeyUp;
     Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
