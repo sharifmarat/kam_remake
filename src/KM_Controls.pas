@@ -590,12 +590,19 @@ type
 
 
   TKMAllowedChars = (
-    acDigits, //Only 0..9 digits, for numeric input
-    acHex,    //Only 0..9 A..F a..f, for input hex values (colors)
-    acANSI7,  //#33..#123,#125,#126 - only basic latin chars and symbols for user nikname, except |
+    acDigits,   //Only 0..9 digits, for numeric input
+    acHex,      //Only 0..9 A..F a..f, for input hex values (colors)
+    acANSI7,    //#33..#123,#125,#126 - only basic latin chars and symbols for user nikname, except |
+    acLatin,    //#65..#90, #97..#122
     acFileName, //Exclude symbols that can't be used in filenames
-    acText,  //Anything is allowed except for eol symbol
-    acAll    //Anything is allowed
+    acText,     //Anything is allowed except for eol symbol
+    acAll       //Anything is allowed
+  );
+
+  TKMTextCase = (
+    tcNone,
+    tcLower,
+    tcUpper
   );
 
 
@@ -646,6 +653,7 @@ type
     fSelectionStart: Integer;
     fSelectionEnd: Integer;
     fSelectionInitialCursorPos: Integer;
+    fTextCase: TKMTextCase;
 
     procedure SetCursorPos(aPos: Integer);
     function GetCursorPosAt(X: Integer): Integer;
@@ -655,6 +663,7 @@ type
     procedure SetSelectionStart(aValue: Integer);
     procedure SetSelectionEnd(aValue: Integer);
     procedure DeleteSelectedText;
+    procedure SetTextCase(aTextCase: TKMTextCase);
   protected
     fText: UnicodeString;
     procedure ControlMouseDown(Sender: TObject; X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -677,6 +686,7 @@ type
     property Selectable: Boolean read fSelectable write fSelectable;
     property SelectionStart: Integer read fSelectionStart write SetSelectionStart;
     property SelectionEnd: Integer read fSelectionEnd write SetSelectionEnd;
+    property TextCase: TKMTextCase read fTextCase write SetTextCase;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -3031,15 +3041,17 @@ end;
 // Check if specified aChar is allowed for specified aAllowedChars type
 function IsCharAllowed(aChar: WideChar; aAllowedChars: TKMAllowedChars): Boolean;
 const
-  HexDigits:        TSetOfAnsiChar = [#48..#57,#65..#70,#97..#102]; //0..9 A..F a..f
-  Ansi7Chars:       TSetOfAnsiChar = [#32..#123,#125..#126]; //except | character
+  HexDigits:        TSetOfAnsiChar = [#48..#57 ,#65..#70, #97..#102]; //0..9 A..F a..f
+  Ansi7Chars:       TSetOfAnsiChar = [#32..#123, #125..#126]; //except | character   
+  LatinChars:       TSetOfAnsiChar = [#65..#90, #97..#122]; //except | character
   NonFileChars:     TSetOfAnsiChar = [#0 .. #31, '<', '>', #176, '|', '"', '\', '/', ':', '*', '?'];
   NonTextCharsWEOL: TSetOfAnsiChar = [#0 .. #31, #176, '|']; //° has negative width so acts like a backspace in KaM fonts
   NonTextChars:     TSetOfAnsiChar = [#0 .. #31, #176]; //° has negative width so acts like a backspace in KaM fonts
 begin
   Result := not ((aAllowedChars = acDigits)   and not InRange(Ord(aChar), 48, 57)
               or (aAllowedChars = acHex)      and not CharInSet(aChar, HexDigits)
-              or (aAllowedChars = acANSI7)    and not CharInSet(aChar, Ansi7Chars)
+              or (aAllowedChars = acANSI7)    and not CharInSet(aChar, Ansi7Chars)  
+              or (aAllowedChars = acLatin)    and not CharInSet(aChar, LatinChars)
               or (aAllowedChars = acFileName) and CharInSet(aChar, NonFileChars)
               or (aAllowedChars = acText)     and CharInSet(aChar, NonTextCharsWEOL)
               or (aAllowedChars = acAll)      and CharInSet(aChar, NonTextChars));
@@ -3850,6 +3862,16 @@ begin
     fSelectionEnd := EnsureRange(aValue, 0, Length(fText));
 end;
 
+procedure TKMSelectableEdit.SetTextCase(aTextCase: TKMTextCase);
+begin
+  if fTextCase <> aTextCase then
+    case aTextCase of
+      tcLower: fText := fText.ToLower;
+      tcUpper: fText := fText.ToUpper;
+    end;
+    
+  fTextCase := aTextCase;
+end;
 
 procedure TKMSelectableEdit.SetSelectionStart(aValue: Integer);
 begin
@@ -4002,8 +4024,12 @@ begin
     DeleteSelectedText
   else
     if Length(fText) >= GetMaxLength then Exit;
-
-  Insert(Key, fText, CursorPos + 1);
+  
+  Insert(Key, fText, CursorPos + 1);  
+  case fTextCase of
+    tcLower: fText := fText.ToLower;
+    tcUpper: fText := fText.ToUpper;
+  end;
   CursorPos := CursorPos + 1; //Before ValidateText so it moves the cursor back if the new char was invalid
   ValidateText;
 end;
@@ -8106,7 +8132,7 @@ begin
 
     //Paint column
     if Rows[aIndex].Cells[I].Pic.ID <> 0 then
-      TKMRenderUI.WritePicture(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth, Y + 1,
+      TKMRenderUI.WritePicture(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth + Rows[aIndex].Cells[I].Pic.OffsetX, Y + 1 + Rows[aIndex].Cells[I].Pic.OffsetY,
                              AvailWidth, fItemHeight, [],
                              Rows[aIndex].Cells[I].Pic.RX,
                              Rows[aIndex].Cells[I].Pic.ID,
