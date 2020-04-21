@@ -267,7 +267,7 @@ function TKMSupervisor.UpdateCombatStatus(aTeam: Byte; var E: TKMUnitGroupArray;
 const
   SQR_DANGEROUS_DISTANCE = 15*15;
   SQR_OFFENSIVE_DISTANCE = 30*30;
-  INFLUENCE_THRESHOLD = 1;
+  INFLUENCE_THRESHOLD = 150;
   ARMY_IN_HOSTILE_CITY = 200;
   TARGET_HOUSE_IN_INFLUENCE = 150;
 var
@@ -505,8 +505,8 @@ begin
         gtMounted:   Threat[IdxE].Risk := Threat[IdxE].WeightedCount * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainMounted];
       end;
       Threat[IdxE].Risk := + Threat[IdxE].Risk
-                           - Threat[IdxE].DistRanged * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist]
-                           - Threat[IdxE].Distance   * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist];
+                           - Threat[IdxE].DistRanged * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainRangDist] * Byte(Threat[IdxE].DistRanged <> 1E6)
+                           - Threat[IdxE].Distance   * AI_Par[ATTACK_SUPERVISOR_EvalTarget_ThreatGainDist]  * Byte(Threat[IdxE].Distance <> 1E6);
     end;
 
     {$IFDEF DEBUG_BattleLines}
@@ -1264,6 +1264,7 @@ const
   COLOR_BLUE = $FF0000;
 {$IFDEF DEBUG_BattleLines}
   var
+    InRange: Boolean;
     K, L, M, PL: Integer;
     MaxThreat,MinThreat: Single;
     Owner: TKMHandID;
@@ -1293,13 +1294,20 @@ begin
             if (gHands[Owner].Alliances[PL] = atEnemy) then
               for L := 0 to gHands[PL].UnitGroups.Count - 1 do
                 if (TargetGroups[Owner,K] = gHands[PL].UnitGroups.Groups[L]) then
+                begin
+                  InRange := False;
                   for M := 0 to Length(fArmyAttackDebug.Groups) - 1 do
                     if (TargetGroups[Owner,K] = fArmyAttackDebug.Groups[M]) then
                     begin
                       G := TargetGroups[Owner,K];
                       gRenderAux.CircleOnTerrain(G.Position.X, G.Position.Y, 0.5, (Round(255 - (fArmyAttackDebug.Threat[M].Risk-MinThreat)/(MaxThreat-MinThreat)*220) shl 24) OR COLOR_RED, $11FFFFFF);
+                      InRange := True;
                       break;
                     end;
+                  if not InRange then
+                    with fCombatStatusDebug.TargetGroups[Owner,K].Position do
+                      gRenderAux.CircleOnTerrain(X, Y, 1, $10FFFFFF, $FFFFFFFF);
+                end;
                 {
     TCombatStatusDebug = record
       TargetGroups: array[0..MAX_HANDS-1] of TKMUnitGroupArray;
