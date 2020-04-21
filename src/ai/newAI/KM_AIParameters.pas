@@ -427,7 +427,7 @@ const
       -30.00, // PLANNER_SnapCrit_HouseOrRoad
       -30.00, // PLANNER_SnapCrit_NoBuild
         0.00, // PLANNER_SnapCrit_ObstacleInEntrance
-        0.00, // PLANNER_SnapCrit_Road
+       25.00, // PLANNER_SnapCrit_Road
         0.00, // PLANNER_SnapCrit_RoadInEntrance
        20.00, // PREDICTOR_SecondSchool_MinRequiredUnits
         0.50, // PREDICTOR_WareNeedPerAWorker_Stone
