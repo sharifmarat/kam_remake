@@ -596,7 +596,7 @@ end;
 
 procedure TFormMain.Export_CustomClick(Sender: TObject);
 begin
-  gRes.Sprites.ExportToPNG(rxCustom);
+  gRes.Sprites.ExportToPNG(rxCampaign);
 end;
 
 procedure TFormMain.Export_TilesetClick(Sender: TObject);

@@ -475,7 +475,6 @@ object FormMain: TFormMain
       Collapsed = True
       TabOrder = 4
       ExplicitTop = 338
-      ExplicitWidth = 241
       ExpandedHeight = 660
     end
     object cpDebugRender: TCategoryPanel
@@ -485,7 +484,6 @@ object FormMain: TFormMain
       DoubleBuffered = True
       ParentDoubleBuffered = False
       TabOrder = 5
-      ExplicitWidth = 241
       object Label2: TLabel
         Left = 100
         Top = 4
@@ -657,7 +655,6 @@ object FormMain: TFormMain
       Caption = 'Game additional'
       Collapsed = True
       TabOrder = 6
-      ExplicitWidth = 241
       ExpandedHeight = 136
       object chkLoadUnsupSaves: TCheckBox
         Left = 12
@@ -706,7 +703,6 @@ object FormMain: TFormMain
       Height = 49
       Caption = 'Game '
       TabOrder = 7
-      ExplicitWidth = 241
       object chkSuperSpeed: TCheckBox
         Left = 8
         Top = 5
