@@ -423,9 +423,9 @@ const
         0.00, // PLANNER_FOREST_PlaceWoodcutter_DistFromForest
       200.00, // PLANNER_ObstaclesInHousePlan_Road
       500.00, // PLANNER_ObstaclesInHousePlan_Tree
-        0.00, // PLANNER_SnapCrit_Field
-        0.00, // PLANNER_SnapCrit_HouseOrRoad
-        0.00, // PLANNER_SnapCrit_NoBuild
+      -20.00, // PLANNER_SnapCrit_Field
+      -30.00, // PLANNER_SnapCrit_HouseOrRoad
+      -30.00, // PLANNER_SnapCrit_NoBuild
         0.00, // PLANNER_SnapCrit_ObstacleInEntrance
         0.00, // PLANNER_SnapCrit_Road
         0.00, // PLANNER_SnapCrit_RoadInEntrance
