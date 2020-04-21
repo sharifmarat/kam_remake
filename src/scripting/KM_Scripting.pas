@@ -66,8 +66,8 @@ type
     property ErrorString: TKMScriptErrorMessage read fErrorString;
     property WarningsString: TKMScriptErrorMessage read fWarningsString;
 
-    procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
-    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString;
+    procedure HandleScriptError(aType: TKMScriptErrorType; const aError: TKMScriptErrorMessage);
+    procedure HandleScriptErrorString(aType: TKMScriptErrorType; const aErrorString: UnicodeString;
                                       const aDetailedErrorString: UnicodeString = '');
     function HasErrors: Boolean;
     function HasWarnings: Boolean;
@@ -122,7 +122,7 @@ type
     fCampaignDataTypeCode: AnsiString;
     fByteCode: AnsiString;
     fDebugByteCode: AnsiString;
-    fExec: TPSDebugExec;
+    fExec: TPSExec;
 
     fValidationIssues: TScriptValidatorResult;
     fErrorHandler: TKMScriptErrorHandler;
@@ -255,7 +255,11 @@ begin
   inherited Create;
 
   // Create an instance of the script executer
-  fExec := TPSDebugExec.Create;
+  if DEBUG_SCRIPTING_EXEC then
+    fExec := TPSDebugExec.Create //Use slow debug executor (about 3 times slower! never use on release version)
+  else
+    fExec := TPSExec.Create;
+
   fIDCache := TKMScriptingIdCache.Create;
 
   // Global object to get events
@@ -1515,8 +1519,8 @@ begin
       Exit;
     end;
 
-    if fExec.DebugEnabled then
-      fExec.LoadDebugData(fDebugByteCode);
+    if (fExec is TPSDebugExec) and TPSDebugExec(fExec).DebugEnabled then
+      TPSDebugExec(fExec).LoadDebugData(fDebugByteCode);
 
     //Check global variables in script to be only of supported type
     for I := 0 to fExec.GetVarCount - 1 do
@@ -1940,17 +1944,17 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
+procedure TKMScriptErrorHandler.HandleScriptError(aType: TKMScriptErrorType; const aError: TKMScriptErrorMessage);
 begin
   HandleScriptErrorString(aType, aError.GameMessage, aError.LogMessage);
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString;
+procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; const aErrorString: UnicodeString;
                                                         const aDetailedErrorString: UnicodeString = '');
 var
   fl: TextFile;
-  LogErrorMsg: UnicodeString;
+  LogErrorMsg, errorStr: UnicodeString;
 begin
   if BLOCK_FILE_WRITE then Exit;
 
@@ -1984,11 +1988,11 @@ begin
     CloseFile(fl);
   end;
 
-  aErrorString := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
+  errorStr := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
 
   //Display compile errors in-game
   if (aType in [seCompileError, sePreprocessorError]) and Assigned(fOnScriptError) then
-    fOnScriptError(aErrorString);
+    fOnScriptError(errorStr);
 
   //Serious runtime errors should be shown to the player
   if aType in [seException] then
@@ -1996,7 +2000,7 @@ begin
     //Only show the first message in-game to avoid spamming the player
     if not fHasErrorOccured and Assigned(fOnScriptError) then
       fOnScriptError('Error(s) have occured in the mission script. ' +
-                     'Please check the log file for further details. First error:|' + aErrorString);
+                     'Please check the log file for further details. First error:|' + errorStr);
     fHasErrorOccured := True;
   end;
 end;

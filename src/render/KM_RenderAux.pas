@@ -412,6 +412,8 @@ begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
     begin
+      if gTerrain.Land[I,J].JamMeter = 0 then Continue;
+
       Limit := (gTerrain.Land[I,J].JamMeter + JAM_DRAW_STEP - 1) div JAM_DRAW_STEP;
       for K := 0 to Limit - 1 do
         Quad(J, I, $20FFFFFF and icOrange);

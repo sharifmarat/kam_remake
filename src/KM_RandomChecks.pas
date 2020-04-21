@@ -140,7 +140,7 @@ procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Integ
 var
   rec: TKMRngLogRecord;
 begin
-  if Self = nil then Exit;
+  if (Self = nil) or not fEnabled then Exit;
 
   rec.ValueType := lrtInt;
   rec.ValueI := aValue;
@@ -153,7 +153,7 @@ procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Singl
 var
   rec: TKMRngLogRecord;
 begin
-  if Self = nil then Exit;
+  if (Self = nil) or not fEnabled then Exit;
 
   rec.ValueType := lrtSingle;
   rec.ValueS := aValue;
@@ -166,7 +166,7 @@ procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Exten
 var
   rec: TKMRngLogRecord;
 begin
-  if Self = nil then Exit;
+  if (Self = nil) or not fEnabled then Exit;
 
   rec.ValueType := lrtExt;
   rec.ValueE := aValue;
@@ -180,7 +180,7 @@ procedure TKMRandomCheckLogger.AddRecordToDict(aTick: Cardinal; const aRec: TKMR
 var
   list: TList<TKMRngLogRecord>;
 begin
-  if not fEnabled then Exit;
+  if (Self = nil) or not fEnabled then Exit;
 
   if not fRngLog.TryGetValue(aTick, list) then
   begin
@@ -195,7 +195,7 @@ end;
 
 procedure TKMRandomCheckLogger.AddRecordToList(aTick: Cardinal; const aRec: TKMRngLogRecord);
 begin
-  if not fEnabled then Exit;
+  if (Self = nil) or not fEnabled then Exit;
 
   fRngChecksInTick.Add(aRec);
 end;
@@ -206,6 +206,8 @@ var
   I: Integer;
   RngValueType: TKMLogRngType;
 begin
+  if (Self = nil) or not fEnabled then Exit;
+
   aStream.Write(fGameTick); //Tick
   aStream.Write(Integer(aRngChecksInTick.Count)); //Number of log records in tick
 //  Inc(Cnt, fRngChecksInTick.Count);
@@ -254,6 +256,8 @@ var
   CallerId: Byte;
   CallerName: AnsiString;
 begin
+  if (Self = nil) then Exit;
+
   aLoadStream.CheckMarker('CallersTable');
   aLoadStream.Read(Count);
   for I := 0 to Count - 1 do
@@ -407,8 +411,7 @@ var
   CallerPair: TPair<Byte, AnsiString>;
   enumerator: TEnumerator<TKMemoryStreamBinary>;
 begin
-  if (Self = nil) or not SAVE_RANDOM_CHECKS then
-    Exit;
+  if (Self = nil) then Exit;
 
   SaveStream := TKMemoryStreamBinary.Create;
 
