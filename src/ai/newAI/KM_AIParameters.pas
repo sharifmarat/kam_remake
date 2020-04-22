@@ -180,9 +180,9 @@ const
 
 AI_Par: array[TAIPar] of Single = (
           7.0000000, // ARMY_MaxGgroupsInCompany
-         10.0505981, // ARMY_PATHFINDING_AvoidEdges
+          3.0505981, // ARMY_PATHFINDING_AvoidEdges
           1.0583768, // ARMY_PATHFINDING_AvoidSpecEnemy
-          2.7351799, // ARMY_PATHFINDING_AvoidTraffic
+          0.1000000, // ARMY_PATHFINDING_AvoidTraffic
          14.0000000, // ATTACK_COMPANY_AttackRadius
           3.8477340, // ATTACK_COMPANY_AttackRangedGain
           0.6768462, // ATTACK_COMPANY_DecreaseThreat_Prio1
