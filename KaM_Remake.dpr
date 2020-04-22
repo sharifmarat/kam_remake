@@ -337,7 +337,8 @@ uses
   KM_WareDistribution in 'src\KM_WareDistribution.pas',
   KM_Video in 'src\KM_Video.pas',
   KM_VLC in 'src\utils\KM_VLC.pas',
-  KM_GUIMenuCampaignMapEditor in 'src\gui\pages_menu\KM_GUIMenuCampaignMapEditor.pas';
+  KM_GUIMenuCampaignMapEditor in 'src\gui\pages_menu\KM_GUIMenuCampaignMapEditor.pas',
+  KM_ResSpritesEdit in 'src\res\KM_ResSpritesEdit.pas';
 
 //KM_PerfLog in 'src\unused\KM_PerfLog.pas', //unused
 
