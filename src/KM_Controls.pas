@@ -1,4 +1,4 @@
-﻿unit KM_Controls;
+unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -9828,6 +9828,8 @@ end;
 
 procedure TKMMasterControl.AddMouseMoveCtrlSub(const aMouseMoveEvent: TKMMouseMoveEvent);
 begin
+  if Self = nil then Exit;
+
   fMouseMoveSubsList.Add(aMouseMoveEvent)
 end;
 
@@ -9901,6 +9903,8 @@ end;
 //Check If Control if it is allowed to be focused on (manual or automatically)
 function TKMMasterControl.IsFocusAllowed(aCtrl: TKMControl): Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := aCtrl.fVisible
         and aCtrl.Enabled
         and aCtrl.Focusable
@@ -9911,6 +9915,8 @@ end;
 //Check If Control if it is allowed to be automatically (not manual, by user) focused on
 function TKMMasterControl.IsAutoFocusAllowed(aCtrl: TKMControl): Boolean;
 begin
+  if Self = nil then Exit(False);
+
   Result := aCtrl.AutoFocusable and IsFocusAllowed(aCtrl);
 end;
 
@@ -9947,6 +9953,8 @@ procedure TKMMasterControl.UpdateFocus(aSender: TKMControl);
       end;
   end;
 begin
+  if Self = nil then Exit;
+
   if aSender.Visible and aSender.Enabled
     and ((not (aSender is TKMPanel) and aSender.Focusable) or (aSender is TKMPanel)) then
   begin
@@ -9973,6 +9981,8 @@ end;
 
 procedure TKMMasterControl.UpdateState(aTickCount: Cardinal);
 begin
+  if Self = nil then Exit;
+
   fMasterPanel.UpdateState(aTickCount);
 end;
 
@@ -10019,6 +10029,8 @@ function TKMMasterControl.HitControl(X,Y: Integer; aIncludeDisabled: Boolean = F
     end;
   end;
 begin
+  if Self = nil then Exit(nil);
+
   Result := ScanChild(fMasterPanel, X, Y);
 end;
 
@@ -10028,6 +10040,9 @@ var
   Control: TKMControl;
 begin
   Result := False;
+
+  if Self = nil then Exit;
+
   //CtrlFocus could be on another menu page and no longer visible
   if (CtrlFocus <> nil) and CtrlFocus.Visible then
   begin
@@ -10043,6 +10058,8 @@ end;
 
 procedure TKMMasterControl.KeyPress(Key: Char);
 begin
+  if Self = nil then Exit;
+
   //CtrlFocus could be on another menu page and no longer visible
   if (CtrlFocus <> nil) and CtrlFocus.Visible then
     CtrlFocus.KeyPress(Key);
@@ -10054,6 +10071,9 @@ var
   Control: TKMControl;
 begin
   Result := False;
+
+  if Self = nil then Exit;
+
   //CtrlFocus could be on another menu page and no longer visible
   if (CtrlFocus <> nil) and CtrlFocus.Visible then
   begin
@@ -10069,6 +10089,8 @@ end;
 
 procedure TKMMasterControl.MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
 begin
+  if Self = nil then Exit;
+
   CtrlDown := HitControl(X,Y);
   fMasterPanel.ControlMouseDown(CtrlDown, X, Y, Shift, Button);
   if CtrlDown <> nil then
@@ -10081,6 +10103,8 @@ var
   I: Integer;
   HintControl: TKMControl;
 begin
+  if Self = nil then Exit;
+
   CtrlOver := HitControl(X,Y);
 
   // Notify all ControlMouseMove subscribers
@@ -10135,8 +10159,11 @@ end;
 
 
 procedure TKMMasterControl.MouseWheel(X,Y: Integer; WheelSteps: Integer; var aHandled: Boolean);
-var C: TKMControl;
+var
+  C: TKMControl;
 begin
+  if Self = nil then Exit;
+
   C := HitControl(X, Y);
   if C <> nil then
     C.MouseWheel(C, WheelSteps, aHandled);
@@ -10149,6 +10176,8 @@ procedure TKMMasterControl.Paint;
 var
   I: Integer;
 begin
+  if Self = nil then Exit;
+
   CtrlPaintCount := 0;
   for I := 0 to fMaxPaintLayer do
   begin
@@ -10162,8 +10191,11 @@ end;
 
 
 procedure TKMMasterControl.SaveToFile(const aFileName: UnicodeString);
-var ft: Textfile;
+var
+  ft: Textfile;
 begin
+  if Self = nil then Exit;
+
   AssignFile(ft,aFileName);
   Rewrite(ft);
 
