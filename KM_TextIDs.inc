@@ -1266,6 +1266,7 @@ TX_MAPED_TERRAIN_BRUSH_BLENDING = 1392; //Blending level
 TX_MAPED_TERRAIN_BRUSH_BLENDING_HINT = 1393; //Blending level of terrain transitions via masks
 
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN = 1209; //Fix terrain brushes
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_SHORT = 1428; //Fix terrain
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1210; //Try to repair internal terrain information to make brushes work
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE = 1211; //Fix terrain brushes
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair|all terrain brushes internal info?||That will allow to use brushes|in spots where manual tiles were used
