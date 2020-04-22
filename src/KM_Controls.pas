@@ -8829,9 +8829,12 @@ var
 begin
   fColumnBoxFiles.Clear;
 
-  Row := MakeListRow(['', '[..]', '', ''], 0);
-  Row.Cells[0].Pic := MakePic(rxGui, 710, True, 0, -2);
-  fColumnBoxFiles.AddItem(Row);
+  if fPath.Length > 3 then
+  begin
+    Row := MakeListRow(['', '[..]', '', ''], 0);
+    Row.Cells[0].Pic := MakePic(rxGui, 710, True, 0, -2);
+    fColumnBoxFiles.AddItem(Row);
+  end;
 
   for I := 0 to fItemCount - 1 do
     if fItems[I].IsDir then
