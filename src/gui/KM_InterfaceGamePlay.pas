@@ -3393,7 +3393,7 @@ begin
   begin
     // Game speed/pause: available in multiplayer mode if the only player left in the game
     if Key = gResKeys[SC_SPEEDUP_1].Key then
-      gGame.SetGameSpeed(GAME_SPEED_NORMAL, True);
+      gGame.SetGameSpeed(GAME_SPEED_NORMAL, True, gGame.GameSpeedGIP);
     if Key = gResKeys[SC_SPEEDUP_2].Key then
       gGame.SetGameSpeed(gGameApp.GameSettings.SpeedMedium, True);
     if Key = gResKeys[SC_SPEEDUP_3].Key then

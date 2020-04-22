@@ -232,6 +232,7 @@ type
 
     procedure SetGameSpeed(aSpeed: Single); overload;
     procedure SetGameSpeed(aSpeed: Single; aToggle: Boolean); overload;
+    procedure SetGameSpeed(aSpeed: Single; aToggle: Boolean; aToggleTo: Single); overload;
 
     procedure SetGameSpeedActual(aSpeed: Single);
     procedure SetGameSpeedGIP(aSpeed: Single; aUpdateActual: Boolean = False);
@@ -1636,9 +1637,6 @@ begin
       Result := fGameOptions.SpeedAfterPT;
   end
   else
-  if IsReplay then
-    Result := fGameSpeedGIP
-  else
     Result := GAME_SPEED_NORMAL;
 end;
 
@@ -1736,12 +1734,18 @@ end;
 
 
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
+begin
+  SetGameSpeed(aSpeed, aToggle, GetNormalGameSpeed);
+end;
+
+
+procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean; aToggleTo: Single);
 var
   NewGameSpeed: Single;
 begin
   //Make the speed toggle between normal speed and desired value
   if (aSpeed = fGameSpeedActual) and aToggle then
-    NewGameSpeed := GetNormalGameSpeed
+    NewGameSpeed := aToggleTo
   else
     NewGameSpeed := aSpeed;
 
