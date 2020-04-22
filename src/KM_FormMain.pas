@@ -267,7 +267,7 @@ uses
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
   KM_RandomChecks,
-  KM_Log, KM_CommonClasses;
+  KM_Log, KM_CommonClasses, KM_Helpers;
 
 
 //Remove VCL panel and use flicker-free TMyPanel instead
@@ -854,9 +854,9 @@ end;
 procedure TFormMain.ControlsRefill;
 begin
   {$IFDEF WDC}
-  chkSnowHouses.Checked := gGameApp.GameSettings.AllowSnowHouses; // Snow houses checkbox could be updated before game
-  chkLoadUnsupSaves.Checked := ALLOW_LOAD_UNSUP_VERSION_SAVE;
-  chkDebugScripting.Checked := DEBUG_SCRIPTING_EXEC;
+  chkSnowHouses.SetCheckedWithoutClick(gGameApp.GameSettings.AllowSnowHouses); // Snow houses checkbox could be updated before game
+  chkLoadUnsupSaves.SetCheckedWithoutClick(ALLOW_LOAD_UNSUP_VERSION_SAVE);
+  chkDebugScripting.SetCheckedWithoutClick(DEBUG_SCRIPTING_EXEC);
   {$ENDIF}
 
   if (gGame = nil) or not gGame.IsMapEditor then Exit;
@@ -864,12 +864,12 @@ begin
   tbPassability.Max := Byte(High(TKMTerrainPassability));
   tbPassability.Position := SHOW_TERRAIN_PASS;
   Label2.Caption := IfThen(SHOW_TERRAIN_PASS <> 0, PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)], '');
-  chkShowWires.Checked := SHOW_TERRAIN_WIRES;
-  chkShowTerrainIds.Checked := SHOW_TERRAIN_IDS;
-  chkShowTerrainKinds.Checked := SHOW_TERRAIN_KINDS;
-  chkTilesGrid.Checked := SHOW_TERRAIN_TILES_GRID;
-  chkShowRoutes.Checked := SHOW_UNIT_ROUTES;
-  chkSelectionBuffer.Checked := SHOW_SEL_BUFFER;
+  chkShowWires.SetCheckedWithoutClick(SHOW_TERRAIN_WIRES);
+  chkShowTerrainIds.SetCheckedWithoutClick(SHOW_TERRAIN_IDS);
+  chkShowTerrainKinds.SetCheckedWithoutClick(SHOW_TERRAIN_KINDS);
+  chkTilesGrid.SetCheckedWithoutClick(SHOW_TERRAIN_TILES_GRID);
+  chkShowRoutes.SetCheckedWithoutClick(SHOW_UNIT_ROUTES);
+  chkSelectionBuffer.SetCheckedWithoutClick(SHOW_SEL_BUFFER);
 end;
 
 
