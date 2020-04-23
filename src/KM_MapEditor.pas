@@ -43,6 +43,8 @@ type
     procedure PaintAIStart(aLayer: TKMPaintLayer);
     procedure PaintMiningRadius(aLayer: TKMPaintLayer);
 
+    procedure AddDefenceMarker(const aLoc: TKMPoint);
+
     function GetCheckpointObjectsStr: string;
     function GetHistory: TKMMapEditorHistory;
   public
@@ -689,6 +691,25 @@ begin
 end;
 
 
+procedure TKMMapEditor.AddDefenceMarker(const aLoc: TKMPoint);
+var
+  groupType: TKMGroupType;
+  dir: TKMDirection;
+  G: TKMUnitGroup;
+begin
+  dir := dirN;
+  groupType := gtMelee;
+  G := gHands.GroupsHitTest(aLoc.X, aLoc.Y);
+  if G <> nil then
+  begin
+    dir := G.Direction;
+    groupType := G.GroupType;
+  end;
+
+  gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(aLoc, dir), groupType, DEFAULT_DEFENCE_POSITION_RADIUS, adtFrontLine);
+end;
+
+
 procedure TKMMapEditor.MouseUp(Button: TMouseButton; aOverMap: Boolean);
 var
   P: TKMPoint;
@@ -744,7 +765,7 @@ begin
                 cmUnits:      ProceedUnitsCursorMode;
                 cmMarkers:    case gGameCursor.Tag1 of
                                 MARKER_REVEAL:        fRevealers[gMySpectator.HandID].Add(P, gGameCursor.MapEdSize);
-                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dirN), gtMelee, DEFAULT_DEFENCE_POSITION_RADIUS, adtFrontLine);
+                                MARKER_DEFENCE:       AddDefenceMarker(P);
                                 MARKER_CENTERSCREEN:  begin
                                                         gMySpectator.Hand.CenterScreen := P;
                                                         //Updating XY display is done in InterfaceMapEd

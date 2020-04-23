@@ -504,7 +504,7 @@ begin
     end;
 
   if aMakeCheckpoint then
-    gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN]);
+    gGame.MapEditor.History.MakeCheckpoint(caTerrain, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_SHORT]);
 end;
 
 

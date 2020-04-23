@@ -790,6 +790,9 @@ begin
 
   gGame := TKMGame.Create(GameMode, gRender, fNetworking, GameDestroyed);
   try
+    // SavedReplays have been just created, and we will reassign them in the next line.
+    // Then Free the newly created save replays object first
+    gGame.SavedReplays.Free;
     gGame.SavedReplays := SavedReplays;
     gGame.LoadSavedReplay(aTick, SaveFile);
   except
