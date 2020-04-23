@@ -33,9 +33,16 @@ constructor TKMParallelRun.Create(aForm: TForm2);
 begin
   fForm := aForm;
   fGASetup.Population := nil;
-  fSimSetup.RunningClass := '';
-  fSimSetup.SimNumber := 0;
-  fSimSetup.SimTimeInMin := 0;
+  with fSimSetup do
+  begin
+    SimFile := '';
+    WorkDir := '';
+    RunningClass := '';
+    SimNumber := 0;
+    ThreadNumber := 0;
+    PeaceTime := 0;
+    SimTimeInMin := 0;
+  end;
   fCommunication := TKMComInterface.Create();
   Log('TKMParallelRun was created');
 end;

@@ -162,9 +162,9 @@ begin
   fInflInfo := aDefInfo;
   fQueueArray := aQueueArray; // This is clear array with zeros
   fVisitedIdx := 0; // It will be updated to 1 after FillPolygons are called
-  fMaxDistance := GA_ATTACK_NMAP_PrefillDistances_Houses;
+  fMaxDistance := Round(AI_Par[ATTACK_NMAP_PrefillDistances_Houses]);
   FillPolygons(aAlliance.HousesCount, aAlliance.HousesPoly);
-  fMaxDistance := GA_ATTACK_NMAP_PrefillDistances_Groups;
+  fMaxDistance := Round(AI_Par[ATTACK_NMAP_PrefillDistances_Groups]);
   FillPolygons(aAlliance.GroupsCount, aAlliance.GroupsPoly);
 end;
 
@@ -469,7 +469,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
             InsertInQueue(Polygons[K]);
 
         // Loop over queue but dont process the children
-        QueueCntBackup := fQueueCnt;
+        QueueCntBackup := fQueueCnt*2;
         for K := 1 to QueueCntBackup do
         begin
           RemoveFromQueue(Idx);
@@ -496,7 +496,7 @@ procedure TArmyForwardFF.AssignDefencePositions();
           end;
         end;
 
-        MinMark := MinMark - 2;
+        MinMark := MinMark - 1;
       end;
     end;
     SetLength(Result, Cnt);
@@ -546,7 +546,7 @@ begin
         begin
           Idx := BattleLines.Lines[L].Polygons[M];
           LinePoint := gAIFields.NavMesh.Polygons[ Idx ].CenterPoint;
-          Price := KMDistanceSqr(LinePoint, GroupPoint) - fInflInfo[Idx].Mark * 32;
+          Price := KMDistanceSqr(LinePoint, GroupPoint) - fInflInfo[Idx].Mark * 32;  // Price := KMDistanceSqr(LinePoint, GroupPoint) - (High(Word) - fInflInfo[Idx].Mark) * 32;
           if (Price < BestPrice) then
           begin
             BestPrice := Price;
@@ -663,7 +663,7 @@ end;
 
 procedure TArmyBackwardFF.ComputeWeightedDistance(const aIdx: Word);
 begin
-  fQueueArray[aIdx].Distance := High(Word) - fInflInfo[aIdx].Distance - fInflInfo[aIdx].EnemyInfluence * GA_ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence;
+  fQueueArray[aIdx].Distance := High(Word) - fInflInfo[aIdx].Distance - fInflInfo[aIdx].EnemyInfluence * Round(AI_Par[ATTACK_NMAP_TArmyBackwardFF_EnemyInfluence]);
 end;
 
 
@@ -862,7 +862,7 @@ begin
     Overflow2 := 0;
     repeat
       Inc(Overflow2);
-      if (fInflInfo[Idx].EnemyInfluence > GA_ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence) then
+      if (fInflInfo[Idx].EnemyInfluence > AI_Par[ATTACK_NMAP_BackwardFlood_MaxEnemyInfluence]) then
       begin
         fQueueArray[OldIdx].Next := fQueueArray[Idx].Next;
         if (Idx = fStartQueue) then fStartQueue := fQueueArray[Idx].Next;
@@ -885,7 +885,7 @@ begin
 
   // Start searching for defense line
   Idx := fStartQueue;
-  while RemoveFromQueue(Idx) AND (fQueueArray[Idx].Distance < High(Word) - GA_ATTACK_NMAP_BackwardFlood_MaxAllyInfluence) do
+  while RemoveFromQueue(Idx) AND (fQueueArray[Idx].Distance < High(Word) - AI_Par[ATTACK_NMAP_BackwardFlood_MaxAllyInfluence]) do
   begin
     if CanBeExpanded(Idx) then
       ExpandPolygon(Idx);
@@ -919,7 +919,7 @@ begin
   //MaxMark := High(Word) - MaxMark;
   //MinMark := High(Word) - MinMark;
   //Evaluation := fQueueCnt * 8 - abs(High(Word) - MaxDist) * 2 - abs(High(Word) - MinDist) * 2;
-  Evaluation := fQueueCnt * GA_ATTACK_NMAP_EvaluateLine_QueueCnt + abs(High(Word) - MinDist) * GA_ATTACK_NMAP_EvaluateLine_MinDist;
+  Evaluation := fQueueCnt * AI_Par[ATTACK_NMAP_EvaluateLine_QueueCnt] + abs(High(Word) - MinDist) * AI_Par[ATTACK_NMAP_EvaluateLine_MinDist];
 
 
   // If is evaluation better save polygons
@@ -1012,6 +1012,7 @@ const
   COLOR_RED = $7700FF;
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
+  COLOR_MIX: array [0..5] of Cardinal = (COLOR_BLUE, COLOR_YELLOW, COLOR_GREEN, COLOR_WHITE, COLOR_BLACK, COLOR_RED);
 {$IFDEF DEBUG_BattleLines}
 var
   K,L,Idx: Integer;
@@ -1036,8 +1037,8 @@ begin
     for L := 0 to fBestBattleLines.Lines[K].PolygonsCount - 1 do
       with fBestBattleLines.Lines[K] do
       begin
-        DrawPolygon(Polygons[L], -2, 25, COLOR_GREEN, IntToStr(High(Word) - fInflInfo[ Polygons[L] ].Mark));
-        DrawPolygon(Polygons[L], -1, 25, COLOR_GREEN, IntToStr(High(Word) - fQueueArray[ Polygons[L] ].Distance));
+        DrawPolygon(Polygons[L], -2, 50, COLOR_MIX[K mod Length(COLOR_MIX)], IntToStr(High(Word) - fInflInfo[ Polygons[L] ].Mark));
+        //DrawPolygon(Polygons[L], -1, 25, COLOR_MIX[K mod Length(COLOR_MIX)], IntToStr(High(Word) - fQueueArray[ Polygons[L] ].Distance));
       end;
   //}
 

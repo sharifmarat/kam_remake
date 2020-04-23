@@ -64,8 +64,8 @@ type
     Label5: TLabel;
     Label6: TLabel;
     chkShowDefences: TCheckBox;
-    chkBuildAI: TCheckBox;
-    chkCombatAI: TCheckBox;
+    chkBuild: TCheckBox;
+    chkCombat: TCheckBox;
     ResourceValues1: TMenuItem;
     chkUIControlsBounds: TCheckBox;
     chkUITextBounds: TCheckBox;
@@ -151,6 +151,7 @@ type
     Debug_UnlockCmpMissions: TMenuItem;
     N11: TMenuItem;
     mnExportRngChecks: TMenuItem;
+    chkSupervisor: TCheckBox;
     cpScripting: TCategoryPanel;
     chkDebugScripting: TCheckBox;
 
@@ -959,8 +960,9 @@ begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
     SHOW_DEBUG_OVERLAY_BEVEL := chkBevel.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
-    OVERLAY_AI_BUILD := chkBuildAI.Checked;
-    OVERLAY_AI_COMBAT := chkCombatAI.Checked;
+    OVERLAY_AI_BUILD := chkBuild.Checked;
+    OVERLAY_AI_COMBAT := chkCombat.Checked;
+    OVERLAY_AI_SUPERVISOR := chkSupervisor.Checked;
     OVERLAY_AI_EYE := chkAIEye.Checked;
     OVERLAY_AI_SOIL := chkShowSoil.Checked;
     OVERLAY_AI_FLATAREA := chkShowFlatArea.Checked;

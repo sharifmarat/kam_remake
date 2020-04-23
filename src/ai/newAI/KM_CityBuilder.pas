@@ -822,25 +822,25 @@ var
   H: TKMHouse;
 begin
   // Analyze basic force stats (max possible plans, construction ware, gold)
-  aMaxPlans := Ceil(fFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef);
+  aMaxPlans := Ceil(fFreeWorkersCnt / Max(0.01,AI_Par[BUILDER_ChHTB_FreeWorkerCoef]));
   // Use "rapid construction" in case that we have resources
   if   (fPredictor.WareBalance[wtStone].Exhaustion > 60) then // Some stone mines are too far so AI must slow down with expansion
     //AND (fPredictor.WareBalance[wtWood].Exhaustion > 60)
     //AND (fPredictor.WareBalance[wtGold].Exhaustion > 60) then
-    aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
+    aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / Max(0.01,AI_Par[BUILDER_ChHTB_AllWorkerCoef])) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wtStone is OK
-  fStoneShortage := (fPredictor.WareBalance[wtStone].Exhaustion < GA_BUILDER_Shortage_Stone);
+  fStoneShortage := (fPredictor.WareBalance[wtStone].Exhaustion < AI_Par[BUILDER_Shortage_Stone]);
 
   // Make sure that gold will be produced ASAP -> minimal delay, exhaustion is OK
-  fGoldShortage := (fPredictor.WareBalance[wtGold].Exhaustion < GA_BUILDER_Shortage_Gold);
+  fGoldShortage := (fPredictor.WareBalance[wtGold].Exhaustion < AI_Par[BUILDER_Shortage_Gold]);
 
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
   Trunk := gHands[fOwner].Stats.GetWareBalance(wtTrunk);
   Wood := gHands[fOwner].Stats.GetWareBalance(wtWood);
   WoodReserves := Trunk * 2 + Wood;
   aTrunkBalance := WoodReserves / (2 * Max(0.1, fPredictor.WareBalance[wtTrunk].ActualConsumption));
-  fTrunkShortage := (aTrunkBalance < GA_BUILDER_Shortage_Trunk);
+  fTrunkShortage := (aTrunkBalance < AI_Par[BUILDER_Shortage_Trunk]);
 
   // Compute building materials
   RequiredStones := gHands[fOwner].BuildList.HousePlanList.GetPlansStoneDemands();
@@ -859,7 +859,7 @@ begin
     if fBuildNodes[K].Active AND (fBuildNodes[K].FieldType = ftRoad) then
       RequiredStones := RequiredStones + fBuildNodes[K].FieldList.Count - 1;
   // Determine stone crisis (based on material)
-  fStoneCrisis := (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (gHands[fOwner].Stats.GetWareBalance(wtStone) < RequiredStones + GA_BUILDER_Shortage_StoneReserve);
+  fStoneCrisis := (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (gHands[fOwner].Stats.GetWareBalance(wtStone) < RequiredStones + AI_Par[BUILDER_Shortage_StoneReserve]);
   fStoneShortage := fStoneShortage OR fStoneCrisis; // Make sure that we have also shortage
   // Determine wood shortage (based on material)
   fTrunkShortage := fTrunkShortage OR (WoodReserves < RequiredWood);
@@ -870,7 +870,7 @@ begin
 
   // Secure wood production: only process trunk -> wood => minimal delay
   fWoodShortage :=
-    (fPredictor.WareBalance[wtWood].Exhaustion < GA_BUILDER_Shortage_Wood)
+    (fPredictor.WareBalance[wtWood].Exhaustion < AI_Par[BUILDER_Shortage_Wood])
     OR
     (
       (
@@ -962,7 +962,7 @@ begin
             Priority := aRoadNodePrio;
             RemoveTreesMode := False;
             ShortcutMode := False;
-            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_RoadMaxWork) + Byte(NODE_PRIO_RoadsUnlockHouse = aRoadNodePrio) * 20;
+            MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_RoadMaxWork]) + Byte(NODE_PRIO_RoadsUnlockHouse = aRoadNodePrio) * 20;
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
             CenterPoint := FieldList[ FieldList.Count-1 ]; // Road node must start from exist house
           end;
@@ -976,7 +976,7 @@ begin
               Priority := Byte(aHouseReservation) * NODE_PRIO_FieldsReservation + Byte(not aHouseReservation) * NODE_PRIO_Fields;
               RemoveTreesMode := False;
               ShortcutMode := False;
-              MaxReqWorkers := Round(GA_BUILDER_BuildHouse_FieldMaxWork);
+              MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_FieldMaxWork]);
               RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
               CenterPoint := Loc;
             end;
@@ -1042,7 +1042,7 @@ begin
             Priority := NODE_PRIO_RemoveTreeInPlan;
             RemoveTreesMode := True;
             ShortcutMode := False;
-            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_RTPMaxWork);
+            MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_RTPMaxWork]);
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
             CenterPoint := Loc;
           end;
@@ -1214,7 +1214,7 @@ var
       WT := Ware;
       if (RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] > 0) then
       begin
-        Priority := fPredictor.WareBalance[WT].Exhaustion - fPredictor.WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
+        Priority := fPredictor.WareBalance[WT].Exhaustion - fPredictor.WareBalance[WT].Fraction * AI_Par[BUILDER_ChHTB_FractionCoef]
                     - Byte(PRODUCTION_WARE2HOUSE[WT] = htBakery) * 1000;
         for K := Low(WareOrder) to High(WareOrder) do
           if (WT = wtNone) then
@@ -1417,7 +1417,7 @@ begin
   RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(not(fTrunkShortage OR (MaxPlace < 3)));
 
   // Find place for chop-only woodcutters when we start to be out of wood
-  if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then
+  if ((AI_Par[BUILDER_ChHTB_TrunkBalance] - TrunkBalance) / Max(1,AI_Par[BUILDER_ChHTB_TrunkFactor]) - GetChopOnlyCnt() > 0) then
     fPlanner.FindForestAround(KMPOINT_ZERO, True);
 
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
@@ -1567,7 +1567,7 @@ const
           Priority := NODE_PRIO_Shortcuts;
           RemoveTreesMode := False;
           ShortcutMode := True;
-          MaxReqWorkers := Round(GA_BUILDER_CreateShortcuts_MaxWork);//MAX_WORKERS_FOR_NODE;
+          MaxReqWorkers := Round(AI_Par[BUILDER_CreateShortcuts_MaxWork]);//MAX_WORKERS_FOR_NODE;
           RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
           CenterPoint := FieldList.Items[0];
         end;

@@ -356,12 +356,12 @@ end;
 procedure TKMCityPredictor.UpdateBuildMaterialConsumption(aInitialization: Boolean = False);
 begin
   // Worker count is decreased after peace time -> compute with maximal count
-  fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker] + GA_PREDICTOR_WareNeedPerAWorker_StoneOffset, fWorkerCount) * GA_PREDICTOR_WareNeedPerAWorker_Stone;
+  fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker] + Round(AI_Par[PREDICTOR_WareNeedPerAWorker_StoneOffset]), fWorkerCount) * AI_Par[PREDICTOR_WareNeedPerAWorker_Stone];
   fWareBalance[wtStone].FinalConsumption := fWareBalance[wtStone].ActualConsumption;
   // Raw wood expectations
   UpdateWareConsumption(wtWood, aInitialization);
-  fWareBalance[wtWood].ActualConsumption := Max(fWareBalance[wtWood].ActualConsumption, fCityStats.Citizens[utWorker] * GA_PREDICTOR_WareNeedPerAWorker_Wood);
-  fWareBalance[wtWood].FinalConsumption := Max(fWareBalance[wtWood].FinalConsumption, fWorkerCount * GA_PREDICTOR_WareNeedPerAWorker_Wood);
+  fWareBalance[wtWood].ActualConsumption := Max(fWareBalance[wtWood].ActualConsumption, fCityStats.Citizens[utWorker] * AI_Par[PREDICTOR_WareNeedPerAWorker_Wood]);
+  fWareBalance[wtWood].FinalConsumption := Max(fWareBalance[wtWood].FinalConsumption, fWorkerCount * AI_Par[PREDICTOR_WareNeedPerAWorker_Wood]);
 end;
 
 
@@ -445,7 +445,7 @@ begin
     RequiredHouses[htSchool] := Max(
                                   0,
                                   Max(
-                                    1 + Byte( (RequiredUnitsCnt > GA_PREDICTOR_SecondSchool_MinRequiredUnits) AND not Builder.GoldShortage AND not Builder.StoneShortage AND not Builder.TrunkShortage AND not Builder.WoodShortage),
+                                    1 + Byte( (RequiredUnitsCnt > Round(AI_Par[PREDICTOR_SecondSchool_MinRequiredUnits])) AND not Builder.GoldShortage AND not Builder.StoneShortage AND not Builder.TrunkShortage AND not Builder.WoodShortage),
                                     Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))
                                   ) - fCityStats.Houses[htSchool]
                                 );
@@ -686,8 +686,8 @@ begin
     FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
     // Allow to reserve quarries
     UpdateWareProduction(wtStone);
-    fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_WareNeedPerAWorker_Stone;
-    fWareBalance[wtStone].FinalConsumption := Max(fCityStats.Citizens[utWorker], fWorkerCount) * GA_PREDICTOR_WareNeedPerAWorker_Stone;
+    fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * AI_Par[PREDICTOR_WareNeedPerAWorker_Stone];
+    fWareBalance[wtStone].FinalConsumption := Max(fCityStats.Citizens[utWorker], fWorkerCount) * AI_Par[PREDICTOR_WareNeedPerAWorker_Stone];
     UpdateWareDerivation(wtStone);
     RequiredHouses[htSchool] := Max(0, 1 - Planner.PlannedHouses[htSchool].Count);
     Exit;

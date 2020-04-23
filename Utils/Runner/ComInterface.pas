@@ -17,7 +17,7 @@ type
   end;
   TSimSetup = record
     SimFile, WorkDir, RunningClass: String;
-    SimTimeInMin, SimNumber, PeaceTime: Word;
+    SimTimeInMin, SimNumber, ThreadNumber, PeaceTime: Word;
   end;
 
   TKMComInterface = class // Communication Interface
@@ -49,16 +49,17 @@ const
   STRING_END = '>';
   CMND_RunningClass = 0;
   CMND_SimTimeInMin = 1;
-  CMND_PeaceTime = 2;
-  CMND_SimNumber = 3;
+  CMND_PeaceTime    = 2;
+  CMND_SimNumber    = 3;
+  CMND_ThreadNumber = 4;
 
-  CMND_GA_GenCnt = 4;
-  CMND_GA_MapCnt = 5;
-  CMND_GA_IdvCnt = 6;
-  CMND_GA_NewIdv = 7;
-  CMND_GA_Fit = 8;
-  CMND_GA_Genes = 9;
-  CMND_GA_DONE = 10;
+  CMND_GA_GenCnt    = 5;
+  CMND_GA_MapCnt    = 6;
+  CMND_GA_IdvCnt    = 7;
+  CMND_GA_NewIdv    = 8;
+  CMND_GA_Fit       = 9;
+  CMND_GA_Genes     = 10;
+  CMND_GA_DONE      = 11;
 
   DEBUG_LOG = False;
   DEBUG_INPUT = False;
@@ -178,8 +179,9 @@ var
     case Command of
       CMND_RunningClass: aSimSetup.RunningClass := Str;
       CMND_SimTimeInMin: aSimSetup.SimTimeInMin := Int;
-      CMND_PeaceTime: aSimSetup.PeaceTime := Int;
-      CMND_SimNumber: aSimSetup.SimNumber := Int;
+      CMND_PeaceTime:    aSimSetup.PeaceTime := Int;
+      CMND_SimNumber:    aSimSetup.SimNumber := Int;
+      CMND_ThreadNumber: aSimSetup.ThreadNumber := Int;
       CMND_GA_MapCnt: aGASetup.MapCnt := Int;
       CMND_GA_IdvCnt: GA_IdvCnt := Int;
       CMND_GA_GenCnt: GA_GenCnt := Int;
@@ -274,6 +276,7 @@ begin
   Str := Str + CreateCommand(CMND_SimTimeInMin) + CreateInt(aSimSetup.SimTimeInMin);
   Str := Str + CreateCommand(CMND_PeaceTime) + CreateInt(aSimSetup.PeaceTime);
   Str := Str + CreateCommand(CMND_SimNumber) + CreateInt(aSimSetup.SimNumber);
+  Str := Str + CreateCommand(CMND_ThreadNumber) + CreateInt(aSimSetup.ThreadNumber);
   Str := Str + EncryptGA() + CreateCommand(CMND_GA_DONE);
   Result := Str;
 end;
@@ -426,6 +429,7 @@ procedure TKMComInterface.SetupSimulation(var aSimSetup: TSimSetup; var aGASetup
      '{'+IntToStr(CMND_SimTimeInMin)+'}(10)'+
      '{'+IntToStr(CMND_PeaceTime   )+'}(60)'+
      '{'+IntToStr(CMND_SimNumber   )+'}(1)'+
+     '{'+IntToStr(CMND_ThreadNumber)+'}(1)'+
      '{'+IntToStr(CMND_GA_MapCnt   )+'}(2)'+
      '{'+IntToStr(CMND_GA_IdvCnt   )+'}(3)'+
      '{'+IntToStr(CMND_GA_GenCnt   )+'}(2)'+

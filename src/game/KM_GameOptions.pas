@@ -23,6 +23,8 @@ type
 
 
 implementation
+uses
+  KM_Defaults;
 
 
 { TKMGameOptions }
@@ -38,7 +40,7 @@ end;
 //Resets values to defaults
 procedure TKMGameOptions.Reset;
 begin
-  Peacetime := 0;
+  Peacetime := DEFAULT_PEACE_TIME;
   SpeedPT := 1;
   SpeedAfterPT := 1;
   RandomSeed := 0; //Must be init later on. 0 is an erroneous value for KaMSeed

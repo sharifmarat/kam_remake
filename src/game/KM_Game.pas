@@ -664,7 +664,11 @@ begin
   //until after user saves it, but we need to attach replay base to it.
   //Basesave is sort of temp we save to HDD instead of keeping in RAM
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
-    SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+    {$IFDEF PARALLEL_RUNNER}
+      SaveGameToFile(SaveName('basesave_thread_'+IntToStr(THREAD_NUMBER), EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+    {$ELSE}
+      SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+    {$ENDIF}
 
   if IsMapEditor then
   begin
@@ -2011,7 +2015,11 @@ begin
       KMCopyFile(fLoadFromFile, NewSaveName, True);
   end else
     //Normally saved game
-    KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
+    {$IFDEF PARALLEL_RUNNER}
+      KMCopyFile(SaveName('basesave_thread_'+IntToStr(THREAD_NUMBER), EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
+    {$ELSE}
+      KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
+    {$ENDIF}
 
   //Save replay queue
   gLog.AddTime('Saving replay info');
