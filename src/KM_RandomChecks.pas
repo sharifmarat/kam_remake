@@ -57,11 +57,11 @@ type
 
     property Enabled: Boolean read GetEnabled write fEnabled;
 
-    procedure SaveToPath(aPath: String);
+    procedure SaveToPath(const aPath: String);
 //    procedure ParseSaveStreamAndSaveAsText(aPath: String);
-    procedure SaveAsText(aPath: String);
-    procedure LoadFromPath(aPath: String);
-    procedure LoadFromPathAndParseToDict(aPath: String);
+    procedure SaveAsText(const aPath: String);
+    procedure LoadFromPath(const aPath: String);
+    procedure LoadFromPathAndParseToDict(const aPath: String);
     procedure Clear;
 
     procedure UpdateState(aGameTick: Cardinal);
@@ -271,7 +271,7 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.LoadFromPath(aPath: String);
+procedure TKMRandomCheckLogger.LoadFromPath(const aPath: String);
 var
   I: Integer;
   tickStreamSize: Cardinal;
@@ -319,7 +319,7 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.LoadFromPathAndParseToDict(aPath: String);
+procedure TKMRandomCheckLogger.LoadFromPathAndParseToDict(const aPath: String);
 var
   LoadStream: TKMemoryStreamBinary;
 begin
@@ -404,7 +404,7 @@ end;
 //end;
 
 
-procedure TKMRandomCheckLogger.SaveToPath(aPath: String);
+procedure TKMRandomCheckLogger.SaveToPath(const aPath: String);
 var
   SaveStream, TickStream: TKMemoryStreamBinary;
 //  CompressionStream: TCompressionStream;
@@ -461,7 +461,7 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.SaveAsText(aPath: String);
+procedure TKMRandomCheckLogger.SaveAsText(const aPath: String);
 var
 //  LogPair: TPair<Cardinal, TList<TKMRngLogRecord>>;
   I, Cnt: Integer;

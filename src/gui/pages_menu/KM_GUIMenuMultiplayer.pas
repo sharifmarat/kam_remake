@@ -821,7 +821,7 @@ end;
 //Make sure that the nikname as a whole is valid (checks that TKMEdit can not always perform)
 function TKMMenuMultiplayer.ValidatePlayerName(const aName: UnicodeString): Boolean;
 
-  function IsReserved(aName: String): Boolean; inline;
+  function IsReserved(const aName: String): Boolean; inline;
   var
     I: Integer;
     Str: String;

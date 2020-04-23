@@ -154,7 +154,7 @@ type
   TKMemoryStreamText = class(TKMemoryStream)
   private
     fLastSection: string;
-    procedure WriteText(aString: string);
+    procedure WriteText(const aString: string);
   public
     procedure PlaceMarker(const aTitle: string); override;
 
@@ -1461,7 +1461,7 @@ procedure TKMemoryStreamBinary.Write(const Value: TDateTime);      begin inherit
 
 
 { TKMemoryStreamText }
-procedure TKMemoryStreamText.WriteText(aString: string);
+procedure TKMemoryStreamText.WriteText(const aString: string);
 var
   I: Word;
   bytes: TBytes;

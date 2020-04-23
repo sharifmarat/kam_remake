@@ -34,7 +34,7 @@ type
     procedure SectionLeave;
     procedure Clear;
     procedure Render(aLeft, aWidth, aHeight, aScaleY: Integer; aEmaAlpha: Single; aFrameBudget: Integer; aSmoothing: Boolean);
-    procedure SaveToFile(aFilename: string; aSaveThreshold: Integer);
+    procedure SaveToFile(const aFilename: string; aSaveThreshold: Integer);
     procedure SaveToStringList(aStringList: TStringList; aSaveThreshold: Integer);
   end;
 
@@ -166,7 +166,7 @@ end;
 
 
 // Save to file for standalone version running without TKMPerfLogs
-procedure TKMPerfLogSingle.SaveToFile(aFilename: string; aSaveThreshold: Integer);
+procedure TKMPerfLogSingle.SaveToFile(const aFilename: string; aSaveThreshold: Integer);
 var
   sl: TStringList;
 begin

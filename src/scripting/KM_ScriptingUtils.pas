@@ -62,7 +62,7 @@ type
     function RandomRangeI(aFrom, aTo: Integer): Integer;
 
     function RGBDecToBGRHex(aR, aG, aB: Byte): AnsiString;
-    function RGBToBGRHex(aHexColor: string): AnsiString;
+    function RGBToBGRHex(const aHexColor: string): AnsiString;
 
     function RoundToDown(aValue: Single; aBase: Integer): Integer;
     function RoundToUp(aValue: Single; aBase: Integer): Integer;
@@ -75,7 +75,7 @@ type
     function TimeToString(aTicks: Integer): AnsiString;
     function TimeToTick(aHours, aMinutes, aSeconds: Integer): Cardinal;
 
-    function ColorBrightness(aHexColor: string): Single;
+    function ColorBrightness(const aHexColor: string): Single;
 
   end;
 
@@ -357,7 +357,7 @@ end;
 //* Version: 10940
 //* Get Color Brightness from HEX BGR color
 //* Result: Color Brightness OR -1 if aHexColor not equal to HEX BGR
-function TKMScriptUtils.ColorBrightness(aHexColor: string): Single;
+function TKMScriptUtils.ColorBrightness(const aHexColor: string): Single;
 var
   hexclr: String;
   Val: Integer;
@@ -725,7 +725,7 @@ end;
 //* Example
 //* VAR := RGBToBGRHex('#FFFF00');
 //* The result of the VAR will be 00FFFF
-function TKMScriptUtils.RGBToBGRHex(aHexColor: string): AnsiString;
+function TKMScriptUtils.RGBToBGRHex(const aHexColor: string): AnsiString;
 var
   hexclr: String;
   Val: Integer;

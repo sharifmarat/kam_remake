@@ -47,7 +47,7 @@ type
     function CouldBeCancelled: Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
-    function ObjToString(aSeparator: String = ', '): String; override;
+    function ObjToString(const aSeparator: String = ', '): String; override;
 
     procedure Paint; override; //Used only for debug so far
   end;
@@ -540,7 +540,7 @@ begin
 end;
 
 
-function TKMTaskDeliver.ObjToString(aSeparator: String = ', '): String;
+function TKMTaskDeliver.ObjToString(const aSeparator: String = ', '): String;
 var
   FromStr, ToUStr, ToHStr: String;
 begin

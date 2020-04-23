@@ -150,7 +150,7 @@ type
   TKMSaveStreamText = class(TKSaveStream)
   private
     fLastSection: string;
-    procedure WriteText(aString: string);
+    procedure WriteText(const aString: string);
   public
     procedure PlaceMarker(const aTitle: string); override;
 
@@ -364,7 +364,7 @@ procedure TKMSaveStreamBinary.Write(const Value: TDateTime);      begin inherite
 
 
 { TKMSaveStreamText }
-procedure TKMSaveStreamText.WriteText(aString: string);
+procedure TKMSaveStreamText.WriteText(const aString: string);
 var
   I: Word;
   bytes: TBytes;

@@ -500,7 +500,7 @@ type
     fRX: TRXType;
     fAutoHeight: Boolean; //Set button height automatically depending text size (height)
     procedure InitCommon(aStyle: TKMButtonStyle);
-    procedure SetCaption(aCaption: UnicodeString);
+    procedure SetCaption(const aCaption: UnicodeString);
     procedure SetAutoHeight(aValue: Boolean);
     procedure UpdateHeight;
   public
@@ -3590,7 +3590,7 @@ begin
 end;
 
 
-procedure TKMButton.SetCaption(aCaption: UnicodeString);
+procedure TKMButton.SetCaption(const aCaption: UnicodeString);
 begin
   fCaption := aCaption;
   UpdateHeight;

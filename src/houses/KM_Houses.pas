@@ -60,7 +60,7 @@ type
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
-    function ObjToStringShort(aSeparator: String = '|'): String;
+    function ObjToStringShort(const aSeparator: String = '|'): String;
 
     function IsEmpty: Boolean;
   end;
@@ -421,7 +421,7 @@ begin
 end;
 
 
-function TKMHouseSketch.ObjToStringShort(aSeparator: String = '|'): String;
+function TKMHouseSketch.ObjToStringShort(const aSeparator: String = '|'): String;
 begin
   Result := Format('UID = %d%sType = %s%sEntrance = %s',
                   [fUID, aSeparator,
