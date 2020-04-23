@@ -55,6 +55,7 @@ type
       Panel_Options_Game: TKMPanel;
         CheckBox_Options_Autosave: TKMCheckBox;
         CheckBox_Options_AutosaveAtGameEnd: TKMCheckBox;
+        CheckBox_MakeSavePoints: TKMCheckBox;
       Panel_Options_Replays: TKMPanel;
         CheckBox_Options_ReplayAutopause: TKMCheckBox;
       Panel_Options_Mods: TKMPanel;
@@ -109,7 +110,8 @@ const
   end;
 
 var
-  I, top, bottomLine: Integer;
+  I, top, bottomLine, lineCnt: Integer;
+  str: string;
 begin
   inherited Create(gpOptions);
 
@@ -233,17 +235,26 @@ begin
       Button_OptionsKeys.OnClick := KeysClick;
 
     // Gameplay section
-    Panel_Options_Game := TKMPanel.Create(Panel_Options,300,top,280,70);
+    str := gResTexts[TX_MENU_OPTIONS_MAKE_SAVEPOINTS];
+    gRes.Fonts[fntMetal].GetTextSize(str, lineCnt);
+
+    Panel_Options_Game := TKMPanel.Create(Panel_Options,300,top,280,70 + 20*lineCnt);
     NextBlock(top, Panel_Options_Game, -5);
     Panel_Options_Game.Anchors := [anLeft];
+
       TKMLabel.Create(Panel_Options_Game,6,0,270,20,gResTexts[TX_MENU_OPTIONS_GAMEPLAY],fntOutline,taLeft);
-      TKMBevel.Create(Panel_Options_Game,0,20,280,50);
+      TKMBevel.Create(Panel_Options_Game,0,20,280,Panel_Options_Game.Height - 20);
 
       CheckBox_Options_Autosave := TKMCheckBox.Create(Panel_Options_Game,10,27,256,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE], fntMetal);
       CheckBox_Options_Autosave.OnClick := Change;
 
       CheckBox_Options_AutosaveAtGameEnd := TKMCheckBox.Create(Panel_Options_Game,10,47,256,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END], fntMetal);
       CheckBox_Options_AutosaveAtGameEnd.OnClick := Change;
+
+      CheckBox_MakeSavePoints := TKMCheckBox.Create(Panel_Options_Game,10,67,256,40,str, fntMetal);
+      CheckBox_MakeSavePoints.OnClick := Change;
+
+
 
     //Replays section
     Panel_Options_Replays := TKMPanel.Create(Panel_Options,300,top,280,50);
@@ -371,6 +382,7 @@ begin
   TrackBar_Options_VideoVolume.Enabled     := fGameSettings.VideoOn;
   Button_Options_VideoTest.Enabled         := fGameSettings.VideoOn;
   CheckBox_Options_SnowHouses.Checked      := fGameSettings.AllowSnowHouses;
+  CheckBox_MakeSavePoints.Checked          := fGameSettings.SaveCheckpoints;
 
   Radio_Options_Lang.ItemIndex := gResLocales.IndexByCode(fGameSettings.Locale);
 
@@ -404,6 +416,7 @@ begin
   fGameSettings.VideoStartup    := CheckBox_Options_VideoStartup.Checked;
   fGameSettings.VideoVolume     := TrackBar_Options_VideoVolume.Position / TrackBar_Options_VideoVolume.MaxValue;
   fGameSettings.AllowSnowHouses := CheckBox_Options_SnowHouses.Checked;
+  fGameSettings.SaveCheckpoints := CheckBox_MakeSavePoints.Checked;
 
   TrackBar_Options_Music.Enabled      := not CheckBox_Options_MusicOff.Checked;
   CheckBox_Options_ShuffleOn.Enabled  := not CheckBox_Options_MusicOff.Checked;

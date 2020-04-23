@@ -90,8 +90,10 @@ type
              aTabWidth: Integer = TAB_WIDTH): UnicodeString;
     function CharsThatFit(const aText: UnicodeString; aMaxPxWidth: Integer; aRound: Boolean = False;
                           aConsiderEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH): Integer;
+    function GetTextSize(const aText: UnicodeString; var aLineCount: Integer; aCountMarkup: Boolean = False;
+                         aConsiderEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH): TKMPoint; overload;
     function GetTextSize(const aText: UnicodeString; aCountMarkup: Boolean = False; aConsiderEolSymbol: Boolean = False;
-             aTabWidth: Integer = TAB_WIDTH): TKMPoint;
+                         aTabWidth: Integer = TAB_WIDTH): TKMPoint; overload;
     function GetMaxPrintWidthOfStrings(aStrings: array of string): Integer;
   end;
 
@@ -701,8 +703,17 @@ end;
 function TKMFontData.GetTextSize(const aText: UnicodeString; aCountMarkup: Boolean = False; aConsiderEolSymbol: Boolean = False;
                                  aTabWidth: Integer = TAB_WIDTH): TKMPoint;
 var
+  LineCount: Integer;
+begin
+  Result := GetTextSize(aText, LineCount, aCountMarkup, aConsiderEolSymbol, aTabWidth);
+end;
+
+
+function TKMFontData.GetTextSize(const aText: UnicodeString; var aLineCount: Integer; aCountMarkup: Boolean = False;
+                                 aConsiderEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH): TKMPoint;
+var
   I: Integer;
-  LineCount, LineWidthInc, TmpColor: Integer;
+  LineWidthInc, TmpColor: Integer;
   LineWidth: array of Integer; // Some fonts may have negative CharSpacing
 begin
   Result.X := 0;
@@ -710,14 +721,14 @@ begin
 
   if aText = '' then Exit;
 
-  LineCount := 1;
+  aLineCount := 1;
   if not aConsiderEolSymbol then
     for I := 1 to Length(aText) do
-      if aText[I] = #124 then Inc(LineCount);
+      if aText[I] = #124 then Inc(aLineCount);
 
-  SetLength(LineWidth, LineCount+2); //1..n+1 (for last line)
+  SetLength(LineWidth, aLineCount+2); //1..n+1 (for last line)
 
-  LineCount := 1;
+  aLineCount := 1;
   I := 1;
   while I <= Length(aText) do
   begin
@@ -726,10 +737,10 @@ begin
     begin
       //Count all characters including markup
       if aText[I] = #9 then // Tab char
-        LineWidthInc := (Floor(LineWidth[LineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[LineCount]
+        LineWidthInc := (Floor(LineWidth[aLineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[aLineCount]
       else
         LineWidthInc := GetCharWidth(aText[I], aConsiderEolSymbol);
-      Inc(LineWidth[LineCount], LineWidthInc);
+      Inc(LineWidth[aLineCount], LineWidthInc);
     end else
       //Ignore color markups [$FFFFFF][]
       if (aText[I]='[') and (I+1 <= Length(aText)) and (aText[I+1]=']') then
@@ -742,26 +753,26 @@ begin
         else begin
           //Not markup so count width normally
           if aText[I] = #9 then // Tab char
-            LineWidthInc := (Floor(LineWidth[LineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[LineCount]
+            LineWidthInc := (Floor(LineWidth[aLineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[aLineCount]
           else
             LineWidthInc := GetCharWidth(aText[I], aConsiderEolSymbol);
-          Inc(LineWidth[LineCount], LineWidthInc);
+          Inc(LineWidth[aLineCount], LineWidthInc);
         end;
 
     if (not aConsiderEolSymbol and (aText[I] = #124)) or (I = Length(aText)) then
     begin // If EOL or aText end
       if aText[I] <> #9 then       // for Tab reduce line width for CharSpacing and also for TAB 'jump'
         LineWidthInc := 0;
-      LineWidth[LineCount] := Math.Max(0, LineWidth[LineCount] - CharSpacing - LineWidthInc);
+      LineWidth[aLineCount] := Math.Max(0, LineWidth[aLineCount] - CharSpacing - LineWidthInc);
       // Remove last interletter space and negate double EOLs
-      Inc(LineCount);
+      Inc(aLineCount);
     end;
     Inc(I);
   end;
 
-  Dec(LineCount);
-  Result.Y := LineHeight * LineCount;
-  for I := 1 to LineCount do
+  Dec(aLineCount);
+  Result.Y := LineHeight * aLineCount;
+  for I := 1 to aLineCount do
     Result.X := Math.Max(Result.X, LineWidth[I]);
 end;
 

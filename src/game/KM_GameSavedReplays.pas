@@ -33,6 +33,7 @@ type
     destructor Destroy; override;
 
     property LastTick: Cardinal read fLastTick write fLastTick;
+    procedure Clear;
 
     property Count: Integer read GetCount;
     property Replay[aTick: Cardinal]: TKMSavedReplay read GetSave;
@@ -41,6 +42,12 @@ type
     procedure FillTicks(aTicksList: TList<Cardinal>);
 
     procedure NewSave(aStream: TKMemoryStream; aTick: Cardinal);
+
+    procedure Save(aSaveStream: TKMemoryStream);
+    procedure Load(aLoadStream: TKMemoryStream);
+
+    procedure SaveToFile(const aFileName: UnicodeString);
+    procedure LoadFromFile(const aFileName: UnicodeString);
   end;
 
 implementation
@@ -57,12 +64,9 @@ end;
 
 
 destructor TKMSavedReplays.Destroy();
-var
-  Replay: TKMSavedReplay;
 begin
-  for Replay in fReplaySaves.Values do
-    Replay.Free;
-  fReplaySaves.Clear;
+  Clear;
+
   fReplaySaves.Free; // TKMList will free all objects of the list
   inherited;
 end;
@@ -71,6 +75,17 @@ end;
 function TKMSavedReplays.GetCount(): Integer;
 begin
   Result := fReplaySaves.Count;
+end;
+
+
+procedure TKMSavedReplays.Clear;
+var
+  Replay: TKMSavedReplay;
+begin
+  for Replay in fReplaySaves.Values do
+    Replay.Free;
+
+  fReplaySaves.Clear;
 end;
 
 
@@ -113,6 +128,88 @@ begin
 end;
 
 
+procedure TKMSavedReplays.Save(aSaveStream: TKMemoryStream);
+var
+  keyArray : TArray<Cardinal>;
+  key: Cardinal;
+  rpl: TKMSavedReplay;
+begin
+  aSaveStream.PlaceMarker('SavedReplays');
+  aSaveStream.Write(fLastTick);
+  aSaveStream.Write(fReplaySaves.Count);
+
+  keyArray := fReplaySaves.Keys.ToArray;
+  TArray.Sort<Cardinal>(keyArray);
+
+  for key in keyArray do
+  begin
+    aSaveStream.PlaceMarker('SavePoint');
+    aSaveStream.Write(key);
+    rpl := fReplaySaves.Items[key];
+    aSaveStream.Write(Cardinal(rpl.fStream.Size));
+    aSaveStream.CopyFrom(rpl.fStream, 0);
+  end;
+end;
+
+
+procedure TKMSavedReplays.SaveToFile(const aFileName: UnicodeString);
+var
+  S: TKMemoryStreamBinary;
+begin
+  S := TKMemoryStreamBinary.Create;
+  try
+    Save(S);
+    S.SaveToFile(aFileName);
+  finally
+    S.Free;
+  end;
+end;
+
+
+procedure TKMSavedReplays.LoadFromFile(const aFileName: UnicodeString);
+var
+  S: TKMemoryStreamBinary;
+begin
+  if not FileExists(aFileName) then Exit;
+
+  S := TKMemoryStreamBinary.Create;
+  try
+    S.LoadFromFile(aFileName);
+    Load(S);
+  finally
+    S.Free;
+  end;
+end;
+
+
+procedure TKMSavedReplays.Load(aLoadStream: TKMemoryStream);
+var
+  I, cnt: Integer;
+  tick, size: Cardinal;
+  rpl: TKMSavedReplay;
+  stream: TKMemoryStream;
+begin
+  fReplaySaves.Clear;
+
+  aLoadStream.CheckMarker('SavedReplays');
+  aLoadStream.Read(fLastTick);
+  aLoadStream.Read(cnt);
+
+  for I := 0 to cnt - 1 do
+  begin
+    aLoadStream.CheckMarker('SavePoint');
+    aLoadStream.Read(tick);
+    aLoadStream.Read(size);
+
+    stream := TKMemoryStreamBinary.Create;
+    stream.CopyFrom(aLoadStream, size);
+
+    rpl := TKMSavedReplay.Create(stream, tick);
+
+    fReplaySaves.Add(tick, rpl);
+  end;
+end;
+
 
 { TKMSavedReplay }
 constructor TKMSavedReplay.Create(aStream: TKMemoryStream; aTick: Cardinal);
@@ -127,6 +224,7 @@ end;
 destructor TKMSavedReplay.Destroy();
 begin
   fStream.Free;
+
   inherited;
 end;
 

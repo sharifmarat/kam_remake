@@ -1,4 +1,4 @@
-unit KM_Controls;
+﻿unit KM_Controls;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -854,6 +854,7 @@ type
 //    property Marks: TList<Integer> read GetMarks;
 
     procedure AddMark(aMark: Integer);
+    procedure Clear;
 
     property OnMarkClick: TIntegerEvent read fOnMarkClick write fOnMarkClick;
 
@@ -4787,6 +4788,12 @@ procedure TKMReplayBar.PaintBar;
 begin
   inherited;
   TKMRenderUI.WriteReplayBar(AbsLeft, AbsTop, Width, Height, fPosition, fPeacetime, fMaxValue, fMarks, MarksPattern, fHighlightMark);
+end;
+
+
+procedure TKMReplayBar.Clear;
+begin
+  fMarks.Clear;
 end;
 
 
