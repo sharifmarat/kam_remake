@@ -1466,6 +1466,8 @@ TX_WORD_OBJECT = 1423; //object
 TX_GAME_FOLDER_PERMISSIONS_ERROR = 1424; //You do not have enough permissions on the KaM Remake installation directory:\n'%s'\n\nPlease reinstall the game into another directory
 TX_MAPED_TERRAIN_TILES_PALETTE = 1426; //Tiles palette
 
+TX_MENU_OPTIONS_MAKE_SAVEPOINTS = 1429; //Make replay savepoints
+
 TX_UNUSED_312_ = 312; //
 TX_UNUSED_313_ = 313; //
 TX_UNUSED_1356_MAPSIZE = 1356; //Map size:

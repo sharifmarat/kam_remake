@@ -96,6 +96,10 @@ type
     fSpecShowBeacons: Boolean;   //Spectator variable - show beacons while spectating
     fShowGameTime: Boolean;      //Show game time label (always)
 
+    fSaveCheckpoints: Boolean; //Save game checkpoint for replay
+    fSaveCheckpointsFreq: Integer;
+    fSaveCheckpointsLimit: Integer;
+
     fPlayersColorMode: TKMPlayerColorMode;
     fPlayerColorSelf: Cardinal;
     fPlayerColorAlly: Cardinal;
@@ -209,6 +213,11 @@ type
     procedure SetScrollSpeed(aValue: Byte);
     procedure SetSpecShowBeacons(aValue: Boolean);
     procedure SetShowGameTime(aValue: Boolean);
+
+    procedure SetSaveCheckpoints(const aValue: Boolean);
+    procedure SetSaveCheckpointsFreq(const aValue: Integer);
+    procedure SetSaveCheckpointsLimit(const aValue: Integer);
+
     procedure SetPlayersColorMode(aValue: TKMPlayerColorMode);
     procedure SetPlayerColorSelf(aValue: Cardinal);
     procedure SetPlayerColorAlly(aValue: Cardinal);
@@ -312,6 +321,10 @@ type
     property AutosaveCount: Integer read fAutosaveCount write SetAutosaveCount;
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
     property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
+
+    property SaveCheckpoints: Boolean read fSaveCheckpoints write SetSaveCheckpoints;
+    property SaveCheckpointsFreq: Integer read fSaveCheckpointsFreq write SetSaveCheckpointsFreq;
+    property SaveCheckpointsLimit: Integer read fSaveCheckpointsLimit write SetSaveCheckpointsLimit;
 
     property PlayersColorMode: TKMPlayerColorMode read fPlayersColorMode write SetPlayersColorMode;
     property PlayerColorSelf: Cardinal read fPlayerColorSelf write SetPlayerColorSelf;
@@ -639,6 +652,11 @@ begin
     fAutosaveAtGameEnd  := F.ReadBool     ('Game', 'AutosaveOnGameEnd', False); //Should be OFF by default
     SetAutosaveFrequency(F.ReadInteger    ('Game', 'AutosaveFrequency', AUTOSAVE_FREQUENCY_DEFAULT));
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
+
+    fSaveCheckpoints    := F.ReadBool     ('Game', 'SaveCheckpoints',      True); //Save checkpoints are enabled by Default
+    SetSaveCheckpointsFreq (F.ReadInteger ('Game', 'SaveCheckpointsFreq',  GAME_SAVE_CHECKPOINT_FREQ_DEF));
+    SetSaveCheckpointsLimit(F.ReadInteger ('Game', 'SaveCheckpointsLimit', GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF));
+
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
     fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode', Byte(pcmDefault))); //Show players colors by default
@@ -680,7 +698,7 @@ begin
     fReplayAutopause    := F.ReadBool       ('Replay', 'ReplayAutopause',   False); //Disabled by default
     fReplayShowBeacons  := F.ReadBool       ('Replay', 'ReplayShowBeacons', False); //Disabled by default
     fReplayAutosave     := F.ReadBool       ('Replay', 'ReplayAutosave',          True); //Should be ON by default
-    SetReplayAutosaveFrequency(F.ReadInteger('Replay', 'ReplayAutosaveFrequency', REPLAY_AUTOSAVE_FREQUENCY_DEFAULT));
+    SetReplayAutosaveFrequency(F.ReadInteger('Replay', 'ReplayAutosaveFrequency', REPLAY_AUTOSAVE_FREQUENCY_DEF));
 
     fSoundFXVolume  := F.ReadFloat  ('SFX',  'SFXVolume',      0.5);
     fMusicVolume    := F.ReadFloat  ('SFX',  'MusicVolume',    0.5);
@@ -798,6 +816,10 @@ begin
 
     F.WriteBool   ('Game','SpecShowBeacons',    fSpecShowBeacons);
     F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
+
+    F.WriteBool   ('Game','SaveCheckpoints',          fSaveCheckpoints);
+    F.WriteInteger('Game','SaveCheckpointsFrequency', fSaveCheckpointsFreq);
+    F.WriteInteger('Game','SaveCheckpointsLimit',     fSaveCheckpointsLimit);
 
     F.WriteInteger('Game','PlayersColorMode', Byte(fPlayersColorMode));
 
@@ -1123,6 +1145,27 @@ end;
 procedure TKMGameSettings.SetShowGameTime(aValue: Boolean);
 begin
   fShowGameTime := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetSaveCheckpoints(const aValue: Boolean);
+begin
+  fSaveCheckpoints := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetSaveCheckpointsFreq(const aValue: Integer);
+begin
+  fSaveCheckpointsFreq := EnsureRange(aValue, GAME_SAVE_CHECKPOINT_FREQ_MIN, GAME_SAVE_CHECKPOINT_FREQ_MAX);
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetSaveCheckpointsLimit(const aValue: Integer);
+begin
+  fSaveCheckpointsLimit := EnsureRange(aValue, GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN, GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX);
   Changed;
 end;
 

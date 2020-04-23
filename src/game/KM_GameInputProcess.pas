@@ -360,6 +360,7 @@ type
     property ReplayState: TKMGIPReplayState read fReplayState;
     function GetLastTick: Cardinal;
     function ReplayEnded: Boolean;
+    procedure MoveCursorTo(aTick: Integer);
 
     class function GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
     class function StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
@@ -522,6 +523,12 @@ function TKMGameInputProcess.MakeEmptyCommand(aGIC: TKMGameInputCommandType): TK
 begin
   Result.CommandType := aGIC;
   Result.HandIndex := gMySpectator.HandID;
+end;
+
+
+procedure TKMGameInputProcess.MoveCursorTo(aTick: Integer);
+begin
+  fCursor := aTick;
 end;
 
 
@@ -1113,9 +1120,12 @@ var
   S: TKMemoryStreamBinary;
 begin
   S := TKMemoryStreamBinary.Create;
-  SaveToStream(S);
-  S.SaveToFile(aFileName);
-  S.Free;
+  try
+    SaveToStream(S);
+    S.SaveToFile(aFileName);
+  finally
+    S.Free;
+  end;
 end;
 
 
@@ -1148,10 +1158,14 @@ var
   S: TKMemoryStreamBinary;
 begin
   if not FileExists(aFileName) then Exit;
+
   S := TKMemoryStreamBinary.Create;
-  S.LoadFromFile(aFileName);
-  LoadFromStream(S);
-  S.Free;
+  try
+    S.LoadFromFile(aFileName);
+    LoadFromStream(S);
+  finally
+    S.Free;
+  end;
 end;
 
 

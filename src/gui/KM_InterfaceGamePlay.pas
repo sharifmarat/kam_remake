@@ -319,7 +319,8 @@ type
     procedure CinematicUpdate;
     procedure LoadHotkeysFromHand;
     procedure UpdateReplayButtons(aPaused: Boolean);
-    procedure ReplaySaved;
+    procedure AddReplayMark(aTick: Cardinal);
+    procedure UpdateReplayMarks;
 
     property UIMode: TUIMode read fUIMode;
 
@@ -1829,10 +1830,32 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ReplaySaved;
+procedure TKMGamePlayInterface.AddReplayMark(aTick: Cardinal);
 begin
+  if Self = nil then Exit;
+
   if (gGame.SavedReplays <> nil) then
-    ReplayBar_Replay.AddMark(gGame.GameTick);
+    ReplayBar_Replay.AddMark(aTick);
+end;
+
+
+// Update replay marks according to Game SavedReplays (checkpoints)
+procedure TKMGamePlayInterface.UpdateReplayMarks;
+var
+  Tick: Cardinal;
+  TicksList: TList<Cardinal>;
+begin
+  if (Self = nil) or (gGame.SavedReplays = nil) then Exit;
+
+  TicksList := TList<Cardinal>.Create;
+  try
+    gGame.SavedReplays.FillTicks(TicksList);
+
+    for Tick in TicksList do
+      AddReplayMark(Tick);
+  finally
+    FreeAndNil(TicksList);
+  end;
 end;
 
 
@@ -1936,6 +1959,8 @@ end;
 
 procedure TKMGamePlayInterface.ReplayClick(Sender: TObject);
 begin
+  if Self = nil then Exit;
+
   if Sender = Button_ReplayRestart then
   begin
     // Restart the replay by loading from stream
@@ -1972,7 +1997,7 @@ begin
   if Sender = Button_ReplaySaveAt then
   begin
     gGame.SaveReplayToMemory();
-    ReplaySaved;
+    AddReplayMark(gGame.GameTick);
   end;
 
   if Sender = Dropbox_ReplayFOW then
@@ -2257,8 +2282,6 @@ end;
 
 procedure TKMGamePlayInterface.ReplayMarkClick(aTick: Integer);
 var
-  TicksList: TList<Cardinal>;
-  Tick: Cardinal;
   OldCenter: TKMPointF;
   OldZoom: Single;
   IsPaused: Boolean;
@@ -2288,40 +2311,33 @@ begin
     Exit;
 
   //!!!!Carefull!!!!
-  //Self TKMGamePlayInterface is now destroyed and we can't access any fields here
-  //Use gGame.GamePlayInterface instead
+  //Self TKMGamePlayInterface is destroyed, but new GamePlayInterface is already created. Point Self to it
+  //Other option is to use gGame.GamePlayInterface instead
+  Self := gGame.GamePlayInterface;
 
   //Restore Replay GUI
-  gGame.GamePlayInterface.OpenMenuPage(MainMenuTab);
-  gGame.GamePlayInterface.SyncUIView(OldCenter, OldZoom);
+  OpenMenuPage(MainMenuTab);
+  SyncUIView(OldCenter, OldZoom);
 
-  gGame.GamePlayInterface.GuiGameSpectator.OpenPage(GuiSpecPage);
+  GuiGameSpectator.OpenPage(GuiSpecPage);
 
   if IsPlayerDropOpen then
-    gGame.GamePlayInterface.Dropbox_ReplayFOW.OpenList;
-  gGame.GamePlayInterface.Dropbox_ReplayFOW.ItemIndex := PlayerDropItem;
+    Dropbox_ReplayFOW.OpenList;
+  Dropbox_ReplayFOW.ItemIndex := PlayerDropItem;
 
-  gGame.GamePlayInterface.Checkbox_ReplayFOW.Checked := ShowPlayerFOW;
-  ReplayClick(gGame.GamePlayInterface.Checkbox_ReplayFOW); //Apply FOW
+  Checkbox_ReplayFOW.Checked := ShowPlayerFOW;
+  ReplayClick(Checkbox_ReplayFOW); //Apply FOW
 
-  gGame.GamePlayInterface.Radio_PlayersColorMode.ItemIndex := PlayersColorMode;
+  Radio_PlayersColorMode.ItemIndex := PlayersColorMode;
 
   if IsPaused then
   begin
     gGame.IsPaused := True;
     UpdateReplayButtons(False); //Update buttons
-    gGame.GamePlayInterface.UpdateState(gGame.GameTick);
+    UpdateState(gGame.GameTick);
   end;
 
-  TicksList := Tlist<Cardinal>.Create;
-  try
-    gGame.SavedReplays.FillTicks(TicksList);
-
-    for Tick in TicksList do
-      gGame.GamePlayInterface.ReplayBar_Replay.AddMark(Tick);
-  finally
-    FreeAndNil(TicksList);
-  end;
+  UpdateReplayMarks;
 end;
 
 

@@ -772,14 +772,19 @@ var
   SavedReplays: TKMSavedReplays;
   GameMode: TKMGameMode;
   SaveFile: UnicodeString;
+  gameInputProcess: TKMGameInputProcess;
 begin
-  if (gGame = nil) then
-    Exit;
+  if (gGame = nil) then Exit;
+
   // Get existing configuration
   SavedReplays := gGame.SavedReplays;
   gGame.SavedReplays := nil;
   GameMode := gGame.GameMode;
   SaveFile := gGame.SaveFile;
+  // Store GIP locally, to restore it later
+  // GIP is the same for every checkpoint, that is why its not stored in the saved replay checkpoint, so we can reuse it
+  gameInputProcess := gGame.GameInputProcess;
+  gGame.GameInputProcess := nil;
 
   StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
@@ -795,6 +800,13 @@ begin
     gGame.SavedReplays.Free;
     gGame.SavedReplays := SavedReplays;
     gGame.LoadSavedReplay(aTick, SaveFile);
+    gGame.LastReplayTick := Max(gGame.LastReplayTick, SavedReplays.LastTick);
+    // Free GIP, which was created on game creation
+    gGame.GameInputProcess.Free;
+    // Restore GIP
+    gGame.GameInputProcess := gameInputProcess;
+    // Move GIP cursor to the actual position
+    gGame.GameInputProcess.MoveCursorTo(aTick);
   except
     on E: Exception do
     begin
@@ -1002,7 +1014,10 @@ end;
 function TKMGameApp.TryLoadSavedReplay(aTick: Integer): Boolean;
 begin
   Result := False;
-  if (gGame <> nil) AND (gGame.SavedReplays <> nil) AND gGame.SavedReplays.Contains(aTick) then
+
+  if (gGame = nil) or (gGame.SavedReplays = nil) then Exit;
+  
+  if gGame.SavedReplays.Contains(aTick) then
   begin
     LoadGameFromMemory(aTick);
     Result := True;
