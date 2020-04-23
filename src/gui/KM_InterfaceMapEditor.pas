@@ -834,7 +834,7 @@ end;
 
 procedure TKMapEdInterface.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
-  KeyHandled, KeyPassedToModal: Boolean;
+  keyHandled, keyPassedToModal: Boolean;
 begin
   aHandled := True; // assume we handle all keys here
 
@@ -844,21 +844,21 @@ begin
     Exit; //Handled by Controls
   end;
 
-  KeyHandled := False;
+  keyHandled := False;
 
   //For MapEd windows / pages
-  fGuiTerrain.KeyDown(Key, Shift, KeyHandled);
-  fGuiTown.KeyDown(Key, Shift, KeyHandled);
-  fGuiMission.KeyDown(Key, Shift, KeyHandled);
+  fGuiTerrain.KeyDown(Key, Shift, keyHandled);
+  fGuiTown.KeyDown(Key, Shift, keyHandled);
+  fGuiMission.KeyDown(Key, Shift, keyHandled);
 
-  if KeyHandled then Exit;
+  if keyHandled then Exit;
 
-  inherited KeyDown(Key, Shift, KeyHandled);
-  if KeyHandled then Exit;
+  inherited KeyDown(Key, Shift, keyHandled);
+  if keyHandled then Exit;
 
   gGameCursor.SState := Shift; // Update Shift state on KeyDown
 
-  KeyPassedToModal := False;
+  keyPassedToModal := False;
   //Pass Key to Modal pages first
   //Todo refactoring - remove fGuiAttack.KeyDown and similar methods,
   //as KeyDown should be handled in Controls them selves (TKMPopUpWindow, f.e.)
@@ -866,17 +866,17 @@ begin
     or (fGuiFormations.Visible and fGuiFormations.KeyDown(Key, Shift))
     or (fGuiGoal.Visible and fGuiGoal.KeyDown(Key, Shift))
     or (fGuiMenuQuickPlay.Visible and fGuiMenuQuickPlay.KeyDown(Key, Shift)) then
-    KeyPassedToModal := True;
+    keyPassedToModal := True;
 
   //For now enter can open up Extra panel
-  if not KeyPassedToModal and (Key = gResKeys[SC_MAPEDIT_EXTRA].Key) then
+  if not keyPassedToModal and (Key = gResKeys[SC_MAPEDIT_EXTRA].Key) then
     Message_Click(Image_Extra);
 
   // If modals are closed or they did not handle key
-  if not KeyPassedToModal and (Key = gResKeys[SC_CLOSE_MENU].Key) then
+  if not keyPassedToModal and (Key = gResKeys[SC_CLOSE_MENU].Key) then
   begin
-    Cancel_Clicked(False, KeyHandled);
-    if not KeyHandled then
+    Cancel_Clicked(False, keyHandled);
+    if not keyHandled then
     begin
       if fGuiMessage.Visible then
         fGuiMessage.Hide
@@ -977,7 +977,7 @@ end;
 
 procedure TKMapEdInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 var
-  Obj: TObject;
+  obj: TObject;
   keyHandled: Boolean;
 begin
   fMyControls.MouseDown(X,Y,Shift,Button);
@@ -987,13 +987,13 @@ begin
 
   if (Button = mbLeft) and (gGameCursor.Mode = cmNone) then
   begin
-    Obj := gMySpectator.HitTestCursor;
-    if Obj <> nil then
+    obj := gMySpectator.HitTestCursor;
+    if obj <> nil then
     begin
       UpdateSelection;
-      fDragObject := Obj;
-      if Obj is TKMHouse then
-        fDragHouseOffset := KMPointSubtract(TKMHouse(Obj).Entrance, gGameCursor.Cell); //Save drag point adjustement to house position
+      fDragObject := obj;
+      if obj is TKMHouse then
+        fDragHouseOffset := KMPointSubtract(TKMHouse(obj).Entrance, gGameCursor.Cell); //Save drag point adjustement to house position
       fDragObjectReady := True;
       fDragObjMousePosStart := KMPoint(X,Y);
     end;
@@ -1286,7 +1286,7 @@ end;
 procedure TKMapEdInterface.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   DP: TAIDefencePosition;
-  Marker: TKMMapEdMarker;
+  marker: TKMMapEdMarker;
   G: TKMUnitGroup;
   U: TKMUnit;
   H: TKMHouse;
@@ -1316,11 +1316,11 @@ begin
               begin
                 //If there are some additional layers we first HitTest them
                 //since they are rendered ontop of Houses/Objects
-                Marker := gGame.MapEditor.HitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
+                marker := gGame.MapEditor.HitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
 
-                if Marker.MarkerType <> mtNone then
+                if marker.MarkerType <> mtNone then
                 begin
-                  ShowMarkerInfo(Marker);
+                  ShowMarkerInfo(marker);
                   gMySpectator.Selected := nil; //We might have had a unit/group/house selected
                 end
                 else
