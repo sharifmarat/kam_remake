@@ -185,8 +185,8 @@ begin
   fSubMenuActionsEvents[0] := BrushChange;
   fSubMenuActionsEvents[1] := BrushChange;
 
-  fSubMenuActionsCtrls[0] := BrushCircle;
-  fSubMenuActionsCtrls[1] := BrushSquare;
+  fSubMenuActionsCtrls[0,0] := BrushCircle;
+  fSubMenuActionsCtrls[1,0] := BrushSquare;
 end;
 
 

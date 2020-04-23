@@ -29,7 +29,7 @@ type
     Panel_Town: TKMPanel;
     Button_Town: array [TKMTownTab] of TKMButton;
     procedure DoShowSubMenu(aIndex: Byte); override;
-    procedure DoExecuteSubMenuAction(aIndex: Byte); override;
+    procedure DoExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean); override;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
     destructor Destroy; override;
@@ -163,15 +163,15 @@ begin
 end;
 
 
-procedure TKMMapEdTown.DoExecuteSubMenuAction(aIndex: Byte);
+procedure TKMMapEdTown.DoExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
 begin
   inherited;
 
-  fGuiHouses.ExecuteSubMenuAction(aIndex);
-  fGuiUnits.ExecuteSubMenuAction(aIndex);
-  fGuiScript.ExecuteSubMenuAction(aIndex);
-  fGuiDefence.ExecuteSubMenuAction(aIndex);
-  fGuiOffence.ExecuteSubMenuAction(aIndex);
+  fGuiHouses.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiUnits.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiScript.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiDefence.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiOffence.ExecuteSubMenuAction(aIndex, aHandled);
 end;
 
 

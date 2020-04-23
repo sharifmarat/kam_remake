@@ -82,7 +82,7 @@ type
     procedure ResetDragObject;
     function DoResetCursorMode: Boolean;
     procedure ShowSubMenu(aIndex: Byte);
-    procedure ExecuteSubMenuAction(aIndex: Byte);
+    procedure ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
     procedure Update_Label_Coordinates;
     procedure MapTypeChanged(aIsMultiplayer: Boolean);
 
@@ -898,30 +898,30 @@ begin
 end;
 
 
-procedure TKMapEdInterface.ExecuteSubMenuAction(aIndex: Byte);
+procedure TKMapEdInterface.ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
 begin
-  fGuiTerrain.ExecuteSubMenuAction(aIndex);
-  fGuiTown.ExecuteSubMenuAction(aIndex);
-  fGuiPlayer.ExecuteSubMenuAction(aIndex);
-  fGuiMission.ExecuteSubMenuAction(aIndex);
+  fGuiTerrain.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiTown.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiPlayer.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiMission.ExecuteSubMenuAction(aIndex, aHandled);
 end;
 
 
 procedure TKMapEdInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
   I: Integer;
-  KeyHandled: Boolean;
+  keyHandled: Boolean;
 begin
   aHandled := True; // assume we handle all keys here
 
   if fMyControls.KeyUp(Key, Shift) then Exit; //Handled by Controls
 
-  inherited KeyUp(Key, Shift, KeyHandled);
-  if KeyHandled then Exit;
+  inherited KeyUp(Key, Shift, keyHandled);
+  if keyHandled then Exit;
 
   //For undo/redo shortcuts and Objects Palette
-  fGuiTerrain.KeyUp(Key, Shift, KeyHandled);
-  if KeyHandled then Exit;
+  fGuiTerrain.KeyUp(Key, Shift, keyHandled);
+  if keyHandled then Exit;
 
   //F1-F5 menu shortcuts
   if Key = gResKeys[SC_MAPEDIT_TERRAIN].Key   then Button_Main[1].Click;
@@ -938,7 +938,10 @@ begin
   //q-w-e-r-t-y-u submenu actions shortcuts
   for I := Low(MAPED_SUBMENU_ACTIONS_HOTKEYS) to High(MAPED_SUBMENU_ACTIONS_HOTKEYS) do
     if Key = gResKeys[MAPED_SUBMENU_ACTIONS_HOTKEYS[I]].Key then
-      ExecuteSubMenuAction(I);
+    begin
+      keyHandled := False;
+      ExecuteSubMenuAction(I, keyHandled);
+    end;
 
   //Universal erasor
   if Key = gResKeys[SC_MAPEDIT_UNIV_ERASOR].Key then
