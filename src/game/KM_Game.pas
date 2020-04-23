@@ -1254,6 +1254,9 @@ begin
     LocalIsMultiPlayerOrSpec := IsMultiPlayerOrSpec;
     TTask.Run(procedure
     begin
+      {$IFDEF DEBUG}
+      TThread.NameThreadForDebugging('Game.AutoSave');
+      {$ENDIF}
       DoAutoSaveRename(LocalIsMultiPlayerOrSpec);
     end);
   {$ELSE}
