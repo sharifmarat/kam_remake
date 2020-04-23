@@ -847,7 +847,9 @@ begin
   keyHandled := False;
 
   //For MapEd windows / pages
-  fGuiTerrain.KeyDown(Key, Shift, keyHandled);
+  fGuiTerrain.KeyDown(Key, Shift, keyHandled); // Terrain first (because of Objects and Tiles popup windows)
+  fGuiHouse.KeyDown(Key, Shift, keyHandled);
+  fGuiUnit.KeyDown(Key, Shift, keyHandled);
   fGuiTown.KeyDown(Key, Shift, keyHandled);
   fGuiMission.KeyDown(Key, Shift, keyHandled);
 
