@@ -97,6 +97,7 @@ type
     gicGameAutoSave,
     gicGameAutoSaveAfterPT,
     gicGameSaveReturnLobby,
+    gicGameLoadSave,
     gicGameTeamChange,
     gicGameHotkeySet,        //Hotkeys are synced for MP saves (UI keeps local copy to avoid GIP delays)
     gicGameMessageLogRead,   //Player marks a message in their log as read
@@ -135,11 +136,11 @@ const
     gicArmyLink, gicArmyAttackUnit, gicArmyAttackHouse, gicArmyHalt,
     gicArmyFormation,  gicArmyWalk, gicArmyStorm, gicHouseBarracksEquip, gicHouseTownHallEquip];
   AllowedAfterDefeat: set of TKMGameInputCommandType =
-    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameLoadSave, gicGameMessageLogRead, gicTempDoNothing];
   AllowedInCinematic: set of TKMGameInputCommandType =
     [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
   AllowedBySpectators: set of TKMGameInputCommandType =
-    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGamePlayerDefeat, gicTempDoNothing];
+    [gicGameAlertBeacon, gicGameSpeed, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameLoadSave, gicGamePlayerDefeat, gicTempDoNothing];
   //Those commands should not have random check, because they they are not strictly happen, depends of player config and actions
   //We want to make it possible to reproduce AI city build knowing only seed + map config
   //Autosave and other commands random checks could break it, since every command have its own random check (and KaMRandom call)
@@ -240,6 +241,7 @@ const
     gicpt_Date,     // gicGameAutoSave
     gicpt_Date,     // gicGameAutoSaveAfterPT
     gicpt_Date,     // gicGameSaveReturnLobby
+    gicpt_Int1,     // gicGameLoadSave
     gicpt_Int2,     // gicGameTeamChange
     gicpt_Int2,     // gicGameHotkeySet
     gicpt_Int1,     // gicGameMessageLogRead
@@ -818,6 +820,7 @@ begin
                                     gGameApp.PrepareReturnToLobby(DateTimeParam); //Timestamp is synchronised
                                     Exit;
                                   end;
+      gicGameLoadSave:            ; //Just a marker to know when game was loaded
       gicGameTeamChange:          begin
                                     //Currently unused, disabled to prevent potential exploitation
                                     {fGame.Networking.NetPlayers[Params[1]].Team := Params[2];
@@ -1066,7 +1069,7 @@ end;
 
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aValue: Integer);
 begin
-  Assert(aCommandType in [gicGameMessageLogRead, gicGamePlayerDefeat]);
+  Assert(aCommandType in [gicGameMessageLogRead, gicGamePlayerDefeat, gicGameLoadSave]);
   TakeCommand(MakeCommand(aCommandType, aValue));
 end;
 
