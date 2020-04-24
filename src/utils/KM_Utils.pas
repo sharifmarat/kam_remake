@@ -17,7 +17,7 @@ uses
   function KMPathLength(aNodeList: TKMPointList): Single;
 
   function GetHintWHotKey(const aText: String; aHotkeyId: Integer): String; overload;
-  function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String; overload;
+  function GetHintWHotKey(aTextId: Integer; const aHotkeyStr: String): String; overload;
   function GetHintWHotKey(aTextId, aHotkeyId: Integer): String; overload;
 
 	function GetShiftState(aButton: TMouseButton): TShiftState;
@@ -291,21 +291,23 @@ end;
 
 function GetHintWHotKey(const aText: String; aHotkeyId: Integer): String; overload;
 var
-  HotKeyStr: String;
+  hotKeyStr: String;
 begin
   Result := aText;
-  HotKeyStr := gResKeys.GetKeyNameById(aHotkeyId);
-  if HotKeyStr <> '' then
-    Result := Result + Format(' (''%s'')', [HotKeyStr]);
+  hotKeyStr := gResKeys.GetKeyNameById(aHotkeyId);
+  if hotKeyStr <> '' then
+    Result := Result + Format(' (''%s'')', [hotKeyStr]);
 end;
 
 
-function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String;
+function GetHintWHotKey(aTextId: Integer; const aHotkeyStr: String): String;
+var
+  hotKeyStr: string;
 begin
   Result := gResTexts[aTextId];
-  aHotkeyStr := Trim(aHotkeyStr);
-  if aHotkeyStr <> '' then
-    Result := Result + Format(' (''%s'')', [aHotkeyStr]);
+  hotKeyStr := Trim(aHotkeyStr);
+  if hotKeyStr <> '' then
+    Result := Result + Format(' (''%s'')', [hotKeyStr]);
 end;
 
 

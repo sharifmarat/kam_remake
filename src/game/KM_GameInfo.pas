@@ -161,7 +161,7 @@ begin
 
   SaveStream.WriteW(Title); //GameName
   SaveStream.Write(TickCount);
-  if GAME_COMPARE_SAVE_MODE then
+  if GAME_COMPARE_SAVE then
     SaveStream.Write(TDateTime(0))
   else
     SaveStream.Write(SaveTimestamp);

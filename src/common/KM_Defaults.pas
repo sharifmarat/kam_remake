@@ -110,6 +110,7 @@ var
   {User interface options}
   DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
   DEBUG_LOGS              :Boolean = True;  //Log debug info
+  DEBUG_SCRIPTING_EXEC    :Boolean = False; //Use slow debug executor (about 3 times slower! never use on release version). Using it we can find exact position of execution time error (row/col/pos/module)
   SKIP_RNG_CHECKS_FOR_SOME_GIC: Boolean = True; //Skip rng checks for Autosave and few other commands to have same AI city with predefined seed + mapconfig
   ALLOW_SELECT_ALLY_UNITS :Boolean = DEBUG_CFG; //Do we allow to select ally units or groups
   ALLOW_SELECT_ENEMIES    :Boolean = DEBUG_CFG; //Do we allow to select enemies houses/units/groups
@@ -254,10 +255,19 @@ const
   AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX = 5; //Max number of autosaves to be included into crashreport
   AUTOSAVE_NOT_MORE_OFTEN_THEN = 10000; //= 10s - Time in ms, how often we can make autosaves. On high speedups we can get IO errors because of too often saves
 
-  REPLAY_AUTOSAVE_FREQUENCY_MIN  = 300; //30 sec
-  REPLAY_AUTOSAVE_FREQUENCY_MAX  = 10*60*60; // 1hour
-  REPLAY_AUTOSAVE_FREQUENCY_DEFAULT = 3000; //5 min
-  REPLAY_AUTOSAVE_MAX_SAVE_POINTS = 40; //Default max number of replay autosaves
+  // Checkpoint, which are made in the memory while watching replay
+  REPLAY_AUTOSAVE_FREQUENCY_MIN = 30*10; //30 sec
+  REPLAY_AUTOSAVE_FREQUENCY_MAX = 10*60*60; // 1 hour
+  REPLAY_AUTOSAVE_FREQUENCY_DEF = 5*60*10; // 5 min
+  REPLAY_AUTOSAVE_CNT_MAX       = 40; // Max number of replay autosaves
+
+  // Checkpoints, which are made during the game and saved in the .rpl file
+  GAME_SAVE_CHECKPOINT_FREQ_MIN = 5*60*10; // 5 min
+  GAME_SAVE_CHECKPOINT_FREQ_MAX = 10*60*60; // 1 hour
+  GAME_SAVE_CHECKPOINT_FREQ_DEF = 10*15*60; // 15 minutes
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN  = 0;  // Min limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX  = 40; // Max limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF  = 10; // Def limit for number of game checkpoints
 
 
   BEACON_COOLDOWN         = 400;  //Minimum time in milliseconds between beacons
@@ -328,6 +338,7 @@ const
   EXT_SAVE_TXT_DOT = '.txt';
 
   EXT_SAVE_REPLAY = 'rpl';
+  EXT_SAVE_GAME_SAVEPTS = 'spt';
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_MAIN_TXT = EXT_SAVE_MAIN + EXT_SAVE_TXT_DOT;
   EXT_SAVE_BASE = 'bas';
@@ -337,6 +348,7 @@ const
   EXT_FILE_SCRIPT = 'script';
 
   EXT_SAVE_REPLAY_DOT = '.' + EXT_SAVE_REPLAY;
+  EXT_SAVE_GAME_SAVEPTS_DOT = '.' + EXT_SAVE_GAME_SAVEPTS;
   EXT_SAVE_MAIN_DOT = '.' + EXT_SAVE_MAIN;
   EXT_SAVE_MAIN_TXT_DOT = '.' + EXT_SAVE_MAIN_TXT;
   EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;

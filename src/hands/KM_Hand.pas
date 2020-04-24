@@ -1537,7 +1537,7 @@ end;
 
 function TKMHand.OwnerName(aNumberedAIs: Boolean = True; aLocalized: Boolean = True): UnicodeString;
 
-  function GetText(aId: Word): UnicodeString;
+  function GetText(aId: Word; aLocalized: Boolean): UnicodeString; inline;
   begin
     if aLocalized then
       Result := gResTexts[aId]
@@ -1546,36 +1546,40 @@ function TKMHand.OwnerName(aNumberedAIs: Boolean = True; aLocalized: Boolean = T
   end;
 
 begin
+  //If this location is controlled by an MP player - show his nik
+  if (fOwnerNikname <> '')
+    and (HandType = hndHuman) then //we could ask AI to play on ex human loc, so fOwnerNikname will be still some human name
+    Exit(UnicodeString(fOwnerNikname));
+
+  //Try to take player name from mission text if we are in SP
+  //Do not use names in MP to avoid confusion of AI players with real player niknames
+  if (gGame.GameMode in [gmSingle, gmCampaign, gmMapEd, gmReplaySingle])
+    and gGame.TextMission.HasText(HANDS_NAMES_OFFSET + fID) then
+  begin
+    if HandType = hndHuman then
+      Result := GetText(TX_PLAYER_YOU, aLocalized) + ' (' + gGame.TextMission[HANDS_NAMES_OFFSET + fID] + ')'
+    else
+      Result := gGame.TextMission[HANDS_NAMES_OFFSET + fID];
+
+    Exit;
+  end;
+
   //Default names
   if HandType = hndHuman then
-    Result := GetText(TX_PLAYER_YOU)
+    Result := GetText(TX_PLAYER_YOU, aLocalized)
   else
     if AI.Setup.NewAI then
     begin
       if aNumberedAIs then
-        Result := Format(GetText(TX_ADVANCED_AI_PLAYER_SHORT_X), [fID + 1])
+        Result := Format(GetText(TX_ADVANCED_AI_PLAYER_SHORT_X, aLocalized), [fID + 1])
       else
-        Result := GetText(TX_AI_PLAYER_ADVANCED_SHORT);
+        Result := GetText(TX_AI_PLAYER_ADVANCED_SHORT, aLocalized);
     end else begin
       if aNumberedAIs then
-        Result := Format(GetText(TX_CLASSIC_AI_PLAYER_SHORT_X), [fID + 1])
+        Result := Format(GetText(TX_CLASSIC_AI_PLAYER_SHORT_X, aLocalized), [fID + 1])
       else
-        Result := GetText(TX_AI_PLAYER_CLASSIC_SHORT);
+        Result := GetText(TX_AI_PLAYER_CLASSIC_SHORT, aLocalized);
     end;
-
-  //Try to take player name from mission text if we are in SP
-  //Do not use names in MP to avoid confusion of AI players with real player niknames
-  if gGame.GameMode in [gmSingle, gmCampaign, gmMapEd, gmReplaySingle] then
-    if gGame.TextMission.HasText(HANDS_NAMES_OFFSET + fID) then
-      if HandType = hndHuman then
-        Result := GetText(TX_PLAYER_YOU) + ' (' + gGame.TextMission[HANDS_NAMES_OFFSET + fID] + ')'
-      else
-        Result := gGame.TextMission[HANDS_NAMES_OFFSET + fID];
-
-  //If this location is controlled by an MP player - show his nik
-  if (fOwnerNikname <> '')
-    and (HandType = hndHuman) then //we could ask AI to play on ex human loc, so fOwnerNikname will be still some human name
-    Result := UnicodeString(fOwnerNikname);
 end;
 
 

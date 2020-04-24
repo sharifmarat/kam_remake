@@ -307,7 +307,7 @@
 308:Vollbild
 309:Übernehmen
 310:Sprache:
-311:Schatten Qualität:
+311:Hohe Schatten Qualität
 314:Lade... Bitte warten
 315:Ein Fehler ist aufgetreten!
 316:Neue Lokalisierung laden
@@ -750,7 +750,7 @@
 798:Zur Lobby zurück?
 799:%s hat abgestimmt zur Lobby zurückzukehren (Abstimmung erfolgreich).
 800:Abstimmung zur Lobby zurückzukehren wurde abgelehnt.
-801:Durch das Löschen dieser Wiedergabe wird auch der dazugehörige Spielstand gelöscht. Möchten Sie diese Spielstand wirklich löschen?
+801:Durch das Löschen dieses Replays wird auch der dazugehörige Spielstand gelöscht. Möchten Sie diesen Spielstand wirklich löschen?
 802:Truppe zufällig
 803:Anzahl
 804:Replay löschen
@@ -780,9 +780,9 @@
 829:Der Auftrag ist vollständig.
 830:Asiatische Fonts
 831:Aus Downloads entfernen
-832:Wiedergabe umbenennen
+832:Replay umbenennen
 833:Replay umbenennen
-834:Diese Wiedergabe löschen
+834:Replay löschen
 835:Neuer Name:
 836:Bestätigen
 837:Tastenbelegung bearbeiten
@@ -792,7 +792,7 @@
 841:Taste
 842:Spezielle nicht bearbeitbare Tastenbelegungen
 843:Spezielle Tastenbelegungen
-844:zurücksetzen
+844:Taste zurücksetzen
 845:Nach links Scrollen
 846:Nach rechts Scrollen
 847:Hochscrollen
@@ -838,9 +838,9 @@
 887:Debug Sieg
 888:Debug Niederlage
 889:Debug Späher hinzufügen
-890:Extra's Menu
+890:Extras Menü
 891:Gelände Editor
-892:Dorfplanung
+892:Siedlungsplanung
 893:Visuelles Skripting
 894:Globales Skripting
 895:Hauptmenü
@@ -850,7 +850,7 @@
 899:Untermenü 4
 900:Untermenü 5
 901:Untermenü 6
-902:Strg und Shift sind nicht zuweisbar
+902:Strg und Shift sind nicht verfügbar
 903:Unbekannter Wert
 904:Linke Maustaste
 905:Mittlere Maustaste
@@ -939,7 +939,7 @@
 989:%s hat das Spiel verlassen und ist besiegt
 990:Der Host (%s) hat das Spiel verlassen und ist besiegt
 991:Abbruch
-992:Tasten löschen
+992:Taste löschen
 993:Gruppe 11 wählen
 994:Gruppe 12 wählen
 995:Gruppe 13 wählen
@@ -954,7 +954,7 @@
 1004:Ackerfeld anlegen
 1005:Weinfeld anlegen
 1006:Gebäude/Bauplan entfernen
-1007:Nächstes Haus/Einheit desselben Typs wählen
+1007:Nächstes Haus/Einheit desselben Typs
 1008:Debug-Fenster
 1009:Spieler 1 zuschauen
 1010:Spieler 2 zuschauen
@@ -968,7 +968,7 @@
 1018:Zuschauer-/Replay-Tastenbelegung
 1019:%s hat dich stumm geschaltet. Du kannst ihm keine Nachrichten oder Signale mehr senden
 1020:Palette "Objekte"
-1021:Universal radierer
+1021:Radiergummi
 1022:Ihr Holzfäller findet keinen freien Platz, um weitere Bäume pflanzen zu können
 1023:PT-
 1024:%s hat gewonnen!
@@ -981,7 +981,7 @@
 1031:Alle
 1032:Alle
 1033:Karte umbenennen
-1034:Pause am Ende der Friedenszeit
+1034:Pause nach Friedenszeit
 1035:Spielzeit
 1036:Name
 1037:Heerstärke
@@ -1008,7 +1008,7 @@
 1058:Vorwärts-Maustaste
 1059:Rückwärts-Maustaste
 1060:Alle
-1061:Universal Radierer
+1061:Radiergummi
 1062:Kachelbesitzer anzeigen
 1063:Kachelnetz anzeigen
 1064:Schnittpunkt
@@ -1050,7 +1050,7 @@
 1100:Nein
 1101:Abbrechen
 1102:Karte
-1103:Wiedergabe
+1103:Replay
 1104:Spieler
 1105:Teams
 1106:Spieler 9 zuschauen
@@ -1066,8 +1066,8 @@
 1116:Möchten Sie den Spieler wirklich löschen?|Alle seine Daten werden dabei gelöscht!
 1117:Schliessen
 1118:Mehrspieler Karten
-1119:Keine Musik
-1120:Lieder zufällig
+1119:Musik aus
+1120:Zufällige Wiedergabe
 1121:Zufallswiedergabe an/aus
 1122:Kartentyp
 1123:Szenariokarte
@@ -1117,7 +1117,7 @@
 1167:Entsättigte Farbe, die für Texte verwendet werden Kann (z. B. in Überlagerungen von Skripten) [readonly]
 1168:Kartenfilter
 1169:Filter zurücksetzen
-1170:Nach Spielernummer
+1170:Anzahl Spieler
 1171:Zurück zum Spiel
 1172:Detaillierte Spielstatistik anzeigen
 1173:Schwierigkeitsgrad
@@ -1134,8 +1134,8 @@
 1184:Host
 1185:Zu ausgewählten Haus springen
 1186:Zu ausgewählter Einheit springen
-1187:Verbündeter / Feind | Farbmodus
-1188:Eigene- / Verbündeten- / Feindfarnem für Spieler anstelle der anfänglichen Spielerfarben
+1187:Zeige Teamfarben
+1188:Eigene- / Verbündeten- / Feindfarben für Spieler anstelle der anfänglichen Spielerfarben.
 1189:[$404040]Host ist bereit zum Starten. Bitte drücke '[][$0707FF]%s[][$404040]'[]
 1190:Bitten, Bereit zu drücken
 1191:Der Alarm, sich bereit zu machen, wurde an %s Spieler gesendet.
@@ -1156,10 +1156,10 @@
 1206:Zusatzoptionen
 1207:Zusätzliche Pinseloptionen
 1208:Zusätzliche Pinseloptionen
-1209:Geländepinsel beheben
-1210:Versuche interne Geländeinformationen zu beheben, damit die Pinsel funktionieren
+1209:Geländepinsel Fix
+1210:Versucht Geländeinformationen zu reparieren, damit die Pinsel funktionieren.
 1211:Geländepinsel beheben
-1212:Sind Sie sicher, dass Sie interne Informationen zu allen Geländepinsel | beheben möchten? | Damit können Sie Pinsel verwenden, die manuell über Kacheln aus der Kacheltabelle gesetzt werden
+1212:Sind Sie sicher, dass Sie Informationen zu allen|Geländepinseln reparieren möchten?|Damit können Sie Pinsel verwenden, die manuell|über Kacheln aus der Kacheltabelle gesetzt werden.
 1213:Std.
 1214:Menschlicher Spieler
 1215:Klassischer KI Spieler %d
@@ -1168,7 +1168,7 @@
 1218:Fortgeschrittene KI %d
 1219:Klassischer KI Spieler
 1220:KI-Spielertyp
-1221:Autosave am Ende des Spiels
+1221:Autosave am Spielende
 1222:Keiner
 1223:Ressourcen
 1224:Häuser
@@ -1213,7 +1213,7 @@
 1263:Zufallskarten Generator - Einstellungen
 1264:Zufallskarten Generator Einstellungen
 1265:ZKG Einstellungen
-1266:Kartengröße:
+1266:Größe:
 1267:Orte
 1268:Orte mit Ressourcen freischalten
 1269:Anzahl an Orten
@@ -1240,7 +1240,7 @@
 1290:Aktiviere Hindernisse (Berge, Flüsse, Sümpfe, ...)
 1291:Größe
 1292:Die Durchschnittsgröße der generierten Hindernisse
-1293:Dichte
+1293:Objekte Dichte
 1294:Die Dichte der generierten Hindernisse
 1295:Streuung
 1296:Die Streuung der generierten Hindernisse
@@ -1279,7 +1279,7 @@
 1329:Limitierung der Biomgrenzen (höherer Wert = größeres Biom)
 1330:Höhe
 1331:Aktiviere Höhe
-1332:Verstecke gezackte Ecken
+1332:Verstecke Ecken
 1333:Passe die Terrainhöhe an, sodass grobe Texturübergänge versteckt werden
 1334:Unerreichbare Plätze
 1335:Behandlung von unerreichbaren Plätzen
@@ -1296,12 +1296,12 @@
 1346:Wälder Dichte
 1347:Bäume
 1348:Anzahl der Bäume im Wald
-1349:Seed
+1349:Karten-ID
 1350:Eine eindeutige Zahl zur Generierung einer Karte mit einer spezifischen Konfiguration
-1351:Neuer zufälliger Seed
-1352:Erstelle Karte mit neuem Seed
+1351:Neue Karte streuen
+1352:Generiere Karte mit neuen Angaben.
 1353:Erstelle Karte
-1354:Erstelle Karte mit aktuellem Seed
+1354:Erstelle Karte mit aktuellem Angaben.
 1355:Schließe Zufallskarten Generator
 1356:Kartengröße:
 1357:Spiele nächsten Tick in der Aufnahme
@@ -1339,7 +1339,7 @@
 1389:Verzögerung in Sekunden bevor die KI Leder ausrüstet
 1390:Verzögerung in Sekunden bevor die KI Eisen ausrüstet
 1391:Setze die Anzahl von KI Arbeitern
-1392:Übergang Stufe
+1392:Weichzeichner
 1393:Stufe der Terrain Übergänge mittels Masken
 1394:Block Building
 1395:Block Walking und Building
@@ -1347,11 +1347,19 @@
 1397:Setze Kachel Overlay.|Verwende LMB für sicheren Modus und LMB+Shift um Straßen zu überschreiben
 1398:Video Clips:
 1399:Aktivieren
-1400:Strecken
-1401:Zeige beim Starten
+1400:Vollbild
+1401:Beim Start abspielen
 1402:Lautstärke
-1403:Teste Video
+1403:Teste Videos
 1404:Mods
-1405:Schneehäuser
+1405:Gebäude mit Schnee
 1406:Blockiere Spieler Farbauswahl
 1407:Blockiere Spieler Farbauswahl in der Lobby
+1408:Historie
+1409:Änderungshistorie anzeigen
+1410:Historie
+1411:Springe zu
+1412:Springt zur geänderten Stelle der Historie.
+1425:Kacheln Palette
+1426:Kacheln Palette
+1427:Version

@@ -93,8 +93,8 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
   function AvoidTraffic(): Cardinal;
   begin
     Result := Round(
-                + gAIFields.Influences.ArmyTraffic[fOwner, aTo] * GA_PATHFINDING_AvoidTraffic
-                + (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * GA_PATHFINDING_AvoidEdges
+                + gAIFields.Influences.ArmyTraffic[fOwner, aTo] * AI_Par[ARMY_PATHFINDING_AvoidTraffic]
+                + (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * AI_Par[ARMY_PATHFINDING_AvoidEdges]
               );
   end;
 
@@ -111,10 +111,10 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
     GT: TKMGroupType;
     Weight: Single;
   begin
-    Weight := //+ gAIFields.Influences.ArmyTraffic[fOwner, aTo] * GA_PATHFINDING_AvoidTraffic
-              + (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * GA_PATHFINDING_AvoidEdges;
+    Weight := //+ gAIFields.Influences.ArmyTraffic[fOwner, aTo] * AI_Par[ARMY_PATHFINDING_AvoidTraffic]
+              + (3 - gAIFields.NavMesh.Polygons[aTo].NearbyCount) * AI_Par[ARMY_PATHFINDING_AvoidEdges];
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      Weight := Weight + CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT] * GA_PATHFINDING_AvoidSpecEnemy;
+      Weight := Weight + CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT] * AI_Par[ARMY_PATHFINDING_AvoidSpecEnemy];
     Result := Round(Weight);
   end;
 

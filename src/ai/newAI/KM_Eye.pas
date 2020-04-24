@@ -1004,13 +1004,13 @@ begin
         if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
           VisitArr[Y,X] := UNVISITED_TREE
         // Ignore trees which are too cloose to exist forest
-        else if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM + GA_EYE_GetForests_MaxAB) then
+        else if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM + AI_Par[EYE_GetForests_MaxAB]) then
           VisitArr[Y,X] := UNVISITED_TREE_IN_FOREST;
       end;
     end;
 
   // Detect potential forests as a cluster of trees
-  RADIUS := Round(GA_EYE_GetForests_Radius);
+  RADIUS := Round(AI_Par[EYE_GetForests_Radius]);
   MAX_DIST := RADIUS + 1;
   FI.Count := 0;
   for Y := 1 to fMapY - 1 do
@@ -1037,7 +1037,7 @@ begin
             VisitArr[Y2,X2] := VISITED_TREE_IN_FOREST;
           end;
         end;
-      if (Cnt > GA_EYE_GetForests_MinTrees) then
+      if (Cnt > AI_Par[EYE_GetForests_MinTrees]) then
       begin
         Point := KMPoint( Round(sumPoint.X/(Cnt*1.0)), Round(sumPoint.Y/(Cnt*1.0)) );
         if (Length(FI.Forests) >= FI.Count) then
@@ -1075,11 +1075,11 @@ begin
     if (Result.Count >= aMaxCnt) then
       break;
     Ownership := gAIFields.Influences.OwnPoly[fOwner, K];
-    if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin) AND
-       (Ownership < GA_EYE_GetForests_SPRndOwnLimMax) then
+    if (Ownership > AI_Par[EYE_GetForests_SPRndOwnLimMin]) AND
+       (Ownership < AI_Par[EYE_GetForests_SPRndOwnLimMax]) then
     begin
       Point := gAIFields.NavMesh.Polygons[K].CenterPoint;
-      if (Soil[Point.Y,Point.X] > GA_EYE_GetForests_MinRndSoil) then
+      if (Soil[Point.Y,Point.X] > AI_Par[EYE_GetForests_MinRndSoil]) then
       begin
         if (Length(Result.Forests) >= Result.Count) then
           SetLength(Result.Forests,Length(Result.Forests)+100);

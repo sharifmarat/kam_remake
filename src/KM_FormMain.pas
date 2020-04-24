@@ -64,8 +64,8 @@ type
     Label5: TLabel;
     Label6: TLabel;
     chkShowDefences: TCheckBox;
-    chkBuildAI: TCheckBox;
-    chkCombatAI: TCheckBox;
+    chkBuild: TCheckBox;
+    chkCombat: TCheckBox;
     ResourceValues1: TMenuItem;
     chkUIControlsBounds: TCheckBox;
     chkUITextBounds: TCheckBox;
@@ -151,6 +151,9 @@ type
     Debug_UnlockCmpMissions: TMenuItem;
     N11: TMenuItem;
     mnExportRngChecks: TMenuItem;
+    chkSupervisor: TCheckBox;
+    cpScripting: TCategoryPanel;
+    chkDebugScripting: TCheckBox;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -265,7 +268,7 @@ uses
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
   KM_RandomChecks,
-  KM_Log, KM_CommonClasses;
+  KM_Log, KM_CommonClasses, KM_Helpers;
 
 
 //Remove VCL panel and use flicker-free TMyPanel instead
@@ -761,7 +764,8 @@ procedure TFormMain.ControlsReset;
   begin
     Result := {$IFDEF WDC}
                  (aCtrl = chkSnowHouses)
-              or (aCtrl = chkLoadUnsupSaves);
+              or (aCtrl = chkLoadUnsupSaves)
+              or (aCtrl = chkDebugScripting);
               {$ENDIF}
               {$IFDEF FPC} False; {$ENDIF}
   end;
@@ -851,8 +855,9 @@ end;
 procedure TFormMain.ControlsRefill;
 begin
   {$IFDEF WDC}
-  chkSnowHouses.Checked := gGameApp.GameSettings.AllowSnowHouses; // Snow houses checkbox could be updated before game
-  chkLoadUnsupSaves.Checked := ALLOW_LOAD_UNSUP_VERSION_SAVE;
+  chkSnowHouses.SetCheckedWithoutClick(gGameApp.GameSettings.AllowSnowHouses); // Snow houses checkbox could be updated before game
+  chkLoadUnsupSaves.SetCheckedWithoutClick(ALLOW_LOAD_UNSUP_VERSION_SAVE);
+  chkDebugScripting.SetCheckedWithoutClick(DEBUG_SCRIPTING_EXEC);
   {$ENDIF}
 
   if (gGame = nil) or not gGame.IsMapEditor then Exit;
@@ -860,12 +865,12 @@ begin
   tbPassability.Max := Byte(High(TKMTerrainPassability));
   tbPassability.Position := SHOW_TERRAIN_PASS;
   Label2.Caption := IfThen(SHOW_TERRAIN_PASS <> 0, PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)], '');
-  chkShowWires.Checked := SHOW_TERRAIN_WIRES;
-  chkShowTerrainIds.Checked := SHOW_TERRAIN_IDS;
-  chkShowTerrainKinds.Checked := SHOW_TERRAIN_KINDS;
-  chkTilesGrid.Checked := SHOW_TERRAIN_TILES_GRID;
-  chkShowRoutes.Checked := SHOW_UNIT_ROUTES;
-  chkSelectionBuffer.Checked := SHOW_SEL_BUFFER;
+  chkShowWires.SetCheckedWithoutClick(SHOW_TERRAIN_WIRES);
+  chkShowTerrainIds.SetCheckedWithoutClick(SHOW_TERRAIN_IDS);
+  chkShowTerrainKinds.SetCheckedWithoutClick(SHOW_TERRAIN_KINDS);
+  chkTilesGrid.SetCheckedWithoutClick(SHOW_TERRAIN_TILES_GRID);
+  chkShowRoutes.SetCheckedWithoutClick(SHOW_UNIT_ROUTES);
+  chkSelectionBuffer.SetCheckedWithoutClick(SHOW_SEL_BUFFER);
 end;
 
 
@@ -942,6 +947,7 @@ begin
     {$IFDEF WDC} //one day update .lfm for lazarus...
     SHOW_JAM_METER := chkJamMeter.Checked;
     SHOW_TERRAIN_OVERLAYS := chkShowTerrainOverlays.Checked;
+    DEBUG_SCRIPTING_EXEC := chkDebugScripting.Checked;
     {$ENDIF}
 
     SKIP_RENDER := chkSkipRender.Checked;
@@ -954,8 +960,9 @@ begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
     SHOW_DEBUG_OVERLAY_BEVEL := chkBevel.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
-    OVERLAY_AI_BUILD := chkBuildAI.Checked;
-    OVERLAY_AI_COMBAT := chkCombatAI.Checked;
+    OVERLAY_AI_BUILD := chkBuild.Checked;
+    OVERLAY_AI_COMBAT := chkCombat.Checked;
+    OVERLAY_AI_SUPERVISOR := chkSupervisor.Checked;
     OVERLAY_AI_EYE := chkAIEye.Checked;
     OVERLAY_AI_SOIL := chkShowSoil.Checked;
     OVERLAY_AI_FLATAREA := chkShowFlatArea.Checked;

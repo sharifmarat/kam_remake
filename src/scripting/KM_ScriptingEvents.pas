@@ -31,7 +31,7 @@ type
 
   TKMScriptEvents = class(TKMScriptEntity)
   private
-    fExec: TPSDebugExec;
+    fExec: TPSExec;
     fPreProcessor: TPSPreProcessor;
 
     fEventHandlers: array[TKMScriptEventType] of array of TKMCustomEventHandler;
@@ -50,7 +50,7 @@ type
   public
     ExceptionOutsideScript: Boolean; //Flag that the exception occured in a State or Action call not script
 
-    constructor Create(aExec: TPSDebugExec; aPreProcessor: TPSPreProcessor; aIDCache: TKMScriptingIdCache);
+    constructor Create(aExec: TPSExec; aPreProcessor: TPSPreProcessor; aIDCache: TKMScriptingIdCache);
     destructor Destroy; override;
 
     procedure AddEventHandlerName(aEventType: TKMScriptEventType; const aEventHandlerName: AnsiString);
@@ -165,7 +165,7 @@ end;
 
 
 { TKMScriptEvents }
-constructor TKMScriptEvents.Create(aExec: TPSDebugExec; aPreProcessor: TPSPreProcessor; aIDCache: TKMScriptingIdCache);
+constructor TKMScriptEvents.Create(aExec: TPSExec; aPreProcessor: TPSPreProcessor; aIDCache: TKMScriptingIdCache);
 begin
   inherited Create(aIDCache);
 
@@ -520,7 +520,7 @@ begin
       InternalProc := TPSInternalProcRec(ExceptionProc);
       MainErrorStr := MainErrorStr + EolW + 'in method ''' + UnicodeString(InternalProc.ExportName) + '''' + EolW;
       // With the help of uPSDebugger get information about error position in script code
-      if fExec.TranslatePositionEx(fExec.LastExProc, fExec.LastExPos, Pos, Row, Col, FileName) then
+      if (fExec is TPSDebugExec) and TPSDebugExec(fExec).TranslatePositionEx(fExec.LastExProc, fExec.LastExPos, Pos, Row, Col, FileName) then
       begin
         //Get line according to preprocessor (includes and defines could affect error row/col)
         if fPreProcessor.CurrentLineInfo.GetLineInfo('', Pos, Res) then
@@ -533,6 +533,11 @@ begin
         ErrorMessage := gGame.Scripting.GetErrorMessage('Error', '', ExtractFileName(FileName), Row, Col, Pos);
         ErrorStr := MainErrorStr + ErrorMessage.GameMessage;
         DetailedErrorStr := MainErrorStr + ErrorMessage.LogMessage;
+      end
+      else
+      begin
+        ErrorStr := MainErrorStr;
+        DetailedErrorStr := MainErrorStr;
       end;
     end;
     fOnScriptError(seException, ErrorStr, DetailedErrorStr);

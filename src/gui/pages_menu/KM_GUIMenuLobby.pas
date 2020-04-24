@@ -1630,7 +1630,7 @@ procedure TKMMenuLobby.Lobby_OnPlayersSetup(Sender: TObject);
   end;
 
 var
-  I,K,aiColorsCnt,freeColorsCnt,ID,LocaleID,ColorID: Integer;
+  I,K,freeColorsCnt,ID,LocaleID,ColorID: Integer;
   MyNik, CanEdit, HostCanEdit, IsSave, IsValid: Boolean;
   CurPlayer: TKMNetPlayerInfo;
   FirstUnused: Boolean;

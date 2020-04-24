@@ -245,9 +245,9 @@ var
     // Increase count of serfs carefully (compute fraction of serfs who does not have job)
     if (Cnt = 0) then
       Result := Max( 1
-        + Byte(Serfs < GA_MANAGEMENT_CheckUnitCount_SerfLimit1)
-        + Byte(Serfs < GA_MANAGEMENT_CheckUnitCount_SerfLimit2)
-        + Byte(Serfs < GA_MANAGEMENT_CheckUnitCount_SerfLimit3), Result);
+        + Byte(Serfs < AI_Par[MANAGEMENT_CheckUnitCount_SerfLimit1])
+        + Byte(Serfs < AI_Par[MANAGEMENT_CheckUnitCount_SerfLimit2])
+        + Byte(Serfs < AI_Par[MANAGEMENT_CheckUnitCount_SerfLimit3]), Result);
   end;
 
   procedure TrainByPriority(const aPrior: TKMTrainPriorityArr; var aUnitReq: TKMUnitReqArr; var aSchools: TKMSchoolHouseArray; aSchoolCnt: Integer);
@@ -306,7 +306,7 @@ begin
   //Citizens
   // Make sure we have enough gold left for self-sufficient city
   GoldProduced := Stats.GetWaresProduced(wtGold);
-  GoldShortage := (Stats.GetWareBalance(wtGold) < GA_MANAGEMENT_GoldShortage) AND (GoldProduced = 0);
+  GoldShortage := (Stats.GetWareBalance(wtGold) < AI_Par[MANAGEMENT_GoldShortage]) AND (GoldProduced = 0);
   if GoldShortage then
   begin
     UnitReq[utSerf] := 3; // 3x Serf
@@ -340,12 +340,12 @@ begin
     UnitReq[utRecruit] := 0;
     UnitReq[utSerf] := 0;
     UnitReq[utWorker] := 0;
-    if (Stats.GetWareBalance(wtGold) > GA_MANAGEMENT_GoldShortage * GA_MANAGEMENT_CheckUnitCount_WorkerGoldCoef) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
+    if (Stats.GetWareBalance(wtGold) > AI_Par[MANAGEMENT_GoldShortage] * AI_Par[MANAGEMENT_CheckUnitCount_WorkerGoldCoef]) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
     begin
       UnitReq[utWorker] :=  fPredictor.WorkerCount * Byte(not gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack) + Byte(not fSetup.AutoBuild) * Byte(fSetup.AutoRepair) * 5;
       UnitReq[utRecruit] := RecruitsNeeded(Houses[htWatchTower]);
     end;
-    if (Stats.GetWareBalance(wtGold) > GA_MANAGEMENT_GoldShortage * GA_MANAGEMENT_CheckUnitCount_SerfGoldCoef) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
+    if (Stats.GetWareBalance(wtGold) > AI_Par[MANAGEMENT_GoldShortage] * AI_Par[MANAGEMENT_CheckUnitCount_SerfGoldCoef]) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
       UnitReq[utSerf] := Stats.GetUnitQty(utSerf) + RequiredSerfCount();
   end;
 
@@ -498,14 +498,14 @@ begin
   begin
     // Gold
     if (GetHouseQty(htMetallurgists) = 0)
-       AND (GetWareBalance(wtGold) <= GA_MANAGEMENT_GoldShortage) then
+       AND (GetWareBalance(wtGold) <= AI_Par[MANAGEMENT_GoldShortage]) then
        AddWare(wtGold);
     // Stone
     if (GetWareBalance(wtStone)-GetHouseQty(htWatchTower)*5 < LACK_OF_STONE)
       AND (Builder.Planner.PlannedHouses[htQuary].Completed = 0) then
       AddWare(wtStone);
     // Gold ore
-    MIN_GOLD_AMOUNT := GA_MANAGEMENT_GoldShortage * 3;
+    MIN_GOLD_AMOUNT := Round(AI_Par[MANAGEMENT_GoldShortage] * 3);
     if ( fPredictor.WareBalance[wtGoldOre].Exhaustion < 20 )
       AND ( GetWareBalance(wtGold) < MIN_GOLD_AMOUNT )
       AND ( GetWareBalance(wtGoldOre) < MIN_GOLD_AMOUNT ) then

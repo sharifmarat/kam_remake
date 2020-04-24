@@ -1236,7 +1236,7 @@ begin
         for Y2 := -1 to +1 do
         for X2 := -1 to +1 do
         begin
-          Dec(Price[Y+Y2,X+X2], GA_PLANNER_PlanFields_CanBuild);
+          Dec(Price[Y+Y2,X+X2], Round(AI_Par[PLANNER_FARM_PlanFields_CanBuild]));
         {$IFDEF DEBUG_NewAI}
           P := KMPointAdd(KMPoint(X,Y),BelowLoc);
           if gTerrain.TileInMapCoords(P.X-1, P.Y-1) AND gTerrain.TileInMapCoords(P.X+1, P.Y+1) then
@@ -1258,14 +1258,14 @@ begin
             if (Y > -FARM_RADIUS+2) AND (Y < FARM_RADIUS-2) AND (X > -FARM_RADIUS+2) AND (X < FARM_RADIUS-2) then
               for Y2 := -2 to +2 do
               for X2 := -2 to +2 do
-                Price[Y2,X2] := Price[Y2,X2] + Round(GA_PLANNER_PlanFields_ExistField * (1 - 0.2 * (abs(Y2) + abs(X2))));
+                Price[Y2,X2] := Price[Y2,X2] + Round(Round(AI_Par[PLANNER_FARM_PlanFields_ExistField]) * (1 - 0.2 * (abs(Y2) + abs(X2))));
           {$IFDEF DEBUG_NewAI}
             DA2[P.Y,P.X] := 100;
           {$ENDIF}
           end;
           feFertileTile:
           begin
-            Price[Y,X] := Price[Y,X] + GA_PLANNER_PlanFields_Dist * (FARM_RADIUS - FieldPrice[Y,X]);
+            Price[Y,X] := Price[Y,X] + Round(AI_Par[PLANNER_FARM_PlanFields_Dist]) * (FARM_RADIUS - FieldPrice[Y,X]);
           end;
           feObstacle: begin end;
         end;
@@ -1327,7 +1327,7 @@ begin
       Tree := Tree + Byte(gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]));
       Road := Road + Byte(tpWalkRoad in gTerrain.Land[Y, X].Passability);
     end;
-  Result := Tree * GA_PLANNER_ObstaclesInHousePlan_Tree + Road * GA_PLANNER_ObstaclesInHousePlan_Road;
+  Result := Tree * AI_Par[PLANNER_ObstaclesInHousePlan_Tree] + Road * AI_Par[PLANNER_ObstaclesInHousePlan_Road];
 end;
 
 
@@ -1357,9 +1357,9 @@ begin
               + Max(0, MIN_WINE_FIELDS - Fields) * Byte(aHT = htWineyard) * DECREASE_CRIT
               + Max(0, MIN_CORN_FIELDS - Fields) * Byte(aHT = htFarm) * DECREASE_CRIT
             )
-            - gAIFields.Eye.Routes[aLoc.Y, aLoc.X] * GA_PLANNER_FieldCrit_PolyRoute
-            - gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * GA_PLANNER_FieldCrit_FlatArea
-            + gAIFields.Eye.Soil[aLoc.Y, aLoc.X] * GA_PLANNER_FieldCrit_Soil;
+            - gAIFields.Eye.Routes[aLoc.Y, aLoc.X] * AI_Par[PLANNER_FARM_FieldCrit_PolyRoute]
+            - gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * AI_Par[PLANNER_FARM_FieldCrit_FlatArea]
+            + gAIFields.Eye.Soil[aLoc.Y, aLoc.X] * AI_Par[PLANNER_FARM_FieldCrit_Soil];
 end;
 
 
@@ -1411,17 +1411,17 @@ begin
         Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,K]);
         AvoidBuilding := gAIFields.Influences.AvoidBuilding[Point.Y, Point.X];
         Output := Output
-                  + Byte(gAIFields.Eye.BuildFF.State[Point.Y,Point.X] in [bsRoad, bsRoadPlan]) * GA_PLANNER_SnapCrit_HouseOrRoad
-                  + Byte(gAIFields.Eye.BuildFF.State[Point.Y,Point.X] in [bsNoBuild]) * GA_PLANNER_SnapCrit_NoBuild
-                  + Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_Road
-                  + Byte(IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_Field;
+                  + Byte(gAIFields.Eye.BuildFF.State[Point.Y,Point.X] in [bsRoad, bsRoadPlan]) * AI_Par[PLANNER_SnapCrit_HouseOrRoad]
+                  + Byte(gAIFields.Eye.BuildFF.State[Point.Y,Point.X] in [bsNoBuild]) * AI_Par[PLANNER_SnapCrit_NoBuild]
+                  + Byte(IsRoad(AvoidBuilding,Point)) * AI_Par[PLANNER_SnapCrit_Road]
+                  + Byte(IsReservedField(AvoidBuilding)) * AI_Par[PLANNER_SnapCrit_Field];
                   //+ Byte(IsNearHouse(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToHouse
                   //+ Byte(IsReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_SnapToFields // OR IsCornField(Point) OR IsWineField(Point)
                   //+ Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToRoads;
       end;
   Output := Output
-            - Byte(IsReservedField( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X] )) * GA_PLANNER_SnapCrit_ObstacleInEntrance
-            + Byte(IsRoad( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X], aLoc )) * GA_PLANNER_SnapCrit_RoadInEntrance;
+            - Byte(IsReservedField( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X] )) * AI_Par[PLANNER_SnapCrit_ObstacleInEntrance]
+            + Byte(IsRoad( gAIFields.Influences.AvoidBuilding[aLoc.Y+1,aLoc.X], aLoc )) * AI_Par[PLANNER_SnapCrit_RoadInEntrance];
   Result := Output;
 end;
 
@@ -1585,6 +1585,9 @@ var
   {$ENDIF}
 
   procedure EvaluateLoc(aLoc: TKMPoint; aDebugLog: Boolean = False);
+  const
+    PLANNER_FindPlaceForHouse_AllyInfluence = 1;
+    PLANNER_FindPlaceForHouse_EnemyInfluence = 10;
   var
     L: Integer;
     Gain, Obstacles, Snap, SeedDist, HouseDist, CenterDist, Routes, FlatArea, FreeEntrance, AllyInf, EnemyInfl, Field: Double;
@@ -1593,14 +1596,14 @@ var
     if (aHT = htFarm) OR (aHT = htWineyard) then
     begin
       Obstacles :=    - ObstaclesInHousePlan(aHT, aLoc);
-      Snap :=         + SnapCrit(aHT, aLoc)                    * GA_PLANNER_FindPlaceForHouse_SnapCrit;
-      SeedDist :=     - gAIFields.Eye.BuildFF.Distance[aLoc]   * GA_PLANNER_FindPlaceForHouse_SeedDist;
-      HouseDist :=    + DistCrit(aHT, aLoc)                    * GA_PLANNER_FindPlaceForHouse_HouseDistFarm;
-      CenterDist :=   - KMDistanceAbs(CityCenter, aLoc)        * GA_PLANNER_FindPlaceForHouse_CityCenterFarm;
-      Routes :=       + gAIFields.Eye.Routes[aLoc.Y, aLoc.X]   * GA_PLANNER_FindPlaceForHouse_RouteFarm;
-      FlatArea :=     + gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * GA_PLANNER_FindPlaceForHouse_FlatAreaFarm;
-      AllyInf :=      - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atAlly)  * GA_PLANNER_FindPlaceForHouse_AllyInfluence;
-      EnemyInfl :=    - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atEnemy) * GA_PLANNER_FindPlaceForHouse_EnemyInfluence;
+      Snap :=         + SnapCrit(aHT, aLoc)                    * AI_Par[PLANNER_FindPlaceForHouse_SnapCrit];
+      SeedDist :=     - gAIFields.Eye.BuildFF.Distance[aLoc]   * AI_Par[PLANNER_FindPlaceForHouse_SeedDist];
+      HouseDist :=    + DistCrit(aHT, aLoc)                    * AI_Par[PLANNER_FARM_FindPlaceForHouse_HouseDist];
+      CenterDist :=   - KMDistanceAbs(CityCenter, aLoc)        * AI_Par[PLANNER_FARM_FindPlaceForHouse_CityCenter];
+      Routes :=       + gAIFields.Eye.Routes[aLoc.Y, aLoc.X]   * AI_Par[PLANNER_FARM_FindPlaceForHouse_Route];
+      FlatArea :=     + gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * AI_Par[PLANNER_FARM_FindPlaceForHouse_FlatArea];
+      AllyInf :=      - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atAlly)  * PLANNER_FindPlaceForHouse_AllyInfluence;
+      EnemyInfl :=    - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atEnemy) * PLANNER_FindPlaceForHouse_EnemyInfluence;
       Field :=    + FieldCrit(aHT, aLoc);
       Gain := Snap + HouseDist + CenterDist + SeedDist + Routes + FlatArea + Obstacles + AllyInf + EnemyInfl + Field;
       {$IFDEF DEBUG_NewAI}
@@ -1611,14 +1614,14 @@ var
     else
     begin
       Obstacles :=    - ObstaclesInHousePlan(aHT, aLoc);
-      Snap :=         + SnapCrit(aHT, aLoc)                    * GA_PLANNER_FindPlaceForHouse_SnapCrit;
-      SeedDist :=     - gAIFields.Eye.BuildFF.Distance[aLoc]   * GA_PLANNER_FindPlaceForHouse_SeedDist;
-      HouseDist :=    + DistCrit(aHT, aLoc)                    * GA_PLANNER_FindPlaceForHouse_HouseDist;
-      CenterDist :=   - KMDistanceAbs(CityCenter, aLoc)        * GA_PLANNER_FindPlaceForHouse_CityCenter;
-      Routes :=       + gAIFields.Eye.Routes[aLoc.Y, aLoc.X]   * GA_PLANNER_FindPlaceForHouse_Route;
-      FlatArea :=     + gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * GA_PLANNER_FindPlaceForHouse_FlatArea;
-      AllyInf :=      - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atAlly)  * GA_PLANNER_FindPlaceForHouse_AllyInfluence;
-      EnemyInfl :=    - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atEnemy) * GA_PLANNER_FindPlaceForHouse_EnemyInfluence;
+      Snap :=         + SnapCrit(aHT, aLoc)                    * AI_Par[PLANNER_FindPlaceForHouse_SnapCrit];
+      SeedDist :=     - gAIFields.Eye.BuildFF.Distance[aLoc]   * AI_Par[PLANNER_FindPlaceForHouse_SeedDist];
+      HouseDist :=    + DistCrit(aHT, aLoc)                    * AI_Par[PLANNER_FindPlaceForHouse_HouseDist];
+      CenterDist :=   - KMDistanceAbs(CityCenter, aLoc)        * AI_Par[PLANNER_FindPlaceForHouse_CityCenter];
+      Routes :=       + gAIFields.Eye.Routes[aLoc.Y, aLoc.X]   * AI_Par[PLANNER_FindPlaceForHouse_Route];
+      FlatArea :=     + gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * AI_Par[PLANNER_FindPlaceForHouse_FlatArea];
+      AllyInf :=      - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atAlly)  * PLANNER_FindPlaceForHouse_AllyInfluence;
+      EnemyInfl :=    - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atEnemy) * PLANNER_FindPlaceForHouse_EnemyInfluence;
       FreeEntrance := 0;
       if (aHT = htStore) OR (aHT = htBarracks) then
         FreeEntrance := EvalFreeEntrance(aLoc);
@@ -2084,10 +2087,10 @@ begin
       for I := 0 to BuildFF.Locs.Count - 1 do
       begin
         Loc := BuildFF.Locs.Items[I];
-        Gain := - ObstaclesInHousePlan(HT,Loc) * GA_PLANNER_FindPlaceForQuary_Obstacle
-                - BuildFF.Distance[Loc] * GA_PLANNER_FindPlaceForQuary_DistCity * Max(1, GA_PLANNER_FindPlaceForQuary_DistTimer - gGame.GameTick)
-                - BuildFF.DistanceInitPoint[Loc] * GA_PLANNER_FindPlaceForQuary_DistStone
-                + SnapCrit(HT, Loc) * GA_PLANNER_FindPlaceForQuary_SnapCrit;
+        Gain := - ObstaclesInHousePlan(HT,Loc) * AI_Par[PLANNER_FindPlaceForQuary_Obstacle]
+                - BuildFF.Distance[Loc] * AI_Par[PLANNER_FindPlaceForQuary_DistCity] * Max(1, AI_Par[PLANNER_FindPlaceForQuary_DistTimer] - gGame.GameTick)
+                - BuildFF.DistanceInitPoint[Loc] * AI_Par[PLANNER_FindPlaceForQuary_DistStone]
+                + SnapCrit(HT, Loc) * AI_Par[PLANNER_FindPlaceForQuary_SnapCrit];
         if (Gain > BestGain) then
         begin
           BestGain := Gain;
@@ -2156,7 +2159,7 @@ begin
   for I := 0 to BuildFF.Locs.Count - 1 do
   begin
     Loc := BuildFF.Locs.Items[I];
-    Gain := - GA_PLANNER_PlaceWoodcutter_DistFromForest * BuildFF.DistanceInitPoint[Loc]
+    Gain := - AI_Par[PLANNER_FOREST_PlaceWoodcutter_DistFromForest] * BuildFF.DistanceInitPoint[Loc]
             + DistCrit(htWoodcutters, Loc)
             + SnapCrit(htWoodcutters, Loc);
     if (Gain > BestGain) then // No need to check for coal tiles everything
@@ -2248,20 +2251,23 @@ var
   {$ENDIF}
 
   procedure EvalForest(aIdx: Integer; aLogResult: Boolean);
+  const
+    PLANNER_FindForestAndWoodcutter_AllyInfluence = 3;
+    PLANNER_FindForestAndWoodcutter_EnemyInfluence = 10;
   var
     TreeCnt,ExistFrs,Routes,FlatArea,Soil,DistCrit,FreeTiles,AllyInf,EnemyInfl: Single;
     P: TKMPoint;
   begin
     P := FI.Forests[aIdx].Loc;
-    TreeCnt   := + FI.Forests[aIdx].TreeCout           * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt * Max(1, GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer - gGame.GameTick);
-    DistCrit  := - FI.Forests[aIdx].Distance           * GA_PLANNER_FindPlaceForWoodcutter_DistCrit * Max(1, GA_PLANNER_FindPlaceForWoodcutter_DistTimer - gGame.GameTick);
-    ExistFrs  := + Byte(FI.Forests[aIdx].PartOfForest) * GA_PLANNER_FindPlaceForWoodcutter_ExistForest;
-    Routes    := + gAIFields.Eye.Routes[P.Y, P.X]      * GA_PLANNER_FindPlaceForWoodcutter_Routes;
-    FlatArea  := + gAIFields.Eye.FlatArea[P.Y, P.X]    * GA_PLANNER_FindPlaceForWoodcutter_FlatArea;
-    Soil      := + gAIFields.Eye.Soil[P.Y, P.X]        * GA_PLANNER_FindPlaceForWoodcutter_Soil;
-    FreeTiles := + GetFreeTiles(P)                     * GA_PLANNER_FindPlaceForWoodcutter_FreeTiles;
-    AllyInf   := - gAIFields.Influences.GetBestAllianceOwnership(fOwner, P.X, P.Y, atAlly)  * GA_PLANNER_FindForestAndWoodcutter_AllyInfluence;
-    EnemyInfl := - gAIFields.Influences.GetBestAllianceOwnership(fOwner, P.X, P.Y, atEnemy) * GA_PLANNER_FindForestAndWoodcutter_EnemyInfluence;
+    TreeCnt   := + FI.Forests[aIdx].TreeCout           * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_TreeCnt] * Max(1, AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_TreeCntTimer] - gGame.GameTick);
+    DistCrit  := - FI.Forests[aIdx].Distance           * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_DistCrit] * Max(1, AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_DistTimer] - gGame.GameTick);
+    ExistFrs  := + Byte(FI.Forests[aIdx].PartOfForest) * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_ExistForest];
+    Routes    := + gAIFields.Eye.Routes[P.Y, P.X]      * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_Routes];
+    FlatArea  := + gAIFields.Eye.FlatArea[P.Y, P.X]    * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_FlatArea];
+    Soil      := + gAIFields.Eye.Soil[P.Y, P.X]        * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_Soil];
+    FreeTiles := + GetFreeTiles(P)                     * AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_FreeTiles];
+    AllyInf   := - gAIFields.Influences.GetBestAllianceOwnership(fOwner, P.X, P.Y, atAlly)  * PLANNER_FindForestAndWoodcutter_AllyInfluence;
+    EnemyInfl := - gAIFields.Influences.GetBestAllianceOwnership(fOwner, P.X, P.Y, atEnemy) * PLANNER_FindForestAndWoodcutter_EnemyInfluence;
     FI.Forests[aIdx].Bid := TreeCnt + DistCrit + ExistFrs + Routes + FlatArea + Soil + FreeTiles + AllyInf + EnemyInfl;
     {$IFDEF DEBUG_NewAI}
     if aLogResult then
@@ -2341,8 +2347,8 @@ begin
     if Output then
     begin
       // Rounding of paramters from GA may change border limit for forest +- 1 so substract it
-      DecreaseSpeed := Min(GA_PLANNER_FindPlaceForWoodcutter_ABRange,AVOID_BUILDING_FOREST_RANGE-1) / sqr(GA_PLANNER_FindPlaceForWoodcutter_Radius);
-      gAIFields.Influences.MarkForest(P, GA_PLANNER_FindPlaceForWoodcutter_Radius, DecreaseSpeed);
+      DecreaseSpeed := Min(AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_ABRange],AVOID_BUILDING_FOREST_RANGE-1) / sqr(AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_Radius]);
+      gAIFields.Influences.MarkForest(P, AI_Par[PLANNER_FOREST_FindPlaceForWoodcutter_Radius], DecreaseSpeed);
     end;
   end;
   Result := Output;
@@ -2357,7 +2363,7 @@ begin
 end;
 
 
-// This function have 2 purposes: detect forest in case of wood shortage and find forest for chop-only mode
+// This function have 2 purposes: detect forest in case of wood shortage and find forest near new house (chop-only mode)
 function TKMCityPlanner.FindForestAround(const aPoint: TKMPoint; aCountByInfluence: Boolean = False): Boolean;
 const
   MIN_TREES = 3;
@@ -2384,7 +2390,7 @@ begin
     for K := fForestsInfo.Count-1 downto 0 do
     begin
       Loc := fForestsInfo.Forests[K].Loc;
-      if (aCountByInfluence OR (KMDistanceSqr(aPoint, Loc) < GA_PLANNER_FindForestAround_MaxDist * GA_PLANNER_FindForestAround_MaxDist))
+      if (aCountByInfluence OR (KMDistanceSqr(aPoint, Loc) < Sqr(AI_Par[PLANNER_FOREST_FindForestAround_MaxDist])))
         AND (fForestsInfo.Forests[K].TreeCout >= MIN_TREES)
         AND (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atEnemy) < 20) then
       begin
@@ -2689,7 +2695,7 @@ var
   AvoidBuilding: Byte;
   Node: PANodeRec;
 begin
-  Result := GA_PATHFINDING_BasePrice;
+  Result := Round(AI_Par[ROADS_BasePrice]);
 
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                     // Reserved road plan
@@ -2698,28 +2704,28 @@ begin
             OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                               // Road under construction
 
   // Improve cost if tile is or will be road
-  if IsRoad                                                 then Dec(Result, GA_PATHFINDING_Road)
+  if IsRoad                                                 then Result := Max(0, Result - Round(AI_Par[ROADS_Road]))
   // 1 tile from future house
   else if (AvoidBuilding = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)
   // Snap to no-build areas (1 tile from house / mountain / special tiles)
     OR not (tpBuild in gTerrain.Land[aToY,aToX].Passability)
   // 1 tile form mine
-    OR (AvoidBuilding = AVOID_BUILDING_MINE_TILE)           then Inc(Result, GA_PATHFINDING_noBuildArea)
+    OR (AvoidBuilding = AVOID_BUILDING_MINE_TILE)           then Inc(Result, Round(AI_Par[ROADS_noBuildArea]))
   else
   begin
     // Penalization of change in direction in general case
     Node := GetNodeAt(aFromX, aFromY);
     if (Node <> nil) AND (Node.Parent <> nil)
       AND (PANodeRec(Node.Parent).X <> aToX)
-      AND (PANodeRec(Node.Parent).Y <> aToY)                then Inc(Result, GA_PATHFINDING_TurnPenalization);
+      AND (PANodeRec(Node.Parent).Y <> aToY)                then Inc(Result, Round(AI_Par[ROADS_TurnPenalization]));
     // Corn / wine field
-    if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)     then Inc(Result, GA_PATHFINDING_Field)
+    if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)     then Inc(Result, Round(AI_Par[ROADS_Field]))
     // Coal field
-    else if (AvoidBuilding = AVOID_BUILDING_COAL_TILE)      then Inc(Result, GA_PATHFINDING_Coal)
+    else if (AvoidBuilding = AVOID_BUILDING_COAL_TILE)      then Inc(Result, Round(AI_Par[ROADS_Coal]))
     // Forest or blocking tile before house entrance
-    else if (AvoidBuilding > AVOID_BUILDING_FOREST_MINIMUM) then Inc(Result, GA_PATHFINDING_Forest)
+    else if (AvoidBuilding > AVOID_BUILDING_FOREST_MINIMUM) then Inc(Result, Round(AI_Par[ROADS_Forest]))
     // Other case
-    else                                                         Inc(Result, GA_PATHFINDING_OtherCase);
+    else                                                         Inc(Result, Round(AI_Par[ROADS_OtherCase]));
   end;
   {$IFDEF DEBUG_NewAI}
     Price[aToY,aTox] := Result;
@@ -2738,7 +2744,7 @@ var
   AvoidBuilding: Byte;
   Node: PANodeRec;
 begin
-  Result := GA_SHORTCUTS_BasePrice;
+  Result := Round(AI_Par[SHORTCUTS_BasePrice]);
 
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                     // Reserved road plan
@@ -2747,28 +2753,28 @@ begin
             OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                               // Road under construction
 
   // Improve cost if tile is or will be road
-  if IsRoad                                                 then Dec(Result, GA_SHORTCUTS_Road)
+  if IsRoad                                                 then Result := Max(0, Result - Round(AI_Par[SHORTCUTS_Road]))
   // 1 tile from future house
   else if (AvoidBuilding = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)
   // Snap to no-build areas (1 tile from house or special tiles)
     OR not (tpBuild in gTerrain.Land[aToY,aToX].Passability)
   // 1 tile form mine
-    OR (AvoidBuilding = AVOID_BUILDING_MINE_TILE)           then Inc(Result, GA_SHORTCUTS_noBuildArea)
+    OR (AvoidBuilding = AVOID_BUILDING_MINE_TILE)           then Inc(Result, Round(AI_Par[SHORTCUTS_noBuildArea]))
   else
   begin
     // Penalization of change in direction in general case
     Node := GetNodeAt(aFromX, aFromY);
     if (Node <> nil) AND (Node.Parent <> nil)
       AND (PANodeRec(Node.Parent).X <> aToX)
-      AND (PANodeRec(Node.Parent).Y <> aToY)                then Inc(Result, GA_SHORTCUTS_TurnPenalization);
+      AND (PANodeRec(Node.Parent).Y <> aToY)                then Inc(Result, Round(AI_Par[SHORTCUTS_TurnPenalization]));
     // Corn / wine field
-    if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)     then Inc(Result, GA_SHORTCUTS_Field)
+    if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)     then Inc(Result, Round(AI_Par[SHORTCUTS_Field]))
     // Coal field
-    else if (AvoidBuilding = AVOID_BUILDING_COAL_TILE)      then Inc(Result, GA_SHORTCUTS_Coal)
+    else if (AvoidBuilding = AVOID_BUILDING_COAL_TILE)      then Inc(Result, Round(AI_Par[SHORTCUTS_Coal]))
     // Forest or blocking tile before house entrance
-    else if (AvoidBuilding > AVOID_BUILDING_FOREST_MINIMUM) then Inc(Result, GA_SHORTCUTS_Forest)
+    else if (AvoidBuilding > AVOID_BUILDING_FOREST_MINIMUM) then Inc(Result, Round(AI_Par[SHORTCUTS_Forest]))
     // Other case
-    else                                                         Inc(Result, GA_SHORTCUTS_OtherCase);
+    else                                                         Inc(Result, Round(AI_Par[SHORTCUTS_OtherCase]));
   end;
   {$IFDEF DEBUG_NewAI}
     Price[aToY,aTox] := Result;

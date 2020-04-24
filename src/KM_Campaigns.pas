@@ -144,6 +144,7 @@ uses
 const
   CAMP_HEADER_V1 = $FEED; //Just some header to separate right progress files from wrong
   CAMP_HEADER_V2 = $BEEF;
+  CAMP_HEADER_V3 = $CEED;
 
 
 { TCampaignsCollection }
@@ -257,8 +258,10 @@ begin
 
     M.Read(I); //Check for wrong file format
     //All campaigns will be kept in initial state
-    if (I <> CAMP_HEADER_V1) and (I <> CAMP_HEADER_V2) then Exit;
-    HasScriptData := (I = CAMP_HEADER_V2);
+    if (I <> CAMP_HEADER_V1)
+      and (I <> CAMP_HEADER_V2)
+      and (I <> CAMP_HEADER_V3) then Exit;
+    HasScriptData := (I = CAMP_HEADER_V3);
 
     M.Read(campCount);
     for I := 0 to campCount - 1 do
@@ -300,7 +303,7 @@ begin
 
   M := TKMemoryStreamBinary.Create;
   try
-    M.Write(Integer(CAMP_HEADER_V2)); //Identify our format
+    M.Write(Integer(CAMP_HEADER_V3)); //Identify our format
     M.Write(Count);
     for I := 0 to Count - 1 do
       if Campaigns[I].Viewed then

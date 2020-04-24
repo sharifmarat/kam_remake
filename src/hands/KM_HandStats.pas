@@ -98,10 +98,10 @@ type
     //Output
     function GetHouseQty(aType: TKMHouseType): Integer; overload;
     function GetHouseOpenedQty(aType: TKMHouseType): Integer; overload;
-    function GetHouseQty(aType: array of TKMHouseType): Integer; overload;
+    function GetHouseQty(const aType: array of TKMHouseType): Integer; overload;
     function GetHouseWip(aType: TKMHouseType): Integer; overload;
     function GetHousePlans(aType: TKMHouseType): Integer; overload;
-    function GetHouseWip(aType: array of TKMHouseType): Integer; overload;
+    function GetHouseWip(const aType: array of TKMHouseType): Integer; overload;
     function GetHouseTotal(aType: TKMHouseType): Integer;
     function GetUnitQty(aType: TKMUnitType): Integer;
     function GetUnitWip(aType: TKMUnitType): Integer;
@@ -334,7 +334,7 @@ end;
 
 
 //How many complete houses there are
-function TKMHandStats.GetHouseQty(aType: array of TKMHouseType): Integer;
+function TKMHandStats.GetHouseQty(const aType: array of TKMHouseType): Integer;
 var
   I: Integer;
   H: TKMHouseType;
@@ -386,7 +386,7 @@ end;
 
 
 //How many houses are planned and in progress
-function TKMHandStats.GetHouseWip(aType: array of TKMHouseType): Integer;
+function TKMHandStats.GetHouseWip(const aType: array of TKMHouseType): Integer;
 var
   I: Integer;
   H: TKMHouseType;
