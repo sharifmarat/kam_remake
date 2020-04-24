@@ -874,11 +874,11 @@ begin
   end;
 
   if AddBeacon then
-      gGame.GamePlayInterface.Alerts.AddBeacon(KMPointF(aCommand.Params[1]/10,
-                                                        aCommand.Params[2]/10),
-                                                        aCommand.Params[3],
-                                                        (aCommand.Params[4] or $FF000000),
-                                                        gGameApp.GlobalTickCount + ALERT_DURATION[atBeacon]);
+    gGame.GamePlayInterface.Alerts.AddBeacon(KMPointF(aCommand.Params[1]/10,
+                                                      aCommand.Params[2]/10),
+                                                      aCommand.Params[3],
+                                                      (aCommand.Params[4] or $FF000000),
+                                                      gGameApp.GlobalTickCount + ALERT_DURATION[atBeacon]);
 end;
 
 
