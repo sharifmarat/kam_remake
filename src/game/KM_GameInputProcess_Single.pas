@@ -55,11 +55,15 @@ begin
       ExecCommand(fQueue[fCursor].Command); //Should always be called to maintain randoms flow
       //CRC check after the command
       if (fQueue[fCursor].Rand <> MyRand)
-        and not gGame.IgnoreConsistencyCheckErrors
-        and CRASH_ON_REPLAY then
+        and not gGame.IgnoreConsistencyCheckErrors then
       begin
-        Inc(fCursor); //Must be done before exiting in case user decides to continue the replay
-        gGame.ReplayInconsistancy(fQueue[fCursor-1], MyRand);
+        if CRASH_ON_REPLAY then
+        begin
+          Inc(fCursor); //Must be done before exiting in case user decides to continue the replay
+          gGame.ReplayInconsistancy(fQueue[fCursor-1], MyRand);
+        end;
+        if Assigned(fOnReplayDesync) then
+          fOnReplayDesync(fCursor);
         Exit; //ReplayInconsistancy sometimes calls GIP.Free, so exit immidiately
       end;
       Inc(fCursor);

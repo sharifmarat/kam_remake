@@ -5,7 +5,7 @@ uses
   KM_Units, KM_UnitGroup,
   KM_Houses, KM_HouseWoodcutters,
   KM_ResHouses, KM_ResWares, KM_ScriptingConsoleCommands,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 { A. This unit takes and adjoins players input from TGame and TGamePlayInterfaces clicks and keys
   Then passes it on to game events.
@@ -288,6 +288,7 @@ type
   protected
     fCursor: Integer; //Used only in gipReplaying
     fQueue: array of TKMStoredGIPCommand;
+    fOnReplayDesync: TIntegerEvent;
 
     function MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand; inline;
     function MakeCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand; overload;
@@ -363,6 +364,8 @@ type
     function GetLastTick: Cardinal;
     function ReplayEnded: Boolean;
     procedure MoveCursorTo(aTick: Integer);
+
+    property OnReplayDesync: TIntegerEvent read fOnReplayDesync write fOnReplayDesync;
 
     class function GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
     class function StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;

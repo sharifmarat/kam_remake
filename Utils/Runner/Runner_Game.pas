@@ -1035,13 +1035,6 @@ begin
     fAverageScore := 0;
     fWorstScore := 1e30;
     fMap := MAPS[K];
-//    fIntParam := 0;
-//    fIntParam2 := 0;
-//    if K <= 12 then
-//      fIntParam := MAPS_V[K]
-//    else
-//      fIntParam2 := MAPS_V[K];
-
 
     for L := 1 to cnt_MAP_SIMULATIONS do
     begin
