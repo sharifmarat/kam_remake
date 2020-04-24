@@ -1,6 +1,7 @@
 program Runner;
 {$I KaM_Remake.inc}
 uses
+  //FastMM4,
   Forms,
   {$IFDEF FPC}
   Interfaces,

@@ -48,9 +48,9 @@ object Form2: TForm2
     Caption = '     '
   end
   object Label6: TLabel
-    Left = 177
+    Left = 174
     Top = 263
-    Width = 15
+    Width = 18
     Height = 13
     Alignment = taRightJustify
     Caption = '      '
@@ -226,6 +226,6 @@ object Form2: TForm2
     MaxValue = 1000000
     MinValue = 0
     TabOrder = 6
-    Value = 20
+    Value = 60
   end
 end

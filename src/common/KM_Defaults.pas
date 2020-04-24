@@ -118,6 +118,7 @@ var
   REPLAY_AUTOSAVE         :Boolean = True;
   GAME_NO_TIMER           :Boolean = False;
   GAME_COMPARE_SAVE       :Boolean = False;
+  GAME_COMPARE_SAVE_MODE  :Boolean = False;
   ALLOW_LOAD_UNSUP_VERSION_SAVE:
                            Boolean = True;  //Allow to try load saves / replay with unsupported version
   SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
@@ -139,6 +140,9 @@ var
   SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND              :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR     :Boolean = False; //Skip loading and setting cursor
+  SKIP_SETTINGS_SAVE      :Boolean = False; //Skip save main/game settings into the ini file
+  SKIP_GAME_DESTRUCTION   :Boolean = False;
+  SKIP_POINTER_REF_CHECK  :Boolean = False;
   AGGRESSIVE_REPLAYS      :Boolean = True; //Write a command gicTempDoNothing every tick in order to find exactly when a replay mismatch occurs
   SHOW_GAME_TICK          :Boolean = DEBUG_CFG; //Show game tick next to game time
   SHOW_FPS                :Boolean = False; //Show FPS
@@ -201,7 +205,7 @@ var
   {Gameplay}
   USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
   CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
-  PAUSE_GAME_AT_TICK    :Integer = -1;    //Pause at specified game tick
+  PAUSE_GAME_AT_TICK    :Integer = 15662;    //Pause at specified game tick
   ALLOW_SAVE_IN_REPLAY  :Boolean = DEBUG_CFG; //Allow to save game from replay, good for debug
   SAVE_GAME_AS_TEXT     :Boolean = True; //Save game serialized //Todo DEBUG. set to False before releases
   {Gameplay cheats}
@@ -263,13 +267,18 @@ const
   REPLAY_AUTOSAVE_CNT_MAX       = 40; // Max number of replay autosaves
 
   // Checkpoints, which are made during the game and saved in the .rpl file
-  GAME_SAVE_CHECKPOINT_FREQ_MIN = 5*60*10; // 5 min
-  GAME_SAVE_CHECKPOINT_FREQ_MAX = 10*60*60; // 1 hour
-  GAME_SAVE_CHECKPOINT_FREQ_DEF = 10*15*60; // 15 minutes
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN  = 0;  // Min limit for number of game checkpoints
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX  = 40; // Max limit for number of game checkpoints
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF  = 10; // Def limit for number of game checkpoints
-
+{$IFDEF DEBUG}
+var
+{$ENDIF}
+  GAME_SAVE_CHECKPOINT_FREQ_MIN: Integer = 5*60*10; // 5 min
+  GAME_SAVE_CHECKPOINT_FREQ_MAX: Integer = 10*60*60; // 1 hour
+  GAME_SAVE_CHECKPOINT_FREQ_DEF: Integer = 10*15*60; // 15 minutes
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN: Integer  = 0;  // Min limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX: Integer  = 40; // Max limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF: Integer  = 10; // Def limit for number of game checkpoints
+{$IFDEF DEBUG}
+const
+{$ENDIF}
 
   BEACON_COOLDOWN         = 400;  //Minimum time in milliseconds between beacons
 

@@ -120,6 +120,7 @@ type
     function GetMapEditor: TKMMapEditor;
 
     function DoRenderGame: Boolean;
+    function GetGameInputProcess: TKMGameInputProcess;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -218,6 +219,8 @@ type
     property GameMode: TKMGameMode read fGameMode;
     property SaveFile: UnicodeString read fSaveFile;
 
+    procedure SetGameMode(aGameMode: TKMGameMode);
+
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
     property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
     property SkipReplayEndCheck: Boolean read fSkipReplayEndCheck write fSkipReplayEndCheck;
@@ -247,7 +250,7 @@ type
 
     property Networking: TKMNetworking read fNetworking;
     property Pathfinding: TPathFinding read fPathfinding;
-    property GameInputProcess: TKMGameInputProcess read fGameInputProcess write fGameInputProcess;
+    property GameInputProcess: TKMGameInputProcess read GetGameInputProcess write fGameInputProcess;
     property GameOptions: TKMGameOptions read fGameOptions;
     property ActiveInterface: TKMUserInterfaceGame read fActiveInterface;
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
@@ -353,8 +356,11 @@ begin
   fTimerGame := TTimer.Create(nil);
   //pseudo GIP command, since we just want to initialize speed with default values
   SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
-  fTimerGame.OnTimer := UpdateGame;
-  fTimerGame.Enabled := not GAME_NO_TIMER;
+  if not GAME_NO_TIMER then
+  begin
+    fTimerGame.OnTimer := UpdateGame;
+    fTimerGame.Enabled := True;
+  end;
 
   fGameSpeedChangeTime := TimeGet;
 
@@ -1748,6 +1754,12 @@ begin
 end;
 
 
+procedure TKMGame.SetGameMode(aGameMode: TKMGameMode);
+begin
+  fGameMode := aGameMode;
+end;
+
+
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
 begin
   SetGameSpeed(aSpeed, aToggle, GetNormalGameSpeed);
@@ -1806,7 +1818,7 @@ end;
 
 function TKMGame.AllowGetPointer: Boolean;
 begin
-  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer;
+  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer or SKIP_POINTER_REF_CHECK;
 end;
 
 
@@ -2358,6 +2370,12 @@ begin
 end;
 
 
+function TKMGame.GetGameInputProcess: TKMGameInputProcess;
+begin
+  Result := fGameInputProcess;
+end;
+
+
 function TKMGame.GetGameTickDuration: Single;
 begin
   Result := gGameApp.GameSettings.SpeedPace / fGameSpeedActual;
@@ -2460,7 +2478,7 @@ end;
 
 procedure TKMGame.SetSeed(aSeed: Integer);
 begin
-  if USE_CUSTOM_SEED then
+  if USE_CUSTOM_SEED and not IsReplay then
     aSeed := CUSTOM_SEED_VALUE;
 
   gLog.AddTime('Set game seed: ' + IntToStr(aSeed));

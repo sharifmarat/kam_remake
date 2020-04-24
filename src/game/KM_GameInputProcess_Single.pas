@@ -54,7 +54,7 @@ begin
         MyRand := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer 2'));
       ExecCommand(fQueue[fCursor].Command); //Should always be called to maintain randoms flow
       //CRC check after the command
-      if (fQueue[fCursor].Rand <> MyRand)
+      if {((fCursor mod 100) = 10) or }(fQueue[fCursor].Rand <> MyRand)
         and not gGame.IgnoreConsistencyCheckErrors then
       begin
         if CRASH_ON_REPLAY then

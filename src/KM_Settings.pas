@@ -516,8 +516,8 @@ procedure TKMainSettings.SaveToINI(const aFileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
-  if BLOCK_FILE_WRITE then
-    Exit;
+  if BLOCK_FILE_WRITE or SKIP_SETTINGS_SAVE then Exit;
+
   F := TMemIniFile.Create(aFileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
 
   try
@@ -622,6 +622,8 @@ end;
 //Save only when needed
 procedure TKMGameSettings.SaveSettings(aForce: Boolean = False);
 begin
+  if SKIP_SETTINGS_SAVE then Exit;
+
   if fNeedsSave or fWareDistribution.Changed or aForce then
     SaveToINI(ExeDir + SETTINGS_FILE);
 end;

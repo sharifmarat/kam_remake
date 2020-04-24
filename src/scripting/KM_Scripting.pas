@@ -241,7 +241,7 @@ end;
 //These functions are regular methods and need TKMScripting object in global scope
 class function TKMScriptingCreator.CreateScripting(aOnScriptError: TUnicodeStringEvent): TKMScripting;
 begin
-  if gScripting <> nil then // Should never happen in 1 application, as only 1 TKMScripting object is needed usually
+  if (gScripting <> nil) and not SKIP_GAME_DESTRUCTION then // Should never happen in 1 application, as only 1 TKMScripting object is needed usually
     FreeAndNil(gScripting);
 
   gScripting := TKMScripting.Create(aOnScriptError);

@@ -29,6 +29,7 @@ type
     fIntParam: Integer;
     fIntParam2: Integer;
     fOnStopSimulation: TBooleanFuncSimple;
+    fOnBeforeTick: TBoolCardFuncSimple;
     fOnTick: TBoolCardFuncSimple;
     procedure SetUp; virtual;
     procedure TearDown; virtual;
@@ -143,6 +144,7 @@ begin
   SKIP_RENDER := (fRenderTarget = nil);
   SKIP_SOUND := True;
   SKIP_LOADING_CURSOR := True;
+  SKIP_SETTINGS_SAVE := True;
   //ExeDir := ExtractFilePath(ParamStr(0)) + '..\..\';
   ExeDir := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))))));
   //gLog := TKMLog.Create(ExtractFilePath(ParamStr(0)) + 'temp.log');
@@ -209,6 +211,20 @@ begin
   for I := aStartTick to aEndTick do
   begin
     fResults.Times[fRun, I] := TimeGet;
+
+    if Assigned(fOnBeforeTick)
+      and not fOnBeforeTick(I) then
+      Exit;
+
+    if I = 15663 then
+    begin
+      IntParam := 23*Sign(I) + aStartTick*fRun - Round(321*Math.Power(fRun, 2));
+      gLog.LogDelivery('IntParam' + IntToStr(IntParam));
+      if IntParam > 321333 then
+        gGameApp.Game.UpdateGame(nil);
+    end;
+
+
 
     gGameApp.Game.UpdateGame(nil);
     gGameApp.Render(False);

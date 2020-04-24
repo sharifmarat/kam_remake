@@ -610,7 +610,7 @@ end;
 //6. Switch to MainMenu
 procedure TKMGameApp.StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
 begin
-  if gGame = nil then Exit;
+  if (gGame = nil) or SKIP_GAME_DESTRUCTION then Exit;
 
   PrepageStopGame(aMsg);
 
@@ -802,7 +802,8 @@ begin
     gGame.LoadSavedReplay(aTick, SaveFile);
     gGame.LastReplayTick := Max(gGame.LastReplayTick, SavedReplays.LastTick);
     // Free GIP, which was created on game creation
-    gGame.GameInputProcess.Free;
+//    if not SKIP_GAME_DESTRUCTION then
+      gGame.GameInputProcess.Free;
     // Restore GIP
     gGame.GameInputProcess := gameInputProcess;
     // Move GIP cursor to the actual position
