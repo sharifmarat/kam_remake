@@ -2349,7 +2349,10 @@ begin
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
     fGamePlayInterface.UpdateReplayMarks;
-  end;
+  end
+  else
+    // Save dummy GIP to know when game was loaded. Good for debug
+    fGameInputProcess.CmdGame(gicGameLoadSave, Integer(fGameTick));
 
   gLog.AddTime('After game loading', True);
 end;
