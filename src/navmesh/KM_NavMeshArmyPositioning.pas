@@ -595,7 +595,7 @@ end;
 
 
 procedure TArmyForwardFF.Paint();
-  procedure DrawPolygon(aIdx: Integer; const Opacity: Byte; aFillColor: Cardinal; aText: String = '');
+  procedure DrawPolygon(aIdx: Integer; const Opacity: Byte; aFillColor: Cardinal; const aText: String = '');
   var
     P0,P1,P2: TKMPoint;
   begin
@@ -989,7 +989,7 @@ end;
 
 
 procedure TArmyBackwardFF.Paint();
-  procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
+  procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; const aText: String = '');
   var
     P0,P1,P2: TKMPoint;
   begin

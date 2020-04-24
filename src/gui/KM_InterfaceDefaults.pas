@@ -91,22 +91,24 @@ type
   TKMMapEdMenuPage = class
   protected
     procedure DoShowSubMenu(aIndex: Byte); virtual;
-    procedure DoExecuteSubMenuAction(aIndex: Byte); virtual;
+    procedure DoExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean); virtual;
   public
     procedure ShowSubMenu(aIndex: Byte);
-    procedure ExecuteSubMenuAction(aIndex: Byte);
+    procedure ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
 
     function Visible: Boolean; virtual; abstract;
+    function IsFocused: Boolean; virtual;
   end;
 
 
   TKMMapEdSubMenuPage = class
   protected
     fSubMenuActionsEvents: array[0..SUB_MENU_ACTIONS_CNT - 1] of TNotifyEvent;
-    fSubMenuActionsCtrls: array[0..SUB_MENU_ACTIONS_CNT - 1] of TKMControl;
+    fSubMenuActionsCtrls: array[0..SUB_MENU_ACTIONS_CNT - 1] of array[0..1] of TKMControl;
   public
-    procedure ExecuteSubMenuAction(aIndex: Byte);
+    procedure ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
     function Visible: Boolean; virtual; abstract;
+    function IsFocused: Boolean; virtual;
   end;
 
 
@@ -304,10 +306,16 @@ begin
 end;
 
 
-procedure TKMMapEdMenuPage.ExecuteSubMenuAction(aIndex: Byte);
+function TKMMapEdMenuPage.IsFocused: Boolean;
 begin
-  if Visible then
-    DoExecuteSubMenuAction(aIndex);
+  Result := Visible;
+end;
+
+
+procedure TKMMapEdMenuPage.ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
+begin
+  if IsFocused then
+    DoExecuteSubMenuAction(aIndex, aHandled);
 end;
 
 
@@ -317,24 +325,37 @@ begin
 end;
 
 
-procedure TKMMapEdMenuPage.DoExecuteSubMenuAction(aIndex: Byte);
+procedure TKMMapEdMenuPage.DoExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
 begin
   //just empty stub here
 end;
 
 
 { TKMMapEdSubMenuPage }
-procedure TKMMapEdSubMenuPage.ExecuteSubMenuAction(aIndex: Byte);
+procedure TKMMapEdSubMenuPage.ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
+var
+  I: Integer;
 begin
-  if Visible
-    and Assigned(fSubMenuActionsEvents[aIndex])
-    and (fSubMenuActionsCtrls[aIndex] <> nil)
-    and fSubMenuActionsCtrls[aIndex].IsClickable then
-  begin
-    if fSubMenuActionsCtrls[aIndex] is TKMCheckBox then
-      TKMCheckBox(fSubMenuActionsCtrls[aIndex]).SwitchCheck;
-    fSubMenuActionsEvents[aIndex](fSubMenuActionsCtrls[aIndex]);
-  end;
+  if aHandled or not IsFocused or not Assigned(fSubMenuActionsEvents[aIndex]) then Exit;
+
+  for I := Low(fSubMenuActionsCtrls[aIndex]) to High(fSubMenuActionsCtrls[aIndex]) do
+    if (fSubMenuActionsCtrls[aIndex, I] <> nil)
+      and fSubMenuActionsCtrls[aIndex, I].IsClickable then
+    begin
+      if fSubMenuActionsCtrls[aIndex, I] is TKMCheckBox then
+        TKMCheckBox(fSubMenuActionsCtrls[aIndex, I]).SwitchCheck;
+
+      // Call event only once
+      fSubMenuActionsEvents[aIndex](fSubMenuActionsCtrls[aIndex, I]);
+      aHandled := True;
+      Exit;
+    end;
+end;
+
+
+function TKMMapEdSubMenuPage.IsFocused: Boolean;
+begin
+  Result := Visible;
 end;
 
 

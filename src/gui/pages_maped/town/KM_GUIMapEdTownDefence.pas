@@ -107,11 +107,11 @@ begin
   fSubMenuActionsEvents[3] := Town_DefenceChange;
   fSubMenuActionsEvents[4] := Town_DefenceFormations;
 
-  fSubMenuActionsCtrls[0] := Button_DefencePosAdd;
-  fSubMenuActionsCtrls[1] := CheckBox_AutoDefence;
-  fSubMenuActionsCtrls[2] := CheckBox_DefendAllies;
-  fSubMenuActionsCtrls[3] := CheckBox_MaxSoldiers;
-  fSubMenuActionsCtrls[4] := Button_EditFormations;
+  fSubMenuActionsCtrls[0,0] := Button_DefencePosAdd;
+  fSubMenuActionsCtrls[1,0] := CheckBox_AutoDefence;
+  fSubMenuActionsCtrls[2,0] := CheckBox_DefendAllies;
+  fSubMenuActionsCtrls[3,0] := CheckBox_MaxSoldiers;
+  fSubMenuActionsCtrls[4,0] := Button_EditFormations;
 end;
 
 

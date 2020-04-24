@@ -37,8 +37,9 @@ type
     Panel_TilesPalettePopup: TKMPopUpPanel;
       Panel_TilesPalette: TKMScrollPanel;
         TilesPaletteTbl: array [0..TABLE_ELEMS - 1] of TKMButtonFlat;
-      Button_PaletteClose:  TKMButton;
-
+        TilesPaletteRandom: TKMCheckBox;
+        TilesPaletteMagicWater, TilesPaletteEyedropper, TilesPaletteRotate: TKMButtonFlat;
+        NumEdit_SetTilePaletteNumber: TKMNumericEdit;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -49,6 +50,7 @@ type
     procedure Hide;
     procedure UpdateState;
     function Visible: Boolean; override;
+    function IsFocused: Boolean; override;
   end;
 
 
@@ -146,7 +148,8 @@ begin
 
   palH := 2*MAPED_TILES_Y*PAL_S + 15;
 
-  Panel_TilesPalettePopup := TKMPopUpPanel.Create(aParent.MasterControl.MasterPanel, 1000, palH + 10, 'Tiles palette', pubgitScrollWCross, True, False);
+  Panel_TilesPalettePopup := TKMPopUpPanel.Create(aParent.MasterControl.MasterPanel, 1000, palH + 10, gResTexts[TX_MAPED_TERRAIN_TILES_PALETTE],
+                                                  pubgitScrollWCross, True, False);
   Panel_TilesPalettePopup.DragEnabled := True;
   Panel_TilesPalettePopup.CapOffsetY := -15;
     Panel_TilesPalette := TKMScrollPanel.Create(Panel_TilesPalettePopup, 5, 5, 990, palH, [saHorizontal, saVertical], bsGame, ssGame);
@@ -154,7 +157,7 @@ begin
       for J := 0 to MAPED_TILES_Y - 1 do
         for K := 0 to row - 1 do
         begin
-          X := ((K mod PAL_1ST_ROW) + (K div PAL_1ST_ROW)*((2*PAL_1ST_ROW - row) div 2)) * PAL_S;
+          X := ((K mod PAL_1ST_ROW) + (K div PAL_1ST_ROW)*(((2*PAL_1ST_ROW - row) div 2) + 2)) * PAL_S;
           Y := (J + MAPED_TILES_Y*(K div PAL_1ST_ROW)) * PAL_S + 5*(K div PAL_1ST_ROW);
           TexID := MapEdTileRemap[J * row + K];
           TilesPaletteTbl[J * row + K] := TKMButtonFlat.Create(Panel_TilesPalette, X, Y, 32, 32, TexID, rxTiles);
@@ -169,27 +172,72 @@ begin
             TilesPaletteTbl[J * row + K].Hint := IntToStr(TexID - 1);
         end;
 
+      TilesPaletteMagicWater := TKMButtonFlat.Create(Panel_TilesPalette, 0, (MAPED_TILES_Y + 1)*PAL_S, BTN_SIZE_S, BTN_SIZE_S, 670);
+      TilesPaletteMagicWater.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_MAGIC_WATER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
+      TilesPaletteMagicWater.OnClick := TilesChange;
+
+      TilesPaletteEyedropper := TKMButtonFlat.Create(Panel_TilesPalette, BTN_SIZE_S + 2, (MAPED_TILES_Y + 1)*PAL_S, BTN_SIZE_S, BTN_SIZE_S, 671);
+      TilesPaletteEyedropper.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_EYEDROPPER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
+      TilesPaletteEyedropper.OnClick := TilesChange;
+
+      TilesPaletteRotate := TKMButtonFlat.Create(Panel_TilesPalette, 2*BTN_SIZE_S + 4, (MAPED_TILES_Y + 1)*PAL_S, BTN_SIZE_S, BTN_SIZE_S, 672);
+      TilesPaletteRotate.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_ROTATE_TILE, SC_MAPEDIT_SUB_MENU_ACTION_3);
+      TilesPaletteRotate.OnClick := TilesChange;
+
+      NumEdit_SetTilePaletteNumber := TKMNumericEdit.Create(Panel_TilesPalette, 3*BTN_SIZE_S + 25, (MAPED_TILES_Y + 1)*PAL_S + ((PAL_S - 20) div 2), 0, MAX_TILE_TO_SHOW - 1);
+      NumEdit_SetTilePaletteNumber.Anchors := [anTop, anRight];
+      NumEdit_SetTilePaletteNumber.Hint := gResTexts[TX_MAPED_TERRAIN_TILE_ID_EDIT_HINT];
+      NumEdit_SetTilePaletteNumber.OnChange := TilesChange;
+      NumEdit_SetTilePaletteNumber.AutoFocusable := False;
+
+      TilesPaletteRandom := TKMCheckBox.Create(Panel_TilesPalette, 0, (MAPED_TILES_Y + 1)*PAL_S + BTN_SIZE + 5, Panel_Tiles.Width - TB_TLS_R, 20, gResTexts[TX_MAPED_TERRAIN_TILES_RANDOM], fntMetal);
+      TilesPaletteRandom.Checked := True;
+      TilesPaletteRandom.OnClick := TilesChange;
+      TilesPaletteRandom.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_TILES_RANDOM_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
+
+
   fSubMenuActionsEvents[0] := TilesChange;
   fSubMenuActionsEvents[1] := TilesChange;
   fSubMenuActionsEvents[2] := TilesChange;
   fSubMenuActionsEvents[3] := TilesChange;
 
-  fSubMenuActionsCtrls[0] := TilesMagicWater;
-  fSubMenuActionsCtrls[1] := TilesEyedropper;
-  fSubMenuActionsCtrls[2] := TilesRotate;
-  fSubMenuActionsCtrls[3] := TilesRandom;
+  fSubMenuActionsCtrls[0,0] := TilesMagicWater;
+  fSubMenuActionsCtrls[1,0] := TilesEyedropper;
+  fSubMenuActionsCtrls[2,0] := TilesRotate;
+  fSubMenuActionsCtrls[3,0] := TilesRandom;
+
+  fSubMenuActionsCtrls[0,1] := TilesPaletteMagicWater;
+  fSubMenuActionsCtrls[1,1] := TilesPaletteEyedropper;
+  fSubMenuActionsCtrls[2,1] := TilesPaletteRotate;
+  fSubMenuActionsCtrls[3,1] := TilesPaletteRandom;
 end;
 
 
 procedure TKMMapEdTerrainTiles.TilesChange(Sender: TObject);
+var
+  isMagicWater, isEyedropper, isRotate, isRandom, isTileNum: Boolean;
+  value: Integer;
 begin
-  Panel_TilesPalettePopup.Hide;
+  isMagicWater := (Sender = TilesMagicWater) or (Sender = TilesPaletteMagicWater);
+  isEyedropper := (Sender = TilesEyedropper) or (Sender = TilesPaletteEyedropper);
+  isRotate     := (Sender = TilesRotate) or (Sender = TilesPaletteRotate);
+  isRandom     := (Sender = TilesRandom) or (Sender = TilesPaletteRandom);
+  isTileNum    := (Sender = NumEdit_SetTileNumber) or (Sender = NumEdit_SetTilePaletteNumber);
 
-  TilesMagicWater.Down := (Sender = TilesMagicWater) and not TilesMagicWater.Down;
-  TilesEyedropper.Down := (Sender = TilesEyedropper) and not TilesEyedropper.Down;
-  TilesRotate.Down := (Sender = TilesRotate) and not TilesRotate.Down;
+  // Do not hide palette on random check
+  if not isRandom and not isTileNum then
+    Panel_TilesPalettePopup.Hide;
 
-  if Sender = TilesMagicWater then
+  TilesMagicWater.Down := isMagicWater and not TilesMagicWater.Down;
+  TilesPaletteMagicWater.Down := TilesMagicWater.Down;
+
+  TilesEyedropper.Down := isEyedropper and not TilesEyedropper.Down;
+  TilesPaletteEyedropper.Down := TilesEyedropper.Down;
+
+  TilesRotate.Down := isRotate and not TilesRotate.Down;
+  TilesPaletteRotate.Down := TilesRotate.Down;
+
+  if isMagicWater then
   begin
     if TilesMagicWater.Down then
       gGameCursor.Mode := cmMagicWater
@@ -197,7 +245,7 @@ begin
       gGameCursor.Mode := cmNone;
   end else
 
-  if Sender = TilesEyedropper then
+  if isEyedropper then
   begin
     if TilesEyedropper.Down then
       gGameCursor.Mode := cmEyedropper
@@ -205,7 +253,7 @@ begin
       gGameCursor.Mode := cmNone;
   end else
 
-  if Sender = TilesRotate then
+  if isRotate then
   begin
     if TilesRotate.Down then
       gGameCursor.Mode := cmRotateTile
@@ -213,16 +261,20 @@ begin
       gGameCursor.Mode := cmNone;
   end else
 
-  if Sender = TilesRandom then
-    gGameCursor.MapEdDir := 4 * Byte(TilesRandom.Checked) //Defined=0..3 or Random=4
+  if isRandom then
+    gGameCursor.MapEdDir := 4 * Byte(TKMCheckBox(Sender).Checked) //Defined=0..3 or Random=4
   else
 
-  if Sender = NumEdit_SetTileNumber then
+  if isTileNum then
   begin
-    if gRes.Tileset.TileIsAllowedToSet(NumEdit_SetTileNumber.Value) then
+    value := TKMNumericEdit(Sender).Value;
+    NumEdit_SetTileNumber.Value := value;
+    NumEdit_SetTilePaletteNumber.Value := value;
+
+    if gRes.Tileset.TileIsAllowedToSet(value) then
     begin
-      TilesSet(NumEdit_SetTileNumber.Value + 1);
-      TilesTableSetTileTexId(NumEdit_SetTileNumber.Value);
+      TilesSet(value + 1);
+      TilesTableSetTileTexId(value);
     end
   end else
 
@@ -233,9 +285,11 @@ begin
   begin
     TilesSet(TKMButtonFlat(Sender).TexID);
     NumEdit_SetTileNumber.Value := TKMButtonFlat(Sender).TexID - 1;
-  end
-  else
-    TilesRefresh(nil);
+    NumEdit_SetTilePaletteNumber.Value := TKMButtonFlat(Sender).TexID - 1;
+  end;
+
+  // Refresh immidiately
+  TilesRefresh(nil);
 end;
 
 
@@ -287,6 +341,8 @@ var
   I,K,L,SP: Integer;
 begin
   NumEdit_SetTileNumber.Value := aTexId;
+  NumEdit_SetTilePaletteNumber.Value := aTexId;
+
   if not IsTileVisible(aTexId) then
     for SP := 0 to TilesScroll.MaxValue do
       for I := 0 to MAPED_TILES_Y - 1 do
@@ -347,9 +403,15 @@ var
   I,K,L: Integer;
   TileTexID, row: Integer;
 begin
-  TilesRandom.Checked := (gGameCursor.MapEdDir = 4);
+  TilesRandom.Checked  := (gGameCursor.MapEdDir = 4);
+  TilesMagicWater.Down := gGameCursor.Mode = cmMagicWater;
   TilesEyedropper.Down := gGameCursor.Mode = cmEyedropper;
-  TilesRotate.Down := gGameCursor.Mode = cmRotateTile;
+  TilesRotate.Down     := gGameCursor.Mode = cmRotateTile;
+
+  TilesPaletteRandom.Checked  := TilesRandom.Checked;
+  TilesPaletteMagicWater.Down := TilesMagicWater.Down;
+  TilesPaletteEyedropper.Down := TilesEyedropper.Down;
+  TilesPaletteRotate.Down     := TilesRotate.Down;
 
   for I := 0 to MAPED_TILES_Y - 1 do
   for K := 0 to MAPED_TILES_X - 1 do
@@ -387,6 +449,12 @@ end;
 function TKMMapEdTerrainTiles.Visible: Boolean;
 begin
   Result := Panel_Tiles.Visible;
+end;
+
+
+function TKMMapEdTerrainTiles.IsFocused: Boolean;
+begin
+  Result := Visible or Panel_TilesPalettePopup.Visible;
 end;
 
 

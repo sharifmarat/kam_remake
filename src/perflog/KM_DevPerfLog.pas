@@ -37,7 +37,7 @@ type
     procedure Clear;
 
     procedure Render(aLeft, aWidth, aHeight: Integer);
-    procedure SaveToFile(aFilename: string; aSaveThreshold: Integer = 10);
+    procedure SaveToFile(const aFilename: string; aSaveThreshold: Integer = 10);
     procedure ShowForm(aContainer: TWinControl);
     function FormHeight: Integer;
 
@@ -323,7 +323,7 @@ begin
 end;
 
 
-procedure TKMPerfLogs.SaveToFile(aFilename: string; aSaveThreshold: Integer = 10);
+procedure TKMPerfLogs.SaveToFile(const aFilename: string; aSaveThreshold: Integer = 10);
 var
   I: TPerfSectionDev;
   S: TStringList;

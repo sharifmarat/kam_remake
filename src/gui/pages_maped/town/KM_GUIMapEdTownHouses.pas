@@ -94,13 +94,13 @@ begin
   for I := 0 to High(fSubMenuActionsEvents) do
     fSubMenuActionsEvents[I] := Town_BuildChange;
 
-  fSubMenuActionsCtrls[0] := Button_BuildRoad;
-  fSubMenuActionsCtrls[1] := Button_BuildField;
-  fSubMenuActionsCtrls[2] := Button_BuildWine;
-  fSubMenuActionsCtrls[3] := Button_BuildCancel;
+  fSubMenuActionsCtrls[0,0] := Button_BuildRoad;
+  fSubMenuActionsCtrls[1,0] := Button_BuildField;
+  fSubMenuActionsCtrls[2,0] := Button_BuildWine;
+  fSubMenuActionsCtrls[3,0] := Button_BuildCancel;
 
   for I := 4 to High(fSubMenuActionsCtrls) do
-    fSubMenuActionsCtrls[I] := Button_Build[I-3];
+    fSubMenuActionsCtrls[I, 0] := Button_Build[I-3];
 end;
 
 

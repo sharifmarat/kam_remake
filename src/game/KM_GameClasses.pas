@@ -22,8 +22,8 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream; aMinimap: TKMMinimap = nil);
 
-    procedure SaveToFile(aFilePath: String);
-    function LoadFromFile(aFilePath: String): Boolean;
+    procedure SaveToFile(const aFilePath: String);
+    function LoadFromFile(const aFilePath: String): Boolean;
   end;
 
 implementation
@@ -78,7 +78,7 @@ begin
 end;
 
 
-procedure TKMGameMPLocalData.SaveToFile(aFilePath: String);
+procedure TKMGameMPLocalData.SaveToFile(const aFilePath: String);
 var
   SaveStream: TKMemoryStreamBinary;
 begin
@@ -92,7 +92,7 @@ begin
 end;
 
 
-function TKMGameMPLocalData.LoadFromFile(aFilePath: String): Boolean;
+function TKMGameMPLocalData.LoadFromFile(const aFilePath: String): Boolean;
 var
   LoadStream: TKMemoryStreamBinary;
   ChoosenStartLoc: Integer;

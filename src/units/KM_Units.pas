@@ -62,7 +62,7 @@ type
 
     function CouldBeCancelled: Boolean; virtual;
 
-    function ObjToString(aSeparator: String = ', '): String; virtual;
+    function ObjToString(const aSeparator: String = ', '): String; virtual;
 
     function Execute: TKMTaskResult; virtual; abstract;
     procedure Save(SaveStream: TKMemoryStream); virtual;
@@ -232,8 +232,8 @@ type
     function GetSlide(aCheck: TKMCheckAxis): Single;
     function PathfindingShouldAvoid: Boolean; virtual;
 
-    function ObjToString(aSeparator: String = '|'): String; virtual;
-    function ObjToStringShort(aSeparator: String = '|'): String; virtual;
+    function ObjToString(const aSeparator: String = '|'): String; virtual;
+    function ObjToStringShort(const aSeparator: String = '|'): String; virtual;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
     function UpdateState: Boolean; virtual;
@@ -298,7 +298,7 @@ type
     procedure CarryGive(Res: TKMWareType);
     procedure CarryTake;
 
-    function ObjToString(aSeparator: String = '|'): String; override;
+    function ObjToString(const aSeparator: String = '|'): String; override;
 
     function UpdateState: Boolean; override;
     procedure Paint; override;
@@ -842,7 +842,7 @@ begin
 end;
 
 
-function TKMUnitSerf.ObjToString(aSeparator: String = '|'): String;
+function TKMUnitSerf.ObjToString(const aSeparator: String = '|'): String;
 begin
   Result := inherited ObjToString(aSeparator)
           + Format('%sCarry = %s', [aSeparator, GetEnumName(TypeInfo(TKMWareType), Integer(fCarry))]);
@@ -2201,7 +2201,7 @@ begin
 end;
 
 
-function TKMUnit.ObjToStringShort(aSeparator: String = '|'): String;
+function TKMUnit.ObjToStringShort(const aSeparator: String = '|'): String;
 var
   ActStr, TaskStr: String;
 begin
@@ -2222,7 +2222,7 @@ begin
 end;
 
 
-function TKMUnit.ObjToString(aSeparator: String = '|'): String;
+function TKMUnit.ObjToString(const aSeparator: String = '|'): String;
 var
   HomeStr, InHouseStr: String;
 begin
@@ -2510,7 +2510,7 @@ begin
 end;
 
 
-function TKMUnitTask.ObjToString(aSeparator: String = ', '): String;
+function TKMUnitTask.ObjToString(const aSeparator: String = ', '): String;
 begin
   Result := Format('Type %s%sPhase = %d%sPhase2 = %d',
                    [GetEnumName(TypeInfo(TKMUnitTaskType), Integer(fType)), aSeparator,

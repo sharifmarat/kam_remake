@@ -385,36 +385,43 @@ end;
 
 function TKMLog.CanLogDelivery: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtDelivery in MessageTypes;
 end;
 
 function TKMLog.CanLogCommands: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtCommands in MessageTypes;
 end;
 
 function TKMLog.CanLogRandomChecks: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtRandomChecks in MessageTypes;
 end;
 
 function TKMLog.CanLogNetConnection: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtNetConnection in MessageTypes;
 end;
 
 function TKMLog.CanLogNetPacketOther: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtNetPacketOther in MessageTypes;
 end;
 
 function TKMLog.CanLogNetPacketCommand: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtNetPacketCommand in MessageTypes;
 end;
 
 function TKMLog.CanLogNetPacketPingFps: Boolean;
 begin
+  if Self = nil then Exit(False);
   Result := lmtNetPacketPingFps in MessageTypes;
 end;
 

@@ -1611,7 +1611,8 @@ end;
 
 
 procedure TKMNetworking.LogPacket(aIsSending: Boolean; aKind: TKMessageKind; aNetworkAddress: TKMNetHandleIndex);
-var LogMessage: String;
+var
+  logMessage: String;
 begin
   if aIsSending then
     Inc(fPacketsSent[aKind])
@@ -1619,18 +1620,18 @@ begin
     Inc(fPacketsReceived[aKind]);
 
   if aIsSending then
-    LogMessage := 'Packet send:     %-23s to   %s'  // 23 is the length of mk_ command with the longest name
+    logMessage := 'Packet send:     %-23s to   %s'  // 23 is the length of mk_ command with the longest name
   else
-    LogMessage := 'Packet received: %-23s from %s';
+    logMessage := 'Packet received: %-23s from %s';
 
-  LogMessage := Format(LogMessage, [GetEnumName(TypeInfo(TKMessageKind), Integer(aKind)),
+  logMessage := Format(logMessage, [GetEnumName(TypeInfo(TKMessageKind), Integer(aKind)),
                                     GetNetAddressPrintDescr(aNetworkAddress)]);
 
   case aKind of
     mkPing, mkPong,
-    mkPingInfo, mkFPS:  gLog.LogNetPacketPingFps(LogMessage);
-    mkCommands       :  gLog.LogNetPacketCommand(LogMessage);
-    else                gLog.LogNetPacketOther(LogMessage);
+    mkPingInfo, mkFPS:  gLog.LogNetPacketPingFps(logMessage);
+    mkCommands       :  gLog.LogNetPacketCommand(logMessage);
+    else                gLog.LogNetPacketOther(logMessage);
   end;
 end;
 

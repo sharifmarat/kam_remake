@@ -86,9 +86,9 @@ begin
   for I := 0 to High(fSubMenuActionsEvents) do
     fSubMenuActionsEvents[I] := Town_UnitChange;
 
-  fSubMenuActionsCtrls[0] := Button_UnitCancel;
+  fSubMenuActionsCtrls[0,0] := Button_UnitCancel;
   for I := 1 to High(fSubMenuActionsCtrls) do
-    fSubMenuActionsCtrls[I] := Button_Citizen[I-1];
+    fSubMenuActionsCtrls[I, 0] := Button_Citizen[I-1];
 end;
 
 

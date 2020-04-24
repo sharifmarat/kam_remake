@@ -44,8 +44,8 @@ type
       function GetNextHistoryMsg: UnicodeString;
       function GetPrevHistoryMsg: UnicodeString;
 
-      procedure Add(aMessage: UnicodeString);
-      procedure AddLine(aMessage: UnicodeString);
+      procedure Add(const aMessage: UnicodeString);
+      procedure AddLine(const aMessage: UnicodeString);
 
       procedure Clear; virtual;
     end;
@@ -147,7 +147,7 @@ begin
 end;
 
 
-procedure TKMConsole.Add(aMessage: UnicodeString);
+procedure TKMConsole.Add(const aMessage: UnicodeString);
 begin
   fMessages := fMessages + aMessage;
 
@@ -156,7 +156,7 @@ begin
 end;
 
 
-procedure TKMConsole.AddLine(aMessage: UnicodeString);
+procedure TKMConsole.AddLine(const aMessage: UnicodeString);
 begin
   if fMessages <> '' then
   begin

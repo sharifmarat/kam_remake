@@ -139,7 +139,7 @@ type
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
     procedure LoadFromStream(var LoadStream: TKMemoryStreamBinary);
     procedure LoadFromFile(const aPathName: UnicodeString; const aCustomReplayFile: UnicodeString = '');
-    procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
+    procedure LoadSavedReplay(aTick: Cardinal; const aSaveFile: UnicodeString);
     procedure AfterLoad;
 
     function MapSizeInfo: UnicodeString;
@@ -2239,7 +2239,7 @@ begin
 end;
 
 
-procedure TKMGame.LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
+procedure TKMGame.LoadSavedReplay(aTick: Cardinal; const aSaveFile: UnicodeString);
 var
   loadStream: TKMemoryStreamBinary;
   lastReplayTick: Cardinal;
@@ -2325,7 +2325,10 @@ begin
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
     fGamePlayInterface.UpdateReplayMarks;
-  end;
+  end
+  else
+    // Save dummy GIP to know when game was loaded. Good for debug
+    fGameInputProcess.CmdGame(gicGameLoadSave, Integer(fGameTick));
 
   gLog.AddTime('After game loading', True);
 end;

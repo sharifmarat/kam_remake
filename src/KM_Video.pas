@@ -48,7 +48,7 @@ type
     FTrackList: TStringList;
     FVideoList: TStringList;
 
-    function TryGetPathFile(aPath: string; var aFileName: string): Boolean;
+    function TryGetPathFile(const aPath: string; var aFileName: string): Boolean;
     procedure SetTrackByLocale;
     function GetState: TVLCPlayerState;
 
@@ -57,9 +57,9 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure AddCampaignVideo(aCampaignPath: string; aVideoName: String);
-    procedure AddMissionVideo(aMissionFile: string; aVideoName: String);
-    procedure AddVideo(AVideoName: String);
+    procedure AddCampaignVideo(const aCampaignPath, aVideoName: string);
+    procedure AddMissionVideo(const aMissionFile, aVideoName: string);
+    procedure AddVideo(const AVideoName: String);
     procedure Play;
     procedure Stop;
     procedure Pause;
@@ -141,7 +141,7 @@ begin
 end;
 
 
-procedure TKMVideoPlayer.AddCampaignVideo(aCampaignPath: string; aVideoName: String);
+procedure TKMVideoPlayer.AddCampaignVideo(const aCampaignPath, aVideoName: string);
 {$IFDEF VIDEOS}
 var
   Path: string;
@@ -159,7 +159,7 @@ begin
 {$ENDIF}
 end;
 
-procedure TKMVideoPlayer.AddMissionVideo(aMissionFile: string; aVideoName: String);
+procedure TKMVideoPlayer.AddMissionVideo(const aMissionFile, aVideoName: string);
 {$IFDEF VIDEOS}
 var
   MissionPath, FileName: string;
@@ -181,7 +181,7 @@ begin
 {$ENDIF}
 end;
 
-procedure TKMVideoPlayer.AddVideo(aVideoName: String);
+procedure TKMVideoPlayer.AddVideo(const aVideoName: String);
 {$IFDEF VIDEOS}
 var
   Path: string;
@@ -583,7 +583,7 @@ end;
 
 {$IFDEF VIDEOS}
 
-function TKMVideoPlayer.TryGetPathFile(aPath: string; var aFileName: string): Boolean;
+function TKMVideoPlayer.TryGetPathFile(const aPath: string; var aFileName: string): Boolean;
 var
   i: Integer;
   SearchRec: TSearchRec;

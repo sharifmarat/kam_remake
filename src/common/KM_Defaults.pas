@@ -66,6 +66,7 @@ var
   BLOCK_DUPLICATE_APP   :Boolean = not DEBUG_CFG;  //Do not allow to run multiple games at once (to prevent MP cheating)
   SHOW_DISMISS_UNITS_BTN:Boolean = True; //The button to order citizens go back to school
   RESET_DEBUG_CONTROLS  :Boolean = not DEBUG_CFG; //Reset Debug controls (F11) on game start
+  SKIP_LOG_TEMP_COMMANDS:Boolean = True;
 
   //Implemented
   DO_UNIT_INTERACTION   :Boolean = True; //Debug for unit interaction

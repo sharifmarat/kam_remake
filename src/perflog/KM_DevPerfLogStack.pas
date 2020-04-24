@@ -67,10 +67,10 @@ type
     procedure Render(aLeft, aWidth, aHeight, aScaleY: Integer; aEmaAlpha: Single; aFrameBudget: Integer; aSmoothing: Boolean);
     property SectionData[aSection: TPerfSectionDev]: TKMSectionData read GetSectionData; default;
     property Count: Integer read GetCount;
-    procedure SectionRollback(aName: string); overload;
+    procedure SectionRollback(const aName: string); overload;
     procedure SectionRollback(aSection: TPerfSectionDev); overload;
 
-    procedure SectionEnter(aName: string; aSection: TPerfSectionDev = psNone); overload;
+    procedure SectionEnter(const aName: string; aSection: TPerfSectionDev = psNone); overload;
     procedure SectionEnter(aSection: TPerfSectionDev); overload;
   end;
 
@@ -413,7 +413,7 @@ begin
 end;
 
 
-procedure TKMPerfLogStack.SectionEnter(aName: string; aSection: TPerfSectionDev = psNone);
+procedure TKMPerfLogStack.SectionEnter(const aName: string; aSection: TPerfSectionDev = psNone);
 var
   I: Integer;
 begin
@@ -451,7 +451,7 @@ begin
 end;
 
 
-procedure TKMPerfLogStack.SectionRollback(aName: string);
+procedure TKMPerfLogStack.SectionRollback(const aName: string);
 var
   I: Integer;
 begin

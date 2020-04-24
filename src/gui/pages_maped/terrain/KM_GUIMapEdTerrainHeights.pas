@@ -105,10 +105,10 @@ begin
   fSubMenuActionsEvents[2] := HeightChange;
   fSubMenuActionsEvents[3] := HeightChange;
 
-  fSubMenuActionsCtrls[0] := HeightCircle;
-  fSubMenuActionsCtrls[1] := HeightSquare;
-  fSubMenuActionsCtrls[2] := HeightElevate;
-  fSubMenuActionsCtrls[3] := HeightUnequalize;
+  fSubMenuActionsCtrls[0,0] := HeightCircle;
+  fSubMenuActionsCtrls[1,0] := HeightSquare;
+  fSubMenuActionsCtrls[2,0] := HeightElevate;
+  fSubMenuActionsCtrls[3,0] := HeightUnequalize;
 end;
 
 

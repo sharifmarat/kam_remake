@@ -78,9 +78,9 @@ begin
   fSubMenuActionsEvents[1] := Attacks_Add;
   fSubMenuActionsEvents[2] := Attacks_Del;
 
-  fSubMenuActionsCtrls[0] := CheckBox_AutoAttack;
-  fSubMenuActionsCtrls[1] := Button_AttacksAdd;
-  fSubMenuActionsCtrls[2] := Button_AttacksDel;
+  fSubMenuActionsCtrls[0,0] := CheckBox_AutoAttack;
+  fSubMenuActionsCtrls[1,0] := Button_AttacksAdd;
+  fSubMenuActionsCtrls[2,0] := Button_AttacksDel;
 end;
 
 
