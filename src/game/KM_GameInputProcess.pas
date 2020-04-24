@@ -729,7 +729,9 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
-    if (gLog <> nil) and gLog.CanLogCommands() then
+    if gLog.CanLogCommands()
+      and (not SKIP_LOG_TEMP_COMMANDS
+           or not (aCommand.CommandType in [gicTempAddScout, gicTempRevealMap, gicTempVictory, gicTempDefeat, gicTempDoNothing]))then
       gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTick, GIPCommandToString(aCommand)]));
 
     case CommandType of

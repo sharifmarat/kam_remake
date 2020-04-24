@@ -154,6 +154,7 @@ type
     chkSupervisor: TCheckBox;
     cpScripting: TCategoryPanel;
     chkDebugScripting: TCheckBox;
+    chkLogSkipTempCmd: TCheckBox;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -786,6 +787,7 @@ procedure TFormMain.ControlsReset;
         if PanelSurface.Controls[I] is TCheckBox then
           TCheckBox(PanelSurface.Controls[I]).Checked :=    (PanelSurface.Controls[I] = chkBevel)
                                                          or (PanelSurface.Controls[I] = chkLogNetConnection)
+                                                         or (PanelSurface.Controls[I] = chkLogSkipTempCmd)
                                                          or ((PanelSurface.Controls[I] = chkSnowHouses) and gGameApp.GameSettings.AllowSnowHouses)
         else
         if PanelSurface.Controls[I] is TTrackBar then
@@ -948,6 +950,7 @@ begin
     SHOW_JAM_METER := chkJamMeter.Checked;
     SHOW_TERRAIN_OVERLAYS := chkShowTerrainOverlays.Checked;
     DEBUG_SCRIPTING_EXEC := chkDebugScripting.Checked;
+    SKIP_LOG_TEMP_COMMANDS := chkLogSkipTempCmd.Checked;
     {$ENDIF}
 
     SKIP_RENDER := chkSkipRender.Checked;
