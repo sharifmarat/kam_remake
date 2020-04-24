@@ -139,7 +139,7 @@ type
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
     procedure LoadFromStream(var LoadStream: TKMemoryStreamBinary);
     procedure LoadFromFile(const aPathName: UnicodeString; const aCustomReplayFile: UnicodeString = '');
-    procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
+    procedure LoadSavedReplay(aTick: Cardinal; const aSaveFile: UnicodeString);
     procedure AfterLoad;
 
     function MapSizeInfo: UnicodeString;
@@ -2263,7 +2263,7 @@ begin
 end;
 
 
-procedure TKMGame.LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
+procedure TKMGame.LoadSavedReplay(aTick: Cardinal; const aSaveFile: UnicodeString);
 var
   loadStream: TKMemoryStreamBinary;
   lastReplayTick: Cardinal;

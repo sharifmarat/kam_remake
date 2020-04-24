@@ -82,7 +82,7 @@ type
     procedure ResetDragObject;
     function DoResetCursorMode: Boolean;
     procedure ShowSubMenu(aIndex: Byte);
-    procedure ExecuteSubMenuAction(aIndex: Byte);
+    procedure ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
     procedure Update_Label_Coordinates;
     procedure MapTypeChanged(aIsMultiplayer: Boolean);
 
@@ -834,7 +834,7 @@ end;
 
 procedure TKMapEdInterface.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
-  KeyHandled, KeyPassedToModal: Boolean;
+  keyHandled, keyPassedToModal: Boolean;
 begin
   aHandled := True; // assume we handle all keys here
 
@@ -844,21 +844,23 @@ begin
     Exit; //Handled by Controls
   end;
 
-  KeyHandled := False;
+  keyHandled := False;
 
   //For MapEd windows / pages
-  fGuiTerrain.KeyDown(Key, Shift, KeyHandled);
-  fGuiTown.KeyDown(Key, Shift, KeyHandled);
-  fGuiMission.KeyDown(Key, Shift, KeyHandled);
+  fGuiTerrain.KeyDown(Key, Shift, keyHandled); // Terrain first (because of Objects and Tiles popup windows)
+  fGuiHouse.KeyDown(Key, Shift, keyHandled);
+  fGuiUnit.KeyDown(Key, Shift, keyHandled);
+  fGuiTown.KeyDown(Key, Shift, keyHandled);
+  fGuiMission.KeyDown(Key, Shift, keyHandled);
 
-  if KeyHandled then Exit;
+  if keyHandled then Exit;
 
-  inherited KeyDown(Key, Shift, KeyHandled);
-  if KeyHandled then Exit;
+  inherited KeyDown(Key, Shift, keyHandled);
+  if keyHandled then Exit;
 
   gGameCursor.SState := Shift; // Update Shift state on KeyDown
 
-  KeyPassedToModal := False;
+  keyPassedToModal := False;
   //Pass Key to Modal pages first
   //Todo refactoring - remove fGuiAttack.KeyDown and similar methods,
   //as KeyDown should be handled in Controls them selves (TKMPopUpWindow, f.e.)
@@ -866,17 +868,17 @@ begin
     or (fGuiFormations.Visible and fGuiFormations.KeyDown(Key, Shift))
     or (fGuiGoal.Visible and fGuiGoal.KeyDown(Key, Shift))
     or (fGuiMenuQuickPlay.Visible and fGuiMenuQuickPlay.KeyDown(Key, Shift)) then
-    KeyPassedToModal := True;
+    keyPassedToModal := True;
 
   //For now enter can open up Extra panel
-  if not KeyPassedToModal and (Key = gResKeys[SC_MAPEDIT_EXTRA].Key) then
+  if not keyPassedToModal and (Key = gResKeys[SC_MAPEDIT_EXTRA].Key) then
     Message_Click(Image_Extra);
 
   // If modals are closed or they did not handle key
-  if not KeyPassedToModal and (Key = gResKeys[SC_CLOSE_MENU].Key) then
+  if not keyPassedToModal and (Key = gResKeys[SC_CLOSE_MENU].Key) then
   begin
-    Cancel_Clicked(False, KeyHandled);
-    if not KeyHandled then
+    Cancel_Clicked(False, keyHandled);
+    if not keyHandled then
     begin
       if fGuiMessage.Visible then
         fGuiMessage.Hide
@@ -898,30 +900,30 @@ begin
 end;
 
 
-procedure TKMapEdInterface.ExecuteSubMenuAction(aIndex: Byte);
+procedure TKMapEdInterface.ExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
 begin
-  fGuiTerrain.ExecuteSubMenuAction(aIndex);
-  fGuiTown.ExecuteSubMenuAction(aIndex);
-  fGuiPlayer.ExecuteSubMenuAction(aIndex);
-  fGuiMission.ExecuteSubMenuAction(aIndex);
+  fGuiTerrain.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiTown.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiPlayer.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiMission.ExecuteSubMenuAction(aIndex, aHandled);
 end;
 
 
 procedure TKMapEdInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
   I: Integer;
-  KeyHandled: Boolean;
+  keyHandled: Boolean;
 begin
   aHandled := True; // assume we handle all keys here
 
   if fMyControls.KeyUp(Key, Shift) then Exit; //Handled by Controls
 
-  inherited KeyUp(Key, Shift, KeyHandled);
-  if KeyHandled then Exit;
+  inherited KeyUp(Key, Shift, keyHandled);
+  if keyHandled then Exit;
 
   //For undo/redo shortcuts and Objects Palette
-  fGuiTerrain.KeyUp(Key, Shift, KeyHandled);
-  if KeyHandled then Exit;
+  fGuiTerrain.KeyUp(Key, Shift, keyHandled);
+  if keyHandled then Exit;
 
   //F1-F5 menu shortcuts
   if Key = gResKeys[SC_MAPEDIT_TERRAIN].Key   then Button_Main[1].Click;
@@ -938,7 +940,10 @@ begin
   //q-w-e-r-t-y-u submenu actions shortcuts
   for I := Low(MAPED_SUBMENU_ACTIONS_HOTKEYS) to High(MAPED_SUBMENU_ACTIONS_HOTKEYS) do
     if Key = gResKeys[MAPED_SUBMENU_ACTIONS_HOTKEYS[I]].Key then
-      ExecuteSubMenuAction(I);
+    begin
+      keyHandled := False;
+      ExecuteSubMenuAction(I, keyHandled);
+    end;
 
   //Universal erasor
   if Key = gResKeys[SC_MAPEDIT_UNIV_ERASOR].Key then
@@ -974,7 +979,7 @@ end;
 
 procedure TKMapEdInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
 var
-  Obj: TObject;
+  obj: TObject;
   keyHandled: Boolean;
 begin
   fMyControls.MouseDown(X,Y,Shift,Button);
@@ -984,13 +989,13 @@ begin
 
   if (Button = mbLeft) and (gGameCursor.Mode = cmNone) then
   begin
-    Obj := gMySpectator.HitTestCursor;
-    if Obj <> nil then
+    obj := gMySpectator.HitTestCursor;
+    if obj <> nil then
     begin
       UpdateSelection;
-      fDragObject := Obj;
-      if Obj is TKMHouse then
-        fDragHouseOffset := KMPointSubtract(TKMHouse(Obj).Entrance, gGameCursor.Cell); //Save drag point adjustement to house position
+      fDragObject := obj;
+      if obj is TKMHouse then
+        fDragHouseOffset := KMPointSubtract(TKMHouse(obj).Entrance, gGameCursor.Cell); //Save drag point adjustement to house position
       fDragObjectReady := True;
       fDragObjMousePosStart := KMPoint(X,Y);
     end;
@@ -1283,7 +1288,7 @@ end;
 procedure TKMapEdInterface.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   DP: TAIDefencePosition;
-  Marker: TKMMapEdMarker;
+  marker: TKMMapEdMarker;
   G: TKMUnitGroup;
   U: TKMUnit;
   H: TKMHouse;
@@ -1313,11 +1318,11 @@ begin
               begin
                 //If there are some additional layers we first HitTest them
                 //since they are rendered ontop of Houses/Objects
-                Marker := gGame.MapEditor.HitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
+                marker := gGame.MapEditor.HitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
 
-                if Marker.MarkerType <> mtNone then
+                if marker.MarkerType <> mtNone then
                 begin
-                  ShowMarkerInfo(Marker);
+                  ShowMarkerInfo(marker);
                   gMySpectator.Selected := nil; //We might have had a unit/group/house selected
                 end
                 else

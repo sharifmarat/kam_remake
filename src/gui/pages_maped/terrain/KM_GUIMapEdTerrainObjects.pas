@@ -218,9 +218,9 @@ begin
   fSubMenuActionsEvents[1] := ObjectsChange;
   fSubMenuActionsEvents[2] := ObjectsPaletteButton_Click;
 
-  fSubMenuActionsCtrls[0] := ObjectErase;
-  fSubMenuActionsCtrls[1] := ObjectBlock;
-  fSubMenuActionsCtrls[2] := ObjectsPalette_Button;
+  fSubMenuActionsCtrls[0,0] := ObjectErase;
+  fSubMenuActionsCtrls[1,0] := ObjectBlock;
+  fSubMenuActionsCtrls[2,0] := ObjectsPalette_Button;
 end;
 
 

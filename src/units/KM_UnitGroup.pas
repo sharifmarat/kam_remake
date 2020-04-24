@@ -196,8 +196,8 @@ type
 
     procedure KillGroup;
 
-    function ObjToStringShort(aSeparator: String = '|'): String;
-    function ObjToString(aSeparator: String = '|'): String;
+    function ObjToStringShort(const aSeparator: String = '|'): String;
+    function ObjToString(const aSeparator: String = '|'): String;
 
     procedure UpdateState;
     procedure PaintHighlighted(aHandColor, aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
@@ -2067,7 +2067,7 @@ begin
 end;
 
 
-function TKMUnitGroup.ObjToStringShort(aSeparator: String = '|'): String;
+function TKMUnitGroup.ObjToStringShort(const aSeparator: String = '|'): String;
 begin
   Result := Format('UID = %d%sType = %s%sMembersCount = %d',
                    [fUID, aSeparator,
@@ -2076,7 +2076,7 @@ begin
 end;
 
 
-function TKMUnitGroup.ObjToString(aSeparator: String = '|'): String;
+function TKMUnitGroup.ObjToString(const aSeparator: String = '|'): String;
 var
   TargetUnitStr, TargetHouseStr, TargetGroupStr: String;
 begin

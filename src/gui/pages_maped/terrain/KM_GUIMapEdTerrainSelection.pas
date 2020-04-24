@@ -99,13 +99,13 @@ begin
   fSubMenuActionsEvents[5] := SelectionClick;
   fSubMenuActionsEvents[6] := GenerateMapClick;
 
-  fSubMenuActionsCtrls[0] := Button_SelectCopy;
-  fSubMenuActionsCtrls[1] := Button_SelectPaste;
-  fSubMenuActionsCtrls[2] := Button_SelectPasteApply;
-  fSubMenuActionsCtrls[3] := Button_SelectPasteCancel;
-  fSubMenuActionsCtrls[4] := Button_SelectFlipH;
-  fSubMenuActionsCtrls[5] := Button_SelectFlipV;
-  fSubMenuActionsCtrls[6] := Button_RMGRND;
+  fSubMenuActionsCtrls[0,0] := Button_SelectCopy;
+  fSubMenuActionsCtrls[1,0] := Button_SelectPaste;
+  fSubMenuActionsCtrls[2,0] := Button_SelectPasteApply;
+  fSubMenuActionsCtrls[3,0] := Button_SelectPasteCancel;
+  fSubMenuActionsCtrls[4,0] := Button_SelectFlipH;
+  fSubMenuActionsCtrls[5,0] := Button_SelectFlipV;
+  fSubMenuActionsCtrls[6,0] := Button_RMGRND;
 end;
 
 

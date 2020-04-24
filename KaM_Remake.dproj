@@ -3,7 +3,7 @@
         <ProjectGuid>{CB64F5E8-91AE-4497-A8C4-89668924F870}</ProjectGuid>
         <MainSource>KaM_Remake.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
@@ -15,11 +15,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
         <Base_Win32>true</Base_Win32>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
-        <Base_Win64>true</Base_Win64>
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
@@ -79,10 +74,6 @@
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
-        <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
         <DCC_DebugInformation>0</DCC_DebugInformation>
@@ -118,6 +109,7 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <DCC_Define>madExcept;$(DCC_Define)</DCC_Define>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -136,6 +128,7 @@
         <DCCReference Include="src\ext\KromUtils.pas"/>
         <DCCReference Include="src\ext\KromShellUtils.pas"/>
         <DCCReference Include="src\ext\ScriptValidatorResult.pas"/>
+        <DCCReference Include="src\ext\iaWin.NameDelphiThreads.pas"/>
         <DCCReference Include="src\ai\KM_AI.pas"/>
         <DCCReference Include="src\ai\KM_AIArmyEvaluation.pas"/>
         <DCCReference Include="src\ai\KM_AIAttacks.pas"/>
@@ -456,7 +449,6 @@
             </Delphi.Personality>
             <Platforms>
                 <Platform value="Win32">True</Platform>
-                <Platform value="Win64">False</Platform>
             </Platforms>
             <UnitTesting>
                 <TestProjectName>G:\Delphi\KaM Remake\Test\KaM_RemakeTests.dproj</TestProjectName>
@@ -464,8 +456,6 @@
             <ModelSupport>False</ModelSupport>
             <Deployment Version="3">
                 <DeployFile LocalName="KaM_Remake.rsm" Configuration="Release" Class="DebugSymbols"/>
-                <DeployFile LocalName="KaM_Remake.rsm" Configuration="Release" Class="DebugSymbols"/>
-                <DeployFile LocalName="KaM_Remake.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployFile LocalName="KaM_Remake.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">

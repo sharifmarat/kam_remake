@@ -113,8 +113,8 @@ type
 
     procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); override;
 
-    function ObjToStringShort(aSeparator: String = '|'): String; override;
-    function ObjToString(aSeparator: String = '|'): String; override;
+    function ObjToStringShort(const aSeparator: String = '|'): String; override;
+    function ObjToString(const aSeparator: String = '|'): String; override;
 
     procedure Save(SaveStream: TKMemoryStream); override;
     function UpdateState: Boolean; override;
@@ -928,7 +928,7 @@ begin
 end;}
 
 
-function TKMUnitWarrior.ObjToStringShort(aSeparator: String = '|'): String;
+function TKMUnitWarrior.ObjToStringShort(const aSeparator: String = '|'): String;
 begin
   Result := inherited ObjToStringShort(aSeparator) +
             Format('%sWarriorOrder = %s%sNextOrder = %s%sNextOrderForced = %s%sOrderLoc = %s%sHasOrderTargetUnit = [%s]%sHasOrderTargetHouse = [%s]',
@@ -942,7 +942,7 @@ begin
 end;
 
 
-function TKMUnitWarrior.ObjToString(aSeparator: String = '|'): String;
+function TKMUnitWarrior.ObjToString(const aSeparator: String = '|'): String;
 var
   UnitStr,HouseStr,GroupStr: String;
 begin

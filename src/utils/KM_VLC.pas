@@ -156,7 +156,7 @@ var
   libvlccore: Integer = 0;
   libvlc: Integer = 0;
 
-function GetAProcAddress(handle: integer; var addr: Pointer; procName: string; failedList: TStringList): integer;
+function GetAProcAddress(handle: integer; var addr: Pointer; const procName: string; failedList: TStringList): integer;
 begin
   addr := GetProcAddress(handle, PWideChar(procName));
   if not Assigned(addr) then

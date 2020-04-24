@@ -44,6 +44,8 @@ type
   public
     constructor Create(aParent: TKMPanel);
 
+    procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+
     procedure Show(aUnit: TKMUnit); overload;
     procedure Show(aGroup: TKMUnitGroup); overload;
     procedure Hide;
@@ -53,6 +55,8 @@ type
 
 implementation
 uses
+  {$IFDEF MSWindows} Windows, {$ENDIF}
+  {$IFDEF Unix} LCLType, {$ENDIF}
   KM_HandsCollection, KM_RenderUI, KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResUnits, KM_Utils;
 
 
@@ -364,6 +368,21 @@ end;
 procedure TKMMapEdUnit.Hide;
 begin
   Panel_Unit.Hide;
+end;
+
+
+procedure TKMMapEdUnit.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+begin
+  if aHandled then Exit;
+
+  if (Key = VK_ESCAPE)
+    and Visible
+    and (gMySpectator.Selected <> nil) then
+    begin
+      gMySpectator.Selected := nil;
+      Hide;
+      aHandled := True;
+    end;
 end;
 
 

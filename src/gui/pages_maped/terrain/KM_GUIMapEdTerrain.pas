@@ -33,7 +33,7 @@ type
     Panel_Terrain: TKMPanel;
     Button_Terrain: array [TKMTerrainTab] of TKMButton;
     procedure DoShowSubMenu(aIndex: Byte); override;
-    procedure DoExecuteSubMenuAction(aIndex: Byte); override;
+    procedure DoExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean); override;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aHideAllPages: TEvent);
     destructor Destroy; override;
@@ -48,6 +48,7 @@ type
     //procedure
     function IsVisible(aPage: TKMTerrainTab): Boolean;
     function Visible: Boolean;  override;
+    function IsFocused: Boolean;  override;
     procedure Resize;
     procedure UpdateState;
     procedure Cancel_Clicked(var aHandled: Boolean);
@@ -189,22 +190,30 @@ begin
 end;
 
 
-procedure TKMMapEdTerrain.DoExecuteSubMenuAction(aIndex: Byte);
+procedure TKMMapEdTerrain.DoExecuteSubMenuAction(aIndex: Byte; var aHandled: Boolean);
 begin
   inherited;
 
-  fGuiBrushes.ExecuteSubMenuAction(aIndex);
-  fGuiHeights.ExecuteSubMenuAction(aIndex);
-  fGuiTiles.ExecuteSubMenuAction(aIndex);
-  fGuiObjects.ExecuteSubMenuAction(aIndex);
-  fGuiSelection.ExecuteSubMenuAction(aIndex);
-  fGuiOverlays.ExecuteSubMenuAction(aIndex);
+  // Tiles go first because of Tiles palette (it must have priority over normal left sub-menus
+  fGuiTiles.ExecuteSubMenuAction(aIndex, aHandled);
+
+  fGuiBrushes.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiHeights.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiObjects.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiSelection.ExecuteSubMenuAction(aIndex, aHandled);
+  fGuiOverlays.ExecuteSubMenuAction(aIndex, aHandled);
 end;
 
 
 function TKMMapEdTerrain.Visible: Boolean;
 begin
   Result := Panel_Terrain.Visible;
+end;
+
+
+function TKMMapEdTerrain.IsFocused: Boolean;
+begin
+  Result := Visible or fGuiTiles.IsFocused;
 end;
 
 

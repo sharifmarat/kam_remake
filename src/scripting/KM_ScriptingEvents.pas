@@ -42,7 +42,7 @@ type
     procedure CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer; aFloatParam: Single = FLOAT_PARAM_NONE);
     function GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
 
-    procedure HandleScriptProcCallError(aMethod: String);
+    procedure HandleScriptProcCallError(const aMethod: String);
     procedure CallEventProc(const aProc: TKMCustomEventHandler; const aIntParams: array of Integer; aFloatParam: Single);
     function MethodAssigned(aProc: TMethod): Boolean; overload; inline;
     function MethodAssigned(aEventType: TKMScriptEventType): Boolean; overload; inline;
@@ -491,7 +491,7 @@ end;
 
 
 //This procedure allows us to keep the exception handling code in one place
-procedure TKMScriptEvents.HandleScriptProcCallError(aMethod: String);//aEx: Exception);
+procedure TKMScriptEvents.HandleScriptProcCallError(const aMethod: String);//aEx: Exception);
 var
   ExceptionProc: TPSProcRec;
   InternalProc: TPSInternalProcRec;

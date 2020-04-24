@@ -817,7 +817,7 @@ begin
 
     RegisterMethodCheck(c, 'function BoolToStr(aBool: Boolean): AnsiString');
 
-    RegisterMethodCheck(c, 'function ColorBrightness(aHexColor: string): Single');
+    RegisterMethodCheck(c, 'function ColorBrightness(const aHexColor: string): Single');
 
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
@@ -854,7 +854,7 @@ begin
     RegisterMethodCheck(c, 'function RandomRangeI(aFrom, aTo: Integer): Integer');
 
     RegisterMethodCheck(c, 'function RGBDecToBGRHex(aR, aG, aB: Byte): AnsiString');
-    RegisterMethodCheck(c, 'function RGBToBGRHex(aHexColor: string): AnsiString');
+    RegisterMethodCheck(c, 'function RGBToBGRHex(const aHexColor: string): AnsiString');
 
     RegisterMethodCheck(c, 'function RoundToDown(aValue: Single; aBase: Integer): Integer');
     RegisterMethodCheck(c, 'function RoundToUp(aValue: Single; aBase: Integer): Integer');

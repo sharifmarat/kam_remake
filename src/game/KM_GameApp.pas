@@ -37,7 +37,7 @@ type
     procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
+    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; const aGIPPath: String = '');
     procedure LoadGameFromScript(const aMissionFile, aGameName: String; aFullCRC, aSimpleCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                  aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
@@ -675,7 +675,7 @@ begin
 end;
 
 
-procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; aGIPPath: String = '');
+procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode; const aGIPPath: String = '');
 var
   LoadError, FilePath: String;
 begin

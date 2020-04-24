@@ -85,6 +85,8 @@ type
   public
     constructor Create(aParent: TKMPanel);
 
+    procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+
     procedure Show(aHouse: TKMHouse);
     procedure Hide;
     function Visible: Boolean;
@@ -94,6 +96,8 @@ type
 
 implementation
 uses
+  {$IFDEF MSWindows} Windows, {$ENDIF}
+  {$IFDEF Unix} LCLType, {$ENDIF}
   KM_HandsCollection, KM_ResTexts, KM_Resource, KM_RenderUI, KM_ResUnits,
   KM_ResWares, KM_HouseBarracks, KM_HouseTownHall,
   KM_ResFonts, KM_GameCursor, KM_Utils;
@@ -648,6 +652,21 @@ begin
     dmTakeOut:   TexId := 664;
   end;
   Button_HouseDeliveryMode.TexID := TexId;
+end;
+
+
+procedure TKMMapEdHouse.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+begin
+  if aHandled then Exit;
+
+  if (Key = VK_ESCAPE)
+    and Visible
+    and (gMySpectator.Selected <> nil) then
+    begin
+      gMySpectator.Selected := nil;
+      Hide;
+      aHandled := True;
+    end;
 end;
 
 

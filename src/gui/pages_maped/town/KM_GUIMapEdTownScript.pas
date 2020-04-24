@@ -120,11 +120,11 @@ begin
   fSubMenuActionsEvents[3] := Town_ScriptChange;
   fSubMenuActionsEvents[4] := Town_ScriptChange;
 
-  fSubMenuActionsCtrls[0] := CheckBox_AutoBuild;
-  fSubMenuActionsCtrls[1] := CheckBox_AutoRepair;
-  fSubMenuActionsCtrls[2] := Button_ClassicAIParams;
-  fSubMenuActionsCtrls[3] := CheckBox_UnlimitedEquip;
-  fSubMenuActionsCtrls[4] := Button_AIStart;
+  fSubMenuActionsCtrls[0,0] := CheckBox_AutoBuild;
+  fSubMenuActionsCtrls[1,0] := CheckBox_AutoRepair;
+  fSubMenuActionsCtrls[2,0] := Button_ClassicAIParams;
+  fSubMenuActionsCtrls[3,0] := CheckBox_UnlimitedEquip;
+  fSubMenuActionsCtrls[4,0] := Button_AIStart;
 end;
 
 
