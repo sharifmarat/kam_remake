@@ -1790,7 +1790,7 @@ end;
 
 function TKMGame.AllowGetPointer: Boolean;
 begin
-  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer;
+  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer {or SKIP_POINTER_REF_CHECK};
 end;
 
 
