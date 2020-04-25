@@ -1808,6 +1808,7 @@ procedure TKMGame.SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryS
 var
   GameInfo: TKMGameInfo;
   I, netIndex: Integer;
+  gameRes: TKMGameResultMsg;
 begin
   GameInfo := TKMGameInfo.Create;
   try
@@ -1888,7 +1889,16 @@ begin
   aSaveStream.Write(GetKaMSeed); //Include the random seed in the save file to ensure consistency in replays
 
   if not IsMultiPlayerOrSpec then
-    aSaveStream.Write(GameResult, SizeOf(GameResult));
+  begin
+    // Game results differ for game and replay (grReplayEnd for replay),
+    // Set some default value
+    if GAME_SAVE_STRIP_FOR_CRC then
+      gameRes := grCancel
+    else
+      gameRes := GameResult;
+      
+    aSaveStream.Write(gameRes, SizeOf(GameResult));    
+  end;
 
   gTerrain.Save(aSaveStream); //Saves the map
   fTerrainPainter.Save(aSaveStream);
@@ -2273,14 +2283,12 @@ begin
   if (fSavedReplays = nil) or fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
     Exit;
 
-  gLog.AddTime('Saving replay start');
+  gLog.AddTime('Make savepoint at tick ' + IntToStr(fGameTick));
 
   SaveStream := TKMemoryStreamBinary.Create;
   SaveGameToStream(TDateTime(0), SaveStream); // Date is not important
 
   fSavedReplays.NewSave(SaveStream, fGameTick);
-
-  gLog.AddTime('Saving replay end');
 end;
 
 

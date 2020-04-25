@@ -161,7 +161,13 @@ begin
 
   SaveStream.WriteW(Title); //GameName
   SaveStream.Write(TickCount);
-  SaveStream.Write(SaveTimestamp);
+
+  // Game times differ for game and replay
+  // Set default value there in that case
+  if GAME_SAVE_STRIP_FOR_CRC then
+    SaveStream.Write(TDateTime(0))
+  else
+    SaveStream.Write(SaveTimestamp);
   SaveStream.Write(MissionMode, SizeOf(MissionMode));
   SaveStream.Write(MissionDifficulty, SizeOf(MissionDifficulty));
   SaveStream.Write(MapSizeX);
