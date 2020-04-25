@@ -1145,10 +1145,17 @@ const
   SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
 
   // Maps for simulation (I dont use for loop in this array)
-  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
-                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
-                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
-  cnt_MAP_SIMULATIONS = 10;
+//  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
+//                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
+//                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
+  //Fighting maps
+  FIGHT_MAPS: array[1..33] of string = ('Icewind Valley 6P', 'Red Valley', 'Clarity Falls - Escape', 'Enter the Heat', 'Pirate Bond',
+                                  'Sharks Islands', 'Dangerous Shore', 'Ambushed', 'Bannockburn','Battle of Great Generals',
+                                  'Gorges', 'Spring of Events', 'Inner Struggle', 'Last Fight for Oasis','Lost Road',
+                                  'River Crossing','Shoulder to Shoulder','The Pirates','Unknown Danger','Battle in the Ruined City',
+                                  'Lost City Struggle','Cross','Cursed Land','Gunplay','Icewind Valley','Rocky Mountains',
+                                  'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
+  cnt_MAP_SIMULATIONS = 30;
 var
   K,L,I: Integer;
   desyncCnt: Integer;
