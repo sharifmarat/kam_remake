@@ -1148,6 +1148,12 @@ const
 //  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
 //                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
 //                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
+  MAPS_8P: array [1..29] of String = ('A War of Justice','Babylon','Back in the Desert','Center Castle Looting','Cold Water 8P',
+                                   'Complication in Simplicity','Crystalline Falls','Cursed Ravine','Dance of Death','Dead of Winter',
+                                   'Drastic Measures','Ending the Tyranny','Twin Peaks','Valley of the Equilibrium 8P', 'Frozen Waters',
+                                   'Hand in Hand','Mega Land','Nibenay Basin','Paradise Island','Reborn','Rich Land','Tale of Two Lands',
+                                   'The Final Frontier','The Last Port','The Same Rocks','The Valley of Dangers 2','Volcanic Violence',
+                                   'Volcano Valley','Voros Arany');
   //Fighting maps
   FIGHT_MAPS: array[1..33] of string = ('Icewind Valley 6P', 'Red Valley', 'Clarity Falls - Escape', 'Enter the Heat', 'Pirate Bond',
                                   'Sharks Islands', 'Dangerous Shore', 'Ambushed', 'Bannockburn','Battle of Great Generals',
