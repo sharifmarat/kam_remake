@@ -262,7 +262,8 @@ type
     function TileInMapCoords(X,Y: Integer; InsetRect: TKMRect): Boolean; overload;
     function VerticeInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
     function VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
-    function EnsureTileInMapCoords(X, Y: Integer; Inset: Byte = 0): TKMPoint;
+    function EnsureTileInMapCoords(X, Y: Integer; aInset: Byte = 0): TKMPoint; overload;
+    function EnsureTileInMapCoords(const aLoc: TKMPoint; aInset: Byte = 0): TKMPoint; overload;
 
     function TileGoodForIronMine(X, Y: Word): Boolean;
     function TileGoodForGoldmine(X, Y: Word): Boolean;
@@ -1139,10 +1140,16 @@ end;
 
 {Ensure that requested tile is within Map boundaries}
 {X,Y are unsigned int, usually called from loops, hence no TKMPoint can be used}
-function TKMTerrain.EnsureTileInMapCoords(X,Y: Integer; Inset: Byte = 0): TKMPoint;
+function TKMTerrain.EnsureTileInMapCoords(X,Y: Integer; aInset: Byte = 0): TKMPoint;
 begin
-  Result.X := EnsureRange(X, 1 + Inset, fMapX - 1 - Inset);
-  Result.Y := EnsureRange(Y, 1 + Inset, fMapY - 1 - Inset);
+  Result.X := EnsureRange(X, 1 + aInset, fMapX - 1 - aInset);
+  Result.Y := EnsureRange(Y, 1 + aInset, fMapY - 1 - aInset);
+end;
+
+
+function TKMTerrain.EnsureTileInMapCoords(const aLoc: TKMPoint; aInset: Byte = 0): TKMPoint;
+begin
+  Result := EnsureTileInMapCoords(aLoc.X, aLoc.Y, aInset);
 end;
 
 

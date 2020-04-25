@@ -218,6 +218,10 @@ type
     property GameMode: TKMGameMode read fGameMode;
     property SaveFile: UnicodeString read fSaveFile;
 
+    {$IFDEF RUNNER}
+    procedure SetGameMode(aGameMode: TKMGameMode);
+    {$ENDIF}
+
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
     property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
     property SkipReplayEndCheck: Boolean read fSkipReplayEndCheck write fSkipReplayEndCheck;
@@ -260,6 +264,8 @@ type
 
     procedure Save(const aSaveName: UnicodeString); overload;
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
+
+    function GetCurrectTickSaveCRC: Cardinal;
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
@@ -351,8 +357,12 @@ begin
   fTimerGame := TTimer.Create(nil);
   //pseudo GIP command, since we just want to initialize speed with default values
   SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
-  fTimerGame.OnTimer := UpdateGame;
-  fTimerGame.Enabled := True;
+
+  if not GAME_NO_UPDATE_ON_TIMER then
+  begin
+    fTimerGame.OnTimer := UpdateGame;
+    fTimerGame.Enabled := True;
+  end;
 
   fGameSpeedChangeTime := TimeGet;
 
@@ -1746,6 +1756,14 @@ begin
 end;
 
 
+{$IFDEF RUNNER}
+procedure TKMGame.SetGameMode(aGameMode: TKMGameMode);
+begin
+  fGameMode := aGameMode;
+end;
+{$ENDIF}
+
+
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
 begin
   SetGameSpeed(aSpeed, aToggle, GetNormalGameSpeed);
@@ -1781,6 +1799,20 @@ begin
 end;
 
 
+function TKMGame.GetCurrectTickSaveCRC: Cardinal;
+var
+  stream: TKMemoryStreamBinary;
+begin
+  stream := TKMemoryStreamBinary.Create;
+  try
+    SaveGameToStream(0, stream);
+    Result := Adler32CRC(stream);
+  finally
+    stream.Free;
+  end;
+end;
+
+
 procedure TKMGame.SetIsPaused(aValue: Boolean);
 begin
   fIsPaused := aValue;
@@ -1790,7 +1822,7 @@ end;
 
 function TKMGame.AllowGetPointer: Boolean;
 begin
-  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer;
+  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer {or SKIP_POINTER_REF_CHECK};
 end;
 
 
@@ -1808,6 +1840,7 @@ procedure TKMGame.SaveGameToStream(aTimestamp: TDateTime; aSaveStream: TKMemoryS
 var
   GameInfo: TKMGameInfo;
   I, netIndex: Integer;
+  gameRes: TKMGameResultMsg;
 begin
   GameInfo := TKMGameInfo.Create;
   try
@@ -1883,12 +1916,21 @@ begin
   //We need to know which mission/savegame to try to restart. This is unused in MP
   if not IsMultiPlayerOrSpec then
     aSaveStream.WriteW(fMissionFileSP);
-
+    
   aSaveStream.Write(fUIDTracker); //Units-Houses ID tracker
   aSaveStream.Write(GetKaMSeed); //Include the random seed in the save file to ensure consistency in replays
 
   if not IsMultiPlayerOrSpec then
-    aSaveStream.Write(GameResult, SizeOf(GameResult));
+  begin
+    // Game results differ for game and replay (grReplayEnd for replay),
+    // Set some default value
+    if GAME_SAVE_STRIP_FOR_CRC then
+      gameRes := grCancel
+    else
+      gameRes := GameResult;
+      
+    aSaveStream.Write(gameRes, SizeOf(GameResult));    
+  end;
 
   gTerrain.Save(aSaveStream); //Saves the map
   fTerrainPainter.Save(aSaveStream);
@@ -2027,7 +2069,7 @@ begin
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
   // Save checkpoints
-  if gGameApp.GameSettings.SaveCheckpoints then
+  if gGameApp.GameSettings.SaveCheckpoints and not SKIP_SAVE_SAVPTS_TO_FILE then
     fSavedReplays.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT));
 
   if DoSaveRandomChecks then
@@ -2123,7 +2165,7 @@ begin
 
   LoadStream.Read(fUIDTracker);
   LoadStream.Read(LoadedSeed);
-
+  
   if not SaveIsMultiplayer then
     LoadStream.Read(GameResult, SizeOf(GameResult));
 
@@ -2273,14 +2315,12 @@ begin
   if (fSavedReplays = nil) or fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
     Exit;
 
-  gLog.AddTime('Saving replay start');
+  gLog.AddTime('Make savepoint at tick ' + IntToStr(fGameTick));
 
   SaveStream := TKMemoryStreamBinary.Create;
   SaveGameToStream(TDateTime(0), SaveStream); // Date is not important
 
   fSavedReplays.NewSave(SaveStream, fGameTick);
-
-  gLog.AddTime('Saving replay end');
 end;
 
 
@@ -2383,7 +2423,7 @@ var
 
 begin
   DoUpdateGame;
-
+  
   if CALC_EXPECTED_TICK then
   begin
     TicksBehindCnt := GetTicksBehindCnt;
@@ -2436,7 +2476,7 @@ end;
 
 procedure TKMGame.SetSeed(aSeed: Integer);
 begin
-  if USE_CUSTOM_SEED then
+  if USE_CUSTOM_SEED and not IsReplay then
     aSeed := CUSTOM_SEED_VALUE;
 
   gLog.AddTime('Set game seed: ' + IntToStr(aSeed));
@@ -2563,7 +2603,8 @@ begin
                             //Make replay save only after everything is updated (UpdateState)
                             if gGameApp.GameSettings.SaveCheckpoints
                               and (fSavedReplays.Count <= gGameApp.GameSettings.SaveCheckpointsLimit) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
-                              and ((fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
+                              and ((fGameTick = MAKE_SAVEPT_AT_TICK)
+                                or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
                                 or ((fGameTick mod gGameApp.GameSettings.SaveCheckpointsFreq) = 0)) then
                               SaveReplayToMemory;
 
@@ -2630,6 +2671,7 @@ begin
                           if gGameApp.GameSettings.ReplayAutosave
                             and (fSavedReplays.Count <= REPLAY_AUTOSAVE_CNT_MAX) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
                             and ((fGameTick = 1) //First tick
+                              or (fGameTick = MAKE_SAVEPT_AT_TICK)
                               or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
                               or ((fGameTick mod GetReplayAutosaveEffectiveFrequency) = 0)) then
                           begin

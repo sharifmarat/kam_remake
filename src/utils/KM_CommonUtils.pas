@@ -68,7 +68,7 @@ uses
   function KaMRandom(const aCaller: AnsiString; aLogRng: Boolean = True): Extended; overload;
   function KaMRandom(aMax: Integer; const aCaller: AnsiString; aLogRng: Boolean = True): Integer; overload;
   function KaMRandomS1(aMax: Single; const aCaller: AnsiString): Single;
-  function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer; overload;
+  function KaMRandomI2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer; overload;
   function KaMRandomS2(Range_Both_Directions: Single; const aCaller: AnsiString): Single; overload;
 
   function IsGameStartAllowed(aGameStartMode: TKMGameStartMode): Boolean;
@@ -1134,7 +1134,7 @@ end;
 procedure DoLogKamRandom(aValue: Extended; const aCaller: AnsiString; const aKaMRandomFunc: AnsiString); overload;
 begin
   if ((gLog <> nil) and gLog.CanLogRandomChecks()) then
-    gLog.LogRandomChecks(Format('%12s: %30s Caller: %s', [aKaMRandomFunc, FormatFloat('0.##############################', aValue), aCaller]));
+    gLog.LogRandomChecks(Format('Seed: %12d %12s: %30s Caller: %s', [fKamSeed, aKaMRandomFunc, FormatFloat('0.##############################', aValue), aCaller]));
 end;
 
 
@@ -1144,7 +1144,7 @@ begin
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(aCaller, aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue, fKaMSeed);
   {$ENDIF}
 end;
 
@@ -1155,7 +1155,7 @@ begin
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(aCaller, aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue, fKaMSeed);
   {$ENDIF}
 end;
 
@@ -1166,7 +1166,7 @@ begin
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(aCaller, aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue, fKaMSeed);
   {$ENDIF}
 end;
 
@@ -1233,7 +1233,7 @@ end;
 
 
 //Returns random number from -Range_Both_Directions to +Range_Both_Directions
-function KaMRandomS2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer;
+function KaMRandomI2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer;
 begin
   Result := KaMRandom(Range_Both_Directions*2+1, aCaller, False) - Range_Both_Directions;
 

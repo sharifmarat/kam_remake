@@ -1,4 +1,4 @@
-﻿unit Unit_Runner;
+unit Unit_Runner;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -28,6 +28,9 @@ type
     fResults: TKMRunResults;
     fIntParam: Integer;
     fIntParam2: Integer;
+    fOnStopSimulation: TBooleanFuncSimple;
+    fOnBeforeTick: TBoolCardFuncSimple;
+    fOnTick: TBoolCardFuncSimple;
     procedure SetUp; virtual;
     procedure TearDown; virtual;
     procedure Execute(aRun: Integer); virtual; abstract;
@@ -37,6 +40,7 @@ type
     Duration: Integer;
     OnProgress: TUnicodeStringEvent;
     OnProgress2: TUnicodeStringEvent;
+    OnProgress3: TUnicodeStringEvent;
     constructor Create(aRenderTarget: TKMRenderControl); reintroduce;
     function Run(aCount: Integer): TKMRunResults;
   end;
@@ -140,6 +144,7 @@ begin
   SKIP_RENDER := (fRenderTarget = nil);
   SKIP_SOUND := True;
   SKIP_LOADING_CURSOR := True;
+  SKIP_SETTINGS_SAVE := True;
   //ExeDir := ExtractFilePath(ParamStr(0)) + '..\..\';
   ExeDir := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))))));
   //gLog := TKMLog.Create(ExtractFilePath(ParamStr(0)) + 'temp.log');
@@ -202,32 +207,35 @@ begin
     aEndTick := fResults.TimesCount - 1
   else
     aEndTick := min(aEndTick,fResults.TimesCount - 1);
+
   for I := aStartTick to aEndTick do
   begin
     fResults.Times[fRun, I] := TimeGet;
 
+    if Assigned(fOnBeforeTick)
+      and not fOnBeforeTick(I+1) then
+      Exit;
+
+    if I = 15663 then
+    begin
+      IntParam := 23*Sign(I) + aStartTick*fRun - Round(321*Math.Power(fRun, 2));
+      gLog.LogDelivery('IntParam' + IntToStr(IntParam));
+      if IntParam > 321333 then
+        gGameApp.Game.UpdateGame(nil);
+    end;
+
+
+
     gGameApp.Game.UpdateGame(nil);
     gGameApp.Render(False);
-    IntParam := -1;
-    TestParam := -1;
 
-    if (fIntParam <> 0) then
-    begin
-      IntParam := fIntParam;
-      TestParam := TKMHouseInn(gHands.HousesHitTest(24,32)).GetFoodCnt;
-    end
-    else
-    if (fIntParam2 <> 0) then
-    begin
-      IntParam := fIntParam2;
-      TestParam := TKMHouseBarracks(gHands.HousesHitTest(24,32)).GetTotalWaresCnt;
-    end;
-
-    if (IntParam <> -1) and (IntParam = TestParam) then
-    begin
-//      fResults.Value[fRun, 0] := gGameApp.Game.TickCount;
+    if Assigned(fOnTick)
+      and not fOnTick(I+1) then
       Exit;
-    end;
+
+    if Assigned(fOnStopSimulation)
+      and fOnStopSimulation then
+      Exit;
 
     fResults.Times[fRun, I] := TimeGet - fResults.Times[fRun, I];
 

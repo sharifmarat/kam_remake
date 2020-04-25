@@ -376,6 +376,7 @@ begin
 
   LoadStream.Read(fOrder, SizeOf(fOrder));
   LoadStream.Read(fOrderLoc);
+  LoadStream.Read(fOrderWalkKind, SizeOf(fOrderWalkKind));
   LoadStream.Read(fOrderTargetGroup, 4); //subst on syncload
   LoadStream.Read(fOrderTargetHouse, 4); //subst on syncload
   LoadStream.Read(fOrderTargetUnit, 4); //subst on syncload
@@ -456,6 +457,7 @@ begin
     SaveStream.Write(TKMUnitWarrior(fOffenders[I]).UID);
   SaveStream.Write(fOrder, SizeOf(fOrder));
   SaveStream.Write(fOrderLoc);
+  SaveStream.Write(fOrderWalkKind, SizeOf(fOrderWalkKind));
   if fOrderTargetGroup <> nil then
     SaveStream.Write(fOrderTargetGroup.UID)
   else
