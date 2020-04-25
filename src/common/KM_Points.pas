@@ -10,10 +10,13 @@ type
   //Records must be packed so they are stored identically in MP saves (padding bytes are unknown values)
   TKMPoint = record
     X,Y: Integer;
+
+    function ToString: String;
+
     class operator Equal(const A, B: TKMPoint): Boolean;
     class operator NotEqual(const A, B: TKMPoint): Boolean;
-    function ToString: String;
-    constructor New(aX, aY: Integer);
+    class operator Add(const A, B: TKMPoint): TKMPoint;
+    class function New(aX, aY: Integer): TKMPoint; static;
   end;
 
   TKMPointF = record
@@ -216,11 +219,12 @@ uses
   SysUtils, TypInfo, Math, KM_CommonUtils;
 
 
-constructor TKMPoint.New(aX, aY: Integer);
+class function TKMPoint.New(aX, aY: Integer): TKMPoint;
 begin
-  X := aX;
-  Y := aY;
+  Result.X := aX;
+  Result.Y := aY;
 end;
+
 
 class operator TKMPoint.Equal(const A, B: TKMPoint): Boolean;
 begin
@@ -232,6 +236,13 @@ class operator TKMPoint.NotEqual(const A, B: TKMPoint): Boolean;
 begin
   Result := not KMSamePoint(A,B);
 end;
+
+
+class operator TKMPoint.Add(const A, B: TKMPoint): TKMPoint;
+begin
+  Result := KMPoint(A.X + B.X,A.Y + B.Y);
+end;
+
 
 function TKMPoint.ToString: String;
 begin
