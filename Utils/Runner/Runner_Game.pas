@@ -952,6 +952,9 @@ begin
 end;
 
 
+const
+  SAVE_LAST_SYNC_TICK = False;
+
 { TKMRunnerDesyncTest }
 procedure TKMRunnerDesyncTest.SetUp();
 begin
@@ -1081,8 +1084,8 @@ function TKMRunnerDesyncTest.BeforeTickPlayed(aTick: Cardinal): Boolean;
 begin
   Result := (fRunKind <> drkReplay) or not fRngMismatchFound;
 
-//  if (fRunKind = drkReplayCRC) then
-//    SaveGame; // Make replay save
+  if SAVE_LAST_SYNC_TICK and (fRunKind = drkReplayCRC) then
+    SaveGame; // Make replay save
 end;
 
 
@@ -1116,8 +1119,11 @@ begin
                       MoveSave(GetSaveName(drkGameCRC, gGame.GameTick));
 
                       //Move last sync saves
-//                      MoveSave(GetSaveName(drkReplayCRC, gGame.GameTick - 1));
-//                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick - 1));
+                      if SAVE_LAST_SYNC_TICK then
+                      begin
+                        MoveSave(GetSaveName(drkReplayCRC, gGame.GameTick - 1));
+                        MoveSave(GetSaveName(drkGameCRC, gGame.GameTick - 1));
+                      end;
 
                       fCRCDesyncFound := True;
                       fCRCDesyncTick := gGame.GameTick;
