@@ -218,6 +218,10 @@ type
     property GameMode: TKMGameMode read fGameMode;
     property SaveFile: UnicodeString read fSaveFile;
 
+    {$IFDEF RUNNER}
+    procedure SetGameMode(aGameMode: TKMGameMode);
+    {$ENDIF}
+
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
     property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
     property SkipReplayEndCheck: Boolean read fSkipReplayEndCheck write fSkipReplayEndCheck;
@@ -1750,6 +1754,14 @@ begin
   else if fGameSpeedChangeAllowed then
     fGameInputProcess.CmdGame(gicGameSpeed, aSpeed);
 end;
+
+
+{$IFDEF RUNNER}
+procedure TKMGame.SetGameMode(aGameMode: TKMGameMode);
+begin
+  fGameMode := aGameMode;
+end;
+{$ENDIF}
 
 
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
