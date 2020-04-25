@@ -351,8 +351,12 @@ begin
   fTimerGame := TTimer.Create(nil);
   //pseudo GIP command, since we just want to initialize speed with default values
   SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
-  fTimerGame.OnTimer := UpdateGame;
-  fTimerGame.Enabled := True;
+
+  if not GAME_NO_UPDATE_ON_TIMER then
+  begin
+    fTimerGame.OnTimer := UpdateGame;
+    fTimerGame.Enabled := True;
+  end;
 
   fGameSpeedChangeTime := TimeGet;
 
