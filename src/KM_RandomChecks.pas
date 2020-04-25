@@ -12,6 +12,7 @@ type
 
   TKMRngLogRecord = record
     ValueType: TKMLogRngType;
+    Seed: Integer;
     ValueI: Integer;
     ValueS: Single;
     ValueE: Extended;
@@ -49,9 +50,9 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddToLog(const aCaller: AnsiString; aValue: Integer); overload;
-    procedure AddToLog(const aCaller: AnsiString; aValue: Single); overload;
-    procedure AddToLog(const aCaller: AnsiString; aValue: Extended); overload;
+    procedure AddToLog(const aCaller: AnsiString; aValue: Integer; aSeed: Integer); overload;
+    procedure AddToLog(const aCaller: AnsiString; aValue: Single; aSeed: Integer); overload;
+    procedure AddToLog(const aCaller: AnsiString; aValue: Extended; aSeed: Integer); overload;
 
 //    property RngLogStream: TKMemoryStream read fRngLogStream;
 
@@ -136,12 +137,13 @@ begin
 end;
 
 
-procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Integer);
+procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Integer; aSeed: Integer);
 var
   rec: TKMRngLogRecord;
 begin
   if (Self = nil) or not fEnabled then Exit;
 
+  rec.Seed := aSeed;
   rec.ValueType := lrtInt;
   rec.ValueI := aValue;
   rec.CallerId := GetCallerID(aCaller, aValue, lrtInt);
@@ -149,12 +151,13 @@ begin
   AddRecordToList(fGameTick, rec);
 end;
 
-procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Single);
+procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Single; aSeed: Integer);
 var
   rec: TKMRngLogRecord;
 begin
   if (Self = nil) or not fEnabled then Exit;
 
+  rec.Seed := aSeed;
   rec.ValueType := lrtSingle;
   rec.ValueS := aValue;
   rec.CallerId := GetCallerID(aCaller, aValue, lrtInt);
@@ -162,12 +165,13 @@ begin
   AddRecordToList(fGameTick, rec);
 end;
 
-procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Extended);
+procedure TKMRandomCheckLogger.AddToLog(const aCaller: AnsiString; aValue: Extended; aSeed: Integer);
 var
   rec: TKMRngLogRecord;
 begin
   if (Self = nil) or not fEnabled then Exit;
 
+  rec.Seed := aSeed;
   rec.ValueType := lrtExt;
   rec.ValueE := aValue;
   rec.CallerId := GetCallerID(aCaller, aValue, lrtInt);
@@ -213,6 +217,7 @@ begin
 //  Inc(Cnt, fRngChecksInTick.Count);
   for I := 0 to aRngChecksInTick.Count - 1 do
   begin
+    aStream.Write(aRngChecksInTick[I].Seed);
     RngValueType := aRngChecksInTick[I].ValueType;
     aStream.Write(RngValueType, SizeOf(RngValueType));
     aStream.Write(aRngChecksInTick[I].CallerId);
@@ -383,6 +388,7 @@ begin
     for K := 0 to CountInTick - 1 do
     begin
       ClearLogRec;
+      aLoadStream.Read(LogRec.Seed);
       aLoadStream.Read(LogRec.ValueType, SizeOf(LogRec.ValueType));
       aLoadStream.Read(LogRec.CallerId);
 
@@ -505,7 +511,7 @@ begin
             lrtSingle:  ValS := 'S ' + FormatFloat('0.##############################', LogRecList[I].ValueS);
             lrtExt:     ValS := 'E ' + FormatFloat('0.##############################', LogRecList[I].ValueE);
           end;
-          S := Format('%d. %s: %s', [I, fCallers[LogRecList[I].CallerId], ValS]);
+          S := Format('%3d. %-50sSeed: %12d Val: %s', [I, fCallers[LogRecList[I].CallerId], LogRecList[I].Seed, ValS]);
           SL.Add(S);
         end;
       end;

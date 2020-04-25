@@ -1144,7 +1144,7 @@ begin
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(aCaller, aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue, fKaMSeed);
   {$ENDIF}
 end;
 
@@ -1155,7 +1155,7 @@ begin
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(aCaller, aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue, fKaMSeed);
   {$ENDIF}
 end;
 
@@ -1166,7 +1166,7 @@ begin
 
   {$IFDEF WDC}
   if SAVE_RANDOM_CHECKS and (gRandomCheckLogger <> nil) then
-    gRandomCheckLogger.AddToLog(aCaller, aValue);
+    gRandomCheckLogger.AddToLog(aCaller, aValue, fKaMSeed);
   {$ENDIF}
 end;
 
