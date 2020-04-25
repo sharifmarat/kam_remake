@@ -213,7 +213,7 @@ begin
     fResults.Times[fRun, I] := TimeGet;
 
     if Assigned(fOnBeforeTick)
-      and not fOnBeforeTick(I) then
+      and not fOnBeforeTick(I+1) then
       Exit;
 
     if I = 15663 then
@@ -230,7 +230,7 @@ begin
     gGameApp.Render(False);
 
     if Assigned(fOnTick)
-      and not fOnTick(I) then
+      and not fOnTick(I+1) then
       Exit;
 
     if Assigned(fOnStopSimulation)

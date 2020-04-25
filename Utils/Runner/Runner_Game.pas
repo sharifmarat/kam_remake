@@ -149,9 +149,11 @@ type
   private
     fSaveName: string;
 //    fSaveDir: String;
+    fDesyncsDir: string;
     fRunKind: TKMDesyncRunKind;
     fRun: Integer;
     fMap: string;
+    fSavePointTick: Cardinal;
     fRngMismatchFound: Boolean;
     fRngMismatchTick: Integer;
     fCRCDesyncFound: Boolean;
@@ -159,14 +161,24 @@ type
 //    fBestScore, fWorstScore, fAverageScore: Double;
 //    fTickCRC: TList<Cardinal>;
     fTickCRC: array of Cardinal;
-    fSavedTicks: array of Cardinal;
-    fSavesNames: TStringList;
+//    fSavedTicks: array of Cardinal;
+//    fSavesNames: TStringList;
     procedure ReplayCrashed(aTick: Integer);
     function BeforeTickPlayed(aTick: Cardinal): Boolean;
+    procedure SaveGame; overload;
+    procedure SaveGame(aSaveName: string); overload;
+    procedure MoveSave(aSaveName: string);
+    procedure SaveGameAndMove; overload;
+    procedure SaveGameAndMove(aSaveName: string); overload;
+    function GetRunKindStr: string; overload;
+    function GetRunKindStr(aRunKind: TKMDesyncRunKind): string; overload;
+    function GetSaveName: string; overload;
+    function GetSaveName(aRunKind: TKMDesyncRunKind; aTick: Integer): string; overload;
     function TickPlayed(aTick: Cardinal): Boolean;
     procedure Tick_GIPRandom;
     procedure Reset;
     function GetSaveDir(aSaveName: string): string;
+    procedure Log(const aString: string);
   protected
     procedure SetUp(); override;
     procedure TearDown(); override;
@@ -940,20 +952,15 @@ begin
 end;
 
 
-const
-  SAVE_FREQ = 600; //every 1 minute
-
-
 { TKMRunnerDesyncTest }
 procedure TKMRunnerDesyncTest.SetUp();
 begin
   inherited;
 
-  fSavesNames := TStringList.Create;
+  fDesyncsDir := Format('%s..\..\Desync\', [ExtractFilePath(ParamStr(0))]);
+  ForceDirectories(fDesyncsDir);
 
-//  fTickCRC := TList<Cardinal>.Create;
   SetLength(fTickCRC, fResults.TimesCount);
-  SetLength(fSavedTicks, (fResults.TimesCount div SAVE_FREQ) + 1);
 
   fOnTick := TickPlayed;
   fOnBeforeTick := BeforeTickPlayed;
@@ -975,21 +982,19 @@ begin
   CRASH_ON_REPLAY := False;
   SAVE_GAME_AS_TEXT := True;
   ALLOW_SAVE_IN_REPLAY := True;
-  GAME_NO_TIMER := True;
+  SAVE_GAME_AS_TEXT := True;
+  GAME_NO_UPDATE_ON_TIMER := True;
   GAME_COMPARE_SAVE := True;
-  SKIP_POINTER_REF_CHECK := True;
+  SKIP_SAVE_SAVPTS_TO_FILE := True;
   GAME_SAVE_CHECKPOINT_FREQ_MIN := 10;
   GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX := 100;
 
-  ForceDirectories(Format('%s..\..\Desync\',[ExtractFilePath(ParamStr(0))]));
 //  Include(gLog.MessageTypes, lmtRandomChecks)
 end;
 
 
 procedure TKMRunnerDesyncTest.TearDown();
 begin
-//  fTickCRC.Free;
-  fSavesNames.Free;
 
   inherited;
 end;
@@ -998,12 +1003,8 @@ end;
 procedure TKMRunnerDesyncTest.Reset;
 begin
   FillChar(fTickCRC, SizeOf(fTickCRC), #0);
-  FillChar(fSavedTicks, SizeOf(fSavedTicks), #0);
 
   SetLength(fTickCRC, fResults.TimesCount);
-  SetLength(fSavedTicks, (fResults.TimesCount div SAVE_FREQ) + 1);
-
-  fSavesNames.Clear;
 end;
 
 
@@ -1016,135 +1017,166 @@ begin
 end;
 
 
+procedure TKMRunnerDesyncTest.SaveGame;
+begin
+  SaveGame(GetSaveName);
+end;
+
+
+procedure TKMRunnerDesyncTest.SaveGame(aSaveName: string);
+var
+  gameMode: TKMGameMode;
+begin
+  gameMode := gGame.GameMode;
+  gGame.SetGameMode(gmSingle);
+  gGame.Save(aSaveName);
+  gGame.SetGameMode(gameMode);
+end;
+
+procedure TKMRunnerDesyncTest.MoveSave(aSaveName: string);
+begin
+  KMMoveFolder(GetSaveDir(aSaveName), fDesyncsDir + aSaveName);
+end;
+
+
+procedure TKMRunnerDesyncTest.SaveGameAndMove;
+begin
+  SaveGameAndMove(GetSaveName);
+end;
+
+
+procedure TKMRunnerDesyncTest.SaveGameAndMove(aSaveName: string);
+begin
+  SaveGame(aSaveName);
+  MoveSave(aSaveName);
+end;
+
+
+function TKMRunnerDesyncTest.GetRunKindStr: string;
+begin
+  Result := GetRunKindStr(fRunKind);
+end;
+
+
+function TKMRunnerDesyncTest.GetRunKindStr(aRunKind: TKMDesyncRunKind): string;
+begin
+  Result := GetEnumName(TypeInfo(TKMDesyncRunKind), Integer(aRunKind));
+  Result := RightStr(Result, Length(Result) - 3);
+end;
+
+
+function TKMRunnerDesyncTest.GetSaveName: string;
+begin
+  Result := GetSaveName(fRunKind, gGame.GameTick);
+end;
+
+
+function TKMRunnerDesyncTest.GetSaveName(aRunKind: TKMDesyncRunKind; aTick: Integer): string;
+begin
+  Result := Format('%s_%s_L%d_T%d', [fSaveName, GetRunKindStr(aRunKind), fSavePointTick, aTick]);
+end;
+
+
 function TKMRunnerDesyncTest.BeforeTickPlayed(aTick: Cardinal): Boolean;
 begin
   Result := (fRunKind <> drkReplay) or not fRngMismatchFound;
+
+//  if (fRunKind = drkReplayCRC) then
+//    SaveGame; // Make replay save
 end;
 
 
 function TKMRunnerDesyncTest.TickPlayed(aTick: Cardinal): Boolean;
 var
-//  stream: TKMemoryStreamBinary;
   tickCRC: Cardinal;
-  str: string;
 begin
   Result := True;
 
-  aTick := gGame.GameTick;
+//  aTick := gGame.GameTick;
 
   case fRunKind of
     drkGame:      begin
 //                    Tick_GIPRandom;
-                    if (aTick mod SAVE_FREQ) = 0 then
-                    begin
-//                      str := Format('%s_G_T%d', [fSaveName, aTick]);
-//                      fSavesNames.Add(str);
-//                      gGame.Save(str);
-                    end;
                   end;
     drkReplay:    ;
     drkGameCRC:   begin
-                    tickCRC := gGameApp.Game.GetCurrectTickSaveCRC;
-                    fTickCRC[aTick - 1] := tickCRC;
+                    if gGame.GameTick >= fSavePointTick then
+                    begin
+                      tickCRC := gGame.GetCurrectTickSaveCRC;
+                      fTickCRC[gGame.GameTick - fSavePointTick] := tickCRC;
+
+                      SaveGame();
+                    end;
                   end;
     drkReplayCRC: begin
-                    tickCRC := gGameApp.Game.GetCurrectTickSaveCRC;
-                    if tickCRC <> fTickCRC[aTick] then
+                    tickCRC := gGame.GetCurrectTickSaveCRC;
+                    if tickCRC <> fTickCRC[gGame.GameTick - fSavePointTick] then
                     begin
-                      Result := False;
-//                      gGameApp.Game.Save(fSaveName + '_RPL_' + IntToStr(aTick+1) + '_' + IntToStr(gGameApp.Game.GameTick));
+                      SaveGameAndMove;
+                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick));
+
+                      //Move last sync saves
+//                      MoveSave(GetSaveName(drkReplayCRC, gGame.GameTick - 1));
+//                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick - 1));
+
                       fCRCDesyncFound := True;
                       fCRCDesyncTick := gGame.GameTick;
+
+                      Result := False;
                     end;
                   end;
   end;
 
-
-//  if fGameSim then
-//  begin
-//    gameType := 'Game';
-////    gLog.AddTime('Game TKMRunnerDesyncTest.Tick: ' + IntToStr(aTick) + '_' + IntToStr(gGame.GameTick));
-//    tickCRC := gGameApp.Game.GetCurrectTickSaveCRC;
-//    fTickCRC[aTick] := tickCRC;
-//    if (aTick mod SAVE_FREQ) = 0 then
-//    begin
-//      gGameApp.Game.SaveReplayToMemory;
-////      fSavedTicks[aTick div SAVE_FREQ] := aTick;
-//    end;
-//      //gGameApp.Game.Save(fSaveName + '_GAM_' + IntToStr(aTick) + '_' + IntToStr(gGame.GameTick));
-////    fTickCRC.Add(tickCRC);
-//
-//  end else
-//  begin
-//    gameType := 'Rpl';
-////    gGameApp.Game.Save(fSaveName + '_RPL_' + IntToStr(aTick) + '_' + IntToStr(gGameApp.Game.GameTick));
-////    gLog.AddTime('Rpl TKMRunnerDesyncTest.Tick: ' + IntToStr(aTick) + '_' + IntToStr(gGameApp.Game.GameTick));
-//    tickCRC := gGameApp.Game.GetCurrectTickSaveCRC;
-//    if tickCRC <> fTickCRC[aTick] then
-//    begin
-//      Result := False;
-//      gGameApp.Game.Save(fSaveName + '_RPL_' + IntToStr(aTick+1) + '_' + IntToStr(gGameApp.Game.GameTick));
-//      fDesyncFound := True;
-//      fDesyncTick := aTick;
-//    end;
-//  end;
-  str := GetEnumName(TypeInfo(TKMDesyncRunKind), Integer(fRunKind));
-  OnProgress2(Format('%s: %s R%d T%d', [RightStr(str, Length(str) - 3), fMap, fRun, aTick]));
+  OnProgress2(Format('%s: %s R%d T%d', [GetRunKindStr, LeftStr(fMap, Min(Length(fMap), 17)), fRun, aTick]));
 end;
 
 
-const
-  SIMUL_TIME_MAX = 10*60*60; //1 hour
-  SAVEPT_FREQ = 10*60*1; //every 1 min
-  REPLAY_LENGTH = 10*40*2; // 2 minutes
-  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+procedure TKMRunnerDesyncTest.Log(const aString: string);
+begin
+  gLog.AddTime('[DESYNC] ' + aString);
+end;
 
 
 procedure TKMRunnerDesyncTest.Execute(aRun: Integer);
 const
+  SIMUL_TIME_MAX = 10*60*60; //1 hour
+  SAVEPT_FREQ = 10*60*1; //every 1 min
+  REPLAY_LENGTH = 50; // ticks to find RNG mismatch
+  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+
   // Maps for simulation (I dont use for loop in this array)
-  //MAPS: array [1..27] of String = ('GA_S1_001','GA_S1_002','GA_S1_003','GA_S1_004','GA_S1_005','GA_S1_006','GA_S1_007','GA_S1_008','GA_S1_009','GA_S1_010','GA_S1_011','GA_S1_012','GA_S1_013','GA_S1_014','GA_S1_015','GA_S1_016','GA_S1_017','GA_S1_018','GA_S1_019','GA_S1_020','GA_S1_021','GA_S1_022','GA_S1_023','GA_S1_024','GA_S1_025','GA_S1_026','GA_S1_027');
   MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
                                    'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
                                    'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
-//  MAPS_V: array [1..13] of Integer = (10, 10, 10, 20, 20, 20, 10, 10, 10, 10, 10, 10,
-//                                      120);
   cnt_MAP_SIMULATIONS = 10;
-//  cnt_LOAD_TRIES = 5;
 var
   K,L,I: Integer;
-//  Score: Double;
-  desyncCnt, tick: Integer;
-//  desyncStr: string;
-  {maxSimulTicks, }simulLastTick: Integer;
+  desyncCnt: Integer;
+  simulLastTick: Integer;
   mapFullName, desyncSaveName: string;
-//  tempGame, tempGame2, tempGame3: TKMGame;
-//  tempGIP: TKMGameInputProcess;
-//  tempSavedReplays: TKMSavedReplays;
 begin
   desyncCnt := 0;
-//  maxSimulTicks :=
-  for K := Low(MAPS) to High(MAPS) do
+//  for K := Low(MAPS) to High(MAPS) do
+  K := 5;
   begin
-//    fBestScore := -1e30;
-//    fAverageScore := 0;
-//    fWorstScore := 1e30;
     fMap := MAPS[K];
 
-    for L := 1 to cnt_MAP_SIMULATIONS do
+    //for L := 1 to cnt_MAP_SIMULATIONS do
+    L := 3;
     begin
       Reset;
       fRun := L;
       CUSTOM_SEED_VALUE := Max(1,L+11);
 
-      fSaveName := Format('%s_RN%.3d',[fMap, L]);
-//      fSaveDir := Format('%s..\..\Saves\%s\',[ExtractFilePath(ParamStr(0)),fSaveName]);
+      fSaveName := Format('%s_SD_%d_RN%.3d',[fMap, CUSTOM_SEED_VALUE, L]);
 
       fRunKind := drkGame;
 
 //      SetKaMSeed(Max(1,L));
       mapFullName := Format('%s..\..\MapsMP\%s\%s.dat',[ExtractFilePath(ParamStr(0)),fMap,fMap]);
       gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+
+      gGameApp.GameSettings.DebugSaveGameAsText := True;
 
       gGameApp.GameSettings.SaveCheckpoints := True;
       gGameApp.GameSettings.SaveCheckpointsFreq := SAVEPT_FREQ;
@@ -1163,131 +1195,58 @@ begin
       fRngMismatchFound := False;
       fRngMismatchTick := -1;
 
-      //Save game locally since we would like to save it later
-//      tempGame := gGame;
-//      tempGIP := gGame.GameInputProcess;
-//      tempSavedReplays := gGame.SavedReplays;
-//      gGame := nil; //Prevent gGame from destruction.
+      gGame.SetGameMode(gmReplaySingle);
 
-      gGameApp.Game.SetGameMode(gmReplaySingle);
-      try
-  //      gGame := nil; //Prevent gGame from destruction. Save it if we will need to save it further;
-        for I := 0 to SAVEPT_CNT - 1 do
+      for I := 0 to SAVEPT_CNT - 1 do
+      begin
+        fSavePointTick := (I + 1) * SAVEPT_FREQ;
+        Log('SavePointTick = ' + IntToStr(fSavePointTick));
+//        tick := (Random((simulTicks div SAVEPT_FREQ)) + 1) * SAVEPT_FREQ + 1;
+        if gGameApp.TryLoadSavedReplay(fSavePointTick) then
         begin
-          tick := (I + 1) * SAVEPT_FREQ;
-  //        tick := (Random((simulTicks div SAVEPT_FREQ)) + 1) * SAVEPT_FREQ + 1;
-//          SKIP_GAME_DESTRUCTION := True;
-          if gGameApp.TryLoadSavedReplay(tick) then
-  //        gGameApp.NewReplay(fSavesNames[I] + EXT_SAVE_BASE_DOT);
+          fRunKind := drkReplay;
+          gGame.GameInputProcess.OnReplayDesync := ReplayCrashed;
+
+          SimulateGame(fSavePointTick + 1, Min(fSavePointTick + REPLAY_LENGTH, simulLastTick));
+
+          // RNG mismatch found. Simulate game to collect every tick save CRC
+          if fRngMismatchFound then
           begin
-            fRunKind := drkReplay;
-            gGameApp.Game.GameInputProcess.OnReplayDesync := ReplayCrashed;
+            Log(Format('Found rng mismatch on ''%s'' at tick %d', [fMap, fRngMismatchTick]));
+            Inc(desyncCnt);
+            OnProgress3('Desyncs: ' + IntToStr(desyncCnt));
 
-            SimulateGame(tick + 1, Min(tick + REPLAY_LENGTH, simulLastTick));
+            fRunKind := drkGameCRC;
 
-            // RNG mismatch found. Simulate game to collect every tick save CRC
-            if fRngMismatchFound then
+            gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+
+            SimulateGame(0, fRngMismatchTick - 1);
+
+            gGame.SetGameMode(gmReplaySingle);
+
+            fCRCDesyncFound := False;
+            fCRCDesyncTick := -1;
+
+            // Load at certain savepoint
+            if gGameApp.TryLoadSavedReplay(fSavePointTick) then
             begin
-              gLog.AddTime(Format('Found rng mismatch on ''%s'' at tick %d', [fMap, fRngMismatchTick]));
-              Inc(desyncCnt);
+              fRunKind := drkReplayCRC;
+              SimulateGame(fSavePointTick - 1, simulLastTick);
 
-              fRunKind := drkGameCRC;
-
-  //            tempGame2 := gGame;
-              gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
-
-              SimulateGame(0, fRngMismatchTick);
-
-              gGameApp.Game.SetGameMode(gmReplaySingle);
-
-              fCRCDesyncFound := False;
-              fCRCDesyncTick := -1;
-
-  //            tempGame3 := gGame;
-              // Load at certain savepoint
-              if gGameApp.TryLoadSavedReplay(tick) then
-              begin
-                fRunKind := drkReplayCRC;
-                SimulateGame(tick + 1, simulLastTick);
-
-                // tick CRC desync found
-                if fCRCDesyncFound then
-                begin
-                  gLog.AddTime(Format('Found save CRC desync on ''%s'' at tick %d', [fMap, fCRCDesyncTick]));
-                  desyncSaveName := Format('%s_L%d_R%d_C%d', [fSaveName, tick, fRngMismatchTick, fCRCDesyncTick]);
-  //                fSaveDir := Format('%s..\..\Saves\%s\',[ExtractFilePath(ParamStr(0)),fSaveName]);
-//                  tempGame.GameInputProcess := tempGIP;
-//                  tempGame.SavedReplays := tempSavedReplays;
-                  gGame.Save(desyncSaveName);
-                  KMMoveFolder(GetSaveDir(desyncSaveName), Format('%s..\..\Desync\%s', [ExtractFilePath(ParamStr(0)), desyncSaveName]));
-
-//                  tempGame.Free;
-//                  tempGame := nil;
-//                  gGame.Free;
-//                  gGame := nil;
-
-  //                tempGame2.Free;
-  //
-  //                tempGame3.Free;
-                  Break;
-                end
-                else
-                  gLog.AddTime('!!! Could not find save CRC desync tick !!!');
-              end;
-              Break;
+              // tick CRC desync found
+              if fCRCDesyncFound then
+                Log(Format('Found save CRC desync on ''%s'' Seed = %d at tick %d', [fMap, CUSTOM_SEED_VALUE, fCRCDesyncTick]))
+              else
+                Log('!!! Could not find save CRC desync tick !!!');
             end;
+            Break;
           end;
-          SKIP_GAME_DESTRUCTION := False;
         end;
-      finally
-//        if tempGame <> nil then
-//          FreeAndNil(tempGame);
-//        if gGame <> nil then
-//          FreeAndNil(gGame);
+        SKIP_GAME_DESTRUCTION := False;
       end;
-
-
-
-//      fGameSim := False;
-//      fDesyncFound := False;
-//
-//      gGameApp.NewReplay(Format('%s..\..\Saves\%s\%s.bas',[ExtractFilePath(ParamStr(0)),fSaveName,fSaveName]));
-//      SimulateGame(0, simulTicks);
-
-//      if fDesyncFound then
-//      begin
-//        KMMoveFolder(fSaveDir, Format('%s..\..\Desync\%s_%d',[ExtractFilePath(ParamStr(0)),fSaveName, fDesyncTick]));
-//        Inc(desyncCnt);
-//      end else
-//        KMDeleteFolder(fSaveDir);
-
-//      Score := gGameApp.Game.GameTick;//Max(0,EvalGame());
-//      fAverageScore := fAverageScore + Score;
-//      //gGameApp.Game.Save(Format('%s__No_%.3d__Score_%.6d',[MapName, K, Round(Score)]), Now);
-//      if (Score < fWorstScore) AND (cnt_MAP_SIMULATIONS > 1) then
-//      begin
-//        fWorstScore := Score;
-////        gGameApp.Game.Save(Format('W__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
-//      end;
-//      if (Score > fBestScore) AND (cnt_MAP_SIMULATIONS > 1) then
-//      begin
-//        fBestScore := Score;
-////        gGameApp.Game.Save(Format('B__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
-//      end;
-
       OnProgress2(fMap + ' Run ' + IntToStr(L));
-
-//      desyncStr := '';
-//      if desyncCnt > 0 then
-//      desyncStr := 'Desyncs: ' + IntToStr(desyncCnt);
       OnProgress3('Desyncs: ' + IntToStr(desyncCnt));
     end;
-
-////    fAverageScore := fAverageScore / cnt_MAP_SIMULATIONS;
-//////    gGameApp.Game.Save(Format('AVRG_%s__%.6d',[MapName, Round(fAverageScore)]), Now);
-////    gLog.SetDefaultMessageTypes;
-////    gLog.AddNoTime(Format('%d;%d;%d', [{MAPS[K], }Round(fAverageScore), Round(fWorstScore), Round(fBestScore)]), False);
-//    gLog.MessageTypes := [];
   end;
 
   gGameApp.StopGame(grSilent);

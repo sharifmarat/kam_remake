@@ -116,9 +116,8 @@ var
   ALLOW_SELECT_ALLY_UNITS :Boolean = DEBUG_CFG; //Do we allow to select ally units or groups
   ALLOW_SELECT_ENEMIES    :Boolean = DEBUG_CFG; //Do we allow to select enemies houses/units/groups
   REPLAY_AUTOSAVE         :Boolean = True;
-  GAME_NO_TIMER           :Boolean = False;
+  GAME_NO_UPDATE_ON_TIMER :Boolean = False;
   GAME_COMPARE_SAVE       :Boolean = False;
-  GAME_COMPARE_SAVE_MODE  :Boolean = False;
   ALLOW_LOAD_UNSUP_VERSION_SAVE:
                            Boolean = True;  //Allow to try load saves / replay with unsupported version
   SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
@@ -142,7 +141,8 @@ var
   SKIP_LOADING_CURSOR     :Boolean = False; //Skip loading and setting cursor
   SKIP_SETTINGS_SAVE      :Boolean = False; //Skip save main/game settings into the ini file
   SKIP_GAME_DESTRUCTION   :Boolean = False;
-  SKIP_POINTER_REF_CHECK  :Boolean = False;
+//  SKIP_POINTER_REF_CHECK  :Boolean = False;
+  SKIP_SAVE_SAVPTS_TO_FILE:Boolean = False;
   AGGRESSIVE_REPLAYS      :Boolean = True; //Write a command gicTempDoNothing every tick in order to find exactly when a replay mismatch occurs
   SHOW_GAME_TICK          :Boolean = DEBUG_CFG; //Show game tick next to game time
   SHOW_FPS                :Boolean = False; //Show FPS

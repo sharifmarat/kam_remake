@@ -356,7 +356,8 @@ begin
   fTimerGame := TTimer.Create(nil);
   //pseudo GIP command, since we just want to initialize speed with default values
   SetGameSpeedGIP(GAME_SPEED_NORMAL, True);
-  if not GAME_NO_TIMER then
+
+  if not GAME_NO_UPDATE_ON_TIMER then
   begin
     fTimerGame.OnTimer := UpdateGame;
     fTimerGame.Enabled := True;
@@ -1818,7 +1819,7 @@ end;
 
 function TKMGame.AllowGetPointer: Boolean;
 begin
-  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer or SKIP_POINTER_REF_CHECK;
+  Result := IsSingleplayerGame or IsMapEditor or not BlockGetPointer {or SKIP_POINTER_REF_CHECK};
 end;
 
 
@@ -2063,7 +2064,7 @@ begin
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
   // Save checkpoints
-  if gGameApp.GameSettings.SaveCheckpoints then
+  if gGameApp.GameSettings.SaveCheckpoints and not SKIP_SAVE_SAVPTS_TO_FILE then
     fSavedReplays.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT));
 
   if DoSaveRandomChecks then
@@ -2309,14 +2310,12 @@ begin
   if (fSavedReplays = nil) or fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
     Exit;
 
-  gLog.AddTime('Saving replay start');
+  gLog.AddTime('Make savepoint at tick ' + IntToStr(fGameTick));
 
   SaveStream := TKMemoryStreamBinary.Create;
   SaveGameToStream(TDateTime(0), SaveStream); // Date is not important
 
   fSavedReplays.NewSave(SaveStream, fGameTick);
-
-  gLog.AddTime('Saving replay end');
 end;
 
 
