@@ -2027,7 +2027,7 @@ begin
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
   // Save checkpoints
-  if gGameApp.GameSettings.SaveCheckpoints then
+  if gGameApp.GameSettings.SaveCheckpoints and not SKIP_SAVE_SAVPTS_TO_FILE then
     fSavedReplays.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT));
 
   if DoSaveRandomChecks then
