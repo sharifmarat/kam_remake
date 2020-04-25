@@ -32,6 +32,7 @@ type
     seDuration: TSpinEdit;
     Label4: TLabel;
     Label5: TLabel;
+    Label6: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -46,6 +47,7 @@ type
     RenderArea: TKMRenderControl;
     procedure RunnerProgress(const aValue: UnicodeString);
     procedure RunnerProgress2(const aValue: UnicodeString);
+    procedure RunnerProgress3(const aValue: UnicodeString);
     procedure RefreshResults(aImg: TImage);
     procedure RefreshDistribution(aImg: TImage);
     procedure RefreshTimes(aImg: TImage);
@@ -155,6 +157,7 @@ begin
 
     Runner.OnProgress := RunnerProgress;
     Runner.OnProgress2 := RunnerProgress2;
+    Runner.OnProgress3 := RunnerProgress3;
     try
       T := GetTickCount;
       Runner.Duration := seDuration.Value;
@@ -355,6 +358,14 @@ procedure TForm2.RunnerProgress2(const aValue: UnicodeString);
 begin
   Label5.Caption := aValue;
   Label5.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress3(const aValue: UnicodeString);
+begin
+  Label6.Caption := aValue;
+  Label6.Refresh;
   Application.ProcessMessages;
 end;
 

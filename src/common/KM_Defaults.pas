@@ -265,13 +265,18 @@ const
   REPLAY_AUTOSAVE_CNT_MAX       = 40; // Max number of replay autosaves
 
   // Checkpoints, which are made during the game and saved in the .rpl file
-  GAME_SAVE_CHECKPOINT_FREQ_MIN = 5*60*10; // 5 min
-  GAME_SAVE_CHECKPOINT_FREQ_MAX = 10*60*60; // 1 hour
-  GAME_SAVE_CHECKPOINT_FREQ_DEF = 10*15*60; // 15 minutes
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN  = 0;  // Min limit for number of game checkpoints
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX  = 40; // Max limit for number of game checkpoints
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF  = 10; // Def limit for number of game checkpoints
-
+{$IFDEF DEBUG}
+var
+{$ENDIF}
+  GAME_SAVE_CHECKPOINT_FREQ_MIN: Integer = 5*60*10; // 5 min
+  GAME_SAVE_CHECKPOINT_FREQ_MAX: Integer = 10*60*60; // 1 hour
+  GAME_SAVE_CHECKPOINT_FREQ_DEF: Integer = 10*15*60; // 15 minutes
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN: Integer  = 0;  // Min limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX: Integer  = 40; // Max limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF: Integer  = 10; // Def limit for number of game checkpoints
+{$IFDEF DEBUG}
+const
+{$ENDIF}
 
   BEACON_COOLDOWN         = 400;  //Minimum time in milliseconds between beacons
 
