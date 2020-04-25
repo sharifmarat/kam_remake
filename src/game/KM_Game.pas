@@ -260,6 +260,8 @@ type
 
     procedure Save(const aSaveName: UnicodeString); overload;
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
+
+    function GetCurrectTickSaveCRC: Cardinal;
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
@@ -1785,6 +1787,20 @@ begin
 end;
 
 
+function TKMGame.GetCurrectTickSaveCRC: Cardinal;
+var
+  stream: TKMemoryStreamBinary;
+begin
+  stream := TKMemoryStreamBinary.Create;
+  try
+    SaveGameToStream(0, stream);
+    Result := Adler32CRC(stream);
+  finally
+    stream.Free;
+  end;
+end;
+
+
 procedure TKMGame.SetIsPaused(aValue: Boolean);
 begin
   fIsPaused := aValue;
@@ -1888,7 +1904,7 @@ begin
   //We need to know which mission/savegame to try to restart. This is unused in MP
   if not IsMultiPlayerOrSpec then
     aSaveStream.WriteW(fMissionFileSP);
-
+    
   aSaveStream.Write(fUIDTracker); //Units-Houses ID tracker
   aSaveStream.Write(GetKaMSeed); //Include the random seed in the save file to ensure consistency in replays
 
@@ -2137,7 +2153,7 @@ begin
 
   LoadStream.Read(fUIDTracker);
   LoadStream.Read(LoadedSeed);
-
+  
   if not SaveIsMultiplayer then
     LoadStream.Read(GameResult, SizeOf(GameResult));
 
@@ -2395,7 +2411,7 @@ var
 
 begin
   DoUpdateGame;
-
+  
   if CALC_EXPECTED_TICK then
   begin
     TicksBehindCnt := GetTicksBehindCnt;
