@@ -161,8 +161,7 @@ begin
 
   gGameCursor := TKMGameCursor.Create;
 
-  if fGameSettings.DebugSaveRandomChecks
-    and SAVE_RANDOM_CHECKS then
+  if fGameSettings.DebugSaveRandomChecks and SAVE_RANDOM_CHECKS then
     gRandomCheckLogger := TKMRandomCheckLogger.Create;
 
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
