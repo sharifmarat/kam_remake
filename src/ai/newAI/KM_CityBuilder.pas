@@ -144,7 +144,7 @@ procedure TKMCityBuilder.Save(SaveStream: TKMemoryStream);
 var
   I, Cnt: Integer;
 begin
-  SaveStream.PlaceMarker('CityBuilder');
+    SaveStream.PlaceMarker('CityBuilder');
   SaveStream.Write(fFreeWorkersCnt);
   SaveStream.Write(fStoneCrisis);
   SaveStream.Write(fStoneShortage);
@@ -161,18 +161,18 @@ begin
   Cnt := Length(fBuildNodes);
   SaveStream.Write(Cnt);
   for I := 0 to Cnt - 1 do
-    with fBuildNodes[I] do
+//    with fBuildNodes[I] do
     begin
-      SaveStream.Write(Active);
-      SaveStream.Write(RemoveTreesMode);
-      SaveStream.Write(ShortcutMode);
-      SaveStream.Write(Priority);
-      SaveStream.Write(FreeWorkers);
-      SaveStream.Write(RequiredWorkers);
-      SaveStream.Write(MaxReqWorkers);
-      SaveStream.Write(CenterPoint, SizeOf(CenterPoint));
-      SaveStream.Write(FieldType, SizeOf(TKMFieldType));
-      FieldList.SaveToStream(SaveStream);
+      SaveStream.Write(fBuildNodes[I].Active);
+      SaveStream.Write(fBuildNodes[I].RemoveTreesMode);
+      SaveStream.Write(fBuildNodes[I].ShortcutMode);
+      SaveStream.Write(fBuildNodes[I].Priority);
+      SaveStream.Write(fBuildNodes[I].FreeWorkers);
+      SaveStream.Write(fBuildNodes[I].RequiredWorkers);
+      SaveStream.Write(fBuildNodes[I].MaxReqWorkers);
+      SaveStream.Write(fBuildNodes[I].CenterPoint, SizeOf(fBuildNodes[I].CenterPoint));
+      SaveStream.Write(fBuildNodes[I].FieldType, SizeOf(fBuildNodes[I].FieldType));
+      fBuildNodes[I].FieldList.SaveToStream(SaveStream);
     end;
 
   fPlanner.Save(SaveStream);
@@ -200,19 +200,19 @@ begin
   LoadStream.Read(Cnt);
   SetLength(fBuildNodes, Cnt);
   for I := 0 to Cnt - 1 do
-    with fBuildNodes[I] do
+//    with fBuildNodes[I] do
     begin
-      LoadStream.Read(Active);
-      LoadStream.Read(RemoveTreesMode);
-      LoadStream.Read(ShortcutMode);
-      LoadStream.Read(Priority);
-      LoadStream.Read(FreeWorkers);
-      LoadStream.Read(RequiredWorkers);
-      LoadStream.Read(MaxReqWorkers);
-      LoadStream.Read(CenterPoint, SizeOf(CenterPoint));
-      LoadStream.Read(FieldType, SizeOf(TKMFieldType));
-      FieldList := TKMPointList.Create();
-      FieldList.LoadFromStream(LoadStream);
+      LoadStream.Read(fBuildNodes[I].Active);
+      LoadStream.Read(fBuildNodes[I].RemoveTreesMode);
+      LoadStream.Read(fBuildNodes[I].ShortcutMode);
+      LoadStream.Read(fBuildNodes[I].Priority);
+      LoadStream.Read(fBuildNodes[I].FreeWorkers);
+      LoadStream.Read(fBuildNodes[I].RequiredWorkers);
+      LoadStream.Read(fBuildNodes[I].MaxReqWorkers);
+      LoadStream.Read(fBuildNodes[I].CenterPoint, SizeOf(fBuildNodes[I].CenterPoint));
+      LoadStream.Read(fBuildNodes[I].FieldType, SizeOf(fBuildNodes[I].FieldType));
+      fBuildNodes[I].FieldList := TKMPointList.Create();
+      fBuildNodes[I].FieldList.LoadFromStream(LoadStream);
     end;
 
   fPlanner.Load(LoadStream);
@@ -261,17 +261,17 @@ begin
       Planner.CheckStoneReserves(False, fPredictor.RequiredHouses[htQuary])
     else if (aTick mod CHECK_FIELDS = fOwner) then
       for K := Low(fBuildNodes) to High(fBuildNodes) do
-        with fBuildNodes[K] do
-          if not Active AND Planner.CheckFields(FieldType, FieldList) then
+//        with fBuildNodes[K] do
+          if not fBuildNodes[K].Active AND Planner.CheckFields(fBuildNodes[K].FieldType, fBuildNodes[K].FieldList) then
           begin
             LockNode(fBuildNodes[K]);
-            Active := True;
-            Priority := NODE_PRIO_Fields;
-            RemoveTreesMode := False;
-            ShortcutMode := False;
-            MaxReqWorkers := 1;
-            RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
-            CenterPoint := FieldList[0];
+            fBuildNodes[K].Active := True;
+            fBuildNodes[K].Priority := NODE_PRIO_Fields;
+            fBuildNodes[K].RemoveTreesMode := False;
+            fBuildNodes[K].ShortcutMode := False;
+            fBuildNodes[K].MaxReqWorkers := 1;
+            fBuildNodes[K].RequiredWorkers := Min(fBuildNodes[K].MaxReqWorkers, fBuildNodes[K].FieldList.Count); // Real count will be updated during building process
+            fBuildNodes[K].CenterPoint := fBuildNodes[K].FieldList[0];
 
             break;
           end;
@@ -346,12 +346,12 @@ begin
     ftRoad: NODE_TYPE := AVOID_BUILDING_NODE_LOCK_ROAD;
     else    NODE_TYPE := AVOID_BUILDING_NODE_LOCK_FIELD;
   end;
-  with aNode.FieldList do
-    for I := 0 to Count-1 do
-      if (gAIFields.Influences.AvoidBuilding[Items[I].Y, Items[I].X] < NODE_TYPE) then
+//  with aNode.FieldList do
+    for I := 0 to aNode.FieldList.Count-1 do
+      if (gAIFields.Influences.AvoidBuilding[aNode.FieldList.Items[I].Y, aNode.FieldList.Items[I].X] < NODE_TYPE) then
       begin
-        gAIFields.Influences.AvoidBuilding[Items[I].Y, Items[I].X] := NODE_TYPE;
-        gAIFields.Eye.BuildFF.ActualizeTile(Items[I].X, Items[I].Y);
+        gAIFields.Influences.AvoidBuilding[aNode.FieldList.Items[I].Y, aNode.FieldList.Items[I].X] := NODE_TYPE;
+        gAIFields.Eye.BuildFF.ActualizeTile(aNode.FieldList.Items[I].X, aNode.FieldList.Items[I].Y);
       end;
 end;
 
@@ -379,9 +379,9 @@ procedure TKMCityBuilder.UnlockNode(var aNode: TBuildNode; aCheckHousePlan: Bool
 var
   I: Integer;
 begin
-  with aNode.FieldList do
-    for I := 0 to Count-1 do
-      UnlockPointOfNode(Items[I], aCheckHousePlan);
+//  with aNode.FieldList do
+    for I := 0 to aNode.FieldList.Count-1 do
+      UnlockPointOfNode(aNode.FieldList.Items[I], aCheckHousePlan);
 end;
 
 
@@ -393,14 +393,17 @@ procedure TKMCityBuilder.UpdateBuildNodes();
     pomP : TKMPoint;
     UnitTask: TKMTaskBuildHouseArea;
   begin
-    with fPlanner.PlannedHouses[htSchool] do
+//    with fPlanner.PlannedHouses[htSchool] do
     begin
-      Result := (UnderConstruction = 1) AND (Completed = 0) AND (Plans[0].Placed) AND (Plans[0].House <> nil);
+      Result :=     (fPlanner.PlannedHouses[htSchool].UnderConstruction = 1)
+                AND (fPlanner.PlannedHouses[htSchool].Completed = 0)
+                AND (fPlanner.PlannedHouses[htSchool].Plans[0].Placed)
+                AND (fPlanner.PlannedHouses[htSchool].Plans[0].House <> nil);
       if Result then
       begin
         for K := Low(fBuildNodes) to High(fBuildNodes) do
           if fBuildNodes[K].Active then
-            if KMSamePoint(KMPointBelow(Plans[0].Loc), fBuildNodes[K].FieldList[0]) then
+            if KMSamePoint(KMPointBelow(fPlanner.PlannedHouses[htSchool].Plans[0].Loc), fBuildNodes[K].FieldList[0]) then
               Exit(False);
         for K := 0 to gHands[fOwner].Units.Count - 1 do
           if not gHands[fOwner].Units[K].IsDeadOrDying
@@ -456,9 +459,9 @@ begin
   for K := 0 to gHands[fOwner].Units.Count - 1 do
     if not gHands[fOwner].Units[K].IsDeadOrDying
        AND (gHands[fOwner].Units[K] is TKMUnitWorker) then
-      with gHands[fOwner].Units[K] do
+//      with gHands[fOwner].Units[K] do
       begin
-        if ( (Task = nil)
+        if ( (gHands[fOwner].Units[K].Task = nil)
             //OR ( (UnitTask.TaskName = uttBuildRoad)  AND (UnitTask.Phase > 8) ) // This actualy have big impact
             //OR ( (UnitTask.TaskName = uttBuildField) AND (UnitTask.Phase > 3) ) // GA set fields max 1 worker so it have no sense to check it
             //OR ( (UnitTask.TaskName = uttBuildWine)  AND (UnitTask.Phase > 6) ) // GA set fields max 1 worker so it have no sense to check it
@@ -466,7 +469,7 @@ begin
            ) then
         //if (gHands[fOwner].Units[I].IsIdle) then
         begin
-          WorkersPos[fFreeWorkersCnt] := CurrPosition;
+          WorkersPos[fFreeWorkersCnt] := gHands[fOwner].Units[K].CurrPosition;
           fFreeWorkersCnt := fFreeWorkersCnt + 1;
         end;
       end;
@@ -480,8 +483,10 @@ begin
       Check := False;
       for L := 0 to gHands[fOwner].Units.Count - 1 do
         if not gHands[fOwner].Units[L].IsDeadOrDying AND (gHands[fOwner].Units[L] is TKMUnitWorker) then
-          with gHands[fOwner].Units[L] do
-            if (Task <> nil) AND (Task.TaskType = uttBuildHouse) AND (TKMTaskBuildHouse(Task).House = H) then
+//          with gHands[fOwner].Units[L] do
+            if    (gHands[fOwner].Units[L].Task <> nil)
+              AND (gHands[fOwner].Units[L].Task.TaskType = uttBuildHouse)
+              AND (TKMTaskBuildHouse(gHands[fOwner].Units[L].Task).House = H) then
               Check := True;
       fFreeWorkersCnt := fFreeWorkersCnt - Byte(not Check);
     end;
@@ -520,10 +525,10 @@ begin
       if (ClosestDist <> High(Integer)) then
       begin
         fFreeWorkersCnt := fFreeWorkersCnt - 1;
-        with fBuildNodes[ClosestIdx] do
+//        with fBuildNodes[ClosestIdx] do
         begin
-          RequiredWorkers := RequiredWorkers - 1;
-          FreeWorkers := FreeWorkers + 1;
+          fBuildNodes[ClosestIdx].RequiredWorkers := fBuildNodes[ClosestIdx].RequiredWorkers - 1;
+          fBuildNodes[ClosestIdx].FreeWorkers := fBuildNodes[ClosestIdx].FreeWorkers + 1;
         end;
       end
       else
@@ -610,76 +615,76 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
     K, ActiveWorkers: Integer;
   begin
     ActiveWorkers := 0;
-    with aNode do
+//    with aNode do
     begin
       // Remove elements of exist road from list
-      for K := FieldList.Count - 1 downto 0 do
-        if IsCompletedRoad(FieldList.Items[K]) then
+      for K := aNode.FieldList.Count - 1 downto 0 do
+        if IsCompletedRoad(aNode.FieldList.Items[K]) then
         begin
-          UnlockPointOfNode(FieldList.Items[K], True);
-          FieldList.Delete(K);
+          UnlockPointOfNode(aNode.FieldList.Items[K], True);
+          aNode.FieldList.Delete(K);
         end
-        else if not ShortcutMode then
+        else if not aNode.ShortcutMode then
           break;
-      if (FieldList.Count = 0) then
+      if (aNode.FieldList.Count = 0) then
       begin
-        Active := False;
+        aNode.Active := False;
         Exit;
       end;
       // Build road / check road plans / replace missing parts / reconnect road when is no more possible to place plan
-      RequiredWorkers := FieldList.Count;
-      for K := FieldList.Count - 1 downto 0 do
+      aNode.RequiredWorkers := aNode.FieldList.Count;
+      for K := aNode.FieldList.Count - 1 downto 0 do
       begin
         // Is there field / wine plan in progress?
-        if IsPlan(FieldList.Items[K], ftWine) OR IsPlan(FieldList.Items[K], ftCorn) then
-          gHands[fOwner].BuildList.FieldworksList.RemFieldPlan( FieldList.Items[K] );
+        if IsPlan(aNode.FieldList.Items[K], ftWine) OR IsPlan(aNode.FieldList.Items[K], ftCorn) then
+          gHands[fOwner].BuildList.FieldworksList.RemFieldPlan( aNode.FieldList.Items[K] );
         // Is there road plan / work in progress?
-        if IsPlan(FieldList.Items[K], tlRoadWork, ftRoad) then
+        if IsPlan(aNode.FieldList.Items[K], tlRoadWork, ftRoad) then
         begin
           ActiveWorkers := ActiveWorkers + 1;
-          RequiredWorkers := RequiredWorkers - 1;
+          aNode.RequiredWorkers := aNode.RequiredWorkers - 1;
         end
-        else if IsPlan(FieldList.Items[K], tlFieldWork) AND ( IsPlan(FieldList.Items[K], ftCorn) OR IsPlan(FieldList.Items[K], ftCorn) ) then
+        else if IsPlan(aNode.FieldList.Items[K], tlFieldWork) AND ( IsPlan(aNode.FieldList.Items[K], ftCorn) OR IsPlan(aNode.FieldList.Items[K], ftCorn) ) then
         begin
           // Wait for worker to finish the corn
         end
         // Is there completed road?
-        else if IsCompletedRoad(FieldList.Items[K]) then
+        else if IsCompletedRoad(aNode.FieldList.Items[K]) then
         begin
-          RequiredWorkers := RequiredWorkers - 1;
-          CenterPoint := FieldList.Items[K]; // Actualize center point (distribution of workers by distance)
+          aNode.RequiredWorkers := aNode.RequiredWorkers - 1;
+          aNode.CenterPoint := aNode.FieldList.Items[K]; // Actualize center point (distribution of workers by distance)
         end
         // When cannot place new plan try find another way by calling pathfinding
         else
         begin
           // Does we have free workers? (this condition cannot be earlier because we need detection of ActiveWorkers)
-          if (FreeWorkers <= 0) then
+          if (aNode.FreeWorkers <= 0) then
             break;
           if not BuildField(K, ftRoad) then
           begin
-            if ShortcutMode then
+            if aNode.ShortcutMode then
             begin
-              UnlockPointOfNode(FieldList.Items[K], True);
-              FieldList.Delete(K);
+              UnlockPointOfNode(aNode.FieldList.Items[K], True);
+              aNode.FieldList.Delete(K);
             end
             else
             begin
               UnlockNode(aNode, True);
               // If is not possible to connect 2 points by road destroy node
-              if not fPlanner.GetRoadBetweenPoints(CenterPoint, FieldList.Items[0], FieldList, FieldType) then
+              if not fPlanner.GetRoadBetweenPoints(aNode.CenterPoint, aNode.FieldList.Items[0], aNode.FieldList, aNode.FieldType) then
               begin
-                FieldList.Clear;
-                Active := False;
+                aNode.FieldList.Clear;
+                aNode.Active := False;
               end;
               LockNode(aNode);
-              RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
+              aNode.RequiredWorkers := Min(aNode.MaxReqWorkers, aNode.FieldList.Count);
               Exit; // Node will be updated in next calling
             end;
           end;
         end;
       end;
       // Restrict max required workers
-      RequiredWorkers := Min(Max(0, MaxReqWorkers - ActiveWorkers), RequiredWorkers);
+      aNode.RequiredWorkers := Min(Max(0, aNode.MaxReqWorkers - ActiveWorkers), aNode.RequiredWorkers);
     end;
   end;
 
@@ -689,50 +694,50 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
     K, ActiveWorkers: Integer;
   begin
     ActiveWorkers := 0;
-    with aNode do
+//    with aNode do
     begin
-      RequiredWorkers := FieldList.Count;
-      for K := 0 to FieldList.Count - 1 do
+      aNode.RequiredWorkers := aNode.FieldList.Count;
+      for K := 0 to aNode.FieldList.Count - 1 do
       begin
         // Check if field was replaced by road
-        if (gAIFields.Influences.AvoidBuilding[FieldList.Items[K].Y, FieldList.Items[K].X] <> AVOID_BUILDING_NODE_LOCK_FIELD) then
+        if (gAIFields.Influences.AvoidBuilding[aNode.FieldList.Items[K].Y, aNode.FieldList.Items[K].X] <> AVOID_BUILDING_NODE_LOCK_FIELD) then
         begin
-          RequiredWorkers := RequiredWorkers - 1;
+          aNode.RequiredWorkers := aNode.RequiredWorkers - 1;
         end
         // Check if field already exists ...
-        else if ((FieldType = ftWine) AND IsCompletedWine(FieldList.Items[K]))
-             OR ((FieldType = ftCorn) AND IsCompletedField(FieldList.Items[K])) then
+        else if ((aNode.FieldType = ftWine) AND IsCompletedWine(aNode.FieldList.Items[K]))
+             OR ((aNode.FieldType = ftCorn) AND IsCompletedField(aNode.FieldList.Items[K])) then
         begin
-          RequiredWorkers := RequiredWorkers - 1;
+          aNode.RequiredWorkers := aNode.RequiredWorkers - 1;
         end
-        else if ((FieldType = ftWine) AND IsPlan(FieldList.Items[K], tlFieldWork, ftWine))
-             OR ((FieldType = ftCorn) AND IsPlan(FieldList.Items[K], tlFieldWork, ftCorn)) then
+        else if ((aNode.FieldType = ftWine) AND IsPlan(aNode.FieldList.Items[K], tlFieldWork, ftWine))
+             OR ((aNode.FieldType = ftCorn) AND IsPlan(aNode.FieldList.Items[K], tlFieldWork, ftCorn)) then
         begin
           ActiveWorkers := ActiveWorkers + 1;
-          if (MaxReqWorkers <= ActiveWorkers) then
+          if (aNode.MaxReqWorkers <= ActiveWorkers) then
             break;
         end
         // ... else try build it
         else
         begin
-          BuildField(K, FieldType);
-          if (FreeWorkers <= 0) then
+          BuildField(K, aNode.FieldType);
+          if (aNode.FreeWorkers <= 0) then
             break;
         end;
         // When node reached all plans disable it
-        if (RequiredWorkers <= 0) OR (K = FieldList.Count-1) then
+        if (aNode.RequiredWorkers <= 0) OR (K = aNode.FieldList.Count-1) then
         begin
           // Only roads are unlocked
           //for K := 0 to FieldList.Count-1 do
           //  if   ((FieldType = ftWine) AND (IsCornField(FieldList.Items[K])))
           //    OR ((FieldType = ftCorn) AND (IsWineField(FieldList.Items[K]))) then
           //    UnlockPointOfNode(FieldList.Items[K]);
-          FieldList.Clear;
-          Active := False;
+          aNode.FieldList.Clear;
+          aNode.Active := False;
         end;
       end;
       // Restrict max required workers
-      RequiredWorkers := Min(Max(0, MaxReqWorkers - ActiveWorkers), RequiredWorkers);
+      aNode.RequiredWorkers := Min(Max(0, aNode.MaxReqWorkers - ActiveWorkers), aNode.RequiredWorkers);
     end;
   end;
 
@@ -741,63 +746,63 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
   var
     K: Integer;
   begin
-    with aNode do
+//    with aNode do
     begin
-      if (FieldList.Count = 0) then
+      if (aNode.FieldList.Count = 0) then
       begin
-        Active := False;
+        aNode.Active := False;
         Exit;
       end;
-      RequiredWorkers := FieldList.Count;
-      for K := FieldList.Count - 1 downto 0 do
+      aNode.RequiredWorkers := aNode.FieldList.Count;
+      for K := aNode.FieldList.Count - 1 downto 0 do
       begin
         //if (FreeWorkers <= 0) then // Ignore FreeWorkers distribution system
         //  Exit;
         // Detect obstacles in house plan
-        if gTerrain.ObjectIsChopableTree(FieldList.Items[K], [caAge1,caAge2,caAge3,caAgeFull]) then
+        if gTerrain.ObjectIsChopableTree(aNode.FieldList.Items[K], [caAge1,caAge2,caAge3,caAgeFull]) then
         begin
           // Check if is wine plan already placed
-          if IsPlan(FieldList.Items[K], tlFieldWork, ftWine) then
+          if IsPlan(aNode.FieldList.Items[K], tlFieldWork, ftWine) then
           begin
-            RequiredWorkers := RequiredWorkers - 1;
+            aNode.RequiredWorkers := aNode.RequiredWorkers - 1;
           end
           // If we cannot remove tree by placing wineyard remove point from list
           else if not BuildField(K, ftWine) then
-            FieldList.Delete(K);
+            aNode.FieldList.Delete(K);
         end
         // If is plan blocked by fields which could be compensated by road do it
-        else if IsCompletedWine(FieldList.Items[K]) OR IsCompletedField(FieldList.Items[K]) OR IsRoad(FieldList.Items[K]) then
+        else if IsCompletedWine(aNode.FieldList.Items[K]) OR IsCompletedField(aNode.FieldList.Items[K]) OR IsRoad(aNode.FieldList.Items[K]) then
         begin
-          if IsCompletedRoad(FieldList.Items[K]) then
-            FieldList.Delete(K) // Now can be item [K] deleted
+          if IsCompletedRoad(aNode.FieldList.Items[K]) then
+            aNode.FieldList.Delete(K) // Now can be item [K] deleted
           // Else try place road plan or delete point
-          else if not IsPlan(FieldList.Items[K], tlRoadWork, ftRoad) then
+          else if not IsPlan(aNode.FieldList.Items[K], tlRoadWork, ftRoad) then
           begin
             // Delete item [K] only in case that we cannot place road plan (point must be removed only in moment when is road completed)
             if not BuildField(K, ftRoad) then
-              FieldList.Delete(K);
+              aNode.FieldList.Delete(K);
           end;
         end
         // Tree was destroyed while worker is going to do it -> remove wine or corn plan and remove point from build node
-        else if (gHands[fOwner].BuildList.FieldworksList.HasField(FieldList.Items[K]) <> ftNone) then // ftNone is fine, road was checked before
+        else if (gHands[fOwner].BuildList.FieldworksList.HasField(aNode.FieldList.Items[K]) <> ftNone) then // ftNone is fine, road was checked before
         begin
-          gHands[fOwner].BuildList.FieldworksList.RemFieldPlan(FieldList.Items[K]);
-          FieldList.Delete(K);
+          gHands[fOwner].BuildList.FieldworksList.RemFieldPlan(aNode.FieldList.Items[K]);
+          aNode.FieldList.Delete(K);
         end
         // There is digged wine / field
-        else if (gTerrain.Land[FieldList.Items[K].Y, FieldList.Items[K].X].TileLock = tlFieldWork) then
+        else if (gTerrain.Land[aNode.FieldList.Items[K].Y, aNode.FieldList.Items[K].X].TileLock = tlFieldWork) then
         begin
           // do nothing (wait till worker finish tile and place road
         end
         // Tree was destroyed for example by script
         else
         begin
-          FieldList.Delete(K);
-          RequiredWorkers := RequiredWorkers - 1;
+          aNode.FieldList.Delete(K);
+          aNode.RequiredWorkers := aNode.RequiredWorkers - 1;
         end;
       end;
       // Restrict max required workers
-      RequiredWorkers := Min(MaxReqWorkers, RequiredWorkers);
+      aNode.RequiredWorkers := Min(aNode.MaxReqWorkers, aNode.RequiredWorkers);
     end;
   end;
 
@@ -955,30 +960,30 @@ begin
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
         begin
-          with fBuildNodes[Node1Idx] do
+//          with fBuildNodes[Node1Idx] do
           begin
             LockNode(fBuildNodes[Node1Idx]);
-            Active := True;
-            Priority := aRoadNodePrio;
-            RemoveTreesMode := False;
-            ShortcutMode := False;
-            MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_RoadMaxWork]) + Byte(NODE_PRIO_RoadsUnlockHouse = aRoadNodePrio) * 20;
-            RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
-            CenterPoint := FieldList[ FieldList.Count-1 ]; // Road node must start from exist house
+            fBuildNodes[Node1Idx].Active := True;
+            fBuildNodes[Node1Idx].Priority := aRoadNodePrio;
+            fBuildNodes[Node1Idx].RemoveTreesMode := False;
+            fBuildNodes[Node1Idx].ShortcutMode := False;
+            fBuildNodes[Node1Idx].MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_RoadMaxWork]) + Byte(NODE_PRIO_RoadsUnlockHouse = aRoadNodePrio) * 20;
+            fBuildNodes[Node1Idx].RequiredWorkers := Min(fBuildNodes[Node1Idx].MaxReqWorkers, fBuildNodes[Node1Idx].FieldList.Count);
+            fBuildNodes[Node1Idx].CenterPoint := fBuildNodes[Node1Idx].FieldList[ fBuildNodes[Node1Idx].FieldList.Count-1 ]; // Road node must start from exist house
           end;
           // Add field to node (if is required [htFarm, htWineyard])
           if not FieldsComplete AND fPlanner.GetFieldToHouse(aHT, HouseIdx, fBuildNodes[Node2Idx].FieldList, fBuildNodes[Node2Idx].FieldType) then
           begin
             LockNode(fBuildNodes[Node2Idx]);
-            with fBuildNodes[Node2Idx] do
+//            with fBuildNodes[Node2Idx] do
             begin
-              Active := True;
-              Priority := Byte(aHouseReservation) * NODE_PRIO_FieldsReservation + Byte(not aHouseReservation) * NODE_PRIO_Fields;
-              RemoveTreesMode := False;
-              ShortcutMode := False;
-              MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_FieldMaxWork]);
-              RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
-              CenterPoint := Loc;
+              fBuildNodes[Node2Idx].Active := True;
+              fBuildNodes[Node2Idx].Priority := Byte(aHouseReservation) * NODE_PRIO_FieldsReservation + Byte(not aHouseReservation) * NODE_PRIO_Fields;
+              fBuildNodes[Node2Idx].RemoveTreesMode := False;
+              fBuildNodes[Node2Idx].ShortcutMode := False;
+              fBuildNodes[Node2Idx].MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_FieldMaxWork]);
+              fBuildNodes[Node2Idx].RequiredWorkers := Min(fBuildNodes[Node2Idx].MaxReqWorkers, fBuildNodes[Node2Idx].FieldList.Count);
+              fBuildNodes[Node2Idx].CenterPoint := Loc;
             end;
           end;
         end
@@ -1000,11 +1005,11 @@ begin
           gHands[fOwner].RemHousePlan(Loc);
         end
         else
-          with fPlanner.PlannedHouses[aHT].Plans[HouseIdx] do
+//          with fPlanner.PlannedHouses[aHT].Plans[HouseIdx] do
           begin
-            HouseReservation := False;
-            RemoveTreeInPlanProcedure := False;
-            Placed := True;
+            fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation := False;
+            fPlanner.PlannedHouses[aHT].Plans[HouseIdx].RemoveTreeInPlanProcedure := False;
+            fPlanner.PlannedHouses[aHT].Plans[HouseIdx].Placed := True;
           end;
       end;
     end
@@ -1036,15 +1041,15 @@ begin
               fBuildNodes[Node1Idx].FieldList.Clear;
               Exit;
             end;
-          with fBuildNodes[Node1Idx] do
+//          with fBuildNodes[Node1Idx] do
           begin
-            Active := True;
-            Priority := NODE_PRIO_RemoveTreeInPlan;
-            RemoveTreesMode := True;
-            ShortcutMode := False;
-            MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_RTPMaxWork]);
-            RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
-            CenterPoint := Loc;
+            fBuildNodes[Node1Idx].Active := True;
+            fBuildNodes[Node1Idx].Priority := NODE_PRIO_RemoveTreeInPlan;
+            fBuildNodes[Node1Idx].RemoveTreesMode := True;
+            fBuildNodes[Node1Idx].ShortcutMode := False;
+            fBuildNodes[Node1Idx].MaxReqWorkers := Round(AI_Par[BUILDER_BuildHouse_RTPMaxWork]);
+            fBuildNodes[Node1Idx].RequiredWorkers := Min(fBuildNodes[Node1Idx].MaxReqWorkers, fBuildNodes[Node1Idx].FieldList.Count); // Real count will be updated during building process
+            fBuildNodes[Node1Idx].CenterPoint := Loc;
           end;
         end
         // There is another problem...
@@ -1341,8 +1346,9 @@ var
     begin
       HT := RESERVATION_FullSet[K];
       for L := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
-        with fPlanner.PlannedHouses[HT].Plans[L] do
-          if not Placed AND (HouseReservation OR RemoveTreeInPlanProcedure) then
+//        with fPlanner.PlannedHouses[HT].Plans[L] do
+          if not fPlanner.PlannedHouses[HT].Plans[L].Placed
+            AND (fPlanner.PlannedHouses[HT].Plans[L].HouseReservation OR fPlanner.PlannedHouses[HT].Plans[L].RemoveTreeInPlanProcedure) then
             Inc(ReservationsCntArr[HT], 1);
     end;
 
@@ -1516,12 +1522,12 @@ const
     begin
       if (HT = htWoodcutters) then
         continue;
-      with fPlanner.PlannedHouses[HT] do
-        for K := 0 to Count - 1 do
-          if Plans[K].Placed AND not Plans[K].ShortcutsCompleted then
+//      with fPlanner.PlannedHouses[HT] do
+        for K := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
+          if fPlanner.PlannedHouses[HT].Plans[K].Placed AND not fPlanner.PlannedHouses[HT].Plans[K].ShortcutsCompleted then
           begin
-            Plans[K].ShortcutsCompleted := True;
-            aLoc := KMPointBelow(Plans[K].Loc);
+            fPlanner.PlannedHouses[HT].Plans[K].ShortcutsCompleted := True;
+            aLoc := KMPointBelow(fPlanner.PlannedHouses[HT].Plans[K].Loc);
             aHT := HT;
             Exit;
           end;
@@ -1560,16 +1566,16 @@ const
       finally
         Road.Free;
       end;
-      with aNode do
-        if (FieldList.Count > 0) then
+//      with aNode do
+        if (aNode.FieldList.Count > 0) then
         begin
-          Active := True;
-          Priority := NODE_PRIO_Shortcuts;
-          RemoveTreesMode := False;
-          ShortcutMode := True;
-          MaxReqWorkers := Round(AI_Par[BUILDER_CreateShortcuts_MaxWork]);//MAX_WORKERS_FOR_NODE;
-          RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
-          CenterPoint := FieldList.Items[0];
+          aNode.Active := True;
+          aNode.Priority := NODE_PRIO_Shortcuts;
+          aNode.RemoveTreesMode := False;
+          aNode.ShortcutMode := True;
+          aNode.MaxReqWorkers := Round(AI_Par[BUILDER_CreateShortcuts_MaxWork]);//MAX_WORKERS_FOR_NODE;
+          aNode.RequiredWorkers := Min(aNode.MaxReqWorkers, aNode.FieldList.Count);
+          aNode.CenterPoint := aNode.FieldList.Items[0];
         end;
     end;
   end;
@@ -1623,9 +1629,9 @@ begin
 
       Locs.Clear();
       for L := 0 to PlannedHouses[HT].Count - 1 do
-        with PlannedHouses[HT].Plans[L] do
-          if Placed then
-            Locs.Add( KMPointBelow(Loc), KMDistanceAbs(Loc, BaseLoc) );
+//        with PlannedHouses[HT].Plans[L] do
+          if PlannedHouses[HT].Plans[L].Placed then
+            Locs.Add( KMPointBelow(PlannedHouses[HT].Plans[L].Loc), KMDistanceAbs(PlannedHouses[HT].Plans[L].Loc, BaseLoc) );
       PlanRoad(fBuildNodes[NodeIdx], BaseLoc, Locs, False);
     end;
 
@@ -1637,12 +1643,12 @@ begin
         if (HT = htWoodcutters) then
           continue;
         for K := 0 to PlannedHouses[HT].Count - 1 do
-          with PlannedHouses[HT].Plans[K] do
-            if Placed then
+//          with PlannedHouses[HT].Plans[K] do
+            if PlannedHouses[HT].Plans[K].Placed then
             begin
-              Dist := KMDistanceAbs(BaseLoc, KMPointBelow(Loc));
+              Dist := KMDistanceAbs(BaseLoc, KMPointBelow(PlannedHouses[HT].Plans[K].Loc));
               if (Dist <> 0) AND (Dist < MAX_DISTANCE_TO_ALL_HOUSES) then
-                Locs.Add( KMPointBelow(Loc), Dist );
+                Locs.Add( KMPointBelow(PlannedHouses[HT].Plans[K].Loc), Dist );
             end;
       end;
     PlanRoad(fBuildNodes[NodeIdx], BaseLoc, Locs, True);
@@ -1673,15 +1679,15 @@ begin
     PlanPlaced := 0;
     Construction := 0;
     for K := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
-      with fPlanner.PlannedHouses[HT].Plans[K] do
+//      with fPlanner.PlannedHouses[HT].Plans[K] do
       begin
-        if not Placed then
+        if not fPlanner.PlannedHouses[HT].Plans[K].Placed then
         begin
-          Inc(Reservation, Byte(HouseReservation));
-          Inc(Reservation, Byte(RemoveTreeInPlanProcedure));
-          Inc(Reservation, Byte(not HouseReservation AND not RemoveTreeInPlanProcedure));
+          Inc(Reservation, Byte(fPlanner.PlannedHouses[HT].Plans[K].HouseReservation));
+          Inc(Reservation, Byte(fPlanner.PlannedHouses[HT].Plans[K].RemoveTreeInPlanProcedure));
+          Inc(Reservation, Byte(not fPlanner.PlannedHouses[HT].Plans[K].HouseReservation AND not fPlanner.PlannedHouses[HT].Plans[K].RemoveTreeInPlanProcedure));
         end
-        else if (House <> nil) AND not (House.IsComplete) then
+        else if (fPlanner.PlannedHouses[HT].Plans[K].House <> nil) AND not (fPlanner.PlannedHouses[HT].Plans[K].House.IsComplete) then
           Inc(Construction,1);
       end;
     if ((Reservation + RemoveTrees + PlanPlaced + Construction) > 0) then
@@ -1735,32 +1741,32 @@ var
 begin
 //{
   for K := 0 to gHands[fOwner].Units.Count - 1 do
-    with gHands[fOwner].Units[K] do
-      if not IsDeadOrDying then
+//    with gHands[fOwner].Units[K] do
+      if not gHands[fOwner].Units[K].IsDeadOrDying then
       begin
-        if (gHands[fOwner].Units[K] is TKMUnitSerf) AND IsIdle then
-          gRenderAux.Quad(CurrPosition.X, CurrPosition.Y, $44000000 OR COLOR_BLUE)
-        else if (gHands[fOwner].Units[K] is TKMUnitWorker) AND IsIdle then
-          gRenderAux.Quad(CurrPosition.X, CurrPosition.Y, $44000000 OR COLOR_NEW2);
+        if (gHands[fOwner].Units[K] is TKMUnitSerf) AND gHands[fOwner].Units[K].IsIdle then
+          gRenderAux.Quad(gHands[fOwner].Units[K].CurrPosition.X, gHands[fOwner].Units[K].CurrPosition.Y, $44000000 OR COLOR_BLUE)
+        else if (gHands[fOwner].Units[K] is TKMUnitWorker) AND gHands[fOwner].Units[K].IsIdle then
+          gRenderAux.Quad(gHands[fOwner].Units[K].CurrPosition.X, gHands[fOwner].Units[K].CurrPosition.Y, $44000000 OR COLOR_NEW2);
       end;
 
   Color := 0; // For compiler
   for K := Low(fBuildNodes) to High(fBuildNodes) do
-    with fBuildNodes[K] do
-      if Active then
+//    with fBuildNodes[K] do
+      if fBuildNodes[K].Active then
       begin
-        case FieldType of
+        case fBuildNodes[K].FieldType of
           ftCorn: Color := $40000000 OR COLOR_GREEN;
           ftWine: Color := $88000000 OR COLOR_GREEN;
           ftRoad: Color := $80000000 OR COLOR_NEW;//COLOR_YELLOW;
         end;
-        if RemoveTreesMode then
+        if fBuildNodes[K].RemoveTreesMode then
           Color := $60000000 OR COLOR_BLUE;
-        if ShortcutMode then
+        if fBuildNodes[K].ShortcutMode then
           Color := $20000000 OR COLOR_BLACK;
-        for L := 0 to FieldList.Count - 1 do
+        for L := 0 to fBuildNodes[K].FieldList.Count - 1 do
         begin
-          Point := FieldList.Items[L];
+          Point := fBuildNodes[K].FieldList.Items[L];
           gRenderAux.Quad(Point.X, Point.Y, Color);
         end;
       end;
