@@ -2392,8 +2392,7 @@ begin
       Loc := fForestsInfo.Forests[K].Loc;
       if (aCountByInfluence OR (KMDistanceSqr(aPoint, Loc) < Sqr(AI_Par[PLANNER_FOREST_FindForestAround_MaxDist])))
         AND (fForestsInfo.Forests[K].TreeCout >= MIN_TREES)
-        AND (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atEnemy) < 20) 
-		AND (gAIFields.Eye.BuildFF.Distance[Loc] < 35) then
+        AND (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atEnemy) < 20) then
       begin
         Gain := gAIFields.Influences.OwnPoint[fOwner, Loc]; // This is equivalent of distance
         if (Gain > BestGain) then
