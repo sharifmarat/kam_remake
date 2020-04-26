@@ -226,6 +226,6 @@ object Form2: TForm2
     MaxValue = 1000000
     MinValue = 0
     TabOrder = 6
-    Value = 60
+    Value = 100
   end
 end

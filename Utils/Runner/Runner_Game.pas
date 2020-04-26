@@ -145,7 +145,7 @@ type
 
   TKMRunnerDesyncTest = class(TKMRunnerCommon)
   type
-    TKMDesyncRunKind = (drkGame, drkReplay, drkGameCRC, drkReplayCRC);
+    TKMDesyncRunKind = (drkGame, drkReplay, drkGameCRC, drkReplayCRC, drkGameSave);
   private
     fSaveName: string;
     fDesyncsDir: string;
@@ -1110,7 +1110,7 @@ begin
                     if tickCRC <> fTickCRC[gGame.GameTick - fSavePointTick] then
                     begin
                       SaveGameAndMove;
-                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick));
+//                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick));
 
                       //Move last sync saves
                       if SAVE_LAST_SYNC_TICK then
@@ -1122,7 +1122,14 @@ begin
                       fCRCDesyncFound := True;
                       fCRCDesyncTick := gGame.GameTick;
 
-                      Result := False;
+                      Result := False; //Stop simulation
+                    end;
+                  end;
+    drkGameSave:  begin
+                    if gGame.GameTick = fCRCDesyncTick then
+                    begin
+                      SaveGameAndMove;
+                      Result := False; //Stop simulation
                     end;
                   end;
   end;
@@ -1156,43 +1163,54 @@ const
                                   'River Crossing','Shoulder to Shoulder','The Pirates','Unknown Danger','Battle in the Ruined City',
                                   'Lost City Struggle','Cross','Cursed Land','Gunplay','Icewind Valley','Rocky Mountains',
                                   'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
-  cnt_MAP_SIMULATIONS = 30;
+  cnt_MAP_SIMULATIONS = 10;
 
-  SIMUL_TIME_MAX = 10*60*100; //1 hour
+  SIMUL_TIME_MAX = 10*60*76; //1 hour
   SAVEPT_FREQ = 10*60*1; //every 1 min
-  REPLAY_LENGTH = 2000; // ticks to find RNG mismatch
+  REPLAY_LENGTH = 330; // ticks to find RNG mismatch
 //  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
   SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
   LOAD_SAVEPT_AT_TICK = 0; //40800;
+
+  procedure StartGame;
+  var
+    mapFullName: string;
+  begin
+    mapFullName := Format('%s..\..\MapsMP\%s\%s.dat',[ExtractFilePath(ParamStr(0)),fMap,fMap]);
+    gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+  end;
+
 
 var
   K,L,I: Integer;
   desyncCnt: Integer;
   simulLastTick: Integer;
-  mapFullName, desyncSaveName: string;
+  {mapFullName, }desyncSaveName: string;
 begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
 //  MAKE_SAVEPT_AT_TICK := 40800;
 
   desyncCnt := 0;
 //  for K := Low(MAPS) to High(MAPS) do
+//  for K := 5 to High(MAPS) do
   begin
     fMap := 'A War of Justice'; //MAPS[K];
 
 //    for L := 1 to cnt_MAP_SIMULATIONS do
-    L := 8;
+    L := 1;
     begin
       Reset;
       fRun := L;
-      CUSTOM_SEED_VALUE := 269; //Max(1,L+11);
+      CUSTOM_SEED_VALUE := L + 300;
 
       fSaveName := Format('%s_SD_%d_RN%.3d',[fMap, CUSTOM_SEED_VALUE, L]);
 
       fRunKind := drkGame;
 
 //      SetKaMSeed(Max(1,L));
-      mapFullName := Format('%s..\..\MapsMP\%s\%s.dat',[ExtractFilePath(ParamStr(0)),fMap,fMap]);
-      gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+
+      StartGame;
+//      gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
 
       gGameApp.GameSettings.DebugSaveGameAsText := True;
 
@@ -1239,7 +1257,8 @@ begin
 
             fRunKind := drkGameCRC;
 
-            gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+//            gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+            StartGame;  
 
             SimulateGame(0, fRngMismatchTick - 1);
 
@@ -1256,7 +1275,12 @@ begin
 
               // tick CRC desync found
               if fCRCDesyncFound then
-                Log(Format('Found save CRC desync on ''%s'' Seed = %d at tick %d', [fMap, CUSTOM_SEED_VALUE, fCRCDesyncTick]))
+              begin
+                Log(Format('Found save CRC desync on ''%s'' Seed = %d at tick %d', [fMap, CUSTOM_SEED_VALUE, fCRCDesyncTick]));
+                fRunKind := drkGameSave;
+                StartGame;
+                SimulateGame(0, fRngMismatchTick - 1);
+              end 
               else
                 Log('!!! Could not find save CRC desync tick !!!');
             end;
