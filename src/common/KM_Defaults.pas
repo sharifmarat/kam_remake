@@ -170,6 +170,7 @@ var
   HOUSE_BUILDING_STEP     :Single = 0;
   OVERLAY_NAVMESH         :Boolean = False; //Show navmesh
   OVERLAY_DEFENCES        :Boolean = False; //Show AI defence perimeters
+  OVERLAY_DEFENCES_A      :Boolean = False; //Show AI defence perimeters (Animation)
   OVERLAY_INFLUENCE       :Boolean = False; //Show influence map
   OVERLAY_OWNERSHIP       :Boolean = False; //Show ownership map
   OVERLAY_AVOID           :Boolean = False; //Show avoidance map
@@ -180,6 +181,9 @@ var
   OVERLAY_AI_FLATAREA     :Boolean = False; //Show FlatArea vision of new AI
   OVERLAY_AI_ROUTES       :Boolean = False; //Show Routes to resources vision of new AI
   OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI
+  OVERLAY_AI_SUPERVISOR_A :Boolean = False; //Show Supervisor vision of new AI (Animation)
+  OVERLAY_AI_SUPERVISOR_D :Boolean = False; //Show Supervisor vision of new AI (Distances)
+  OVERLAY_AI_SUPERVISOR_M :Boolean = False; //Show Supervisor vision of new AI (Marks)
   {Stats}
   SHOW_SPRITE_COUNT       :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT      :Boolean = False; //Show debug total count of unit/house pointers being tracked
