@@ -385,6 +385,7 @@ begin
 
   fRoadPlanner.Load(LoadStream);
   fRoadShortcutPlanner.Load(LoadStream);
+  fFieldEval.OwnerUpdate(fOwner); // UPDATE OWNER AFTER LOAD
 end;
 
 
