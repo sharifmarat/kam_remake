@@ -126,9 +126,7 @@ type
     fOrderCompletedMsgIssued: Boolean;
     fNeedIssueOrderCompletedMsg: Boolean;
     fAllowAllyToView: Boolean;
-
-    // Not saved
-    fPlacedOverRoad: Boolean;
+    fPlacedOverRoad: Boolean; //Is house entrance placed over road
 
     procedure CheckOnSnow;
 
@@ -592,6 +590,7 @@ begin
   LoadStream.Read(fResourceDepletedMsgIssued);
   LoadStream.Read(DoorwayUse);
   LoadStream.Read(fAllowAllyToView);
+  LoadStream.Read(fPlacedOverRoad);
 end;
 
 
@@ -1974,6 +1973,7 @@ begin
   SaveStream.Write(fResourceDepletedMsgIssued);
   SaveStream.Write(DoorwayUse);
   SaveStream.Write(fAllowAllyToView);
+  SaveStream.Write(fPlacedOverRoad);
 end;
 
 
