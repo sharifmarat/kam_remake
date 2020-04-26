@@ -1072,7 +1072,7 @@ end;
 
 function TKMRunnerDesyncTest.GetSaveName(aRunKind: TKMDesyncRunKind; aTick: Integer): string;
 begin
-  Result := Format('%s_%s_L%d_T%d', [fSaveName, GetRunKindStr(aRunKind), fSavePointTick, aTick]);
+  Result := Format('%s_%s_L%d_RNG%d_CRC%d', [fSaveName, GetRunKindStr(aRunKind), fSavePointTick, fRngMismatchTick, aTick]);
 end;
 
 
