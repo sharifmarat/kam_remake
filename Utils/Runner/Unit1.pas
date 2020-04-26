@@ -39,6 +39,7 @@ type
     Label9: TLabel;
     Label10: TLabel;
     Label11: TLabel;
+    Label12: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -55,6 +56,7 @@ type
     procedure RunnerProgress2(const aValue: UnicodeString);
     procedure RunnerProgress3(const aValue: UnicodeString);
     procedure RunnerProgress4(const aValue: UnicodeString);
+    procedure RunnerProgress5(const aValue: UnicodeString);
     procedure RunnerProgress_Left(const aValue: UnicodeString);
     procedure RunnerProgress_Left2(const aValue: UnicodeString);
     procedure RunnerProgress_Left3(const aValue: UnicodeString);
@@ -172,6 +174,7 @@ begin
     Runner.OnProgress2 := RunnerProgress2;
     Runner.OnProgress3 := RunnerProgress3;
     Runner.OnProgress4 := RunnerProgress4;
+    Runner.OnProgress5 := RunnerProgress5;
     try
       T := GetTickCount;
       Runner.Duration := seDuration.Value;
@@ -389,6 +392,14 @@ procedure TForm2.RunnerProgress4(const aValue: UnicodeString);
 begin
   Label8.Caption := aValue;
   Label8.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress5(const aValue: UnicodeString);
+begin
+  Label12.Caption := aValue;
+  Label12.Refresh;
   Application.ProcessMessages;
 end;
 

@@ -34,7 +34,7 @@ type
     procedure SetUp; virtual;
     procedure TearDown; virtual;
     procedure Execute(aRun: Integer); virtual; abstract;
-    procedure SimulateGame(aStartTick: Word = 0; aEndTick: Integer = -1);
+    procedure SimulateGame(aStartTick: Integer = 0; aEndTick: Integer = -1);
     procedure ProcessRunResults;
   public
     Duration: Integer;
@@ -46,6 +46,7 @@ type
     OnProgress2: TUnicodeStringEvent;
     OnProgress3: TUnicodeStringEvent;
     OnProgress4: TUnicodeStringEvent;
+    OnProgress5: TUnicodeStringEvent;
     constructor Create(aRenderTarget: TKMRenderControl); reintroduce;
     function Run(aCount: Integer): TKMRunResults;
   end;
@@ -204,7 +205,7 @@ end;
 //end;
 
 
-procedure TKMRunnerCommon.SimulateGame(aStartTick: Word = 0; aEndTick: Integer = -1);
+procedure TKMRunnerCommon.SimulateGame(aStartTick: Integer = 0; aEndTick: Integer = -1);
 var
   I, IntParam, TestParam: Integer;
 begin

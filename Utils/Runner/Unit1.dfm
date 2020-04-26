@@ -5,6 +5,7 @@ object Form2: TForm2
   ClientHeight = 641
   ClientWidth = 1097
   Color = clBtnFace
+  DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -25,9 +26,9 @@ object Form2: TForm2
     Caption = 'Cycles:'
   end
   object Label2: TLabel
-    Left = 175
+    Left = 178
     Top = 236
-    Width = 18
+    Width = 15
     Height = 13
     Alignment = taRightJustify
     Caption = '     '
@@ -40,9 +41,9 @@ object Form2: TForm2
     Caption = 'Duration (min):'
   end
   object Label5: TLabel
-    Left = 175
+    Left = 178
     Top = 216
-    Width = 18
+    Width = 15
     Height = 13
     Alignment = taRightJustify
     Caption = '     '
@@ -89,6 +90,14 @@ object Form2: TForm2
     Top = 276
     Width = 18
     Height = 13
+    Caption = '      '
+  end
+  object Label12: TLabel
+    Left = 175
+    Top = 296
+    Width = 18
+    Height = 13
+    Alignment = taRightJustify
     Caption = '      '
   end
   object Button1: TButton

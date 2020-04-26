@@ -148,6 +148,7 @@ type
     TKMDesyncRunKind = (drkGame, drkReplay, drkGameCRC, drkReplayCRC, drkGameSave);
   private
     fRunSeed: Integer;
+    fStartTime: Cardinal;
     fSaveName: string;
     fDesyncsDir: string;
     fRunKind: TKMDesyncRunKind;
@@ -1090,7 +1091,7 @@ end;
 
 function TKMRunnerDesyncTest.TickPlayed(aTick: Cardinal): Boolean;
 var
-  tickCRC: Cardinal;
+  tickCRC, T: Cardinal;
 begin
   Result := True;
 
@@ -1139,7 +1140,9 @@ begin
                   end;
   end;
 
+  T := GetTimeSince(fStartTime);
   OnProgress2(Format('%s: %s R%d T%d', [GetRunKindStr, LeftStr(fMap, Min(Length(fMap), 17)), fRun, aTick]));
+  OnProgress5(Format('Time elapsed: %.2d:%.2d:%.2d', [T div (60*60*1000), (T div (60*1000)) mod 60, (T div 1000) mod 60]));
 end;
 
 
@@ -1191,7 +1194,8 @@ const
 var
   K,L,I,M: Integer;
   desyncCnt: Integer;
-  simulLastTick, mapsCnt: Integer;
+  totalTime: Cardinal;
+  simulLastTick, mapsCnt, totalRuns, totalLoads: Integer;
   {mapFullName, }desyncSaveName: string;
 begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
@@ -1199,6 +1203,9 @@ begin
 
   M := 0;
   desyncCnt := 0;
+  totalRuns := 0;
+  totalLoads := 0;
+  fStartTime := TimeGet;
   mapsCnt := Length(MAPS_8P);
 //  for K := Low(MAPS) to High(MAPS) do
 //  for K := 5 to High(MAPS) do
@@ -1212,6 +1219,7 @@ begin
 //    L := 1;
     begin
       Reset;
+      Inc(totalRuns);
       fRun := L;
       CUSTOM_SEED_VALUE := L + M*cnt_MAP_SIMULATIONS + Seed;
 
@@ -1257,6 +1265,7 @@ begin
 
         if gGameApp.TryLoadSavedReplay(fSavePointTick) then
         begin
+          Inc(totalLoads);
           OnProgress_Left(Format('Load: %d', [fSavePointTick]));
           Log('SavePointTick = ' + IntToStr(fSavePointTick));
 
@@ -1270,7 +1279,7 @@ begin
           begin
             Log(Format('Found rng mismatch on ''%s'' at tick %d', [fMap, fRngMismatchTick]));
             Inc(desyncCnt);
-            OnProgress4('Desyncs: ' + IntToStr(desyncCnt));
+            OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
 
             fRunKind := drkGameCRC;
 
@@ -1307,7 +1316,7 @@ begin
           OnProgress_Left('');
       end;
       OnProgress2(fMap + ' Run ' + IntToStr(L));
-      OnProgress4('Desyncs: ' + IntToStr(desyncCnt));
+      OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
     end;
   end;
 
