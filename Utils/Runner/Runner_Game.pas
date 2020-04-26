@@ -1014,6 +1014,8 @@ begin
 
   fRngMismatchFound := True;
   fRngMismatchTick := gGame.GameTick;
+
+  OnProgress_Left2(Format('RNG mismatch: %d', [fRngMismatchTick]));
 end;
 
 
@@ -1123,15 +1125,17 @@ begin
                       fCRCDesyncFound := True;
                       fCRCDesyncTick := gGame.GameTick;
 
+                      OnProgress_Left3(Format('CRC desync: %d', [fCRCDesyncTick]));
+
                       Result := False; //Stop simulation
                     end;
                   end;
     drkGameSave:  begin
                     if gGame.GameTick = fCRCDesyncTick then
-                    begin
+                      SaveGameAndMove
+                    else
+                    if gGame.GameTick = fRngMismatchTick then
                       SaveGameAndMove;
-                      Result := False; //Stop simulation
-                    end;
                   end;
   end;
 
@@ -1166,7 +1170,7 @@ const
                                   'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
   cnt_MAP_SIMULATIONS = 10;
 
-  SIMUL_TIME_MAX = 10*60*100; //1 hour
+  SIMUL_TIME_MAX = 10*60*120; //1 hour
   SAVEPT_FREQ = 10*60*1; //every 1 min
   REPLAY_LENGTH = 1500; // ticks to find RNG mismatch
 //  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
@@ -1185,28 +1189,39 @@ const
 
 
 var
-  K,L,I: Integer;
+  K,L,I,M: Integer;
   desyncCnt: Integer;
-  simulLastTick: Integer;
+  simulLastTick, mapsCnt: Integer;
   {mapFullName, }desyncSaveName: string;
 begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
 //  MAKE_SAVEPT_AT_TICK := 40800;
 
+  M := 0;
   desyncCnt := 0;
+  mapsCnt := Length(MAPS_8P);
 //  for K := Low(MAPS) to High(MAPS) do
-  for K := 5 to High(MAPS) do
+//  for K := 5 to High(MAPS) do
+  while M < Length(MAPS_8P) do
   begin
-    fMap := 'Across the Desert';//MAPS[K];
+    K := Random(Length(MAPS_8P)) + 1;
+    fMap := MAPS_8P[K];
+    Inc(M);
 
     for L := 1 to cnt_MAP_SIMULATIONS do
 //    L := 1;
     begin
       Reset;
       fRun := L;
-      CUSTOM_SEED_VALUE := L + 310;
+      CUSTOM_SEED_VALUE := L + M*cnt_MAP_SIMULATIONS + Seed;
 
-      fSaveName := Format('%s_SD_%d_RN%.3d',[fMap, CUSTOM_SEED_VALUE, L]);
+      OnProgress3('Seed: ' + IntToStr(CUSTOM_SEED_VALUE));
+
+      OnProgress_Left('');
+      OnProgress_Left2('');
+      OnProgress_Left3('');
+
+      fSaveName := Format('%s_SD_%d_RN%.2d',[fMap, CUSTOM_SEED_VALUE, L]);
 
       fRunKind := drkGame;
 
@@ -1238,10 +1253,13 @@ begin
         if LOAD_SAVEPT_AT_TICK <> 0 then
           fSavePointTick := LOAD_SAVEPT_AT_TICK
         else
-          fSavePointTick := (I + 1) * SAVEPT_FREQ;
-        Log('SavePointTick = ' + IntToStr(fSavePointTick));
+          fSavePointTick := (I + 15) * SAVEPT_FREQ;
+
         if gGameApp.TryLoadSavedReplay(fSavePointTick) then
         begin
+          OnProgress_Left(Format('Load: %d', [fSavePointTick]));
+          Log('SavePointTick = ' + IntToStr(fSavePointTick));
+
           fRunKind := drkReplay;
           gGame.GameInputProcess.OnReplayDesync := ReplayCrashed;
 
@@ -1252,7 +1270,7 @@ begin
           begin
             Log(Format('Found rng mismatch on ''%s'' at tick %d', [fMap, fRngMismatchTick]));
             Inc(desyncCnt);
-            OnProgress3('Desyncs: ' + IntToStr(desyncCnt));
+            OnProgress4('Desyncs: ' + IntToStr(desyncCnt));
 
             fRunKind := drkGameCRC;
 
@@ -1284,10 +1302,12 @@ begin
             end;
             Break;
           end;
-        end;
+        end
+        else
+          OnProgress_Left('');
       end;
       OnProgress2(fMap + ' Run ' + IntToStr(L));
-      OnProgress3('Desyncs: ' + IntToStr(desyncCnt));
+      OnProgress4('Desyncs: ' + IntToStr(desyncCnt));
     end;
   end;
 

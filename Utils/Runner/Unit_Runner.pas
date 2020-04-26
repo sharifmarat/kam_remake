@@ -38,9 +38,14 @@ type
     procedure ProcessRunResults;
   public
     Duration: Integer;
+    Seed: Integer;
     OnProgress: TUnicodeStringEvent;
+    OnProgress_Left: TUnicodeStringEvent;
+    OnProgress_Left2: TUnicodeStringEvent;
+    OnProgress_Left3: TUnicodeStringEvent;
     OnProgress2: TUnicodeStringEvent;
     OnProgress3: TUnicodeStringEvent;
+    OnProgress4: TUnicodeStringEvent;
     constructor Create(aRenderTarget: TKMRenderControl); reintroduce;
     function Run(aCount: Integer): TKMRunResults;
   end;

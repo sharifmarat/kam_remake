@@ -19,15 +19,15 @@ object Form2: TForm2
   TextHeight = 13
   object Label1: TLabel
     Left = 8
-    Top = 128
+    Top = 127
     Width = 35
     Height = 13
     Caption = 'Cycles:'
   end
   object Label2: TLabel
-    Left = 177
-    Top = 235
-    Width = 15
+    Left = 175
+    Top = 236
+    Width = 18
     Height = 13
     Alignment = taRightJustify
     Caption = '     '
@@ -40,19 +40,55 @@ object Form2: TForm2
     Caption = 'Duration (min):'
   end
   object Label5: TLabel
-    Left = 177
+    Left = 175
     Top = 216
-    Width = 15
+    Width = 18
     Height = 13
     Alignment = taRightJustify
     Caption = '     '
   end
   object Label6: TLabel
-    Left = 174
-    Top = 263
+    Left = 175
+    Top = 256
     Width = 18
     Height = 13
     Alignment = taRightJustify
+    Caption = '      '
+  end
+  object Label7: TLabel
+    Left = 8
+    Top = 168
+    Width = 28
+    Height = 13
+    Caption = 'Seed:'
+  end
+  object Label8: TLabel
+    Left = 175
+    Top = 276
+    Width = 18
+    Height = 13
+    Alignment = taRightJustify
+    Caption = '      '
+  end
+  object Label9: TLabel
+    Left = 8
+    Top = 236
+    Width = 18
+    Height = 13
+    Caption = '      '
+  end
+  object Label10: TLabel
+    Left = 8
+    Top = 256
+    Width = 18
+    Height = 13
+    Caption = '      '
+  end
+  object Label11: TLabel
+    Left = 8
+    Top = 276
+    Width = 18
+    Height = 13
     Caption = '      '
   end
   object Button1: TButton
@@ -86,7 +122,7 @@ object Form2: TForm2
   end
   object Memo2: TMemo
     Left = 8
-    Top = 296
+    Top = 492
     Width = 185
     Height = 137
     BorderStyle = bsNone
@@ -212,7 +248,7 @@ object Form2: TForm2
   end
   object chkRender: TCheckBox
     Left = 8
-    Top = 172
+    Top = 456
     Width = 57
     Height = 17
     Caption = 'Render'
@@ -227,5 +263,15 @@ object Form2: TForm2
     MinValue = 0
     TabOrder = 6
     Value = 100
+  end
+  object seSeed: TSpinEdit
+    Left = 8
+    Top = 187
+    Width = 89
+    Height = 22
+    MaxValue = 2000000000
+    MinValue = 0
+    TabOrder = 7
+    Value = 0
   end
 end

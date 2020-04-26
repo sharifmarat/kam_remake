@@ -33,6 +33,12 @@ type
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
+    seSeed: TSpinEdit;
+    Label7: TLabel;
+    Label8: TLabel;
+    Label9: TLabel;
+    Label10: TLabel;
+    Label11: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -48,6 +54,10 @@ type
     procedure RunnerProgress(const aValue: UnicodeString);
     procedure RunnerProgress2(const aValue: UnicodeString);
     procedure RunnerProgress3(const aValue: UnicodeString);
+    procedure RunnerProgress4(const aValue: UnicodeString);
+    procedure RunnerProgress_Left(const aValue: UnicodeString);
+    procedure RunnerProgress_Left2(const aValue: UnicodeString);
+    procedure RunnerProgress_Left3(const aValue: UnicodeString);
     procedure RefreshResults(aImg: TImage);
     procedure RefreshDistribution(aImg: TImage);
     procedure RefreshTimes(aImg: TImage);
@@ -156,11 +166,16 @@ begin
       Runner := RunnerClass.Create(nil);
 
     Runner.OnProgress := RunnerProgress;
+    Runner.OnProgress_Left := RunnerProgress_Left;
+    Runner.OnProgress_Left2 := RunnerProgress_Left2;
+    Runner.OnProgress_Left3 := RunnerProgress_Left3;
     Runner.OnProgress2 := RunnerProgress2;
     Runner.OnProgress3 := RunnerProgress3;
+    Runner.OnProgress4 := RunnerProgress4;
     try
       T := GetTickCount;
       Runner.Duration := seDuration.Value;
+      Runner.Seed := seSeed.Value;
       fResults := Runner.Run(Count);
       fRunTime := 'Done in ' + IntToStr(GetTickCount - T) + ' ms';
     finally
@@ -369,6 +384,37 @@ begin
   Application.ProcessMessages;
 end;
 
+
+procedure TForm2.RunnerProgress4(const aValue: UnicodeString);
+begin
+  Label8.Caption := aValue;
+  Label8.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress_Left(const aValue: UnicodeString);
+begin
+  Label9.Caption := aValue;
+  Label9.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress_Left2(const aValue: UnicodeString);
+begin
+  Label10.Caption := aValue;
+  Label10.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress_Left3(const aValue: UnicodeString);
+begin
+  Label11.Caption := aValue;
+  Label11.Refresh;
+  Application.ProcessMessages;
+end;
 
 
 procedure TForm2.TabSheetResize(Sender: TObject);
