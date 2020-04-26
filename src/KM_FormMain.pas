@@ -155,6 +155,10 @@ type
     cpScripting: TCategoryPanel;
     chkDebugScripting: TCheckBox;
     chkLogSkipTempCmd: TCheckBox;
+    chkShowDefencesAnimate: TCheckBox;
+    chkShowSupervisorAnimate: TCheckBox;
+    chkShowSupervisorDistances: TCheckBox;
+    chkShowSupervisorMarks: TCheckBox;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -963,9 +967,13 @@ begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
     SHOW_DEBUG_OVERLAY_BEVEL := chkBevel.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
+    OVERLAY_DEFENCES_A := chkShowDefencesAnimate.Checked;
     OVERLAY_AI_BUILD := chkBuild.Checked;
     OVERLAY_AI_COMBAT := chkCombat.Checked;
     OVERLAY_AI_SUPERVISOR := chkSupervisor.Checked;
+    OVERLAY_AI_SUPERVISOR_A := chkShowSupervisorAnimate.Checked;
+    OVERLAY_AI_SUPERVISOR_D := chkShowSupervisorDistances.Checked;
+    OVERLAY_AI_SUPERVISOR_M := chkShowSupervisorMarks.Checked;
     OVERLAY_AI_EYE := chkAIEye.Checked;
     OVERLAY_AI_SOIL := chkShowSoil.Checked;
     OVERLAY_AI_FLATAREA := chkShowFlatArea.Checked;

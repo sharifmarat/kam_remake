@@ -61,7 +61,7 @@ type
     fDistancePenalization: TDistancePenalization;
     fBackwardFF: TArmyBackwardFF;
     fCntAllyPoly, fCntEnemyPoly: Word;
-    {$IFDEF DEBUG_NavMeshDefences}
+    {$IFDEF DEBUG_BattleLines}
     fDebugCounter: Integer;
     fDebugDefPolyCnt: Integer;
     {$ENDIF}
@@ -234,7 +234,7 @@ begin
     Inc(fDebugCounter);
     if OVERLAY_AI_SUPERVISOR_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugDefPolyCnt) then
     begin
-      DrawPolygon(aIdx, -1, Min(250,75), COLOR_BLUE, IntToStr(K));
+      DrawPolygon(aIdx, -1, Min(250,75), COLOR_BLUE, IntToStr(aIdx));
       Idx := fStartQueue;
       for K := 0 to fQueueCnt - 1 do
       begin
@@ -716,7 +716,7 @@ begin
     Inc(fDebugCounter);
     if OVERLAY_AI_SUPERVISOR_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.005) mod fDebugDefPolyCnt) then
     begin
-      DrawPolygon(aIdx, -1, Min(250,75), COLOR_RED, IntToStr(K));
+      DrawPolygon(aIdx, -1, Min(250,75), COLOR_RED, IntToStr(aIdx));
       Idx := fStartQueue;
       for K := 0 to fQueueCnt - 1 do
       begin
@@ -1047,8 +1047,7 @@ function TArmyBackwardFF.Paint(var aEnemy: TKMAllianceInfo; var aOwners: TKMHand
 const
   COLOR_MIX: array [0..5] of Cardinal = (COLOR_BLUE, COLOR_YELLOW, COLOR_GREEN, COLOR_WHITE, COLOR_BLACK, COLOR_RED);
 var
-  K,L,Idx,MaxValue: Integer;
-  Color, TickIdx: Cardinal;
+  K,L,MaxValue: Integer;
 {$ENDIF}
 begin
   {$IFDEF DEBUG_BattleLines}

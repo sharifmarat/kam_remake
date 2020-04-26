@@ -245,7 +245,7 @@ begin
     Inc(fDebugCounter);
     if OVERLAY_DEFENCES_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugDefPolyCnt) then
     begin
-      DrawPolygon(aIdx, -1, Min(250,75), COLOR_BLUE, IntToStr(K));
+      DrawPolygon(aIdx, -1, Min(250,75), COLOR_BLUE, IntToStr(aIdx));
       Idx := fStartQueue;
       for K := 0 to fQueueCnt - 1 do
       begin
@@ -585,7 +585,7 @@ begin
     Inc(fDebugCounter);
     if OVERLAY_DEFENCES_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugDefPolyCnt) then
     begin
-      DrawPolygon(aIdx, 1, Min(250,75), COLOR_RED, IntToStr(K));
+      DrawPolygon(aIdx, 1, Min(250,75), COLOR_RED, IntToStr(aIdx));
       Idx := fStartQueue;
       for K := 0 to fQueueCnt-1 do
       begin
