@@ -986,7 +986,7 @@ begin
   SKIP_SAVE_SAVPTS_TO_FILE := True;
   SAVE_RANDOM_CHECKS := False;
   GAME_SAVE_CHECKPOINT_FREQ_MIN := 10;
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX := 100;
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX := 1000;
 
 //  Include(gLog.MessageTypes, lmtRandomChecks)
 end;
@@ -1102,7 +1102,7 @@ begin
                       tickCRC := gGame.GetCurrectTickSaveCRC;
                       fTickCRC[gGame.GameTick - fSavePointTick] := tickCRC;
 
-                      SaveGame();
+                      //SaveGame();
                     end;
                   end;
     drkReplayCRC: begin
@@ -1139,15 +1139,10 @@ end;
 
 procedure TKMRunnerDesyncTest.Execute(aRun: Integer);
 const
-  SIMUL_TIME_MAX = 10*60*60; //1 hour
-  SAVEPT_FREQ = 10*60*1; //every 1 min
-  REPLAY_LENGTH = 50; // ticks to find RNG mismatch
-  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
-
   // Maps for simulation (I dont use for loop in this array)
-//  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
-//                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
-//                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
+  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
+                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
+                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
   MAPS_8P: array [1..29] of String = ('A War of Justice','Babylon','Back in the Desert','Center Castle Looting','Cold Water 8P',
                                    'Complication in Simplicity','Crystalline Falls','Cursed Ravine','Dance of Death','Dead of Winter',
                                    'Drastic Measures','Ending the Tyranny','Twin Peaks','Valley of the Equilibrium 8P', 'Frozen Waters',
@@ -1162,22 +1157,34 @@ const
                                   'Lost City Struggle','Cross','Cursed Land','Gunplay','Icewind Valley','Rocky Mountains',
                                   'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
   cnt_MAP_SIMULATIONS = 30;
+
+  SIMUL_TIME_MAX = 10*60*100; //1 hour
+  SAVEPT_FREQ = 10*60*1; //every 1 min
+  REPLAY_LENGTH = 2000; // ticks to find RNG mismatch
+//  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+  LOAD_SAVEPT_AT_TICK = 0; //40800;
+
 var
   K,L,I: Integer;
   desyncCnt: Integer;
   simulLastTick: Integer;
   mapFullName, desyncSaveName: string;
 begin
-  desyncCnt := 0;
-  for K := Low(MAPS) to High(MAPS) do
-  begin
-    fMap := MAPS[K];
+  PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
+//  MAKE_SAVEPT_AT_TICK := 40800;
 
-    for L := 1 to cnt_MAP_SIMULATIONS do
+  desyncCnt := 0;
+//  for K := Low(MAPS) to High(MAPS) do
+  begin
+    fMap := 'A War of Justice'; //MAPS[K];
+
+//    for L := 1 to cnt_MAP_SIMULATIONS do
+    L := 8;
     begin
       Reset;
       fRun := L;
-      CUSTOM_SEED_VALUE := Max(1,L+11);
+      CUSTOM_SEED_VALUE := 269; //Max(1,L+11);
 
       fSaveName := Format('%s_SD_%d_RN%.3d',[fMap, CUSTOM_SEED_VALUE, L]);
 
@@ -1210,7 +1217,10 @@ begin
 
       for I := 0 to SAVEPT_CNT - 1 do
       begin
-        fSavePointTick := (I + 1) * SAVEPT_FREQ;
+        if LOAD_SAVEPT_AT_TICK <> 0 then
+          fSavePointTick := LOAD_SAVEPT_AT_TICK
+        else
+          fSavePointTick := (I + 1) * SAVEPT_FREQ;
         Log('SavePointTick = ' + IntToStr(fSavePointTick));
 //        tick := (Random((simulTicks div SAVEPT_FREQ)) + 1) * SAVEPT_FREQ + 1;
         if gGameApp.TryLoadSavedReplay(fSavePointTick) then
