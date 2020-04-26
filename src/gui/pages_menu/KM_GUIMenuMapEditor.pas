@@ -527,7 +527,9 @@ end;
 procedure TKMMenuMapEditor.LoadClick(Sender: TObject);
 var
   Map: TKMapInfo;
+  MapFolder: TKMapFolder;
 begin
+  MapFolder := TKMapFolder(Radio_MapType.ItemIndex);
   //This is also called by double clicking on a map in the list
   if ((Sender = Button_Load) or (Sender = ColumnBox_MapEd)) and
      Button_Load.Enabled and ColumnBox_MapEd.IsSelected then
@@ -550,13 +552,14 @@ begin
     end;
     //Keep MP/SP selected in the map editor interface
     //(if mission failed to load we would have gGame = nil)
-    if (gGame <> nil) and (gGame.ActiveInterface is TKMapEdInterface) then
-      TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(Radio_MapType.ItemIndex <> 0);
   end;
 
   //Create new map (NumEdits hold actual dimensions)
   if Sender = Button_MapCreate then
     gGameApp.NewMapEditor('', gGameApp.GameSettings.MenuMapEdNewMapX, gGameApp.GameSettings.MenuMapEdNewMapY);
+
+  if (gGame <> nil) and (gGame.ActiveInterface is TKMapEdInterface) then
+    TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(MapFolder);
 end;
 
 procedure TKMMenuMapEditor.MapTypeChange(Sender: TObject);

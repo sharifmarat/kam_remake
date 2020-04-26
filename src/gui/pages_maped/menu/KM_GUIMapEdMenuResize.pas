@@ -2,15 +2,14 @@ unit KM_GUIMapEdMenuResize;
 {$I KaM_Remake.inc}
 interface
 uses
-   Classes, SysUtils, KM_Controls;
-
+   Classes, SysUtils, KM_Controls, KM_Defaults;
 
 type
   TKMMapEdMenuResize = class
   private
     fOnDone: TNotifyEvent;
     fOnPageChange: TNotifyEvent;
-    fIsMultiplayer: Boolean;
+    fMapFolder: TKMapFolder;
 
     procedure ResizeRefresh(Sender: TObject);
     procedure PanelConfirm_Switch(Sender: TObject);
@@ -30,7 +29,7 @@ type
   public
     constructor Create(aParent: TKMPanel; aOnDone, aOnPageChange: TNotifyEvent);
 
-    procedure SetLoadMode(aMultiplayer: Boolean);
+    procedure SetLoadMode(aMapFolder: TKMapFolder);
     function Visible: Boolean;
     procedure Show;
     procedure Hide;
@@ -39,7 +38,7 @@ type
 
 implementation
 uses
-  KromUtils, Math, KM_Defaults, KM_GameApp, KM_Game, KM_Terrain,
+  KromUtils, Math, KM_GameApp, KM_Game, KM_Terrain,
   KM_InterfaceGame, KM_ResFonts, KM_RenderUI, KM_Points, KM_Maps, KM_ResTexts, KM_ResTileset;
 
 
@@ -177,7 +176,7 @@ begin
 
   gGame.TerrainPainter.FixTerrainKindInfoAtBorders(False);
 
-  SaveName := TKMapsCollection.FullPath(gGame.GameName, '.dat', fIsMultiplayer);
+  SaveName := TKMapsCollection.FullPath(gGame.GameName, '.dat', fMapFolder);
   gGame.SaveMapEditor(SaveName, KMRect(NumEdit_Resize_Left.Value,  NumEdit_Resize_Top.Value,
                                        NumEdit_Resize_Right.Value, NumEdit_Resize_Bottom.Value));
   FreeThenNil(gGame);
@@ -252,9 +251,9 @@ begin
 end;
 
 
-procedure TKMMapEdMenuResize.SetLoadMode(aMultiplayer: Boolean);
+procedure TKMMapEdMenuResize.SetLoadMode(aMapFolder: TKMapFolder);
 begin
-  fIsMultiplayer := aMultiplayer;
+  fMapFolder := aMapFolder;
 end;
 
 

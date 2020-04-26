@@ -433,6 +433,7 @@ type
   TKMapFolder = (mfSP, mfMP, mfCM, mfDL);
   TKMapFolderSet = set of TKMapFolder;
 
+  TMapFolderEvent = procedure (aValue: TKMapFolder) of object;
 
 const
   MAPS_FOLDER_NAME = 'Maps';

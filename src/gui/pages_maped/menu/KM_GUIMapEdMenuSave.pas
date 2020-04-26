@@ -2,16 +2,16 @@ unit KM_GUIMapEdMenuSave;
 {$I KaM_Remake.inc}
 interface
 uses
-   Classes, SysUtils,
+   Classes, SysUtils, KM_Defaults,
    KM_Controls, KM_Maps, KM_InterfaceGame, KM_CommonTypes;
 
 
 type
   TKMMapEdMenuSave = class
   private
-    fIsMultiplayer: Boolean;
+    fMapFolder: TKMapFolder;
     fOnDone: TNotifyEvent;
-    fOnMapTypChanged: TBooleanEvent;
+    fOnMapFolderChanged: TMapFolderEvent;
 
     procedure Menu_SaveClick(Sender: TObject);
   protected
@@ -23,10 +23,10 @@ type
   public
     Button_SaveSave: TKMButton;
     Button_SaveCancel: TKMButton;
-    constructor Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aOnMapTypChanged: TBooleanEvent;
+    constructor Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aOnMapFolderChanged: TMapFolderEvent;
                        aLeftPanelInset: Integer = TB_PAD; aTopPanelInset: Integer = 45; aControlsWidth: Integer = TB_MAP_ED_WIDTH-TB_PAD);
 
-    procedure SetLoadMode(aMultiplayer: Boolean);
+    procedure SetLoadMode(aMapFolder: TKMapFolder);
     procedure Show;
     procedure Hide;
   end;
@@ -38,14 +38,13 @@ uses
 
 
 { TKMMapEdMenuSave }
-constructor TKMMapEdMenuSave.Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aOnMapTypChanged: TBooleanEvent;
+constructor TKMMapEdMenuSave.Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aOnMapFolderChanged: TMapFolderEvent;
                                     aLeftPanelInset: Integer = TB_PAD; aTopPanelInset: Integer = 45; aControlsWidth: Integer = TB_MAP_ED_WIDTH - TB_PAD);
 begin
   inherited Create;
 
   fOnDone := aOnDone;
-  fOnMapTypChanged := aOnMapTypChanged;
-  fIsMultiplayer := False;
+  fOnMapFolderChanged := aOnMapFolderChanged;
 
   Panel_Save := TKMPanel.Create(aParent, 0, aTopPanelInset, aControlsWidth + aLeftPanelInset, 230);
   Panel_Save.Anchors := [anLeft, anTop, anBottom];
@@ -96,9 +95,9 @@ begin
 
   if Sender = Button_SaveSave then
   begin
-    fIsMultiplayer := Radio_Save_MapType.ItemIndex = 1;
-    if Assigned(fOnMapTypChanged) then
-      fOnMapTypChanged(fIsMultiplayer);
+    fMapFolder := TKMapFolder(Radio_Save_MapType.ItemIndex);
+    if Assigned(fOnMapFolderChanged) then
+      fOnMapFolderChanged(fMapFolder);
 
     gGame.SaveMapEditor(GetSaveName);
     gGame.MapEditor.WasSaved := True;
@@ -123,20 +122,17 @@ end;
 
 procedure TKMMapEdMenuSave.Show;
 begin
-  SetLoadMode(fIsMultiplayer);
+  SetLoadMode(fMapFolder);
   Edit_SaveName.Text := gGame.GameName;
   Menu_SaveClick(Edit_SaveName);
   Panel_Save.Show;
 end;
 
 
-procedure TKMMapEdMenuSave.SetLoadMode(aMultiplayer: Boolean);
+procedure TKMMapEdMenuSave.SetLoadMode(aMapFolder: TKMapFolder);
 begin
-  fIsMultiplayer := aMultiplayer;
-  if aMultiplayer then
-    Radio_Save_MapType.ItemIndex := 1
-  else
-    Radio_Save_MapType.ItemIndex := 0;
+  fMapFolder := aMapFolder;
+  Radio_Save_MapType.ItemIndex := Integer(aMapFolder);
 end;
 
 

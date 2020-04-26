@@ -3,7 +3,7 @@ unit KM_GUIMapEdMenuLoad;
 interface
 uses
    Classes, SysUtils, Math,
-   KM_Controls, KM_Maps;
+   KM_Controls, KM_Maps, KM_Defaults;
 
 type
   TKMMapEdMenuLoad = class
@@ -30,7 +30,7 @@ type
     constructor Create(aParent: TKMPanel; aOnDone: TNotifyEvent);
     destructor Destroy; override;
 
-    procedure SetLoadMode(aMultiplayer:boolean);
+    procedure SetLoadMode(aMapFolder: TKMapFolder);
     procedure Show;
     procedure Hide;
     procedure UpdateState;
@@ -40,7 +40,7 @@ type
 implementation
 uses
   KM_ResTexts, KM_Game, KM_GameApp, KM_RenderUI, KM_ResFonts, KM_InterfaceGame,
-  KM_InterfaceMapEditor, KM_Defaults, KM_Campaigns;
+  KM_InterfaceMapEditor, KM_Campaigns;
 
 
 { TKMMapEdMenuLoad }
@@ -116,6 +116,7 @@ var
   IsMulti: Boolean;
   Maps: TKMapsCollection;
   Map: TKMapInfo;
+  MapFolder: TKMapFolder;
   Campaign: TKMCampaign;
 begin
   if (Sender = Button_LoadLoad) or (Sender = ListBox_Load) then
@@ -131,14 +132,14 @@ begin
       else Exit;
     end;
 
-    IsMulti := Radio_Load_MapType.ItemIndex <> 0;
+    MapFolder := TKMapFolder(Radio_Load_MapType.ItemIndex);
     Map := Maps[ListBox_Load.ItemTags[ListBox_Load.ItemIndex]];
     gGameApp.NewMapEditor(Map.FullPath('.dat'), 0, 0, Map.CRC, Map.MapAndDatCRC);
 
     //Keep MP/SP selected in the map editor interface
     //(if mission failed to load we would have fGame = nil)
     if (gGame <> nil) and (gGame.ActiveInterface is TKMapEdInterface) then
-      TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(IsMulti);
+      TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(MapFolder);
   end
   else
   if Sender = Button_LoadCancel then
@@ -254,12 +255,9 @@ begin
 end;
 
 
-procedure TKMMapEdMenuLoad.SetLoadMode(aMultiplayer: Boolean);
+procedure TKMMapEdMenuLoad.SetLoadMode(aMapFolder: TKMapFolder);
 begin
-  if aMultiplayer then
-    Radio_Load_MapType.ItemIndex := 1
-  else
-    Radio_Load_MapType.ItemIndex := 0;
+  Radio_Load_MapType.ItemIndex := Integer(aMapFolder);
 end;
 
 

@@ -125,7 +125,7 @@ type
     DoGameHoldState: TKMGameResultMsg; //The type of GameHold we want to occur due to DoGameHold
     SkipReplayEndCheck: Boolean;
     StartedFromMapEditor: Boolean; //True if we start game from map editor ('Try Map')
-    StartedFromMapEdAsMPMap: Boolean;     //True if we start game from map editor ('Try Map') with MP map
+    StartedFromMapEdMapFolder: TKMapFolder;     //True if we start game from map editor ('Try Map') with MP map
 
     constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
     destructor Destroy; override;

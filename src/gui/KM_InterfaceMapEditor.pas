@@ -84,7 +84,7 @@ type
     procedure ShowSubMenu(aIndex: Byte);
     procedure ExecuteSubMenuAction(aIndex: Byte);
     procedure Update_Label_Coordinates;
-    procedure MapTypeChanged(aIsMultiplayer: Boolean);
+    procedure MapTypeChanged(aMapFolder: TKMapFolder);
 
     procedure UnRedo_Click(Sender: TObject);
     procedure History_Click(Sender: TObject);
@@ -135,7 +135,7 @@ type
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseWheel(Shift: TShiftState; WheelSteps, X,Y: Integer; var aHandled: Boolean); override;
     procedure Resize(X,Y: Word); override;
-    procedure SetLoadMode(aMultiplayer: Boolean);
+    procedure SetLoadMode(aMapFolder: TKMapFolder);
 
     procedure DebugControlsUpdated; override;
 	
@@ -1016,9 +1016,9 @@ begin
 end;
 
 
-procedure TKMapEdInterface.MapTypeChanged(aIsMultiplayer: Boolean);
+procedure TKMapEdInterface.MapTypeChanged(aMapFolder: TKMapFolder);
 begin
-  SetLoadMode(aIsMultiplayer);
+  SetLoadMode(aMapFolder);
 end;
 
 
@@ -1444,9 +1444,9 @@ begin
 end;
 
 
-procedure TKMapEdInterface.SetLoadMode(aMultiplayer: Boolean);
+procedure TKMapEdInterface.SetLoadMode(aMapFolder: TKMapFolder);
 begin
-  fGuiMenu.SetLoadMode(aMultiplayer);
+  fGuiMenu.SetLoadMode(aMapFolder);
 end;
 
 
