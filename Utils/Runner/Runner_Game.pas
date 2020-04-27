@@ -957,7 +957,7 @@ procedure TKMRunnerDesyncTest.SetUp();
 begin
   inherited;
 
-  fDesyncsDir := Format('%s..\..\Desync\', [ExtractFilePath(ParamStr(0))]);
+  fDesyncsDir := Format('%sDesync\', [ExeDir]);
   ForceDirectories(fDesyncsDir);
 
   SetLength(fTickCRC, fResults.TimesCount);
@@ -1186,7 +1186,7 @@ const
   begin
     fRunSeed := 1;
 
-    mapFullName := Format('%s..\..\MapsMP\%s\%s.dat',[ExtractFilePath(ParamStr(0)),fMap,fMap]);
+    mapFullName := Format('%sMapsMP\%s\%s.dat',[ExeDir,fMap,fMap]);
     gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
   end;
 
