@@ -4739,6 +4739,8 @@ begin
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
+      Land[I,J].IsCustom := TileBasic.IsCustom;
+      Land[I,J].BlendingLvl := TileBasic.BlendingLvl;
       Land[I,J].TileOverlay := TileBasic.TileOverlay;
       Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
@@ -5107,7 +5109,7 @@ begin
       if aGameRev > 10745 then //Blending option appeared only after r10745
         aStream.Read(aTileBasic.BlendingLvl)
       else
-        aTileBasic.BlendingLvl := 50;
+        aTileBasic.BlendingLvl := TERRAIN_DEF_BLENDING_LVL;
 
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin
