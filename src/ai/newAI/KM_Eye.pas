@@ -1423,7 +1423,7 @@ end;
 
 function TKMBuildFF.GetState(const aY,aX: Word): TKMBuildState;
 begin
-  Result := fInfoArr[aY*fMapX + aX].State;
+  Result := GetStateFromIdx(aY*fMapX + aX);
 end;
 procedure TKMBuildFF.SetState(const aY,aX: Word; const aState: TKMBuildState);
 begin
@@ -1432,16 +1432,25 @@ end;
 
 function TKMBuildFF.GetStateFromIdx(const aIdx: Word): TKMBuildState;
 begin
-  Result := fInfoArr[aIdx].State;
+  Result := bsNoBuild;
+  with fInfoArr[aIdx] do
+    if (Visited = fVisitIdx) then
+      Result := State;
 end;
 
 function TKMBuildFF.GetDistance(const aPoint: TKMPoint): Word;
 begin
-  Result := fInfoArr[aPoint.Y*fMapX + aPoint.X].Distance;
+  Result := 50;
+  with fInfoArr[aPoint.Y*fMapX + aPoint.X] do
+    if (Visited = fVisitIdx) then
+      Result := Distance;
 end;
 function TKMBuildFF.GetDistanceInitPoint(const aPoint: TKMPoint): Word;
 begin
-  Result := fInfoArr[aPoint.Y*fMapX + aPoint.X].DistanceInitPoint;
+  Result := 50;
+  with fInfoArr[aPoint.Y*fMapX + aPoint.X] do
+    if (Visited = fVisitIdx) then
+      Result := DistanceInitPoint;
 end;
 
 function TKMBuildFF.GetNext(const aY,aX: Word): Word;
