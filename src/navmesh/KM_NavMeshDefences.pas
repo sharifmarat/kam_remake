@@ -63,15 +63,21 @@ type
   protected
     fOwner: TKMHandID;
     fFirstLine: Word;
+    fPolygonCnt: Integer;
     fDefInfo: TDefInfoArray;
     fBackwardFF: TBackwardFF;
     fBestDefLines: TKMDefenceLines;
+    {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter: Integer;
+    fDebugDefPolyCnt: Integer;
+    {$ENDIF}
 
     procedure MakeNewQueue(); override;
     function IsVisited(const aIdx: Word): Boolean; override;
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
     function ForwardFF(): Boolean;
+    procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
   public
     constructor Create(aSorted: Boolean = False); reintroduce;
     destructor Destroy(); override;
@@ -92,6 +98,7 @@ type
   protected
     fDefLinesRequired: Boolean;
     fOwner: TKMHandID;
+    fPolygonCnt: Integer;
     fBestEvaluation: Single;
     fStartPolygons: TKMWordArray;
     fDefInfo: TDefInfoArray;
@@ -99,6 +106,8 @@ type
     fDefPosArr: TKMDefencePosArr;
     fFilterFF: TFilterFF;
     {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter: Integer;
+    fDebugDefPolyCnt: Integer;
     fDebugDefLines: TKMDefLinesDebugInfo;
     {$ENDIF}
 
@@ -106,6 +115,7 @@ type
     procedure BackwardFlood(aOwners: TKMHandIDArray);
     procedure EvaluateDefence(const aIdx: Word);
     function FindDefencePos(aBaseCnt: Word): Boolean;
+    procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
   public
     constructor Create(aSorted: Boolean = False); reintroduce;
     destructor Destroy(); override;
@@ -113,11 +123,11 @@ type
     procedure UpdatePointers(var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr);
     procedure NewQueue(aVisitedIdx: Byte);
     procedure AddPolygon(aIdx: Word);
-    function FindDefenceLines(aOwner: TKMHandID): TKMDefenceLines;
-    function FindDefensivePolygons(aOwner: TKMHandID; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
-    procedure FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False);
+    function FindDefenceLines(aOwner: TKMHandID; aPolygonCnt: Integer): TKMDefenceLines;
+    function FindDefensivePolygons(aOwner: TKMHandID; aPolygonCnt: Integer; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
+    procedure FindTeamDefences(var aOwners: TKMHandIDArray; aPolygonCnt: Integer; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False);
 
-    procedure Paint();
+    procedure Paint(var aOwners: TKMHandIDArray; aPolygonCnt: Integer; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
   end;
 
 
@@ -155,9 +165,20 @@ const
   ENEMY_INFLUENCE_PENALIZATION = 10; // Enemy penalization (dont place defences inside of enemy city)
   MAXIMAL_DEFENCE_DISTANCE = 75; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
   MIN_DEFENCE_CNT = 1; // Minimal count of defence polygons before penalization
+
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $7700FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
 implementation
 uses
-  SysUtils, KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_RenderAux;
+  SysUtils, KM_Hand, KM_HandsCollection,
+  {$IFDEF DEBUG_BattleLines}
+  DateUtils,
+  {$ENDIF}
+  KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_RenderAux;
 
 
 
@@ -167,6 +188,10 @@ constructor TForwardFF.Create(aSorted: Boolean = False);
 begin
   inherited Create(aSorted);
   fBackwardFF := TBackwardFF.Create(aSorted);
+  {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter := 0;
+    fDebugDefPolyCnt := 0;
+  {$ENDIF}
 end;
 
 
@@ -180,6 +205,7 @@ end;
 // Prepare new Queue
 procedure TForwardFF.MakeNewQueue();
 begin
+  fPolygonCnt := 0;
   // Check length
   if (Length(fQueueArray) < gAIFields.NavMesh.PolygonsCnt) then
   begin
@@ -191,6 +217,11 @@ begin
   ClearVisitIdx();
   // Init also backward FF
   fBackwardFF.NewQueue(fVisitedIdx+1);
+  {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter := 0;
+    if (fDebugDefPolyCnt = 0) then
+      fDebugDefPolyCnt := gAIFields.NavMesh.PolygonsCnt;
+  {$ENDIF}
 end;
 
 
@@ -201,11 +232,28 @@ end;
 
 
 function TForwardFF.CanBeExpanded(const aIdx: Word): Boolean;
+{$IFDEF DEBUG_NavMeshDefences}
+  var
+    Idx,K: Integer;
+{$ENDIF}
 begin
   // This is border condition for final line of forward flood fill (polygons with 3 nearby polygons can create defensive lines)
   Result := (gAIFields.NavMesh.Polygons[aIdx].NearbyCount <> 3) OR (fDefInfo[aIdx].EnemyInfluence < MAX_ENEMY_INFLUENCE);
   if not Result then
     fBackwardFF.AddPolygon(aIdx);
+  {$IFDEF DEBUG_NavMeshDefences}
+    Inc(fDebugCounter);
+    if OVERLAY_DEFENCES_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugDefPolyCnt) then
+    begin
+      DrawPolygon(aIdx, -1, Min(250,75), COLOR_BLUE, IntToStr(aIdx));
+      Idx := fStartQueue;
+      for K := 0 to fQueueCnt - 1 do
+      begin
+        DrawPolygon(Idx, -1, Min(250,K + 75), COLOR_BLUE, IntToStr(K));
+        Idx := fQueueArray[Idx].Next;
+      end;
+    end;
+  {$ENDIF}
 end;
 
 
@@ -213,6 +261,7 @@ procedure TForwardFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TK
 var
   Distance: Word;
 begin
+  Inc(fPolygonCnt);
   // Get owner influence and distance from influence
   fDefInfo[aIdx].Influence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
   fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, atAlly);
@@ -262,12 +311,13 @@ end;
 function TForwardFF.FindDefenceLines(aOwner: TKMHandID; var aDefLines: TKMDefenceLines): Boolean;
 begin
   fOwner := aOwner;
+  fFirstLine := 0;
 
   gAIFields.Eye.OwnerUpdate(aOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
 
   Result := ForwardFF();
   if Result then
-    aDefLines := fBackwardFF.FindDefenceLines(aOwner);
+    aDefLines := fBackwardFF.FindDefenceLines(aOwner, fPolygonCnt);
 end;
 
 
@@ -281,46 +331,41 @@ begin
 
   Result := ForwardFF();
   if Result then
-    aDefPosArr := fBackwardFF.FindDefensivePolygons(aOwner, fFirstLine, fBestDefLines, False);
+    aDefPosArr := fBackwardFF.FindDefensivePolygons(aOwner, fPolygonCnt, fFirstLine, fBestDefLines, False);
 end;
 
 
 function TForwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False): Boolean;
 begin
   fOwner := aOwners[0];
-  fFirstLine := 0;
 
   gAIFields.Eye.OwnerUpdate(fOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
 
   Result := ForwardFF();
   if Result then
-    fBackwardFF.FindTeamDefences(aOwners, aDefPosReq, aTeamDefPos, aDefLinesRequired);
+    fBackwardFF.FindTeamDefences(aOwners, fPolygonCnt, aDefPosReq, aTeamDefPos, aDefLinesRequired);
+end;
+
+
+procedure TForwardFF.DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
+var
+  P0,P1,P2: TKMPoint;
+begin
+  if (aOpacity = 0) then
+    Exit;
+  with gAIFields.NavMesh do
+  begin
+    P0 := Nodes[ Polygons[aIdx].Indices[0] ];
+    P1 := Nodes[ Polygons[aIdx].Indices[1] ];
+    P2 := Nodes[ Polygons[aIdx].Indices[2] ];
+    gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor OR (aOpacity shl 24));
+    if (Length(aText) > 0) then
+      gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + aOffset, aText, $FFFFFFFF);
+  end;
 end;
 
 
 procedure TForwardFF.Paint();
-  procedure DrawPolygon(aIdx: Integer; const aFillColor: Cardinal);
-  var
-    P0,P1,P2: TKMPoint;
-  begin
-    if (aFillColor < (1 shl 24)) then // Skip transparent polygons
-      Exit;
-    with gAIFields.NavMesh do
-    begin
-      P0 := Nodes[ Polygons[aIdx].Indices[0] ];
-      P1 := Nodes[ Polygons[aIdx].Indices[1] ];
-      P2 := Nodes[ Polygons[aIdx].Indices[2] ];
-      gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor);
-      gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + 1, IntToStr(fDefInfo[aIdx].Distance), $FFFFFFFF);
-    end;
-  end;
-const
-  COLOR_WHITE = $FFFFFF;
-  COLOR_BLACK = $000000;
-  COLOR_GREEN = $00FF00;
-  COLOR_RED = $7700FF;
-  COLOR_YELLOW = $00FFFF;
-  COLOR_BLUE = $FF0000;
 var
   K: Integer;
   PL: TKMHandID;
@@ -347,16 +392,25 @@ begin
   for K := Low(DefPosReq) to High(DefPosReq) do
     DefPosReq[K] := 10;
   // Find defences for debug
-  FindTeamDefences(Owners, DefPosReq, TeamDefPos, True);
-  for K := Low(fDefInfo) to High(fDefInfo) do
-    with fDefInfo[K] do
-    begin
-      if (fDefInfo[K].Influence      > 0) then DrawPolygon(K, (fDefInfo[K].Influence      shl 24) OR COLOR_GREEN );
-      if (fDefInfo[K].AllyInfluence  > 0) then DrawPolygon(K, (fDefInfo[K].AllyInfluence  shl 24) OR COLOR_BLUE  );
-      if (fDefInfo[K].EnemyInfluence > 0) then DrawPolygon(K, (fDefInfo[K].EnemyInfluence shl 24) OR COLOR_RED   );
-    end;
+  fOwner := Owners[0];
+  fFirstLine := 0;
+  gAIFields.Eye.OwnerUpdate(fOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
+  ForwardFF();
+  //{
+  if not OVERLAY_DEFENCES_A then
+    for K := Low(fDefInfo) to High(fDefInfo) do
+      with fDefInfo[K] do
+      begin
+        if (fDefInfo[K].Influence      > 0) then DrawPolygon(K, 0, fDefInfo[K].Influence     , COLOR_GREEN );
+        if (fDefInfo[K].AllyInfluence  > 0) then DrawPolygon(K, 0, fDefInfo[K].AllyInfluence , COLOR_BLUE  );
+        if (fDefInfo[K].EnemyInfluence > 0) then DrawPolygon(K, 0, fDefInfo[K].EnemyInfluence, COLOR_RED   );
+      end;
   //}
-  fBackwardFF.Paint();
+  fBackwardFF.Paint(Owners, fPolygonCnt, DefPosReq, TeamDefPos);
+
+  {$IFDEF DEBUG_NavMeshDefences}
+    fDebugDefPolyCnt := fDebugCounter;
+  {$ENDIF}
 end;
 
 
@@ -367,6 +421,10 @@ constructor TBackwardFF.Create(aSorted: Boolean = False);
 begin
   inherited Create(aSorted);
   fFilterFF := TFilterFF.Create(False);
+  {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter := 0;
+    fDebugDefPolyCnt := 0;
+  {$ENDIF}
 end;
 
 
@@ -457,13 +515,18 @@ procedure TBackwardFF.EvaluateDefence(const aIdx: Word);
       Inc(fBestDefLines.Count);
   end;
 var
-  I, QueueIdx: Integer;
+  K, QueueIdx: Integer;
   Evaluation: Single;
 begin
+  if (fPolygonCnt < 10) then
+    Exit;
+  for K := Low(fStartPolygons) to High(fStartPolygons) do
+    if IsVisited(fStartPolygons[K]) then
+      Exit;
   // Calculate evaluation of actual defensive position
   Evaluation := fQueueCnt * POLYGON_CNT_PENALIZATION;
   QueueIdx := aIdx;
-  for I := 0 to fQueueCnt do // aIdx is already taken from Queue so it must be from 0 to fQueueCnt!
+  for K := 0 to fQueueCnt do // aIdx is already taken from Queue so it must be from 0 to fQueueCnt!
   begin
     Evaluation := + Evaluation
                   //+ fDefInfo[QueueIdx].Distance // Consideration of distance does more damage than benefit
@@ -477,16 +540,13 @@ begin
   // If is evaluation better save polygons
   if (Evaluation < fBestEvaluation) then
   begin
-    for I := Low(fStartPolygons) to High(fStartPolygons) do
-      if IsVisited(fStartPolygons[I]) then
-        Exit;
     fBestEvaluation := Evaluation;
     fBestDefLines.Count := 0; // Set defences count to 0 (it will be incremented later)
     if (fQueueCnt >= Length(fBestDefLines.Lines)) then
       SetLength(fBestDefLines.Lines, fQueueCnt + 32);
     // Copy defensive polygons
     QueueIdx := aIdx;
-    for I := 0 to fQueueCnt do // aIdx is already taken from Queue so it must be from 0 to fQueueCnt!
+    for K := 0 to fQueueCnt do // aIdx is already taken from Queue so it must be from 0 to fQueueCnt!
     begin
       AddDefence(QueueIdx);
       QueueIdx := fQueueArray[QueueIdx].Next;
@@ -509,11 +569,31 @@ end;
 
 
 function TBackwardFF.CanBeExpanded(const aIdx: Word): Boolean;
+{$IFDEF DEBUG_NavMeshDefences}
+var
+  K, Idx: Integer;
+{$ENDIF}
 begin
+  Dec(fPolygonCnt);
+
   Result := (fDefInfo[aIdx].Distance > 0);
 
   if Result AND (fDefInfo[aIdx].Distance < MAXIMAL_DEFENCE_DISTANCE) then
     EvaluateDefence(aIdx);
+
+  {$IFDEF DEBUG_NavMeshDefences}
+    Inc(fDebugCounter);
+    if OVERLAY_DEFENCES_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugDefPolyCnt) then
+    begin
+      DrawPolygon(aIdx, 1, Min(250,75), COLOR_RED, IntToStr(aIdx));
+      Idx := fStartQueue;
+      for K := 0 to fQueueCnt-1 do
+      begin
+        DrawPolygon(Idx, 1, Min(250,K + 75), COLOR_RED, IntToStr(K));
+        Idx := fQueueArray[Idx].Next;
+      end;
+    end;
+  {$ENDIF}
 end;
 
 
@@ -581,6 +661,11 @@ procedure TBackwardFF.BackwardFlood(aOwners: TKMHandIDArray);
 var
   Idx: Word;
 begin
+  {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter := 0;
+    if (fDebugDefPolyCnt = 0) then
+      fDebugDefPolyCnt := gAIFields.NavMesh.PolygonsCnt;
+  {$ENDIF}
   MarkInitPolygons();
   fBestDefLines.Count := 0;
   CreateBorders();
@@ -693,9 +778,10 @@ begin
 end;
 
 
-function TBackwardFF.FindDefenceLines(aOwner: TKMHandID): TKMDefenceLines;
+function TBackwardFF.FindDefenceLines(aOwner: TKMHandID; aPolygonCnt: Integer): TKMDefenceLines;
 begin
   fOwner := aOwner;
+  fPolygonCnt := aPolygonCnt;
   fDefLinesRequired := True;
   BackwardFlood([aOwner]);
   fFilterFF.FilterDefenceLine(fBestDefLines, Result);
@@ -703,13 +789,14 @@ end;
 
 
 // Defense detection for Krom's AI
-function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandID; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
+function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandID; aPolygonCnt: Integer; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
 const
   MIN_DEF_POINTS_CNT = 9;
   MULTIPLICATION = 3;
 begin
   // Initialization
   fOwner := aOwner;
+  fPolygonCnt := aPolygonCnt;
   fDefLinesRequired := aDefLinesRequired;
   // Find best defence line
   BackwardFlood([aOwner]);
@@ -724,7 +811,7 @@ end;
 
 
 // Defense detection for new AI (once per a team)
-procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False);
+procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; aPolygonCnt: Integer; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos; aDefLinesRequired: Boolean = False);
 var
   SeparatedDefLines: TKMDefLinesArray;
   DefLinesReq: TKMWordArray;
@@ -768,6 +855,7 @@ var
   PLsDefAreas: TKMByte2Array;
 begin
   fOwner := aOwners[0];
+  fPolygonCnt := aPolygonCnt;
   fDefLinesRequired := aDefLinesRequired;
   BackwardFlood(aOwners); // Find best defence line
   if (fBestDefLines.Count = 0) then
@@ -797,14 +885,25 @@ begin
 end;
 
 
-procedure TBackwardFF.Paint();
-const
-  COLOR_WHITE = $FFFFFF;
-  COLOR_BLACK = $000000;
-  COLOR_GREEN = $00FF00;
-  COLOR_RED = $7700FF;
-  COLOR_YELLOW = $00FFFF;
-  COLOR_BLUE = $FF0000;
+procedure TBackwardFF.DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
+var
+  P0,P1,P2: TKMPoint;
+begin
+  if (aOpacity = 0) then
+    Exit;
+  with gAIFields.NavMesh do
+  begin
+    P0 := Nodes[ Polygons[aIdx].Indices[0] ];
+    P1 := Nodes[ Polygons[aIdx].Indices[1] ];
+    P2 := Nodes[ Polygons[aIdx].Indices[2] ];
+    gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor OR (aOpacity shl 24));
+    if (Length(aText) > 0) then
+      gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + aOffset, aText, $FFFFFFFF);
+  end;
+end;
+
+
+procedure TBackwardFF.Paint(var aOwners: TKMHandIDArray; aPolygonCnt: Integer; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
 {$IFDEF DEBUG_NavMeshDefences}
 var
   Opacity: Byte;
@@ -814,6 +913,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF DEBUG_NavMeshDefences}
+    FindTeamDefences(aOwners, aPolygonCnt, aDefPosReq, aTeamDefPos);
     MinPrc := +1E10;
     MaxPrc := -1E10;
     for K := 0 to fDebugDefLines.Count - 1 do
@@ -831,6 +931,7 @@ begin
           P2 := gAIFields.NavMesh.Nodes[ DefArr.Lines[L].Nodes[1] ];
           gRenderAux.LineOnTerrain(P1, P2, (Opacity shl 24) OR COLOR_RED);
         end;
+    fDebugDefPolyCnt := fDebugCounter;
   {$ENDIF}
 
   fFilterFF.Paint();
@@ -994,13 +1095,6 @@ end;
 
 
 procedure TFilterFF.Paint();
-const
-  COLOR_WHITE = $FFFFFF;
-  COLOR_BLACK = $000000;
-  COLOR_GREEN = $00FF00;
-  COLOR_RED = $7700FF;
-  COLOR_YELLOW = $00FFFF;
-  COLOR_BLUE = $FF0000;
 {$IFDEF DEBUG_NavMeshDefences}
 const
   RAD = 0.25;
@@ -1009,16 +1103,16 @@ var
 {$ENDIF}
 begin
   {$IFDEF DEBUG_NavMeshDefences}
-  for K := Low(fQueueArray) to High(fQueueArray) do
-    with gAIFields.NavMesh.Polygons[K].CenterPoint do
-      case fQueueArray[K].Visited of
-       1: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_RED, ($09000000) OR COLOR_RED);
-       2: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLACK, ($09000000) OR COLOR_BLACK);
-       3: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_WHITE, ($09000000) OR COLOR_WHITE);
-       4: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_GREEN, ($09000000) OR COLOR_GREEN);
-       5: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLUE, ($09000000) OR COLOR_BLUE);
-       6: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLUE, ($09000000) OR COLOR_YELLOW);
-      end;
+    for K := Low(fQueueArray) to High(fQueueArray) do
+      with gAIFields.NavMesh.Polygons[K].CenterPoint do
+        case fQueueArray[K].Visited of
+         1: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_RED, ($09000000) OR COLOR_RED);
+         2: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLACK, ($09000000) OR COLOR_BLACK);
+         3: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_WHITE, ($09000000) OR COLOR_WHITE);
+         4: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_GREEN, ($09000000) OR COLOR_GREEN);
+         5: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLUE, ($09000000) OR COLOR_BLUE);
+         6: gRenderAux.CircleOnTerrain(X, Y-1, RAD, ($FF000000) OR COLOR_BLUE, ($09000000) OR COLOR_YELLOW);
+        end;
   {$ENDIF}
 end;
 

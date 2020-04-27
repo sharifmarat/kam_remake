@@ -314,16 +314,16 @@ object FormMain: TFormMain
       Collapsed = True
       TabOrder = 3
       object Label5: TLabel
-        Left = 106
-        Top = 123
+        Left = 202
+        Top = 111
         Width = 32
         Height = 13
         Caption = 'Margin'
         Visible = False
       end
       object Label6: TLabel
-        Left = 106
-        Top = 146
+        Left = 202
+        Top = 134
         Width = 47
         Height = 13
         Caption = 'Threshold'
@@ -440,8 +440,8 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object tbOwnMargin: TTrackBar
-        Left = -1
-        Top = 123
+        Left = 103
+        Top = 111
         Width = 101
         Height = 17
         Max = 255
@@ -455,8 +455,8 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
       object tbOwnThresh: TTrackBar
-        Left = -1
-        Top = 146
+        Left = 103
+        Top = 134
         Width = 101
         Height = 17
         Max = 255
@@ -471,11 +471,47 @@ object FormMain: TFormMain
       end
       object chkSupervisor: TCheckBox
         Left = 8
-        Top = 73
+        Top = 88
         Width = 97
         Height = 17
         Caption = 'Supervisor'
         TabOrder = 14
+        OnClick = ControlsUpdate
+      end
+      object chkShowDefencesAnimate: TCheckBox
+        Left = 25
+        Top = 73
+        Width = 56
+        Height = 17
+        Caption = 'Animate'
+        TabOrder = 15
+        OnClick = ControlsUpdate
+      end
+      object chkShowSupervisorAnimate: TCheckBox
+        Left = 25
+        Top = 102
+        Width = 72
+        Height = 17
+        Caption = 'Animate'
+        TabOrder = 16
+        OnClick = ControlsUpdate
+      end
+      object chkShowSupervisorDistances: TCheckBox
+        Left = 25
+        Top = 118
+        Width = 72
+        Height = 17
+        Caption = 'Distances'
+        TabOrder = 17
+        OnClick = ControlsUpdate
+      end
+      object chkShowSupervisorMarks: TCheckBox
+        Left = 25
+        Top = 135
+        Width = 72
+        Height = 17
+        Caption = 'Marks'
+        TabOrder = 18
         OnClick = ControlsUpdate
       end
     end

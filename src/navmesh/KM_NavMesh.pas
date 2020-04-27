@@ -425,21 +425,12 @@ const
 var
   K, L: Integer;
   p1,p2: TKMPoint;
-
-  FFF: TForwardFF;
 begin
   //{ DEFENCE SYSTEM
   // Show this defences only in case that show combat AI is not enabled;
   // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
   if AI_GEN_NAVMESH AND not OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
-  begin
-    FFF := TForwardFF.Create(true);
-    try
-      FFF.Paint();
-    finally
-      FFF.Free;
-    end;
-  end;
+    fDefences.Paint();
   //}
 
   //AfterMissionInit();

@@ -36,12 +36,6 @@ type
     Price: Single;
     Lines: array of TKMBattleLine;
   end;
-  {$IFDEF DEBUG_BattleLines}
-  TKMDebugBattleLines = record
-    Count, LineStartIdx: Word;
-    DBLs: array of TKMBattleLines;
-  end;
-  {$ENDIF}
 
   TDistancePenalization = class;
   TArmyForwardFF = class;
@@ -67,7 +61,12 @@ type
     fDistancePenalization: TDistancePenalization;
     fBackwardFF: TArmyBackwardFF;
     fCntAllyPoly, fCntEnemyPoly: Word;
+    {$IFDEF DEBUG_BattleLines}
+    fDebugCounter: Integer;
+    fDebugDefPolyCnt: Integer;
+    {$ENDIF}
 
+    function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MakeNewQueue(); override;
     function IsVisited(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
@@ -76,8 +75,11 @@ type
 
     procedure AssignDefencePositions();
 
+    function AssignTargets(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
+
     function GetInitPolygonsGroups(aAllianceType: TKMAllianceType; var aAlliance: TKMAllianceInfo): Boolean;
     function GetInitPolygonsHouses(aAllianceType: TKMAllianceType; var aAlliance: TKMAllianceInfo): Boolean;
+    procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
   public
     fInflInfo: TKMInflInfoArray;
     Enemy: TKMAllianceInfo;
@@ -92,7 +94,7 @@ type
     destructor Destroy; override;
 
     function FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
-    procedure Paint();
+    procedure Paint(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray);
   end;
 
 
@@ -105,8 +107,8 @@ type
     fBattleLines: TKMBattleLines;
     fBestBattleLines: TKMBattleLines;
     {$IFDEF DEBUG_BattleLines}
-    fDebugLines: TKMDebugBattleLines;
-    procedure SaveDebugLine();
+    fDebugCounter: Integer;
+    fDebugDefPolyCnt: Integer;
     {$ENDIF}
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
@@ -117,14 +119,22 @@ type
     procedure EvaluateLine(const aIdx: Word);
     procedure ExpandPolygon(aIdx: Word; aLineIdx1: Integer = -1; aPolyIdx1: Integer = -1);
     procedure ComputeWeightedDistance(const aIdx: Word);
+    procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
   public
     constructor Create(aSorted: Boolean = False); override;
 
     function FindTeamBattleLine(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
-
-    procedure Paint();
+    function Paint(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
   end;
 
+
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $7700FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
 
 
 implementation
@@ -204,6 +214,35 @@ begin
   ClearVisitIdx();
   // Distance will be changed so clear array
   FillChar(fInflInfo[0], SizeOf(fInflInfo[0]) * Length(fInflInfo), #0);
+  {$IFDEF DEBUG_NavMeshDefences}
+    fDebugCounter := 0;
+    if (fDebugDefPolyCnt = 0) then
+      fDebugDefPolyCnt := gAIFields.NavMesh.PolygonsCnt;
+  {$ENDIF}
+end;
+
+
+function TArmyForwardFF.CanBeExpanded(const aIdx: Word): Boolean;
+{$IFDEF DEBUG_NavMeshDefences}
+  var
+    K, Idx: Integer;
+{$ENDIF}
+begin
+  Result := inherited CanBeExpanded(aIdx);
+
+  {$IFDEF DEBUG_NavMeshDefences}
+    Inc(fDebugCounter);
+    if OVERLAY_AI_SUPERVISOR_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugDefPolyCnt) then
+    begin
+      DrawPolygon(aIdx, -1, Min(250,75), COLOR_BLUE, IntToStr(aIdx));
+      Idx := fStartQueue;
+      for K := 0 to fQueueCnt - 1 do
+      begin
+        DrawPolygon(Idx, -1, Min(250,K + 75), COLOR_BLUE, IntToStr(K));
+        Idx := fQueueArray[Idx].Next;
+      end;
+    end;
+  {$ENDIF}
 end;
 
 
@@ -357,7 +396,7 @@ begin
 end;
 
 
-function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
+function TArmyForwardFF.AssignTargets(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
 var
   K,L: Integer;
 begin
@@ -398,6 +437,16 @@ begin
           TargetEnemy.HousesPoly[TargetEnemy.HousesCount] := Enemy.HousesPoly[K];
           Inc(TargetEnemy.HousesCount);
         end;
+    Result := True;
+  end;
+end;
+
+
+function TArmyForwardFF.FindArmyPosition(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray): Boolean;
+begin
+  Result := False;
+  if AssignTargets(aOwners, aTargetGroups, aTargetHouses) then
+  begin
     BattleLines := fBackwardFF.FindTeamBattleLine(TargetEnemy, aOwners, fInflInfo, fQueueArray);
     Result := BattleLines.Count > 0;
     if Result then
@@ -594,44 +643,46 @@ begin
 end;
 
 
-procedure TArmyForwardFF.Paint();
-  procedure DrawPolygon(aIdx: Integer; const Opacity: Byte; aFillColor: Cardinal; const aText: String = '');
-  var
-    P0,P1,P2: TKMPoint;
+procedure TArmyForwardFF.DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
+var
+  P0,P1,P2: TKMPoint;
+begin
+  if (aOpacity = 0) then
+    Exit;
+  with gAIFields.NavMesh do
   begin
-    if (Opacity = 0) then
-      Exit;
-    aFillColor := aFillColor OR (Opacity shl 24);
-    with gAIFields.NavMesh do
-    begin
-      P0 := Nodes[ Polygons[aIdx].Indices[0] ];
-      P1 := Nodes[ Polygons[aIdx].Indices[1] ];
-      P2 := Nodes[ Polygons[aIdx].Indices[2] ];
-      gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor);
-      if (Length(aText) > 0) then
-        gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y, aText, $FFFFFFFF);
-    end;
+    P0 := Nodes[ Polygons[aIdx].Indices[0] ];
+    P1 := Nodes[ Polygons[aIdx].Indices[1] ];
+    P2 := Nodes[ Polygons[aIdx].Indices[2] ];
+    gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor OR (aOpacity shl 24));
+    if (Length(aText) > 0) then
+      gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + aOffset, aText, $FFFFFFFF);
   end;
-const
-  COLOR_WHITE = $FFFFFF;
-  COLOR_BLACK = $000000;
-  COLOR_GREEN = $00FF00;
-  COLOR_RED = $7700FF;
-  COLOR_YELLOW = $00FFFF;
-  COLOR_BLUE = $FF0000;
+end;
+
+
+procedure TArmyForwardFF.Paint(var aOwners: TKMHandIDArray; var aTargetGroups: TKMUnitGroupArray; var aTargetHouses: TKMHouseArray);
+{$IFDEF DEBUG_BattleLines}
 var
   K: Integer;
-  //PL: TKMHandID;
+{$ENDIF}
 begin
+  {$IFDEF DEBUG_BattleLines}
   //PL := gMySpectator.HandID;
-
-  fBackwardFF.Paint();
-  for K := 0 to fCntEnemyPoly - 1 do
-    DrawPolygon(Enemy.GroupsPoly[K], 20, COLOR_RED);
-
-  for K := 0 to Length(TargetPositions) - 1 do
-    with TargetPositions[K].Loc do
-      gRenderAux.Quad(X, Y, ($77 shl 24) OR COLOR_WHITE);
+    fDebugCounter := 0;
+    if AssignTargets(aOwners, aTargetGroups, aTargetHouses) then
+    begin
+      BattleLines := fBackwardFF.Paint(TargetEnemy, aOwners, fInflInfo, fQueueArray);
+      for K := 0 to fCntEnemyPoly - 1 do
+        DrawPolygon(Enemy.GroupsPoly[K], 0, 20, COLOR_RED);
+      for K := 0 to Length(TargetPositions) - 1 do
+        with TargetPositions[K].Loc do
+          gRenderAux.Quad(X, Y, ($77 shl 24) OR COLOR_RED);
+      if (BattleLines.Count > 0) then
+        AssignDefencePositions();
+    end;
+    fDebugDefPolyCnt := fDebugCounter;
+  {$ENDIF}
 end;
 
 
@@ -644,14 +695,36 @@ end;
 constructor TArmyBackwardFF.Create(aSorted: Boolean = False);
 begin
   inherited Create(aSorted);
+  {$IFDEF DEBUG_BattleLines}
+    fDebugCounter := 0;
+    fDebugDefPolyCnt := 0;
+  {$ENDIF}
 end;
 
 
 function TArmyBackwardFF.CanBeExpanded(const aIdx: Word): Boolean;
+{$IFDEF DEBUG_NavMeshDefences}
+  var
+    K, Idx: Integer;
+{$ENDIF}
 begin
   Result := True;
 
   EvaluateLine(aIdx);
+
+  {$IFDEF DEBUG_NavMeshDefences}
+    Inc(fDebugCounter);
+    if OVERLAY_AI_SUPERVISOR_A AND (fDebugCounter = Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.005) mod fDebugDefPolyCnt) then
+    begin
+      DrawPolygon(aIdx, -1, Min(250,75), COLOR_RED, IntToStr(aIdx));
+      Idx := fStartQueue;
+      for K := 0 to fQueueCnt - 1 do
+      begin
+        DrawPolygon(Idx, -1, Min(250,K + 75), COLOR_RED, IntToStr(K));
+        Idx := fQueueArray[Idx].Next;
+      end;
+    end;
+  {$ENDIF}
 end;
 
 
@@ -703,7 +776,9 @@ var
   K, Idx: Integer;
 begin
   {$IFDEF DEBUG_BattleLines}
-    fDebugLines.Count := 0;
+    fDebugCounter := 0;
+    if (fDebugDefPolyCnt = 0) then
+      fDebugDefPolyCnt := gAIFields.NavMesh.PolygonsCnt;
   {$ENDIF}
   fQueueCnt := 0;
   fExpandedPolygonsCnt := 0;
@@ -869,9 +944,6 @@ begin
         if (Idx = fEndQueue)   then fEndQueue := OldIdx;
         Dec(fQueueCnt);
         ExpandPolygon(Idx);
-        {$IFDEF DEBUG_BattleLines}
-        //SaveDebugLine();
-        {$ENDIF}
         InEnemyInfluence := True;
         break;
       end;
@@ -879,9 +951,6 @@ begin
       Idx := fQueueArray[Idx].Next;
     until (OldIdx <> fEndQueue) OR (Overflow2 < 1000) OR (fQueueCnt <= 0);
   end;
-  {$IFDEF DEBUG_BattleLines}
-  fDebugLines.LineStartIdx := fDebugLines.Count;
-  {$ENDIF}
 
   // Start searching for defense line
   Idx := fStartQueue;
@@ -889,9 +958,6 @@ begin
   begin
     if CanBeExpanded(Idx) then
       ExpandPolygon(Idx);
-    {$IFDEF DEBUG_BattleLines}
-    //SaveDebugLine();
-    {$ENDIF}
   end;
 end;
 
@@ -945,36 +1011,6 @@ begin
 end;
 
 
-{$IFDEF DEBUG_BattleLines}
-procedure TArmyBackwardFF.SaveDebugLine();
-var
-  K,L: Integer;
-begin
-  if (fBattleLines.Count <= 0) OR (Length(fBattleLines.Lines) <= 0) then
-    Exit;
-  if (fDebugLines.Count <= Length(fDebugLines.DBLs)) then
-    SetLength(fDebugLines.DBLs, Length(fDebugLines.DBLs) + 64);
-  L := fDebugLines.Count;
-  Inc(fDebugLines.Count);
-
-  fDebugLines.DBLs[L].Count := fBattleLines.Count;
-  fDebugLines.DBLs[L].Price := 0;
-  if (Length(fDebugLines.DBLs[L].Lines) <= fBattleLines.Count) then
-    SetLength(fDebugLines.DBLs[L].Lines, fBattleLines.Count + 16);
-  for K := 0 to fBattleLines.Count - 1 do
-    if (fBattleLines.Lines[K].PolygonsCount > 0) then
-    begin
-      fDebugLines.DBLs[L].Lines[K].GroupsCount   := fBattleLines.Lines[K].GroupsCount;
-      fDebugLines.DBLs[L].Lines[K].PolygonsCount := fBattleLines.Lines[K].PolygonsCount;
-      SetLength(fDebugLines.DBLs[L].Lines[K].Groups,   fBattleLines.Lines[K].GroupsCount);
-      SetLength(fDebugLines.DBLs[L].Lines[K].Polygons, fBattleLines.Lines[K].PolygonsCount);
-      if (fBattleLines.Lines[K].GroupsCount   > 0) then Move(fBattleLines.Lines[K].Groups[0],   fDebugLines.DBLs[L].Lines[K].Groups[0],   SizeOf(fBattleLines.Lines[K].Groups[0])   * fBattleLines.Lines[K].GroupsCount);
-      if (fBattleLines.Lines[K].PolygonsCount > 0) then Move(fBattleLines.Lines[K].Polygons[0], fDebugLines.DBLs[L].Lines[K].Polygons[0], SizeOf(fBattleLines.Lines[K].Polygons[0]) * fBattleLines.Lines[K].PolygonsCount);
-    end;
-end;
-{$ENDIF}
-
-
 function TArmyBackwardFF.FindTeamBattleLine(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
 begin
   fOwner := aOwners[0];
@@ -988,48 +1024,58 @@ begin
 end;
 
 
-procedure TArmyBackwardFF.Paint();
-  procedure DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; const aText: String = '');
-  var
-    P0,P1,P2: TKMPoint;
-  begin
-    if (aOpacity = 0) then
-      Exit;
-    with gAIFields.NavMesh do
-    begin
-      P0 := Nodes[ Polygons[aIdx].Indices[0] ];
-      P1 := Nodes[ Polygons[aIdx].Indices[1] ];
-      P2 := Nodes[ Polygons[aIdx].Indices[2] ];
-      gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor OR (aOpacity shl 24));
-      if (Length(aText) > 0) then
-        gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + aOffset, aText, $FFFFFFFF);
-    end;
-  end;
-const
-  COLOR_WHITE = $FFFFFF;
-  COLOR_BLACK = $000000;
-  COLOR_GREEN = $00FF00;
-  COLOR_RED = $7700FF;
-  COLOR_YELLOW = $00FFFF;
-  COLOR_BLUE = $FF0000;
-  COLOR_MIX: array [0..5] of Cardinal = (COLOR_BLUE, COLOR_YELLOW, COLOR_GREEN, COLOR_WHITE, COLOR_BLACK, COLOR_RED);
-{$IFDEF DEBUG_BattleLines}
+procedure TArmyBackwardFF.DrawPolygon(aIdx: Integer; aOffset: Single; aOpacity: Byte; aFillColor: Cardinal; aText: String = '');
 var
-  K,L,Idx: Integer;
-  Color, TickIdx: Cardinal;
+  P0,P1,P2: TKMPoint;
+begin
+  if (aOpacity = 0) then
+    Exit;
+  with gAIFields.NavMesh do
+  begin
+    P0 := Nodes[ Polygons[aIdx].Indices[0] ];
+    P1 := Nodes[ Polygons[aIdx].Indices[1] ];
+    P2 := Nodes[ Polygons[aIdx].Indices[2] ];
+    gRenderAux.TriangleOnTerrain(P0.X,P0.Y, P1.X,P1.Y, P2.X,P2.Y, aFillColor OR (aOpacity shl 24));
+    if (Length(aText) > 0) then
+      gRenderAux.Text(Polygons[aIdx].CenterPoint.X, Polygons[aIdx].CenterPoint.Y + aOffset, aText, $FFFFFFFF);
+  end;
+end;
+
+
+function TArmyBackwardFF.Paint(var aEnemy: TKMAllianceInfo; var aOwners: TKMHandIDArray; var aDefInfo: TKMInflInfoArray; var aQueueArray: TPolygonsQueueArr): TKMBattleLines;
+{$IFDEF DEBUG_BattleLines}
+const
+  COLOR_MIX: array [0..5] of Cardinal = (COLOR_BLUE, COLOR_YELLOW, COLOR_GREEN, COLOR_WHITE, COLOR_BLACK, COLOR_RED);
+var
+  K,L,MaxValue: Integer;
 {$ENDIF}
 begin
   {$IFDEF DEBUG_BattleLines}
+    fDebugCounter := 0;
+    Result := FindTeamBattleLine(aEnemy, aOwners, aDefInfo, aQueueArray);
 
-  { DISTANCE
-  for K := 0 to Length(fQueueArray) - 1 do
-    if (gAIFields.NavMesh.Polygons[K].NearbyCount = 3) then
-      DrawPolygon(K, 0, 1+100*Byte(fQueueArray[K].Distance = High(Word)), COLOR_BLUE, IntToStr(High(Word) - fQueueArray[K].Distance));
+  //{ DISTANCE
+  if OVERLAY_AI_SUPERVISOR_D AND (Result.Count > 0) then
+  begin
+    MaxValue := 1;
+    for K := 0 to Length(fQueueArray) - 1 do
+      MaxValue := Max(MaxValue, fInflInfo[K].Distance);
+    for K := 0 to Length(fQueueArray) - 1 do
+      DrawPolygon(K, 0, Round(fInflInfo[K].Distance / MaxValue * 220 + 35), COLOR_BLUE, IntToStr(fInflInfo[K].Distance));
+  end;
   //}
 
-  { MARK
-  for K := 0 to Length(fQueueArray) - 1 do
-    DrawPolygon(K, 0, 1, COLOR_WHITE, IntToStr(High(Word) - fInflInfo[K].Mark));
+  //{ MARK
+  if OVERLAY_AI_SUPERVISOR_M AND (Result.Count > 0) then
+  begin
+    MaxValue := 1;
+    for K := 0 to Length(fQueueArray) - 1 do
+      if (fInflInfo[K].Mark > 40000) then
+        MaxValue := Max(MaxValue, High(Word) - fInflInfo[K].Mark);
+    for K := 0 to Length(fQueueArray) - 1 do
+      if (fInflInfo[K].Mark > 40000) then
+        DrawPolygon(K, 0, Round((High(Word) - fInflInfo[K].Mark) / MaxValue * 220) + 35, COLOR_WHITE, IntToStr(High(Word) - fInflInfo[K].Mark));
+  end;
   //}
 
   //{ BEST BATTLE LINE: MARK
@@ -1041,24 +1087,7 @@ begin
         //DrawPolygon(Polygons[L], -1, 25, COLOR_MIX[K mod Length(COLOR_MIX)], IntToStr(High(Word) - fQueueArray[ Polygons[L] ].Distance));
       end;
   //}
-
-  { DEBUG LINE
-  if fDebugLines.Count > 0 then
-  begin
-    TickIdx := Round(DateUtils.MilliSecondsBetween(Now, 0) * 0.01) mod fDebugLines.Count;
-    Color := COLOR_WHITE;
-    if (fDebugLines.LineStartIdx >= TickIdx) then
-      Color := COLOR_RED;
-    with fDebugLines.DBLs[TickIdx] do
-      for K := 0 to Count - 1 do
-        for L := 0 to Lines[K].PolygonsCount - 1 do
-        begin
-          Idx := Lines[K].Polygons[L];
-          DrawPolygon(Idx, 0, 50, Color, IntToStr(fQueueArray[Idx].Distance));
-        end;
-  end;
-  //}
-
+    fDebugDefPolyCnt := fDebugCounter;
   {$ENDIF}
 end;
 

@@ -45,9 +45,6 @@ type
       Groups: TKMUnitGroupArray;
       Threat: TThreatArray;
     end;
-
-    //fCombatStatusDebug: TCombatStatusDebug;
-    //fArmyAttackDebug: TArmyAttackDebug;
   {$ENDIF}
 
 // Supervisor <-> agent relation ... cooperating AI players are just an illusion, agents does not see each other
@@ -376,11 +373,9 @@ begin
       with fCombatStatusDebug do
       begin
         SetLength(TargetGroups[Owner], CntE);
-        if (CntE > 0) then
-          Move(E[0], TargetGroups[Owner,0], CntE * SizeOf(E[0]));
         SetLength(TargetHouses[Owner], CntH);
-        if (CntH > 0) then
-          Move(H[0], TargetHouses[Owner,0], CntH * SizeOf(H[0]));
+        if (CntE > 0) then Move(E[0], TargetGroups[Owner,0], CntE * SizeOf(E[0]));
+        if (CntH > 0) then Move(H[0], TargetHouses[Owner,0], CntH * SizeOf(H[0]));
       end;
     end;
   {$ENDIF}
@@ -446,16 +441,19 @@ begin
     begin
       TargetH := A[IdxA].OrderTargetHouse;
       if (TargetH <> nil) AND (A[IdxA].GroupType <> gtRanged) AND (KMDistanceSqr(A[IdxA].Position,TargetH.Entrance) < sqr_MAX_DISTANCE_FROM_HOUSE) then
+      begin
+        // Consider units if house is in the combat line
         for IdxE := 0 to Length(H) - 1 do
           if (H[IdxE] = TargetH) then
           begin
             Inc(AttackingHouseCnt[IdxE],A[IdxA].Count);
-            Dec(CntA);
-            G := A[IdxA];
-            A[IdxA] := A[CntA];
-            A[CntA] := G;
             break;
           end;
+        Dec(CntA);
+        G := A[IdxA];
+        A[IdxA] := A[CntA];
+        A[CntA] := G;
+      end;
     end;
   end;
 
@@ -477,7 +475,6 @@ begin
           A[CntA] := G;
         end;
       end;
-
 
     // Compute distances (it is used for threat so compute it for all groups)
     SetLength(Dist, Length(A)*Length(E));
@@ -1196,10 +1193,7 @@ begin
         AND AI.Setup.NewAI
         AND (not aAttack OR AI.Setup.AutoAttack)
         AND (not aDefence OR AI.Setup.AutoDefend) then
-      begin
-        Result := True;
-        Exit;
-      end;
+        Exit(True);
 end;
 
 
@@ -1273,12 +1267,13 @@ const
 {$ENDIF}
 begin
   //EvaluateArmies();
-  fArmyPos.Paint();
 
   {$IFDEF DEBUG_BattleLines}
     Owner := gMySpectator.HandID;
     if (Owner = PLAYER_NONE) then
       Exit;
+
+    fArmyPos.Paint(fAlli2PL[ fPL2Alli[Owner] ], fCombatStatusDebug.TargetGroups[Owner], fCombatStatusDebug.TargetHouses[Owner]);
 
     MaxThreat := -1E10;
     MinThreat := +1E10;
@@ -1308,21 +1303,6 @@ begin
                     with fCombatStatusDebug.TargetGroups[Owner,K].Position do
                       gRenderAux.CircleOnTerrain(X, Y, 1, $10FFFFFF, $FFFFFFFF);
                 end;
-                {
-    TCombatStatusDebug = record
-      TargetGroups: array[0..MAX_HANDS-1] of TKMUnitGroupArray;
-      TargetHouses: array[0..MAX_HANDS-1] of TKMHouseArray;
-    end;
-    TArmyAttackDebug = record
-      Threat: TThreatArray;
-        TThreatArray = array of record
-    DistRanged, Distance, Risk, WeightedCount: Single;
-  end;
-    end;
-    }
-
-    //fCombatStatusDebug: TCombatStatusDebug;
-    //fArmyAttackDebug: TArmyAttackDebug;
 
     if (gMySpectator.Selected is TKMUnitGroup) then
     begin
