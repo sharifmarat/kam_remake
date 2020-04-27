@@ -57,14 +57,15 @@ begin
       if (fQueue[fCursor].Rand <> MyRand)
         and not gGame.IgnoreConsistencyCheckErrors then
       begin
+        if Assigned(fOnReplayDesync) then // Call before ReplayInconsistancy, fOnReplayDesync could be free after it!
+          fOnReplayDesync(fCursor);
         if CRASH_ON_REPLAY then
         begin
           Inc(fCursor); //Must be done before exiting in case user decides to continue the replay
           gGame.ReplayInconsistancy(fQueue[fCursor-1], MyRand);
+          Exit; //ReplayInconsistancy sometimes calls GIP.Free, so exit immidiately
         end;
-        if Assigned(fOnReplayDesync) then
-          fOnReplayDesync(fCursor);
-        Exit; //ReplayInconsistancy sometimes calls GIP.Free, so exit immidiately
+        Exit;
       end;
       Inc(fCursor);
     end;
