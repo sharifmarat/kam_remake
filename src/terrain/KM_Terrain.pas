@@ -307,7 +307,7 @@ type
     function TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
     function TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
 
-    function VerticeTerKinds(const aLoc: TKMPoint): TKMTerrainKindsArray;
+    procedure GetVerticeTerKinds(const aLoc: TKMPoint; out aVerticeTerKinds: TKMTerrainKindCorners);
 
     function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
     function TileHasRoad(X,Y: Integer): Boolean; overload;
@@ -1616,25 +1616,24 @@ end;
 function TKMTerrain.VerticeIsFactorable(const Loc: TKMPoint): Boolean;
 const
   //Non factorable terkinds
-  NON_FACT_TER_KINDS: array [0..6] of TKMTerrainKind = (tkIron, tkIronMount, tkGold, tkGoldMount, tkLava, tkAbyss, tkCustom);
+  NON_FACT_TER_KINDS: set of TKMTerrainKind = [tkIron, tkIronMount, tkGold, tkGoldMount, tkLava, tkAbyss, tkCustom];
 
 var
-  I, K: Integer;
-  verticeTKinds: TKMTerrainKindsArray;
+  I: Integer;
+  verticeTKinds: TKMTerrainKindCorners;
 begin
-  if   not TileInMapCoords(Loc.X,     Loc.Y) 
+  if   not TileInMapCoords(Loc.X,     Loc.Y)
     or not TileInMapCoords(Loc.X - 1, Loc.Y)
     or not TileInMapCoords(Loc.X,     Loc.Y - 1)
     or not TileInMapCoords(Loc.X - 1, Loc.Y - 1) then Exit(False);
 
   Result := True;
-  
-  verticeTKinds := VerticeTerKinds(Loc);
+
+  GetVerticeTerKinds(Loc, verticeTKinds);
 
   for I := 0 to 3 do
-    for K := Low(NON_FACT_TER_KINDS) to High(NON_FACT_TER_KINDS) do
-      if verticeTKinds[I] = NON_FACT_TER_KINDS[K] then
-        Exit(False);
+    if verticeTKinds[I] in NON_FACT_TER_KINDS then
+      Exit(False);
 end;
 
 
@@ -1724,14 +1723,12 @@ end;
 
 
 //Get vertice terrain kinds
-function TKMTerrain.VerticeTerKinds(const aLoc: TKMPoint): TKMTerrainKindsArray;
+procedure TKMTerrain.GetVerticeTerKinds(const aLoc: TKMPoint; out aVerticeTerKinds: TKMTerrainKindCorners);
 begin
-  SetLength(Result, 4);
-
-  Result[0] := TileCornerTerKind(aLoc.X - 1, aLoc.Y - 1, 2); //  0 | 1 
-  Result[1] := TileCornerTerKind(aLoc.X    , aLoc.Y - 1, 3); //  __|__
-  Result[2] := TileCornerTerKind(aLoc.X    , aLoc.Y    , 0); //    |
-  Result[3] := TileCornerTerKind(aLoc.X - 1, aLoc.Y    , 1); //  3 | 2
+  aVerticeTerKinds[0] := TileCornerTerKind(aLoc.X - 1, aLoc.Y - 1, 2); //  0 | 1
+  aVerticeTerKinds[1] := TileCornerTerKind(aLoc.X    , aLoc.Y - 1, 3); //  __|__
+  aVerticeTerKinds[2] := TileCornerTerKind(aLoc.X    , aLoc.Y    , 0); //    |
+  aVerticeTerKinds[3] := TileCornerTerKind(aLoc.X - 1, aLoc.Y    , 1); //  3 | 2
 end;
 
 

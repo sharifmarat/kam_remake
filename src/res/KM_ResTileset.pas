@@ -84,6 +84,8 @@ type
 
   TKMTerrainKindsArray = array of TKMTerrainKind;
 
+  TKMTerrainKindCorners = array[0..3] of TKMTerrainKind;
+
 const
   TER_KIND_ORDER: array[tkCustom..tkLava] of Integer =
     (0,1,2,3,4,5,6,7,8,9,10,11,
