@@ -970,7 +970,7 @@ begin
     gLog := TKMLog.Create(Format('%sUtils\Runner\Runner_Log.log',[ExeDir]));
   gLog.MessageTypes := [];
 
-//  gLog.SetDefaultMessageTypes;
+  gLog.SetDefaultMessageTypes;
 
 //  Include(gLog.MessageTypes, lmtRandomChecks);
 //  Include(gLog.MessageTypes, lmtCommands);
@@ -1171,6 +1171,14 @@ const
                                   'River Crossing','Shoulder to Shoulder','The Pirates','Unknown Danger','Battle in the Ruined City',
                                   'Lost City Struggle','Cross','Cursed Land','Gunplay','Icewind Valley','Rocky Mountains',
                                   'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
+
+  COOP_MAPS: array[1..45] of string = ('A Clash of Kings', 'A Farmers Wish Coop', 'A Southern Journey', 'A Way East', 'Bridgecal Dundee',
+                                  'Coalical Dundee', 'Dead Border','Hillycal Dundee','Lakeland','No Escape','Northern Islands I',
+                                  'Return to Moorbach','Siege of Castle Fennford','The Cracker','The Dig','TPR 03','TPR 04','TPR 05',
+                                  'TPR 06','TPR 07','TPR 08','TPR 09','TPR 10','TPR 11','TPR 12','TPR 13','TPR 14','Tropical Dundee',
+                                  'TSK 03','TSK 06','TSK 07','TSK 08','TSK 09','TSK 10','TSK 11','TSK 12','TSK 13','TSK 14','TSK 15','TSK 16',
+                                  'TSK 17','TSK 18','TSK 19','TSK 20','Waterfall Dundee');
+
   cnt_MAP_SIMULATIONS = 10;
 
   SIMUL_TIME_MAX = 10*60*180; //1 hour
@@ -1194,10 +1202,10 @@ const
 
 var
   K,L,I,M: Integer;
-  desyncCnt: Integer;
+  desyncCnt, mapsCnt: Integer;
   totalTime: Cardinal;
-  simulLastTick, mapsCnt, totalRuns, totalLoads: Integer;
-  {mapFullName, }desyncSaveName: string;
+  simulLastTick, totalRuns, totalLoads: Integer;
+  desyncSaveName: string;
 begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
 //  MAKE_SAVEPT_AT_TICK := 40800;
@@ -1207,13 +1215,27 @@ begin
   totalRuns := 0;
   totalLoads := 0;
   fStartTime := TimeGet;
-  mapsCnt := Length(MAPS_8P);
+
+  case MapsType of
+    rmtClassic: mapsCnt := Length(MAPS);
+    rmtMP8:     mapsCnt := Length(MAPS_8P);
+    rmtFight:   mapsCnt := Length(FIGHT_MAPS);
+    rmtCoop:    mapsCnt := Length(COOP_MAPS);
+  end;
+
 //  for K := Low(MAPS) to High(MAPS) do
 //  for K := 5 to High(MAPS) do
-  while M < Length(MAPS_8P) do
+  while M < mapsCnt do
   begin
-    K := Random(Length(MAPS_8P)) + 1;
-    fMap := MAPS_8P[K];
+    K := Random(mapsCnt) + 1;
+//    fMap := COOP_MAPS[K];
+    case MapsType of
+      rmtClassic: fMap := MAPS[K];
+      rmtMP8:     fMap := MAPS_8P[K];
+      rmtFight:   fMap := FIGHT_MAPS[K];
+      rmtCoop:    fMap := COOP_MAPS[K];
+    end;
+
     Inc(M);
 
     for L := 1 to cnt_MAP_SIMULATIONS do
@@ -1268,6 +1290,7 @@ begin
         begin
           Inc(totalLoads);
           OnProgress_Left(Format('Load: %d', [fSavePointTick]));
+          OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
           Log('SavePointTick = ' + IntToStr(fSavePointTick));
 
           fRunKind := drkReplay;

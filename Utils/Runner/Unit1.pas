@@ -43,6 +43,7 @@ type
     rgAIType: TRadioGroup;
     btnStop: TButton;
     btnPause: TButton;
+    rgMaps: TRadioGroup;
     procedure FormCreate(Sender: TObject);
     procedure btnRunClick(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -231,6 +232,8 @@ begin
         Runner.AIType := aitClassic
       else
         Runner.AIType := aitAdvanced;
+
+      Runner.MapsType := TKMRunnerMapsType(rgMaps.ItemIndex);
 
       fResults := Runner.Run(Count);
       fRunTime := 'Done in ' + IntToStr(GetTickCount - T) + ' ms';

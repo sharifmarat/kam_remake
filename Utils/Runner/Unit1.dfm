@@ -73,7 +73,7 @@ object Form2: TForm2
   end
   object Label9: TLabel
     Left = 8
-    Top = 236
+    Top = 215
     Width = 18
     Height = 13
     Caption = '      '
@@ -102,8 +102,8 @@ object Form2: TForm2
   end
   object btnRun: TButton
     Left = 8
-    Top = 364
-    Width = 184
+    Top = 412
+    Width = 89
     Height = 38
     Caption = 'Run'
     Enabled = False
@@ -131,9 +131,9 @@ object Form2: TForm2
   end
   object Memo2: TMemo
     Left = 8
-    Top = 492
+    Top = 496
     Width = 185
-    Height = 137
+    Height = 133
     BorderStyle = bsNone
     Color = clBtnFace
     Lines.Strings = (
@@ -297,7 +297,7 @@ object Form2: TForm2
   end
   object btnStop: TButton
     Left = 103
-    Top = 408
+    Top = 412
     Width = 89
     Height = 38
     Caption = 'Stop'
@@ -306,13 +306,28 @@ object Form2: TForm2
     OnClick = btnStopClick
   end
   object btnPause: TButton
-    Left = 8
-    Top = 408
+    Left = 104
+    Top = 456
     Width = 89
-    Height = 38
+    Height = 21
     Caption = 'Pause'
     Enabled = False
     TabOrder = 10
+    Visible = False
     OnClick = btnPauseClick
+  end
+  object rgMaps: TRadioGroup
+    Left = 1
+    Top = 305
+    Width = 72
+    Height = 96
+    Caption = 'Maps type'
+    ItemIndex = 1
+    Items.Strings = (
+      'Classic'
+      'MP 8P'
+      'Fight'
+      'Coop')
+    TabOrder = 11
   end
 end

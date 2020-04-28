@@ -10,6 +10,7 @@ uses
 type
   TKMRunnerCommon = class;
   TKMRunnerClass = class of TKMRunnerCommon;
+  TKMRunnerMapsType = (rmtClassic, rmtMP8, rmtFight, rmtCoop);
 
   TKMRunResults = record
     ChartsCount: Integer; //How many charts return
@@ -41,6 +42,7 @@ type
     Duration: Integer;
     Seed: Integer;
     AIType: TKMAIType;
+    MapsType: TKMRunnerMapsType;
     OnProgress: TUnicodeStringEvent;
     OnProgress_Left: TUnicodeStringEvent;
     OnProgress_Left2: TUnicodeStringEvent;
