@@ -40,9 +40,9 @@ type
 
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
     function GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
-    function GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
-    function GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
-    function GetTileCornersTKinds(aCell: TKMPoint; aGetOnlyTileCornersTK: Boolean = False; aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
+    function GetTileOwnCornersTKinds(const aCell: TKMPoint): TKMTerrainKindsArray;
+    function GetTileLandNodeTKinds(const aCell: TKMPoint): TKMTerrainKindsArray;
+    function GetTileCornersTKinds(const aCell: TKMPoint; aGetOnlyTileCornersTK: Boolean = False; aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
     procedure BrushTile(const X, Y: Integer);
     procedure BrushTerrainTile(const X, Y: Integer; aTerKind: TKMTerrainKind);
     procedure MagicBrush(const X,Y: Integer); overload;
@@ -106,7 +106,7 @@ type
 
     procedure FixTerrainKindInfoAtBorders(aMakeCheckpoint: Boolean = True);
     procedure FixTerrainKindInfo(aMakeCheckpoint: Boolean = True); overload;
-    procedure FixTerrainKindInfo(aRect: TKMRect; aMakeCheckpoint: Boolean = True); overload;
+    procedure FixTerrainKindInfo(const aRect: TKMRect; aMakeCheckpoint: Boolean = True); overload;
 
     class function GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
 
@@ -488,7 +488,7 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.FixTerrainKindInfo(aRect: TKMRect; aMakeCheckpoint: Boolean = True);
+procedure TKMTerrainPainter.FixTerrainKindInfo(const aRect: TKMRect; aMakeCheckpoint: Boolean = True);
 var
   I,J: Integer;
   TerKind: TKMTerrainKind;
@@ -654,13 +654,13 @@ end;
 
 
 //Get tile corners terkinds (TKinds, based on TILE_CORNERS_TERRAIN_KINDS or generated mask)
-function TKMTerrainPainter.GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+function TKMTerrainPainter.GetTileOwnCornersTKinds(const aCell: TKMPoint): TKMTerrainKindsArray;
 begin
   Result := GetTileCornersTKinds(aCell, True);
 end;
 
 
-function TKMTerrainPainter.GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+function TKMTerrainPainter.GetTileLandNodeTKinds(const aCell: TKMPoint): TKMTerrainKindsArray;
 begin
   Result := GetTileCornersTKinds(aCell, False, True);
 end;
@@ -693,9 +693,9 @@ begin
 end;
 
 
-function TKMTerrainPainter.GetTileCornersTKinds(aCell: TKMPoint;
-                                                      aGetOnlyTileCornersTK: Boolean = False;
-                                                      aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
+function TKMTerrainPainter.GetTileCornersTKinds(const aCell: TKMPoint;
+                                                aGetOnlyTileCornersTK: Boolean = False;
+                                                aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
 var
   TerKindFound: array [0..3] of Boolean;
 

@@ -261,7 +261,7 @@ type
     function TileInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function TileInMapCoords(X,Y: Integer; InsetRect: TKMRect): Boolean; overload;
     function VerticeInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
-    function VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
+    function VerticeInMapCoords(const aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function EnsureTileInMapCoords(X, Y: Integer; aInset: Byte = 0): TKMPoint; overload;
     function EnsureTileInMapCoords(const aLoc: TKMPoint; aInset: Byte = 0): TKMPoint; overload;
 
@@ -1135,7 +1135,7 @@ begin
 end;
 
 
-function TKMTerrain.VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean;
+function TKMTerrain.VerticeInMapCoords(const aCell: TKMPoint; Inset: Byte = 0): Boolean;
 begin
   Result := VerticeInMapCoords(aCell.X, aCell.Y, Inset);
 end;
