@@ -4743,6 +4743,8 @@ begin
 
       WriteTileToStream(SaveStream, TileBasic, Land[I,K].TileOwner, True);
 
+      SaveStream.Write(Land[I,K].Passability, SizeOf(Land[I,K].Passability));
+      SaveStream.Write(Land[I,K].WalkConnect, SizeOf(Land[I,K].WalkConnect));
       SaveStream.Write(Land[I,K].TreeAge);
       SaveStream.Write(Land[I,K].FieldAge);
       SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
@@ -4785,6 +4787,8 @@ begin
       for L := 0 to 2 do
         Land[I,J].Layer[L] := TileBasic.Layer[L];
 
+      LoadStream.Read(Land[I,J].Passability, SizeOf(Land[I,J].Passability));
+      LoadStream.Read(Land[I,J].WalkConnect, SizeOf(Land[I,J].WalkConnect));
       LoadStream.Read(Land[I,J].TreeAge);
       LoadStream.Read(Land[I,J].FieldAge);
       LoadStream.Read(Land[I,J].TileLock,SizeOf(Land[I,J].TileLock));
@@ -4801,10 +4805,7 @@ begin
   fFinder := TKMTerrainFinder.Create;
 
   UpdateLighting(MapRect);
-  UpdatePassability(MapRect);
-
-  UpdateWalkConnect([wcWalk, wcRoad, wcFish, wcWork], MapRect, True);
-
+  // Do not update Passability and WalkConnect, since we loaded it from the stream
   gLog.AddTime('Terrain loaded');
 end;
 
