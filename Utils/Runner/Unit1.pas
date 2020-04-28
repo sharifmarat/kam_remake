@@ -40,6 +40,7 @@ type
     Label10: TLabel;
     Label11: TLabel;
     Label12: TLabel;
+    rgAIType: TRadioGroup;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -73,6 +74,8 @@ var
 
 implementation
 {$R *.dfm}
+uses
+  KM_CommonTypes;
 
 
 const
@@ -107,6 +110,8 @@ begin
     ListBox1.ItemIndex := 0;
     Button1.Enabled := True
   end;
+
+  Caption := ExtractFileName(Application.ExeName);
 end;
 
 
@@ -179,6 +184,11 @@ begin
       T := GetTickCount;
       Runner.Duration := seDuration.Value;
       Runner.Seed := seSeed.Value;
+      if rgAIType.ItemIndex = 0 then
+        Runner.AIType := aitClassic
+      else
+        Runner.AIType := aitAdvanced;
+
       fResults := Runner.Run(Count);
       fRunTime := 'Done in ' + IntToStr(GetTickCount - T) + ' ms';
     finally

@@ -283,4 +283,16 @@ object Form2: TForm2
     TabOrder = 7
     Value = 0
   end
+  object rgAIType: TRadioGroup
+    Left = 8
+    Top = 396
+    Width = 96
+    Height = 54
+    Caption = 'AI type'
+    ItemIndex = 1
+    Items.Strings = (
+      'Classic'
+      'Advanced')
+    TabOrder = 8
+  end
 end

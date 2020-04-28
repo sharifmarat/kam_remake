@@ -39,6 +39,7 @@ type
   public
     Duration: Integer;
     Seed: Integer;
+    AIType: TKMAIType;
     OnProgress: TUnicodeStringEvent;
     OnProgress_Left: TUnicodeStringEvent;
     OnProgress_Left2: TUnicodeStringEvent;
@@ -75,6 +76,7 @@ begin
 
   fRenderTarget := aRenderTarget;
   fIntParam := 0;
+  AIType := aitNone;
 end;
 
 

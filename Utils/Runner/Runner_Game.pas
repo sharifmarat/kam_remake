@@ -957,7 +957,7 @@ procedure TKMRunnerDesyncTest.SetUp();
 begin
   inherited;
 
-  fDesyncsDir := Format('%sDesync\', [ExeDir]);
+  fDesyncsDir := Format('%s..\Desyncs\', [ExeDir]);
   ForceDirectories(fDesyncsDir);
 
   SetLength(fTickCRC, fResults.TimesCount);
@@ -1173,12 +1173,13 @@ const
                                   'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
   cnt_MAP_SIMULATIONS = 10;
 
-  SIMUL_TIME_MAX = 10*60*120; //1 hour
+  SIMUL_TIME_MAX = 10*60*180; //1 hour
   SAVEPT_FREQ = 10*60*1; //every 1 min
   REPLAY_LENGTH = 1500; // ticks to find RNG mismatch
 //  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
   SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
   LOAD_SAVEPT_AT_TICK = 0;
+  SKIP_FIRST_SAVEPT_CNT = 15; //Skip first savepoints to save some time
 
   procedure StartGame;
   var
@@ -1187,7 +1188,7 @@ const
     fRunSeed := 1;
 
     mapFullName := Format('%sMapsMP\%s\%s.dat',[ExeDir,fMap,fMap]);
-    gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+    gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, AIType);
   end;
 
 
@@ -1261,7 +1262,7 @@ begin
         if LOAD_SAVEPT_AT_TICK <> 0 then
           fSavePointTick := LOAD_SAVEPT_AT_TICK
         else
-          fSavePointTick := (I + 15) * SAVEPT_FREQ;
+          fSavePointTick := (I + SKIP_FIRST_SAVEPT_CNT) * SAVEPT_FREQ;
 
         if gGameApp.TryLoadSavedReplay(fSavePointTick) then
         begin
