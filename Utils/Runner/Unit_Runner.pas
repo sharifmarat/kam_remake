@@ -28,7 +28,8 @@ type
     fResults: TKMRunResults;
     fIntParam: Integer;
     fIntParam2: Integer;
-    fOnStopSimulation: TBooleanFuncSimple;
+    fOnPause: TBooleanFuncSimple;
+    fOnStop: TBooleanFuncSimple;
     fOnBeforeTick: TBoolCardFuncSimple;
     fOnTick: TBoolCardFuncSimple;
     procedure SetUp; virtual;
@@ -48,7 +49,7 @@ type
     OnProgress3: TUnicodeStringEvent;
     OnProgress4: TUnicodeStringEvent;
     OnProgress5: TUnicodeStringEvent;
-    constructor Create(aRenderTarget: TKMRenderControl); reintroduce;
+    constructor Create(aRenderTarget: TKMRenderControl; {aOnPause, }aOnStop: TBooleanFuncSimple); reintroduce;
     function Run(aCount: Integer): TKMRunResults;
   end;
 
@@ -70,11 +71,15 @@ end;
 
 
 { TKMRunnerCommon }
-constructor TKMRunnerCommon.Create(aRenderTarget: TKMRenderControl);
+constructor TKMRunnerCommon.Create(aRenderTarget: TKMRenderControl; {aOnPause, }aOnStop: TBooleanFuncSimple);
 begin
   inherited Create;
 
   fRenderTarget := aRenderTarget;
+
+//  fOnPause := aOnPause;
+  fOnStop := aOnStop;
+
   fIntParam := 0;
   AIType := aitNone;
 end;
@@ -224,16 +229,6 @@ begin
       and not fOnBeforeTick(I+1) then
       Exit;
 
-    if I = 15663 then
-    begin
-      IntParam := 23*Sign(I) + aStartTick*fRun - Round(321*Math.Power(fRun, 2));
-      gLog.LogDelivery('IntParam' + IntToStr(IntParam));
-      if IntParam > 321333 then
-        gGameApp.Game.UpdateGame(nil);
-    end;
-
-
-
     gGameApp.Game.UpdateGame(nil);
     gGameApp.Render(False);
 
@@ -241,8 +236,8 @@ begin
       and not fOnTick(I+1) then
       Exit;
 
-    if Assigned(fOnStopSimulation)
-      and fOnStopSimulation then
+    if Assigned(fOnStop)
+      and fOnStop then
       Exit;
 
     fResults.Times[fRun, I] := TimeGet - fResults.Times[fRun, I];

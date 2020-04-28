@@ -26,8 +26,8 @@ object Form2: TForm2
     Caption = 'Cycles:'
   end
   object Label2: TLabel
-    Left = 178
-    Top = 236
+    Left = 187
+    Top = 256
     Width = 15
     Height = 13
     Alignment = taRightJustify
@@ -41,16 +41,16 @@ object Form2: TForm2
     Caption = 'Duration (min):'
   end
   object Label5: TLabel
-    Left = 178
-    Top = 216
+    Left = 187
+    Top = 236
     Width = 15
     Height = 13
     Alignment = taRightJustify
     Caption = '     '
   end
   object Label6: TLabel
-    Left = 175
-    Top = 256
+    Left = 184
+    Top = 276
     Width = 18
     Height = 13
     Alignment = taRightJustify
@@ -64,8 +64,8 @@ object Form2: TForm2
     Caption = 'Seed:'
   end
   object Label8: TLabel
-    Left = 175
-    Top = 276
+    Left = 184
+    Top = 296
     Width = 18
     Height = 13
     Alignment = taRightJustify
@@ -93,22 +93,22 @@ object Form2: TForm2
     Caption = '      '
   end
   object Label12: TLabel
-    Left = 175
-    Top = 296
+    Left = 184
+    Top = 316
     Width = 18
     Height = 13
     Alignment = taRightJustify
     Caption = '      '
   end
-  object Button1: TButton
-    Left = 103
-    Top = 172
-    Width = 89
+  object btnRun: TButton
+    Left = 8
+    Top = 364
+    Width = 184
     Height = 38
     Caption = 'Run'
     Enabled = False
     TabOrder = 0
-    OnClick = Button1Click
+    OnClick = btnRunClick
   end
   object seCycles: TSpinEdit
     Left = 8
@@ -284,15 +284,35 @@ object Form2: TForm2
     Value = 0
   end
   object rgAIType: TRadioGroup
-    Left = 8
-    Top = 396
+    Left = 106
+    Top = 172
     Width = 96
-    Height = 54
+    Height = 53
     Caption = 'AI type'
     ItemIndex = 1
     Items.Strings = (
       'Classic'
       'Advanced')
     TabOrder = 8
+  end
+  object btnStop: TButton
+    Left = 103
+    Top = 408
+    Width = 89
+    Height = 38
+    Caption = 'Stop'
+    Enabled = False
+    TabOrder = 9
+    OnClick = btnStopClick
+  end
+  object btnPause: TButton
+    Left = 8
+    Top = 408
+    Width = 89
+    Height = 38
+    Caption = 'Pause'
+    Enabled = False
+    TabOrder = 10
+    OnClick = btnPauseClick
   end
 end

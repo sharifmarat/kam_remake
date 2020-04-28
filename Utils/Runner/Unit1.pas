@@ -9,7 +9,7 @@ uses
 
 type
   TForm2 = class(TForm)
-    Button1: TButton;
+    btnRun: TButton;
     seCycles: TSpinEdit;
     Label1: TLabel;
     ListBox1: TListBox;
@@ -41,18 +41,26 @@ type
     Label11: TLabel;
     Label12: TLabel;
     rgAIType: TRadioGroup;
+    btnStop: TButton;
+    btnPause: TButton;
     procedure FormCreate(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure btnRunClick(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
     procedure TabSheetResize(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
+    procedure btnStopClick(Sender: TObject);
+    procedure btnPauseClick(Sender: TObject);
   private
     fY: array of TLabel;
     fX: array of TLabel;
     fResults: TKMRunResults;
     fRunTime: string;
+    fStopped: Boolean;
+    fPaused: Boolean;
     RenderArea: TKMRenderControl;
+    function IsStopped: Boolean;
+    function IsPaused: Boolean;
     procedure RunnerProgress(const aValue: UnicodeString);
     procedure RunnerProgress2(const aValue: UnicodeString);
     procedure RunnerProgress3(const aValue: UnicodeString);
@@ -93,6 +101,14 @@ end;
 {$ENDIF}
 
 
+procedure TForm2.btnStopClick(Sender: TObject);
+begin
+  fStopped := True;
+  btnStop.Enabled := False;
+end;
+
+
+
 procedure TForm2.FormCreate(Sender: TObject);
 var
   I: Integer;
@@ -108,7 +124,9 @@ begin
   if Length(RunnerList) > 0 then
   begin
     ListBox1.ItemIndex := 0;
-    Button1.Enabled := True
+    btnRun.Enabled := True;
+    btnStop.Enabled := False;
+    btnPause.Enabled := False;
   end;
 
   Caption := ExtractFileName(Application.ExeName);
@@ -121,7 +139,9 @@ var
 begin
   ID := ListBox1.ItemIndex;
   if ID = -1 then Exit;
-  Button1.Enabled := True;
+  btnRun.Enabled := True;
+  btnStop.Enabled := False;
+  btnPause.Enabled := False;
 end;
 
 
@@ -150,7 +170,26 @@ begin
 end;
 
 
-procedure TForm2.Button1Click(Sender: TObject);
+function TForm2.IsStopped: Boolean;
+begin
+  Result := fStopped;
+end;
+
+
+function TForm2.IsPaused: Boolean;
+begin
+  Result := fPaused;
+end;
+
+
+procedure TForm2.btnPauseClick(Sender: TObject);
+begin
+  fPaused := True;
+  btnPause.Enabled := False;
+end;
+
+
+procedure TForm2.btnRunClick(Sender: TObject);
 var
   T: Cardinal;
   ID, Count: Integer;
@@ -162,15 +201,19 @@ begin
   Count := seCycles.Value;
   if Count <= 0 then Exit;
 
+  fStopped := False;
+
   Memo1.Clear;
-  Button1.Enabled := False;
+  btnRun.Enabled := False;
+  btnStop.Enabled := True;
+  btnPause.Enabled := False; //Always disabled for now
   try
     RunnerClass := RunnerList[ID];
 
     if chkRender.Checked then
-      Runner := RunnerClass.Create(RenderArea)
+      Runner := RunnerClass.Create(RenderArea, {IsPaused, }IsStopped)
     else
-      Runner := RunnerClass.Create(nil);
+      Runner := RunnerClass.Create(nil, {IsPaused, }IsStopped);
 
     Runner.OnProgress := RunnerProgress;
     Runner.OnProgress_Left := RunnerProgress_Left;
@@ -197,7 +240,9 @@ begin
 
     PageControl1Change(nil);
   finally
-    Button1.Enabled := True;
+    btnRun.Enabled := True;
+    btnStop.Enabled := False;
+    btnPause.Enabled := False;
   end;
 end;
 

@@ -1316,8 +1316,13 @@ begin
         else
           OnProgress_Left('');
       end;
+
       OnProgress2(fMap + ' Run ' + IntToStr(L));
       OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
+
+      if Assigned(fOnStop)
+        and fOnStop then
+        Exit;
     end;
   end;
 
