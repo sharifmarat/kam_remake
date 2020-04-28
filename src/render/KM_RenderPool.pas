@@ -391,6 +391,9 @@ begin
   if SHOW_TERRAIN_OVERLAYS then
     gRenderAux.TileTerrainOverlays(aRect);
 
+  if SHOW_TERRAIN_HEIGHT then
+    gRenderAux.TileTerrainHeight(aRect);
+
   if SHOW_JAM_METER then
     gRenderAux.TileTerrainJamMeter(aRect);
 
