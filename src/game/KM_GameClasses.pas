@@ -110,24 +110,23 @@ var
   ChoosenStartLoc: Integer;
 begin
   Result := False;
-  if FileExists(aFilePath) then
-  begin
-    LoadStream := TKMemoryStreamBinary.Create;
-    try
-      LoadStream.LoadFromFile(aFilePath);
-      ChoosenStartLoc := fStartLoc;
-      LoadHeader(LoadStream);
+  if not FileExists(aFilePath) then Exit;
 
-      if (ChoosenStartLoc = LOC_ANY) // for not MP game, f.e.
-        or (ChoosenStartLoc = LOC_SPECTATE) // allow to see minimap for spectator loc
-        or (fStartLoc = ChoosenStartLoc) then // allow, if we was on the same loc
-      begin
-        LoadMinimap(LoadStream, fMinimap);
-        Result := True;
-      end;
-    finally
-      LoadStream.Free;
+  LoadStream := TKMemoryStreamBinary.Create;
+  try
+    LoadStream.LoadFromFile(aFilePath);
+    ChoosenStartLoc := fStartLoc;
+    LoadHeader(LoadStream);
+
+    if (ChoosenStartLoc = LOC_ANY) // for not MP game, f.e.
+      or (ChoosenStartLoc = LOC_SPECTATE) // allow to see minimap for spectator loc
+      or (fStartLoc = ChoosenStartLoc) then // allow, if we was on the same loc
+    begin
+      LoadMinimap(LoadStream, fMinimap);
+      Result := True;
     end;
+  finally
+    LoadStream.Free;
   end;
 end;
 
