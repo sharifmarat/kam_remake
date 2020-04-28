@@ -305,7 +305,7 @@ type
     function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
     function TileCornersTerrains(aX, aY: Word): TKMWordArray;
     function TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
-    function TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
+    procedure GetTileCornersTerKinds(aX, aY: Word; out aCornerTerKinds: TKMTerrainKindCorners);
 
     procedure GetVerticeTerKinds(const aLoc: TKMPoint; out aVerticeTerKinds: TKMTerrainKindCorners);
 
@@ -574,7 +574,7 @@ const
     L, D, adj, hMid: Integer;
     TileBasic: TKMTerrainTileBasic;
     terKind: TKMTerrainKind;
-    CornersTerKinds: TKMTerrainKindsArray;
+    cornersTerKinds: TKMTerrainKindCorners;
     tileOwner: TKMHandID;
   begin
     tileOwner := PLAYER_NONE;
@@ -584,7 +584,7 @@ const
       //Check if terrainKind is same for all 4 corners
       if not TileTryGetTerKind(aFromX, aFromY, terKind) then
       begin
-        CornersTerKinds := TileCornersTerKinds(aFromX, aFromY);
+        GetTileCornersTerKinds(aFromX, aFromY, cornersTerKinds);
 
         if aDir = dirNA then // that should never happen usually
           terKind := tkGrass
@@ -1158,19 +1158,19 @@ end;
 
 function TKMTerrain.TileGoodForIronMine(X,Y: Word): Boolean;
 var
-  CornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Result :=
     (fTileset.TileIsGoodForIronMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    CornersTKinds := TileCornersTerKinds(X, Y);
+    GetTileCornersTerKinds(X, Y, cornersTKinds);
     Result :=
-          (CornersTKinds[0] in [tkIron, tkIronMount])
-      and (CornersTKinds[1] in [tkIron, tkIronMount])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[2]])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[3]]);
+          (cornersTKinds[0] in [tkIron, tkIronMount])
+      and (cornersTKinds[1] in [tkIron, tkIronMount])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[2]])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[3]]);
   end;
 end;
 
@@ -1188,19 +1188,19 @@ end;
 
 function TKMTerrain.TileGoodForGoldMine(X,Y: Word): Boolean;
 var
-  CornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Result :=
     (fTileset.TileIsGoodForGoldMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    CornersTKinds := TileCornersTerKinds(X, Y);
+    GetTileCornersTerKinds(X, Y, cornersTKinds);
     Result :=
-          (CornersTKinds[0] in [tkGold, tkGoldMount])
-      and (CornersTKinds[1] in [tkGold, tkGoldMount])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[2]])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[3]]);
+          (cornersTKinds[0] in [tkGold, tkGoldMount])
+      and (cornersTKinds[1] in [tkGold, tkGoldMount])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[2]])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[3]]);
   end;
 end;
 
@@ -1351,12 +1351,12 @@ end;
 function TKMTerrain.TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind): Boolean;
 var
   K: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := False;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
   for K := 0 to 3 do
-    if CornersTerKinds[K] = aTerKind then
+    if cornersTerKinds[K] = aTerKind then
     begin
       Result := True;
       Exit;
@@ -1367,21 +1367,21 @@ end;
 
 function TKMTerrain.TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind; aDir: TKMDirection): Boolean;
 var
-  CornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Result := False;
-  CornersTKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTKinds);
 
   case aDir of
     dirNA:  Result := TileHasStone(X, Y);
-    dirN:   Result := (CornersTKinds[0] = aTerKind) and (CornersTKinds[1] = aTerKind);
-    dirNE:  Result := (CornersTKinds[1] = aTerKind);
-    dirE:   Result := (CornersTKinds[1] = aTerKind) and (CornersTKinds[2] = aTerKind);
-    dirSE:  Result := (CornersTKinds[2] = aTerKind);
-    dirS:   Result := (CornersTKinds[2] = aTerKind) and (CornersTKinds[3] = aTerKind);
-    dirSW:  Result := (CornersTKinds[3] = aTerKind);
-    dirW:   Result := (CornersTKinds[3] = aTerKind) and (CornersTKinds[0] = aTerKind);
-    dirNW:  Result := (CornersTKinds[0] = aTerKind);
+    dirN:   Result := (cornersTKinds[0] = aTerKind) and (cornersTKinds[1] = aTerKind);
+    dirNE:  Result := (cornersTKinds[1] = aTerKind);
+    dirE:   Result := (cornersTKinds[1] = aTerKind) and (cornersTKinds[2] = aTerKind);
+    dirSE:  Result := (cornersTKinds[2] = aTerKind);
+    dirS:   Result := (cornersTKinds[2] = aTerKind) and (cornersTKinds[3] = aTerKind);
+    dirSW:  Result := (cornersTKinds[3] = aTerKind);
+    dirW:   Result := (cornersTKinds[3] = aTerKind) and (cornersTKinds[0] = aTerKind);
+    dirNW:  Result := (cornersTKinds[0] = aTerKind);
   end;
 end;
 
@@ -1400,12 +1400,12 @@ end;
 function TKMTerrain.TileHasOnlyTerrainKinds(X, Y: Word; const aTerKinds: array of TKMTerrainKind): Boolean;
 var
   I: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := True;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
   for I := 0 to 3 do
-    if not TerKindArrayContains(CornersTerKinds[I], aTerKinds) then
+    if not TerKindArrayContains(cornersTerKinds[I], aTerKinds) then
       Exit(False);
 end;
 
@@ -1413,12 +1413,12 @@ end;
 function TKMTerrain.TileHasOnlyTerrainKind(X, Y: Word; const aTerKind: TKMTerrainKind): Boolean;
 var
   I: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := True;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
   for I := 0 to 3 do
-    if CornersTerKinds[I] <> aTerKind then
+    if cornersTerKinds[I] <> aTerKind then
       Exit(False);
 end;
 
@@ -1427,13 +1427,13 @@ end;
 function TKMTerrain.TileTryGetTerKind(X, Y: Word; var aTerKind: TKMTerrainKind): Boolean;
 var
   I: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := True;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
-  aTerKind := CornersTerKinds[0];
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
+  aTerKind := cornersTerKinds[0];
   for I := 1 to 3 do
-    if CornersTerKinds[I] <> aTerKind then
+    if cornersTerKinds[I] <> aTerKind then
     begin
       aTerKind := tkCustom;
       Exit(False); // Corners has different terKinds, return tkCustom then
@@ -1474,7 +1474,7 @@ const
   STRICT_TERKINDS: array[0..4] of TKMTerrainKind = (tkGrassyWater, tkSwamp, tkIce, tkWater, tkFastWater);
 var
   I, K, Cnt: Integer;
-  Corners: TKMTerrainKindsArray;
+  corners: TKMTerrainKindCorners;
 begin
   Result := False;
 
@@ -1485,19 +1485,19 @@ begin
   else
   begin
     Cnt := 0;
-    Corners := TileCornersTerKinds(X,Y);
+    GetTileCornersTerKinds(X, Y, corners);
     for K := 0 to 3 do
     begin
       for I := 0 to High(PROHIBIT_TERKINDS) do
-        if Corners[K] = PROHIBIT_TERKINDS[I] then
+        if corners[K] = PROHIBIT_TERKINDS[I] then
           Exit(False);
 
       if aStrictCheck then
         for I := 0 to High(STRICT_TERKINDS) do
-          if Corners[K] = STRICT_TERKINDS[I] then
+          if corners[K] = STRICT_TERKINDS[I] then
             Exit(False);
 
-      if aCheckTileFunc(BASE_TERRAIN[Corners[K]]) then
+      if aCheckTileFunc(BASE_TERRAIN[corners[K]]) then
         Inc(Cnt);
     end;
 
@@ -1677,44 +1677,43 @@ end;
 function TKMTerrain.TileCornersTerrains(aX, aY: Word): TKMWordArray;
 var
   K: Integer;
-  TKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   SetLength(Result, 4);
-  TKinds := TileCornersTerKinds(aX, aY);
+  GetTileCornersTerKinds(aX, aY, cornersTKinds);
   for K := 0 to 3 do
-    Result[K] := BASE_TERRAIN[TKinds[K]];
+    Result[K] := BASE_TERRAIN[cornersTKinds[K]];
 end;
 
 
 function TKMTerrain.TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
 var
-  cornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Assert(InRange(aCorner, 0, 3));
   
-  cornersTKinds := TileCornersTerKinds(aX, aY);
+  GetTileCornersTerKinds(aX, aY, cornersTKinds);
   Result := cornersTKinds[aCorner];
 end;
 
 
 //Get tile corners terrain kinds
-function TKMTerrain.TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
+procedure TKMTerrain.GetTileCornersTerKinds(aX, aY: Word; out aCornerTerKinds: TKMTerrainKindCorners);
 var
   K, L: Integer;
 begin
-  SetLength(Result, 4);
   for K := 0 to 3 do
   begin
-    Result[K] := tkCustom;
+    aCornerTerKinds[K] := tkCustom;
     with gTerrain.Land[aY,aX] do
     begin
       if BaseLayer.Corners[K] then
-        Result[K] := TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]
+        aCornerTerKinds[K] := TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]
       else
         for L := 0 to LayersCnt - 1 do
           if Layer[L].Corners[K] then
           begin
-            Result[K] := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind;
+            aCornerTerKinds[K] := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind;
             Break;
           end;
     end;
