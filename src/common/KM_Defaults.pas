@@ -146,6 +146,7 @@ var
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
   SHOW_TERRAIN_OVERLAYS   :Boolean = False; //Show terrain tile overlays
+  SHOW_TERRAIN_HEIGHT     :Boolean = False; //Show terrain tile overlays
   SHOW_TERRAIN_TILES_GRID :Boolean = False; //Show terrain tiles grid
   SHOW_BRUSH_APPLY_AREA   :Boolean = False; //Show brushes apply area
   SHOW_TERRAIN_WIRES      :Boolean = False; //Makes terrain height visible

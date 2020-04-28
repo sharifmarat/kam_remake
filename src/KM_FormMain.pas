@@ -159,6 +159,7 @@ type
     chkShowSupervisorAnimate: TCheckBox;
     chkShowSupervisorDistances: TCheckBox;
     chkShowSupervisorMarks: TCheckBox;
+    chkHeight: TCheckBox;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -952,6 +953,7 @@ begin
 
     {$IFDEF WDC} //one day update .lfm for lazarus...
     SHOW_JAM_METER := chkJamMeter.Checked;
+    SHOW_TERRAIN_HEIGHT := chkHeight.Checked;
     SHOW_TERRAIN_OVERLAYS := chkShowTerrainOverlays.Checked;
     DEBUG_SCRIPTING_EXEC := chkDebugScripting.Checked;
     SKIP_LOG_TEMP_COMMANDS := chkLogSkipTempCmd.Checked;

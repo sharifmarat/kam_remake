@@ -33,6 +33,7 @@ type
     procedure TileTerrainKinds(const aRect: TKMRect);
     procedure TileTerrainOverlays(const aRect: TKMRect);
     procedure TileTerrainJamMeter(const aRect: TKMRect);
+    procedure TileTerrainHeight(const aRect: TKMRect);
     procedure Passability(const aRect: TKMRect; aPass: Byte);
     procedure RenderResizeMap(const aExceptRect: TKMRect);
     procedure Projectile(x1, y1, x2, y2: Single);
@@ -420,6 +421,19 @@ begin
       //Draw text over quads
       Text(J, I, IntToStr(gTerrain.Land[I,J].JamMeter), icRed);
     end;
+end;
+
+
+procedure TRenderAux.TileTerrainHeight(const aRect: TKMRect);
+const
+  JAM_DRAW_STEP = 3;
+var
+  I, J, K, Limit: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      //Draw text over quads
+      Text(J, I, IntToStr(gTerrain.Land[I,J].Height), icCyan);
 end;
 
 
