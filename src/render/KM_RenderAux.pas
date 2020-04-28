@@ -426,14 +426,21 @@ end;
 procedure TRenderAux.Passability(const aRect: TKMRect; aPass: Byte);
 var
   I, K: Integer;
+  pass: TKMTerrainPassability;
 begin
   if aPass <> 0 then
   begin
+    pass := TKMTerrainPassability(aPass);
     glColor4f(0,1,0,0.25);
     for I := aRect.Top to aRect.Bottom do
       for K := aRect.Left to aRect.Right do
-        if TKMTerrainPassability(aPass) in gTerrain.Land[I,K].Passability then
-          RenderQuad(K,I);
+        if pass in gTerrain.Land[I,K].Passability then
+        begin
+          if pass = tpFactor then
+            DotOnTerrain(K-1,I-1,icRed)
+          else
+            RenderQuad(K,I);
+        end;
   end;
 end;
 
