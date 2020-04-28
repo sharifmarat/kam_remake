@@ -777,11 +777,11 @@ begin
 end;
 
 
+//@Deprecated
 function TKMResTileset.TileIsFactorable(aTile: Word): Boolean;
 begin
   //List of tiles that cannot be factored (coordinates outside the map return true)
-  Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206])
-            and (aTile <> 300);
+  Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206]);
 end;
 
 

@@ -298,13 +298,16 @@ type
     function TileIsSoil(const Loc: TKMPoint): Boolean; overload;
     function TileIsIce(X, Y: Word): Boolean;
     function TileHasWater(X, Y: Word): Boolean;
-    function TileIsFactorable(const Loc: TKMPoint): Boolean;
+    function VerticeIsFactorable(const Loc: TKMPoint): Boolean;
     function TileIsWalkable(const Loc: TKMPoint): Boolean;
     function TileIsRoadable(const Loc: TKMPoint): Boolean;
 
     function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
     function TileCornersTerrains(aX, aY: Word): TKMWordArray;
+    function TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
     function TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
+
+    function VerticeTerKinds(const aLoc: TKMPoint): TKMTerrainKindsArray;
 
     function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
     function TileHasRoad(X,Y: Integer): Boolean; overload;
@@ -1382,6 +1385,7 @@ begin
   end;
 end;
 
+
 function TerKindArrayContains(aElement: TKMTerrainKind; const aArray: array of TKMTerrainKind): Boolean;
 var
   I: Integer;
@@ -1609,10 +1613,28 @@ begin
 end;   
 
 
-//Check if this tile can be factored
-function TKMTerrain.TileIsFactorable(const Loc: TKMPoint): Boolean;
+function TKMTerrain.VerticeIsFactorable(const Loc: TKMPoint): Boolean;
+const
+  //Non factorable terkinds
+  NON_FACT_TER_KINDS: array [0..6] of TKMTerrainKind = (tkIron, tkIronMount, tkGold, tkGoldMount, tkLava, tkAbyss, tkCustom);
+
+var
+  I, K: Integer;
+  verticeTKinds: TKMTerrainKindsArray;
 begin
-  Result := TileInMapCoords(Loc.X,Loc.Y) and fTileset.TileIsFactorable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+  if   not TileInMapCoords(Loc.X,     Loc.Y) 
+    or not TileInMapCoords(Loc.X - 1, Loc.Y)
+    or not TileInMapCoords(Loc.X,     Loc.Y - 1)
+    or not TileInMapCoords(Loc.X - 1, Loc.Y - 1) then Exit(False);
+
+  Result := True;
+  
+  verticeTKinds := VerticeTerKinds(Loc);
+
+  for I := 0 to 3 do
+    for K := Low(NON_FACT_TER_KINDS) to High(NON_FACT_TER_KINDS) do
+      if verticeTKinds[I] = NON_FACT_TER_KINDS[K] then
+        Exit(False);
 end;
 
 
@@ -1633,7 +1655,7 @@ end;
 //Get tile corner terrain id
 function TKMTerrain.TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
 const
-  TOO_BIG_VALUE = 10000;
+  TOO_BIG_VALUE = 50000;
 var
   L: Integer;
 begin
@@ -1665,6 +1687,17 @@ begin
 end;
 
 
+function TKMTerrain.TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
+var
+  cornersTKinds: TKMTerrainKindsArray;
+begin
+  Assert(InRange(aCorner, 0, 3));
+  
+  cornersTKinds := TileCornersTerKinds(aX, aY);
+  Result := cornersTKinds[aCorner];
+end;
+
+
 //Get tile corners terrain kinds
 function TKMTerrain.TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
 var
@@ -1687,6 +1720,18 @@ begin
           end;
     end;
   end;
+end;
+
+
+//Get vertice terrain kinds
+function TKMTerrain.VerticeTerKinds(const aLoc: TKMPoint): TKMTerrainKindsArray;
+begin
+  SetLength(Result, 4);
+
+  Result[0] := TileCornerTerKind(aLoc.X - 1, aLoc.Y - 1, 2); //  0 | 1 
+  Result[1] := TileCornerTerKind(aLoc.X    , aLoc.Y - 1, 3); //  __|__
+  Result[2] := TileCornerTerKind(aLoc.X    , aLoc.Y    , 0); //    |
+  Result[3] := TileCornerTerKind(aLoc.X - 1, aLoc.Y    , 1); //  3 | 2
 end;
 
 
@@ -3537,11 +3582,8 @@ begin
     and (Land[Loc.Y,Loc.X].TileLock <> tlHouse) then
     AddPassability(tpWorker);
 
-  //Check all 4 tiles that border with this vertex
-  if TileIsFactorable(KMPoint(Loc.X  ,Loc.Y))
-    and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y))
-    and TileIsFactorable(KMPoint(Loc.X  ,Loc.Y-1))
-    and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y-1)) then
+  //Check all 4 corners ter kinds around vertice 
+  if VerticeIsFactorable(Loc) then
     AddPassability(tpFactor);
 
   //Check for houses around this vertice(!)
