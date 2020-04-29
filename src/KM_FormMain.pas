@@ -132,6 +132,20 @@ type
     chkLoadUnsupSaves: TCheckBox;
     chkJamMeter: TCheckBox;
     chkShowTerrainOverlays: TCheckBox;
+    chkDebugScripting: TCheckBox;
+    chkLogSkipTempCmd: TCheckBox;
+    chkShowDefencesAnimate: TCheckBox;
+    chkShowSupervisorAnimate: TCheckBox;
+    chkShowSupervisorDistances: TCheckBox;
+    chkShowSupervisorMarks: TCheckBox;
+    chkHeight: TCheckBox;
+    chkTreeAge: TCheckBox;
+    chkFieldAge: TCheckBox;
+    chkTileLock: TCheckBox;
+    chkTileOwner: TCheckBox;
+    chkTileUnit: TCheckBox;
+    chkVertexUnit: TCheckBox;
+    chkTileObject: TCheckBox;
     {$ENDIF}
     {$IFDEF FPC}
     mainGroup: TGroupBox;
@@ -153,13 +167,6 @@ type
     mnExportRngChecks: TMenuItem;
     chkSupervisor: TCheckBox;
     cpScripting: TCategoryPanel;
-    chkDebugScripting: TCheckBox;
-    chkLogSkipTempCmd: TCheckBox;
-    chkShowDefencesAnimate: TCheckBox;
-    chkShowSupervisorAnimate: TCheckBox;
-    chkShowSupervisorDistances: TCheckBox;
-    chkShowSupervisorMarks: TCheckBox;
-    chkHeight: TCheckBox;
 
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -872,12 +879,20 @@ begin
   tbPassability.Max := Byte(High(TKMTerrainPassability));
   tbPassability.Position := SHOW_TERRAIN_PASS;
   Label2.Caption := IfThen(SHOW_TERRAIN_PASS <> 0, PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)], '');
-  chkShowWires.SetCheckedWithoutClick(SHOW_TERRAIN_WIRES);
-  chkShowTerrainIds.SetCheckedWithoutClick(SHOW_TERRAIN_IDS);
+
+  chkShowWires.SetCheckedWithoutClick       (SHOW_TERRAIN_WIRES);
+  chkShowTerrainIds.SetCheckedWithoutClick  (SHOW_TERRAIN_IDS);
   chkShowTerrainKinds.SetCheckedWithoutClick(SHOW_TERRAIN_KINDS);
-  chkTilesGrid.SetCheckedWithoutClick(SHOW_TERRAIN_TILES_GRID);
-  chkShowRoutes.SetCheckedWithoutClick(SHOW_UNIT_ROUTES);
-  chkSelectionBuffer.SetCheckedWithoutClick(SHOW_SEL_BUFFER);
+  chkTilesGrid.SetCheckedWithoutClick       (SHOW_TERRAIN_TILES_GRID);
+  chkTileOwner.SetCheckedWithoutClick       (SHOW_TILES_OWNER);
+  chkTileObject.SetCheckedWithoutClick      (SHOW_TILE_OBJECT_ID);
+  chkTreeAge.SetCheckedWithoutClick         (SHOW_TREE_AGE);
+  chkFieldAge.SetCheckedWithoutClick        (SHOW_FIELD_AGE);
+  chkTileLock.SetCheckedWithoutClick        (SHOW_TILE_LOCK);
+  chkTileUnit.SetCheckedWithoutClick        (SHOW_TILE_UNIT);
+  chkVertexUnit.SetCheckedWithoutClick      (SHOW_VERTEX_UNIT);
+  chkShowRoutes.SetCheckedWithoutClick      (SHOW_UNIT_ROUTES);
+  chkSelectionBuffer.SetCheckedWithoutClick (SHOW_SEL_BUFFER);
 end;
 
 
@@ -953,6 +968,13 @@ begin
 
     {$IFDEF WDC} //one day update .lfm for lazarus...
     SHOW_JAM_METER := chkJamMeter.Checked;
+    SHOW_TILE_OBJECT_ID := chkTileObject.Checked;
+    SHOW_TILES_OWNER := chkTileOwner.Checked;
+    SHOW_TREE_AGE := chkTreeAge.Checked;
+    SHOW_FIELD_AGE := chkFieldAge.Checked;
+    SHOW_TILE_LOCK := chkTileLock.Checked;
+    SHOW_TILE_UNIT := chkTileUnit.Checked;
+    SHOW_VERTEX_UNIT := chkVertexUnit.Checked;
     SHOW_TERRAIN_HEIGHT := chkHeight.Checked;
     SHOW_TERRAIN_OVERLAYS := chkShowTerrainOverlays.Checked;
     DEBUG_SCRIPTING_EXEC := chkDebugScripting.Checked;

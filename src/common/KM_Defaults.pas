@@ -158,6 +158,13 @@ var
   SHOW_GROUND_LINES       :Boolean = False; //Show a line below all sprites to mark the ground height used in Z-Order
   SHOW_UNIT_MOVEMENT      :Boolean = False; //Draw unit movement overlay (occupied tile), Only if unit interaction enabled
   SHOW_JAM_METER          :Boolean = False; //Show jam meter value on terrain
+  SHOW_TILE_OBJECT_ID     :Boolean = False; //Show jam meter value on terrain
+  SHOW_TILES_OWNER        :Boolean = False; //Show jam meter value on terrain
+  SHOW_TREE_AGE           :Boolean = False; //Show jam meter value on terrain
+  SHOW_FIELD_AGE          :Boolean = False; //Show jam meter value on terrain
+  SHOW_TILE_LOCK          :Boolean = False; //Show jam meter value on terrain
+  SHOW_TILE_UNIT          :Boolean = False; //Show jam meter value on terrain
+  SHOW_VERTEX_UNIT        :Boolean = False; //Show jam meter value on terrain
   SHOW_UIDs               :Boolean = False;  //Show units/groups/houses UIDs
   SHOW_WALK_CONNECT       :Boolean = False; //Show floodfill areas of interconnected areas
   SHOW_DEFENCE_POSITIONS  :Boolean = False;
@@ -804,7 +811,6 @@ type
     mlAIStart,
     mlSelection,
     mlWaterFlow,
-    mlTileOwner,
     mlMapResize);  //Enum representing mapEditor visible layers
   TKMMapEdLayerSet = set of TKMMapEdLayer;                                   //Set of above enum
 
