@@ -19,12 +19,13 @@ type
     procedure Reset;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
+    function ToString: string;
   end;
 
 
 implementation
 uses
-  KM_Defaults;
+  SysUtils, TypInfo, KM_Defaults;
 
 
 { TKMGameOptions }
@@ -65,6 +66,14 @@ begin
   SaveStream.Write(SpeedAfterPT);
   SaveStream.Write(RandomSeed);
   SaveStream.Write(MissionDifficulty, SizeOf(MissionDifficulty));
+end;
+
+
+function TKMGameOptions.ToString: string;
+begin
+  Result := Format('PT = %d; SpeedPT = %s; SpeedAfterPT = %s; Seed = %d; Difficulty = %s',
+                   [Peacetime, FormatFloat('0.##', SpeedPT), FormatFloat('0.##', SpeedAfterPT),
+                    RandomSeed, GetEnumName(TypeInfo(TKMMissionDifficulty), Integer(MissionDifficulty))]);
 end;
 
 

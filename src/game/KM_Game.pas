@@ -661,6 +661,7 @@ begin
 
   fMapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
 
+  gLog.AddTime('Game options: ' + fGameOptions.ToString);
   gLog.AddTime('Gameplay initialized', True);
 end;
 
@@ -2390,6 +2391,7 @@ begin
     // Save dummy GIP to know when game was loaded. Good for debug
     fGameInputProcess.CmdGame(gicGameLoadSave, Integer(fGameTick));
 
+  gLog.AddTime('Game options: ' + fGameOptions.ToString);
   gLog.AddTime('After game loading', True);
 end;
 
