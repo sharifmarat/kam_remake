@@ -1203,9 +1203,7 @@ const
 var
   K,L,I,M: Integer;
   desyncCnt, mapsCnt: Integer;
-  totalTime: Cardinal;
   simulLastTick, totalRuns, totalLoads: Integer;
-  desyncSaveName: string;
 begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
 //  MAKE_SAVEPT_AT_TICK := 40800;
@@ -1215,6 +1213,8 @@ begin
   totalRuns := 0;
   totalLoads := 0;
   fStartTime := TimeGet;
+
+  mapsCnt := 0;
 
   case MapsType of
     rmtClassic: mapsCnt := Length(MAPS);
@@ -1338,6 +1338,10 @@ begin
         end
         else
           OnProgress_Left('');
+
+        if Assigned(fOnStop)
+          and fOnStop then
+          Exit;
       end;
 
       OnProgress2(fMap + ' Run ' + IntToStr(L));
