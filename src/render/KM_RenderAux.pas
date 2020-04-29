@@ -19,7 +19,7 @@ type
     procedure Circle(x, y, rad: Single; Fill, Line: TColor4);
     procedure CircleOnTerrain(x, y, rad: Single; Fill, Line: TColor4);
     procedure Dot(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
-    procedure DotOnTerrain(x, y: Single; aCol: TColor4);
+    procedure DotOnTerrain(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
     procedure LineOnTerrain(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
     procedure LineOnTerrain(const A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
     procedure LineOnTerrain(const A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
@@ -194,11 +194,11 @@ begin
 end;
 
 
-procedure TRenderAux.DotOnTerrain(x, y: Single; aCol: TColor4);
+procedure TRenderAux.DotOnTerrain(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
   glColor4ubv(@aCol);
-  RenderDot(X,gTerrain.FlatToHeight(X, Y));
+  RenderDot(X, gTerrain.FlatToHeight(X, Y), aSize);
 end;
 
 
@@ -438,6 +438,8 @@ end;
 
 
 procedure TRenderAux.Passability(const aRect: TKMRect; aPass: Byte);
+const
+  DRAW_DOT_FOR_PASS: set of TKMTerrainPassability = [tpElevate, tpFactor];
 var
   I, K: Integer;
   pass: TKMTerrainPassability;
@@ -446,12 +448,15 @@ begin
   begin
     pass := TKMTerrainPassability(aPass);
     glColor4f(0,1,0,0.25);
-    for I := aRect.Top to aRect.Bottom do
+    for I := aRect.Top to aRect.Bottom do               
       for K := aRect.Left to aRect.Right do
         if pass in gTerrain.Land[I,K].Passability then
         begin
-          if pass = tpFactor then
-            DotOnTerrain(K-1,I-1,icRed)
+          if pass = tpCutTree then
+            CircleOnTerrain(K-1,I-1,0.25,$3F00FF00,icCyan) //draw circle, because dot could be hidden under Trees
+          else
+          if pass in DRAW_DOT_FOR_PASS then
+            DotOnTerrain(K-1,I-1,icCyan)
           else
             RenderQuad(K,I);
         end;
