@@ -99,6 +99,7 @@ end;
 
 procedure TKMGeneral.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('AIGeneral');
   SaveStream.Write(fOwner);
   SaveStream.Write(fLastEquippedTimeIron);
   SaveStream.Write(fLastEquippedTimeLeather);
@@ -109,6 +110,7 @@ end;
 
 procedure TKMGeneral.Load(LoadStream: TKMemoryStream);
 begin
+  LoadStream.CheckMarker('AIGeneral');
   LoadStream.Read(fOwner);
   LoadStream.Read(fLastEquippedTimeIron);
   LoadStream.Read(fLastEquippedTimeLeather);

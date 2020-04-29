@@ -326,6 +326,9 @@ function TForwardFF.FindDefensivePolygons(aOwner: TKMHandID; var aDefPosArr: TKM
 begin
   fOwner := aOwner;
   fFirstLine := 0;
+  fBestDefLines.Mark := 0;
+  fBestDefLines.Count := 0;
+  fBestDefLines.PolyCnt := 0;
 
   gAIFields.Eye.OwnerUpdate(aOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
 
@@ -805,8 +808,10 @@ begin
   fBestDefLines := aBestDefLines;
   aFirstLine := fBestDefLines.Count;
   // Get more defensive points around defensive line
-  FindDefencePos( Max(MIN_DEF_POINTS_CNT, aFirstLine * MULTIPLICATION) );
-  Result := fDefPosArr;
+  if FindDefencePos( Max(MIN_DEF_POINTS_CNT, aFirstLine * MULTIPLICATION) ) then
+    Result := fDefPosArr
+  else
+    SetLength(Result,0);
 end;
 
 

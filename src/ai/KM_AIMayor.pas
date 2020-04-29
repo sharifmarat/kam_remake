@@ -1014,6 +1014,7 @@ end;
 
 procedure TKMayor.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('AIMayor');
   SaveStream.Write(fOwner);
   SaveStream.Write(fRoadBelowStore);
   SaveStream.Write(fDefenceTowersPlanned);
@@ -1030,6 +1031,7 @@ end;
 
 procedure TKMayor.Load(LoadStream: TKMemoryStream);
 begin
+  LoadStream.CheckMarker('AIMayor');
   LoadStream.Read(fOwner);
   LoadStream.Read(fRoadBelowStore);
   LoadStream.Read(fDefenceTowersPlanned);
