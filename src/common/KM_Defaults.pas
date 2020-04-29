@@ -492,7 +492,7 @@ type
     tpElevate,     // Nodes which are forbidden to be elevated by workers (house basements, water, etc..)
     tpWorker,      // Like CanWalk but allows walking on building sites
     tpOwn,         // For AI ownership
-    tpFactor       // Allows vertex (top left) to be factored as a neighbour in flattening algorithm
+    tpFactor       // Allows vertex (top left) to be factored as a neighbour in flattening algorithm (it is to stop mines flattening strangely due to surrounding hills)
   );
   TKMTerrainPassabilitySet = set of TKMTerrainPassability;
 
