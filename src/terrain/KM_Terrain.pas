@@ -125,6 +125,7 @@ type
     function GetMiningRect(aRes: TKMWareType): TKMRect;
 
     function ChooseCuttingDirection(const aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
+    procedure DoFlattenTerrain(const Loc: TKMPoint; var aDepth: Byte; aUpdateWalkConnects: Boolean; aIgnoreCanElevate: Boolean);
 
     procedure UpdateWalkConnect(const aSet: TKMWalkConnectSet; aRect: TKMRect; aDiagObjectsEffected: Boolean);
 
@@ -4068,9 +4069,15 @@ end;
 //Interpolate between 12 vertices surrounding this tile (X and Y, no diagonals)
 //Also it is FlattenTerrain duty to preserve walkability if there are units standing
 //aIgnoreCanElevate ignores CanElevate constraint which prevents crashes during stonemining (hacky)
-procedure TKMTerrain.FlattenTerrain(const Loc: TKMPoint; aUpdateWalkConnects: Boolean = True; aIgnoreCanElevate: Boolean = False);
+procedure TKMTerrain.DoFlattenTerrain(const Loc: TKMPoint; var aDepth: Byte; aUpdateWalkConnects: Boolean; aIgnoreCanElevate: Boolean);
+const
+  // Max depth of recursion for flatten algorythm to use tpElevate as a restriction
+  // After depth goes beyond this value we omit tpElevate restriction and allow to change tiles height under any houses
+  // Its needed, because there is still a possibility to get into infinite recursion loop EnsureRange -> DoFlattenTerrain -> EnsureRange -> ...
+  FLATTEN_RECUR_USE_ELEVATE_MAX_DEPTH = 16;
+
   //If tiles with units standing on them become unwalkable we should try to fix them
-  procedure EnsureWalkable(aX,aY: Word);
+  procedure EnsureWalkable(aX,aY: Word; var aDepth: Byte);
   begin
     //We did not recalculated passability yet, hence tile has CanWalk but CheckHeightPass=False already
     if (tpWalk in Land[aY,aX].Passability)
@@ -4080,7 +4087,7 @@ procedure TKMTerrain.FlattenTerrain(const Loc: TKMPoint; aUpdateWalkConnects: Bo
     and not fMapEditor //Allow units to become "stuck" in MapEd, as height changing is allowed anywhere
     then
       //This recursive call should be garanteed to exit, as eventually the terrain will be flat enough
-      FlattenTerrain(KMPoint(aX,aY), False, aIgnoreCanElevate); //WalkConnect should be done at the end
+      DoFlattenTerrain(KMPoint(aX,aY), aDepth, False, aIgnoreCanElevate or (aDepth > FLATTEN_RECUR_USE_ELEVATE_MAX_DEPTH)); //WalkConnect should be done at the end
   end;
 
   function CanElevateAt(aX, aY: Word): Boolean;
@@ -4109,6 +4116,8 @@ var
   Avg: Word;
 begin
   Assert(TileInMapCoords(Loc.X, Loc.Y), 'Can''t flatten tile outside map coordinates');
+
+  Inc(aDepth); //Increase depth
 
   if aUpdateWalkConnects then
     fBoundsWC := KMRect(Loc.X, Loc.Y, Loc.X, Loc.Y);
@@ -4139,7 +4148,7 @@ begin
   //All 9 tiles around and including this one could have become unwalkable and made a unit stuck, so check them all
   for I := Max(Loc.Y-1, 1) to Min(Loc.Y+1, fMapY-1) do
     for K := Max(Loc.X-1, 1) to Min(Loc.X+1, fMapX-1) do
-      EnsureWalkable(K, I);
+      EnsureWalkable(K, I, aDepth);
 
   UpdateLighting(KMRect(Loc.X-2, Loc.Y-2, Loc.X+3, Loc.Y+3));
   //Changing height will affect the cells around this one
@@ -4147,6 +4156,16 @@ begin
 
   if aUpdateWalkConnects then
     UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrow(fBoundsWC, 1), False);
+end;
+
+
+//Flatten terrain loc
+procedure TKMTerrain.FlattenTerrain(const Loc: TKMPoint; aUpdateWalkConnects: Boolean = True; aIgnoreCanElevate: Boolean = False);
+var
+  depth: Byte;
+begin
+  depth := 0;
+  DoFlattenTerrain(Loc, depth, aUpdateWalkConnects, aIgnoreCanElevate);
 end;
 
 
