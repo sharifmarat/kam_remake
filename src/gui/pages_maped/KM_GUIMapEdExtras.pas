@@ -27,7 +27,7 @@ type
     CheckBox_ShowMiningRadius: TKMCheckBox;
     CheckBox_ShowTowersAttackRadius: TKMCheckBox;
     CheckBox_ShowUnitsAttackRadius: TKMCheckBox;
-    CheckBox_ShowTileOwners: TKMCheckBox;
+    CheckBox_ShowTilesOwner: TKMCheckBox;
     CheckBox_ShowTilesGrid: TKMCheckBox;
     constructor Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
 
@@ -104,9 +104,9 @@ begin
   CheckBox_ShowUnitsAttackRadius.Checked := False; //Disabled by default
   CheckBox_ShowUnitsAttackRadius.OnClick := Extra_Change;
 
-  CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 50, 170, 220, 20, gResTexts[TX_MAPED_SHOW_TILE_OWNERS], fntAntiqua);
-  CheckBox_ShowTileOwners.Checked := False; //Disabled by default
-  CheckBox_ShowTileOwners.OnClick := Extra_Change;
+  CheckBox_ShowTilesOwner := TKMCheckBox.Create(Panel_Extra, 50, 170, 220, 20, gResTexts[TX_MAPED_SHOW_TILE_OWNERS], fntAntiqua);
+  CheckBox_ShowTilesOwner.Checked := False; //Disabled by default
+  CheckBox_ShowTilesOwner.OnClick := Extra_Change;
   CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 50, 190, 220, 20, gResTexts[TX_MAPED_SHOW_TILES_GRID], fntAntiqua);
   CheckBox_ShowTilesGrid.Checked := False; //Disabled by default
   CheckBox_ShowTilesGrid.OnClick := Extra_Change;
@@ -128,8 +128,9 @@ end;
 
 procedure TKMMapEdExtras.Extra_Change(Sender: TObject);
 begin
-  SHOW_TERRAIN_PASS := TrackBar_Passability.Position;
+  SHOW_TERRAIN_PASS       := TrackBar_Passability.Position;
   SHOW_TERRAIN_TILES_GRID := CheckBox_ShowTilesGrid.Checked;
+  SHOW_TILES_OWNER         := CheckBox_ShowTilesOwner.Checked;
 
   if TrackBar_Passability.Position <> 0 then
     Label_Passability.Caption := PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)]
@@ -165,8 +166,9 @@ end;
 
 procedure TKMMapEdExtras.Refresh;
 begin
-  CheckBox_ShowTilesGrid.Checked := SHOW_TERRAIN_TILES_GRID;
-  TrackBar_Passability.Position := SHOW_TERRAIN_PASS;
+  CheckBox_ShowTilesGrid.Checked  := SHOW_TERRAIN_TILES_GRID;
+  CheckBox_ShowTilesOwner.Checked := SHOW_TILES_OWNER;
+  TrackBar_Passability.Position   := SHOW_TERRAIN_PASS;
 end;
 
 

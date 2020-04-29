@@ -2440,6 +2440,9 @@ begin
 
   if SHOW_POINTER_DOTS then
     gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(axX), fPositionF.Y + 1   + GetSlide(axY), fPointerCount);
+
+  if SHOW_TILE_UNIT then
+    gRenderAux.CircleOnTerrain(fPositionF.X - 0.5 + GetSlide(axX), fPositionF.Y - 0.5 + GetSlide(axY), 0.35, GetRandomColorWSeed(fUID));
 end;
 
 

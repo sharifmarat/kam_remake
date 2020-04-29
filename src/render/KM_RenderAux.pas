@@ -17,7 +17,8 @@ type
     procedure RenderQuad(pX, pY: Integer);
   public
     procedure Circle(x, y, rad: Single; Fill, Line: TColor4);
-    procedure CircleOnTerrain(x, y, rad: Single; Fill, Line: TColor4);
+    procedure CircleOnTerrain(x, y, rad: Single; Fill, Line: TColor4); overload;
+    procedure CircleOnTerrain(X, Y, Rad: Single; aColor: TColor4); overload;
     procedure Dot(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
     procedure DotOnTerrain(x, y: Single; aCol: TColor4);
     procedure LineOnTerrain(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
@@ -34,6 +35,12 @@ type
     procedure TileTerrainOverlays(const aRect: TKMRect);
     procedure TileTerrainJamMeter(const aRect: TKMRect);
     procedure TileTerrainHeight(const aRect: TKMRect);
+    procedure TileTerrainTileObjectID(const aRect: TKMRect);
+    procedure TileTerrainTileLock(const aRect: TKMRect);
+    procedure TileTerrainTileUnit(const aRect: TKMRect);
+    procedure TileTerrainVertexUnit(const aRect: TKMRect);
+    procedure TileTerrainTreeAge(const aRect: TKMRect);
+    procedure TileTerrainFieldAge(const aRect: TKMRect);
     procedure Passability(const aRect: TKMRect; aPass: Byte);
     procedure RenderResizeMap(const aExceptRect: TKMRect);
     procedure Projectile(x1, y1, x2, y2: Single);
@@ -56,7 +63,7 @@ var
 
 implementation
 uses
-  KM_Render, KM_Game, KM_Terrain, KM_Resource, KM_ResTileset;
+  KM_Render, KM_Game, KM_Units, KM_Terrain, KM_Resource, KM_ResTileset, KM_CommonUtils;
 
 const
   TILE_TERRAIN_LAYERS_COLORS: array [0..3] of Cardinal =
@@ -134,6 +141,12 @@ begin
         glVertex2f(Cos(I/SEC_COUNT*pi)*Rad, Sin(I/SEC_COUNT*pi)*Rad);//-1..1
     glEnd;
   glPopMatrix;
+end;
+
+
+procedure TRenderAux.CircleOnTerrain(X, Y, Rad: Single; aColor: TColor4);
+begin
+  CircleOnTerrain(X, Y, Rad, aColor, aColor);
 end;
 
 
@@ -400,7 +413,76 @@ var
 begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
-      Text(J, I, IntToStr(Byte(gTerrain.Land[I,J].TileOverlay)), icOrange);
+      Text(J, I, IntToStr(Byte(gTerrain.Land[I,J].TileOverlay)), icDarkPink);
+end;
+
+
+procedure TRenderAux.TileTerrainTileLock(const aRect: TKMRect);
+const
+  TILE_LOCK_STR: array[TKMTileLock] of string = ('', 'Fenced', 'Digged', 'House', 'FieldW', 'RoadW');
+var
+  I, J: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      Text(J, I, TILE_LOCK_STR[gTerrain.Land[I,J].TileLock], icCyan);
+end;
+
+procedure TRenderAux.TileTerrainTileObjectID(const aRect: TKMRect);
+var
+  I, J: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      Text(J, I, IntToStr(gTerrain.Land[I,J].Obj), icCyan);
+end;
+
+procedure TRenderAux.TileTerrainTileUnit(const aRect: TKMRect);
+var
+  I, J: Integer;
+  color: Cardinal;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      if gTerrain.Land[I,J].IsUnit <> nil then
+      begin
+        color := GetRandomColorWSeed(TKMUnit(gTerrain.Land[I,J].IsUnit).UID);
+        Quad(J, I, $80FFFFFF and color);
+      end;
+end;
+
+
+procedure TRenderAux.TileTerrainVertexUnit(const aRect: TKMRect);
+var
+  I, J: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      case gTerrain.Land[I,J].IsVertexUnit of
+        vuNone: ;
+        vuNWSE: LineOnTerrain(J - 0.5, I - 0.5, J - 1.5, I - 1.5, icBlue);
+        vuNESW: LineOnTerrain(J - 1.5, I - 0.5, J - 0.5, I - 1.5, icBlue);
+      end;
+end;
+
+
+procedure TRenderAux.TileTerrainTreeAge(const aRect: TKMRect);
+var
+  I, J: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      Text(J, I, IntToStr(gTerrain.Land[I,J].TreeAge), icCyan);
+end;
+
+
+procedure TRenderAux.TileTerrainFieldAge(const aRect: TKMRect);
+var
+  I, J: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      Text(J, I, IntToStr(gTerrain.Land[I,J].FieldAge), icCyan);
 end;
 
 
@@ -425,14 +507,11 @@ end;
 
 
 procedure TRenderAux.TileTerrainHeight(const aRect: TKMRect);
-const
-  JAM_DRAW_STEP = 3;
 var
-  I, J, K, Limit: Integer;
+  I, J: Integer;
 begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
-      //Draw text over quads
       Text(J, I, IntToStr(gTerrain.Land[I,J].Height), icCyan);
 end;
 
@@ -489,6 +568,8 @@ end;
 
 procedure TRenderAux.Text(pX, pY: Single; const aText: string; aCol: TColor4; const aInset: TKMPointF; aConsiderTextLength: Boolean = True);
 begin
+  if aText = '' then Exit;
+
   TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
   glColor4ubv(@aCol);
   glRasterPos2f(pX + aInset.X - 0.5 - Byte(aConsiderTextLength)*Length(aText)/20, gTerrain.FlatToHeight(pX + aInset.X - 0.5, pY + aInset.Y - 0.5));
