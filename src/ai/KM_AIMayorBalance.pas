@@ -1034,6 +1034,7 @@ end;
 
 procedure TKMayorBalance.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('AIMayorBalance');
   SaveStream.Write(fOwner);
 
   SaveStream.Write(GoldNeed);
@@ -1055,6 +1056,7 @@ end;
 
 procedure TKMayorBalance.Load(LoadStream: TKMemoryStream);
 begin
+  LoadStream.CheckMarker('AIMayorBalance');
   LoadStream.Read(fOwner);
 
   LoadStream.Read(GoldNeed);

@@ -492,6 +492,7 @@ end;
 
 procedure TKMCityPlanner.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('AICityPlanner');
   SaveStream.Write(fOwner);
   fFinder.Save(SaveStream);
   fListGold.SaveToStream(SaveStream);
@@ -500,6 +501,7 @@ end;
 
 procedure TKMCityPlanner.Load(LoadStream: TKMemoryStream);
 begin
+  LoadStream.CheckMarker('AICityPlanner');
   LoadStream.Read(fOwner);
   fFinder.Load(LoadStream);
   fListGold.LoadFromStream(LoadStream);

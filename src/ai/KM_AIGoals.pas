@@ -209,6 +209,7 @@ procedure TKMGoals.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
+  SaveStream.PlaceMarker('Goals');
   SaveStream.Write(fCount);
   for I := 0 to fCount - 1 do
     SaveStream.Write(fGoals[I], SizeOf(fGoals[I]));
@@ -219,6 +220,7 @@ procedure TKMGoals.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin
+  LoadStream.CheckMarker('Goals');
   LoadStream.Read(fCount);
   SetLength(fGoals, fCount);
   for I := 0 to fCount - 1 do
