@@ -145,8 +145,10 @@ type
 
   TKMRunnerDesyncTest = class(TKMRunnerCommon)
   type
-    TKMDesyncRunKind = (drkGame, drkReplay, drkGameCRC, drkReplayCRC);
+    TKMDesyncRunKind = (drkGame, drkReplay, drkGameCRC, drkReplayCRC, drkGameSave);
   private
+    fRunSeed: Integer;
+    fStartTime: Cardinal;
     fSaveName: string;
     fDesyncsDir: string;
     fRunKind: TKMDesyncRunKind;
@@ -955,7 +957,7 @@ procedure TKMRunnerDesyncTest.SetUp();
 begin
   inherited;
 
-  fDesyncsDir := Format('%s..\..\Desync\', [ExtractFilePath(ParamStr(0))]);
+  fDesyncsDir := Format('%s..\Desyncs\', [ExeDir]);
   ForceDirectories(fDesyncsDir);
 
   SetLength(fTickCRC, fResults.TimesCount);
@@ -966,7 +968,7 @@ begin
   // Deactivate KaM log
   if (gLog = nil) then
     gLog := TKMLog.Create(Format('%sUtils\Runner\Runner_Log.log',[ExeDir]));
-//  gLog.MessageTypes := [];
+  gLog.MessageTypes := [];
 
   gLog.SetDefaultMessageTypes;
 
@@ -986,7 +988,7 @@ begin
   SKIP_SAVE_SAVPTS_TO_FILE := True;
   SAVE_RANDOM_CHECKS := False;
   GAME_SAVE_CHECKPOINT_FREQ_MIN := 10;
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX := 100;
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX := 1000;
 
 //  Include(gLog.MessageTypes, lmtRandomChecks)
 end;
@@ -1013,6 +1015,8 @@ begin
 
   fRngMismatchFound := True;
   fRngMismatchTick := gGame.GameTick;
+
+  OnProgress_Left2(Format('RNG mismatch: %d', [fRngMismatchTick]));
 end;
 
 
@@ -1087,7 +1091,7 @@ end;
 
 function TKMRunnerDesyncTest.TickPlayed(aTick: Cardinal): Boolean;
 var
-  tickCRC: Cardinal;
+  tickCRC, T: Cardinal;
 begin
   Result := True;
 
@@ -1102,7 +1106,7 @@ begin
                       tickCRC := gGame.GetCurrectTickSaveCRC;
                       fTickCRC[gGame.GameTick - fSavePointTick] := tickCRC;
 
-                      SaveGame();
+                      //SaveGame();
                     end;
                   end;
     drkReplayCRC: begin
@@ -1110,7 +1114,7 @@ begin
                     if tickCRC <> fTickCRC[gGame.GameTick - fSavePointTick] then
                     begin
                       SaveGameAndMove;
-                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick));
+//                      MoveSave(GetSaveName(drkGameCRC, gGame.GameTick));
 
                       //Move last sync saves
                       if SAVE_LAST_SYNC_TICK then
@@ -1122,32 +1126,38 @@ begin
                       fCRCDesyncFound := True;
                       fCRCDesyncTick := gGame.GameTick;
 
-                      Result := False;
+                      OnProgress_Left3(Format('CRC desync: %d', [fCRCDesyncTick]));
+
+                      Result := False; //Stop simulation
                     end;
+                  end;
+    drkGameSave:  begin
+                    if gGame.GameTick = fCRCDesyncTick then
+                      SaveGameAndMove
+                    else
+                    if gGame.GameTick = fRngMismatchTick then
+                      SaveGameAndMove;
                   end;
   end;
 
+  T := GetTimeSince(fStartTime);
   OnProgress2(Format('%s: %s R%d T%d', [GetRunKindStr, LeftStr(fMap, Min(Length(fMap), 17)), fRun, aTick]));
+  OnProgress5(Format('Time elapsed: %.2d:%.2d:%.2d', [T div (60*60*1000), (T div (60*1000)) mod 60, (T div 1000) mod 60]));
 end;
 
 
 procedure TKMRunnerDesyncTest.Log(const aString: string);
 begin
-  gLog.AddTime('[DESYNC] ' + aString);
+  gLog.AddNoTime('[DESYNC] ' + aString);
 end;
 
 
 procedure TKMRunnerDesyncTest.Execute(aRun: Integer);
 const
-  SIMUL_TIME_MAX = 10*60*60; //1 hour
-  SAVEPT_FREQ = 10*60*1; //every 1 min
-  REPLAY_LENGTH = 50; // ticks to find RNG mismatch
-  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
-
   // Maps for simulation (I dont use for loop in this array)
-//  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
-//                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
-//                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
+  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
+                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
+                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
   MAPS_8P: array [1..29] of String = ('A War of Justice','Babylon','Back in the Desert','Center Castle Looting','Cold Water 8P',
                                    'Complication in Simplicity','Crystalline Falls','Cursed Ravine','Dance of Death','Dead of Winter',
                                    'Drastic Measures','Ending the Tyranny','Twin Peaks','Valley of the Equilibrium 8P', 'Frozen Waters',
@@ -1161,31 +1171,92 @@ const
                                   'River Crossing','Shoulder to Shoulder','The Pirates','Unknown Danger','Battle in the Ruined City',
                                   'Lost City Struggle','Cross','Cursed Land','Gunplay','Icewind Valley','Rocky Mountains',
                                   'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
-  cnt_MAP_SIMULATIONS = 30;
-var
-  K,L,I: Integer;
-  desyncCnt: Integer;
-  simulLastTick: Integer;
-  mapFullName, desyncSaveName: string;
-begin
-  desyncCnt := 0;
-  for K := Low(MAPS) to High(MAPS) do
+
+  COOP_MAPS: array[1..45] of string = ('A Clash of Kings', 'A Farmers Wish Coop', 'A Southern Journey', 'A Way East', 'Bridgecal Dundee',
+                                  'Coalical Dundee', 'Dead Border','Hillycal Dundee','Lakeland','No Escape','Northern Islands I',
+                                  'Return to Moorbach','Siege of Castle Fennford','The Cracker','The Dig','TPR 03','TPR 04','TPR 05',
+                                  'TPR 06','TPR 07','TPR 08','TPR 09','TPR 10','TPR 11','TPR 12','TPR 13','TPR 14','Tropical Dundee',
+                                  'TSK 03','TSK 06','TSK 07','TSK 08','TSK 09','TSK 10','TSK 11','TSK 12','TSK 13','TSK 14','TSK 15','TSK 16',
+                                  'TSK 17','TSK 18','TSK 19','TSK 20','Waterfall Dundee');
+
+  cnt_MAP_SIMULATIONS = 10;
+
+  SIMUL_TIME_MAX = 10*60*180; //1 hour
+  SAVEPT_FREQ = 10*60*1; //every 1 min
+  REPLAY_LENGTH = 1500; // ticks to find RNG mismatch
+//  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+  LOAD_SAVEPT_AT_TICK = 0;
+  SKIP_FIRST_SAVEPT_CNT = 15; //Skip first savepoints to save some time
+
+  procedure StartGame;
+  var
+    mapFullName: string;
   begin
-    fMap := MAPS[K];
+    fRunSeed := 1;
+
+    mapFullName := Format('%sMapsMP\%s\%s.dat',[ExeDir,fMap,fMap]);
+    gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, AIType);
+  end;
+
+
+var
+  K,L,I,M: Integer;
+  desyncCnt, mapsCnt: Integer;
+  totalTime: Cardinal;
+  simulLastTick, totalRuns, totalLoads: Integer;
+  desyncSaveName: string;
+begin
+  PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
+//  MAKE_SAVEPT_AT_TICK := 40800;
+
+  M := 0;
+  desyncCnt := 0;
+  totalRuns := 0;
+  totalLoads := 0;
+  fStartTime := TimeGet;
+
+  case MapsType of
+    rmtClassic: mapsCnt := Length(MAPS);
+    rmtMP8:     mapsCnt := Length(MAPS_8P);
+    rmtFight:   mapsCnt := Length(FIGHT_MAPS);
+    rmtCoop:    mapsCnt := Length(COOP_MAPS);
+  end;
+
+//  for K := Low(MAPS) to High(MAPS) do
+//  for K := 5 to High(MAPS) do
+  while M < mapsCnt do
+  begin
+    K := Random(mapsCnt) + 1;
+//    fMap := COOP_MAPS[K];
+    case MapsType of
+      rmtClassic: fMap := MAPS[K];
+      rmtMP8:     fMap := MAPS_8P[K];
+      rmtFight:   fMap := FIGHT_MAPS[K];
+      rmtCoop:    fMap := COOP_MAPS[K];
+    end;
+
+    Inc(M);
 
     for L := 1 to cnt_MAP_SIMULATIONS do
+//    L := 1;
     begin
       Reset;
+      Inc(totalRuns);
       fRun := L;
-      CUSTOM_SEED_VALUE := Max(1,L+11);
+      CUSTOM_SEED_VALUE := L + M*cnt_MAP_SIMULATIONS + Seed;
 
-      fSaveName := Format('%s_SD_%d_RN%.3d',[fMap, CUSTOM_SEED_VALUE, L]);
+      OnProgress3('Seed: ' + IntToStr(CUSTOM_SEED_VALUE));
+
+      OnProgress_Left('');
+      OnProgress_Left2('');
+      OnProgress_Left3('');
+
+      fSaveName := Format('%s_SD_%d_RN%.2d',[fMap, CUSTOM_SEED_VALUE, L]);
 
       fRunKind := drkGame;
 
-//      SetKaMSeed(Max(1,L));
-      mapFullName := Format('%s..\..\MapsMP\%s\%s.dat',[ExtractFilePath(ParamStr(0)),fMap,fMap]);
-      gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+      StartGame;
 
       gGameApp.GameSettings.DebugSaveGameAsText := True;
 
@@ -1210,11 +1281,18 @@ begin
 
       for I := 0 to SAVEPT_CNT - 1 do
       begin
-        fSavePointTick := (I + 1) * SAVEPT_FREQ;
-        Log('SavePointTick = ' + IntToStr(fSavePointTick));
-//        tick := (Random((simulTicks div SAVEPT_FREQ)) + 1) * SAVEPT_FREQ + 1;
+        if LOAD_SAVEPT_AT_TICK <> 0 then
+          fSavePointTick := LOAD_SAVEPT_AT_TICK
+        else
+          fSavePointTick := (I + SKIP_FIRST_SAVEPT_CNT) * SAVEPT_FREQ;
+
         if gGameApp.TryLoadSavedReplay(fSavePointTick) then
         begin
+          Inc(totalLoads);
+          OnProgress_Left(Format('Load: %d', [fSavePointTick]));
+          OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
+          Log('SavePointTick = ' + IntToStr(fSavePointTick));
+
           fRunKind := drkReplay;
           gGame.GameInputProcess.OnReplayDesync := ReplayCrashed;
 
@@ -1225,11 +1303,11 @@ begin
           begin
             Log(Format('Found rng mismatch on ''%s'' at tick %d', [fMap, fRngMismatchTick]));
             Inc(desyncCnt);
-            OnProgress3('Desyncs: ' + IntToStr(desyncCnt));
+            OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
 
             fRunKind := drkGameCRC;
 
-            gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, aitAdvanced);
+            StartGame;
 
             SimulateGame(0, fRngMismatchTick - 1);
 
@@ -1246,16 +1324,28 @@ begin
 
               // tick CRC desync found
               if fCRCDesyncFound then
-                Log(Format('Found save CRC desync on ''%s'' Seed = %d at tick %d', [fMap, CUSTOM_SEED_VALUE, fCRCDesyncTick]))
+              begin
+                Log(Format('Found save CRC desync on ''%s'' Seed = %d at tick %d', [fMap, CUSTOM_SEED_VALUE, fCRCDesyncTick]));
+                fRunKind := drkGameSave;
+                StartGame;
+                SimulateGame(0, Max(fCRCDesyncTick, fRngMismatchTick));
+              end 
               else
                 Log('!!! Could not find save CRC desync tick !!!');
             end;
             Break;
           end;
-        end;
+        end
+        else
+          OnProgress_Left('');
       end;
+
       OnProgress2(fMap + ' Run ' + IntToStr(L));
-      OnProgress3('Desyncs: ' + IntToStr(desyncCnt));
+      OnProgress4(Format('Desyncs: %d / %d / %d', [desyncCnt, totalRuns, totalLoads]));
+
+      if Assigned(fOnStop)
+        and fOnStop then
+        Exit;
     end;
   end;
 
@@ -1272,7 +1362,7 @@ end;
 
 procedure TKMRunnerDesyncTest.Tick_GIPRandom;
 const
-  FREQ = 10;
+  FREQ = 50;
 var
   hand, enemyHand: TKMHand;
   group, group2: TKMUnitGroup;
@@ -1287,9 +1377,10 @@ begin
 
   // We use gRandom.Get for repeatability in Stadium
 
-  if KaMRandom(100, '') = 0 then
+  Log(Format('Tick: %5d %d' ,[gGame.GameTick, fRunSeed]));
+  if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
   begin
-    gMySpectator.HandID := KaMRandom(gHands.Count, '');
+    gMySpectator.HandID := KaMRandomWSeed(fRunSeed, gHands.Count);
     hand := gMySpectator.Hand;
 
     if hand.IsAnimal then Exit;
@@ -1297,9 +1388,9 @@ begin
     // Army
     if hand.UnitGroups.Count > 0 then
     begin
-      group := hand.UnitGroups[KaMRandom(hand.UnitGroups.Count, '')];
+      group := hand.UnitGroups[KaMRandomWSeed(fRunSeed, hand.UnitGroups.Count)];
 
-      case KaMRandom(FREQ, '') of
+      case KaMRandomWSeed(fRunSeed, FREQ) of
         0:  gGameApp.Game.GameInputProcess.CmdArmy(gicArmyFeed, group);
         1:  gGameApp.Game.GameInputProcess.CmdArmy(gicArmySplit, group);
         2:  gGameApp.Game.GameInputProcess.CmdArmy(gicArmySplitSingle, group);
@@ -1307,78 +1398,78 @@ begin
         4:  gGameApp.Game.GameInputProcess.CmdArmy(gicArmyHalt, group);
       end;
 
-      enemyHand := gHands[KaMRandom(gHands.Count, '')];
+      enemyHand := gHands[KaMRandomWSeed(fRunSeed, gHands.Count)];
       if enemyHand <> hand then
       if enemyHand.Units.Count > 0 then
       begin
-        enemyUnit := enemyHand.Units[KaMRandom(enemyHand.Units.Count, '')];
+        enemyUnit := enemyHand.Units[KaMRandomWSeed(fRunSeed, enemyHand.Units.Count)];
 
-        if KaMRandom(FREQ, '') = 0 then
+        if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
           gGameApp.Game.GameInputProcess.CmdArmy(gicArmyAttackUnit, group, enemyUnit);
       end;
 
-      group2 := hand.UnitGroups[KaMRandom(hand.UnitGroups.Count, '')];
+      group2 := hand.UnitGroups[KaMRandomWSeed(fRunSeed, hand.UnitGroups.Count)];
 
-      if KaMRandom(FREQ, '') = 0 then
+      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
         gGameApp.Game.GameInputProcess.CmdArmy(gicArmyLink, group, group2);
 
       if enemyHand.Houses.Count > 0 then
       begin
-        enemyHouse := enemyHand.Houses[KaMRandom(enemyHand.Houses.Count, '')];
+        enemyHouse := enemyHand.Houses[KaMRandomWSeed(fRunSeed, enemyHand.Houses.Count)];
 
-        if KaMRandom(FREQ, '') = 0 then
+        if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
           gGameApp.Game.GameInputProcess.CmdArmy(gicArmyAttackHouse, group, enemyHouse);
       end;
 
 //      if hand.Houses.Count > 0 then
 //      begin
-//        house := hand.Houses[KaMRandom(hand.Houses.Count, '')];
+//        house := hand.Houses[KaMRandomWSeed(fRunSeed, hand.Houses.Count)];
 //        if house.HouseType in [htTowerArrow, htTower2] then
-//        if KaMRandom(FREQ, '') = 0 then
+//        if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
 //          gGameApp.Game.GameInputProcess.CmdArmyCrewTower(group, house);
 //      end;
 
 //      if group.IsInsideTower then
 //      begin
-//        if KaMRandom(FREQ, '') = 0 then
+//        if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
 //          gGameApp.Game.GameInputProcess.CmdArmyExitHouse(group, group.Members[0].InHouse);
 //      end;
 
-      if KaMRandom(FREQ, '') = 0 then
-        gGameApp.Game.GameInputProcess.CmdArmy(gicArmyFormation, group, TKMTurnDirection(KaMRandom(3, '')), KaMRandom(group.Count, ''));
-      if KaMRandom(FREQ, '') = 0 then
-        gGameApp.Game.GameInputProcess.CmdArmy(gicArmyWalk, group, TKMPoint.New(KaMRandom(gTerrain.MapX-1,''), KaMRandom(gTerrain.MapY-1, '')), TKMDirection(KaMRandom(9, '')));
+      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
+        gGameApp.Game.GameInputProcess.CmdArmy(gicArmyFormation, group, TKMTurnDirection(KaMRandomWSeed(fRunSeed, 3)), KaMRandomWSeed(fRunSeed, group.Count));
+      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
+        gGameApp.Game.GameInputProcess.CmdArmy(gicArmyWalk, group, TKMPoint.New(KaMRandomWSeed(fRunSeed, gTerrain.MapX-1), KaMRandomWSeed(fRunSeed, gTerrain.MapY-1)), TKMDirection(KaMRandomWSeed(fRunSeed, 9)));
     end;
 
     // Building
     begin
       // gicBuildRemoveFieldPlan
-      P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomI2(30,''), KaMRandomI2(30,'')));
-      case KaMRandom(FREQ, '') of
+      P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomWSeedI2(fRunSeed, 30), KaMRandomWSeedI2(fRunSeed, 30)));
+      case KaMRandomWSeed(fRunSeed, FREQ) of
         0: gGameApp.Game.GameInputProcess.CmdBuild(gicBuildRemoveFieldPlan, P);
         1: gGameApp.Game.GameInputProcess.CmdBuild(gicBuildRemoveHouse, P);
         2: gGameApp.Game.GameInputProcess.CmdBuild(gicBuildRemoveHousePlan, P);
       end;
 
-      P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomI2(30,''), KaMRandomI2(30,'')));
-      case KaMRandom(FREQ, '') of
+      P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomWSeedI2(fRunSeed, 30), KaMRandomWSeedI2(fRunSeed, 30)));
+      case KaMRandomWSeed(fRunSeed, FREQ) of
         0: gGameApp.Game.GameInputProcess.CmdBuild(gicBuildRemoveFieldPlan, P);
         1: gGameApp.Game.GameInputProcess.CmdBuild(gicBuildRemoveHouse, P);
         2: gGameApp.Game.GameInputProcess.CmdBuild(gicBuildRemoveHousePlan, P);
       end;
 
       // CmdBuildAddFieldPlan
-      if KaMRandom(FREQ, '') = 0 then
+      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
       begin
-        P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomI2(30,''), KaMRandomI2(30,'')));
-        gGameApp.Game.GameInputProcess.CmdBuild(gicBuildAddFieldPlan, P, TKMFieldType(KaMRandom(3, '') + 1))
+        P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomWSeedI2(fRunSeed, 30), KaMRandomWSeedI2(fRunSeed, 30)));
+        gGameApp.Game.GameInputProcess.CmdBuild(gicBuildAddFieldPlan, P, TKMFieldType(KaMRandomWSeed(fRunSeed, 3) + 1))
       end;
 //
       // CmdBuildAddHousePlan
-      if KaMRandom(FREQ * 5, '') = 0 then
+      if KaMRandomWSeed(fRunSeed, FREQ * 5) = 0 then
       begin
-        P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomI2(30, ''), KaMRandomI2(30, '')));
-        ht := TKMHouseType(KaMRandom(Ord(HOUSE_MAX) - Ord(HOUSE_MIN) + 1, '') + 2);
+        P := gTerrain.EnsureTileInMapCoords(hand.CenterScreen + TKMPoint.New(KaMRandomWSeedI2(fRunSeed, 30), KaMRandomWSeedI2(fRunSeed, 30)));
+        ht := TKMHouseType(KaMRandomWSeed(fRunSeed, Ord(HOUSE_MAX) - Ord(HOUSE_MIN) + 1) + 2);
         if (ht <> htSiegeWorkshop)
           and gRes.Houses.IsValid(ht)
           {and gRes.Houses[ht].HouseEnabled
@@ -1390,10 +1481,10 @@ begin
     // House
     if hand.Houses.Count > 0 then
     begin
-      house := hand.Houses[KaMRandom(hand.Houses.Count, '')];
+      house := hand.Houses[KaMRandomWSeed(fRunSeed, hand.Houses.Count)];
 
       // gicHouseRepairToggle, gicHouseClosedForWorkerTgl, gicHBarracksAcceptRecruitsTgl, gicHouseDeliveryModeNext, gicHouseDeliveryModePrev
-      case KaMRandom(FREQ, '') of
+      case KaMRandomWSeed(fRunSeed, FREQ) of
         0:  gGameApp.Game.GameInputProcess.CmdHouse(gicHouseRepairToggle, house);
         1:  gGameApp.Game.GameInputProcess.CmdHouse(gicHouseClosedForWorkerTgl, house);
         2:  gGameApp.Game.GameInputProcess.CmdHouse(gicHBarracksAcceptRecruitsTgl, house);
@@ -1402,47 +1493,47 @@ begin
       end;
 
       //gicHouseOrderProduct, gicHouseSchoolTrainChOrder
-      if KaMRandom(FREQ, '') = 0 then
+      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
         if house.IsComplete then
           if gRes.Houses[house.HouseType].DoesOrders then
-            gGameApp.Game.GameInputProcess.CmdHouse(gicHouseOrderProduct, house, KaMRandom(4, ''), KaMRandom(9, ''));
+            gGameApp.Game.GameInputProcess.CmdHouse(gicHouseOrderProduct, house, KaMRandomWSeed(fRunSeed, 4), KaMRandomWSeed(fRunSeed, 9));
 
       //gicHouseRemoveTrain gicHouseSchoolTrainChOrder gicHouseRemoveTrain gicHouseSchoolTrain gicHouseSchoolTrainChLastUOrder
       if house.IsComplete then
         if house.HouseType = htSchool then
-          case KaMRandom(FREQ, '') of
-            0: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseRemoveTrain, house, KaMRandom(5, ''));
-//            1: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseSchoolTrainChOrder, house, KaMRandom(5, ''), KaMRandom(5, ''));
-            2: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseRemoveTrain, house, KaMRandom(5, ''));
-            3: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseSchoolTrain, house, School_Order[KaMRandom(Length(School_Order), '')], KaMRandom(10, ''));
-//            4: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseSchoolTrainChLastUOrder, house, KaMRandom(2, ''));
+          case KaMRandomWSeed(fRunSeed, FREQ) of
+            0: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseRemoveTrain, house, KaMRandomWSeed(fRunSeed, 5));
+//            1: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseSchoolTrainChOrder, house, KaMRandomWSeed(fRunSeed, 5), KaMRandomWSeed(fRunSeed, 5));
+            2: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseRemoveTrain, house, KaMRandomWSeed(fRunSeed, 5));
+            3: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseSchoolTrain, house, School_Order[KaMRandomWSeed(fRunSeed, Length(School_Order))], KaMRandomWSeed(fRunSeed, 10));
+//            4: gGameApp.Game.GameInputProcess.CmdHouse(gicHouseSchoolTrainChLastUOrder, house, KaMRandomWSeed(fRunSeed, 2));
           end;
 
 
-//      if KaMRandom(FREQ, '') = 0 then
+//      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
 //        if gRes.Houses[house.HouseType].IsSpacious then
 //          if (gRes.Houses[house.HouseType].WareInCount > 0) then
 //            gGameApp.Game.GameInputProcess.CmdHouseWareBlock(
-//              house, gRes.Houses[house.HouseType].WareInType[KaMRandom(gRes.Houses[house.HouseType].WareInCount)]);
+//              house, gRes.Houses[house.HouseType].WareInType[KaMRandomWSeed(fRunSeed, gRes.Houses[house.HouseType].WareInCount)]);
 //
 //    //procedure CmdHouseMarketFrom(aHouse: TKMHouse; aItem: TKMWareType);
 //    //procedure CmdHouseMarketTo(aHouse: TKMHouse; aItem: TKMWareType);
 //
-//      if KaMRandom(FREQ, '') = 0 then
+//      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
 //        if house.HouseType = htWoodcutters then
-//          gGameApp.Game.GameInputProcess.CmdHouseWoodcutterMode(house, TKMWoodcutterMode(KaMRandom(3, '')));
+//          gGameApp.Game.GameInputProcess.CmdHouseWoodcutterMode(house, TKMWoodcutterMode(KaMRandomWSeed(fRunSeed, 3)));
 //
-//      if KaMRandom(FREQ, '') = 0 then
+//      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
 //      if house.IsComplete then
 //        if gRes.Houses[house.HouseType].TrainCount > 0 then
 //          gGameApp.Game.GameInputProcess.CmdHouseTrainQueueAdd(
-//            house, gRes.Houses[house.HouseType].Trains[KaMRandom(gRes.Houses[house.HouseType].TrainCount)], KaMRandom(3, ''));
+//            house, gRes.Houses[house.HouseType].Trains[KaMRandomWSeed(fRunSeed, gRes.Houses[house.HouseType].TrainCount)], KaMRandomWSeed(fRunSeed, 3));
 //
-//      if KaMRandom(FREQ, '') = 0 then
+//      if KaMRandomWSeed(fRunSeed, FREQ) = 0 then
 //      if house.IsComplete then
 //        if gRes.Houses[house.HouseType].TrainCount > 0 then
 //          gGameApp.Game.GameInputProcess.CmdHouseTrainQueueRemoveIndex(
-//            house, KaMRandom(3, ''), KaMRandom(3, ''));
+//            house, KaMRandomWSeed(fRunSeed, 3), KaMRandomWSeed(fRunSeed, 3));
     end;
   end;
 end;

@@ -5,6 +5,7 @@ object Form2: TForm2
   ClientHeight = 641
   ClientWidth = 1097
   Color = clBtnFace
+  DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -19,14 +20,14 @@ object Form2: TForm2
   TextHeight = 13
   object Label1: TLabel
     Left = 8
-    Top = 128
+    Top = 127
     Width = 35
     Height = 13
     Caption = 'Cycles:'
   end
   object Label2: TLabel
-    Left = 177
-    Top = 235
+    Left = 187
+    Top = 256
     Width = 15
     Height = 13
     Alignment = taRightJustify
@@ -40,30 +41,74 @@ object Form2: TForm2
     Caption = 'Duration (min):'
   end
   object Label5: TLabel
-    Left = 177
-    Top = 216
+    Left = 187
+    Top = 236
     Width = 15
     Height = 13
     Alignment = taRightJustify
     Caption = '     '
   end
   object Label6: TLabel
-    Left = 174
-    Top = 263
+    Left = 184
+    Top = 276
     Width = 18
     Height = 13
     Alignment = taRightJustify
     Caption = '      '
   end
-  object Button1: TButton
-    Left = 103
-    Top = 172
+  object Label7: TLabel
+    Left = 8
+    Top = 168
+    Width = 28
+    Height = 13
+    Caption = 'Seed:'
+  end
+  object Label8: TLabel
+    Left = 184
+    Top = 296
+    Width = 18
+    Height = 13
+    Alignment = taRightJustify
+    Caption = '      '
+  end
+  object Label9: TLabel
+    Left = 8
+    Top = 215
+    Width = 18
+    Height = 13
+    Caption = '      '
+  end
+  object Label10: TLabel
+    Left = 8
+    Top = 256
+    Width = 18
+    Height = 13
+    Caption = '      '
+  end
+  object Label11: TLabel
+    Left = 8
+    Top = 276
+    Width = 18
+    Height = 13
+    Caption = '      '
+  end
+  object Label12: TLabel
+    Left = 184
+    Top = 316
+    Width = 18
+    Height = 13
+    Alignment = taRightJustify
+    Caption = '      '
+  end
+  object btnRun: TButton
+    Left = 8
+    Top = 412
     Width = 89
     Height = 38
     Caption = 'Run'
     Enabled = False
     TabOrder = 0
-    OnClick = Button1Click
+    OnClick = btnRunClick
   end
   object seCycles: TSpinEdit
     Left = 8
@@ -86,9 +131,9 @@ object Form2: TForm2
   end
   object Memo2: TMemo
     Left = 8
-    Top = 296
+    Top = 496
     Width = 185
-    Height = 137
+    Height = 133
     BorderStyle = bsNone
     Color = clBtnFace
     Lines.Strings = (
@@ -212,7 +257,7 @@ object Form2: TForm2
   end
   object chkRender: TCheckBox
     Left = 8
-    Top = 172
+    Top = 456
     Width = 57
     Height = 17
     Caption = 'Render'
@@ -226,6 +271,63 @@ object Form2: TForm2
     MaxValue = 1000000
     MinValue = 0
     TabOrder = 6
-    Value = 60
+    Value = 100
+  end
+  object seSeed: TSpinEdit
+    Left = 8
+    Top = 187
+    Width = 89
+    Height = 22
+    MaxValue = 2000000000
+    MinValue = 0
+    TabOrder = 7
+    Value = 0
+  end
+  object rgAIType: TRadioGroup
+    Left = 106
+    Top = 172
+    Width = 96
+    Height = 53
+    Caption = 'AI type'
+    ItemIndex = 1
+    Items.Strings = (
+      'Classic'
+      'Advanced')
+    TabOrder = 8
+  end
+  object btnStop: TButton
+    Left = 103
+    Top = 412
+    Width = 89
+    Height = 38
+    Caption = 'Stop'
+    Enabled = False
+    TabOrder = 9
+    OnClick = btnStopClick
+  end
+  object btnPause: TButton
+    Left = 104
+    Top = 456
+    Width = 89
+    Height = 21
+    Caption = 'Pause'
+    Enabled = False
+    TabOrder = 10
+    Visible = False
+    OnClick = btnPauseClick
+  end
+  object rgMaps: TRadioGroup
+    Left = 1
+    Top = 305
+    Width = 72
+    Height = 96
+    Caption = 'Maps type'
+    ItemIndex = 1
+    Items.Strings = (
+      'Classic'
+      'MP 8P'
+      'Fight'
+      'Coop')
+    TabOrder = 11
   end
 end

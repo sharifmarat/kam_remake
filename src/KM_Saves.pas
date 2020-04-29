@@ -218,56 +218,82 @@ begin
 end;
 
 
+// Try to laod save minimap.
+// MP game save minimap is stored in a separate file (.sloc)
+// SP game save minimap in stored in a main save file (.sav)
+// But players could place saves in wrong folders occasionaly or intentionaly
+// in that case we still could try to load save
 function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap; aChoosenStartLoc: Integer): Boolean;
+
+  function LoadMPMinimap(aFilePath: string): Boolean;
+  var
+    gameLocalData: TKMGameMPLocalData;
+  begin
+    Result := False;
+    try
+      // Lets try to load Minimap for MP save
+      gameLocalData := TKMGameMPLocalData.Create(0, aChoosenStartLoc, aMinimap);
+      try
+        Result := GameLocalData.LoadFromFile(aFilePath);
+      finally
+        gameLocalData.Free;
+      end;
+    except
+      // Ignore any errors, because MP minimap is optional
+      on E: Exception do
+        // Just log error to log, do not crash game in case of any error here
+        gLog.AddTime('Load MP save minimap from file '
+          + aFilePath + ' exception: ' + E.ClassName + ': ' + E.Message
+          {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
+          );
+    end;
+  end;
+
+  function LoadSPMinimap: Boolean;
+  var
+    loadStream: TKMemoryStreamBinary;
+    dummyGameInfo: TKMGameInfo;
+    dummyGameOptions: TKMGameOptions;
+    isMultiplayerFlagInSave: Boolean;
+  begin
+    Result := False;
+    loadStream := TKMemoryStreamBinary.Create; //Read data from file into stream
+    dummyGameInfo := TKMGameInfo.Create;
+    dummyGameOptions := TKMGameOptions.Create;
+    try
+      loadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
+
+      dummyGameInfo.Load(loadStream); //We don't care, we just need to skip past it correctly
+      dummyGameOptions.Load(loadStream); //We don't care, we just need to skip past it correctly
+      loadStream.Read(isMultiplayerFlagInSave);
+
+      // Skip minimap load if save is actually made in MP game.
+      // We store MP minimap in a separate file .sloc
+      if not isMultiplayerFlagInSave then
+      begin
+        aMinimap.LoadFromStream(loadStream);
+        Result := True;
+      end;  
+    finally
+      dummyGameOptions.Free;
+      dummyGameInfo.Free;
+      loadStream.Free;
+    end;
+  end;
+
 var
-  LoadStream: TKMemoryStreamBinary;
-  DummyGameInfo: TKMGameInfo;
-  DummyGameOptions: TKMGameOptions;
-  GameLocalData: TKMGameMPLocalData;
-  IsMultiplayer: Boolean;
-  LocalDataFilePath: String;
+  localDataFilePath: string;
 begin
   Result := False;
   if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then Exit;
 
-  LoadStream := TKMemoryStreamBinary.Create; //Read data from file into stream
-  DummyGameInfo := TKMGameInfo.Create;
-  DummyGameOptions := TKMGameOptions.Create;
-  try
-    LoadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
+  localDataFilePath := fPath + fFileName + EXT_SAVE_MP_LOCAL_DOT;
 
-    DummyGameInfo.Load(LoadStream); //We don't care, we just need to skip past it correctly
-    DummyGameOptions.Load(LoadStream); //We don't care, we just need to skip past it correctly
-
-    LoadStream.Read(IsMultiplayer);
-    if not IsMultiplayer then
-    begin
-      aMinimap.LoadFromStream(LoadStream);
-      Result := True;
-    end else begin
-      try
-        // Lets try to load Minimap for MP save
-        GameLocalData := TKMGameMPLocalData.Create(0, aChoosenStartLoc, aMinimap);
-        try
-          Result := GameLocalData.LoadFromFile(fPath + fFileName + EXT_SAVE_MP_LOCAL_DOT);
-        finally
-          GameLocalData.Free;
-        end;
-      except
-        // Ignore any errors, because MP minimap is optional
-        on E: Exception do
-          // Just log error to log, do not crash game in case of any error here
-          gLog.AddTime('Load MP save minimap from file '
-            + LocalDataFilePath + ' exception: ' + E.ClassName + ': ' + E.Message
-            {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
-            );
-      end;
-    end;
-  finally
-    DummyGameOptions.Free;
-    DummyGameInfo.Free;
-    LoadStream.Free;
-  end;
+  // Check if we have MP minimap file in the save
+  if FileExists(localDataFilePath) then
+    Result := LoadMPMinimap(localDataFilePath)
+  else
+    Result := LoadSPMinimap;
 end;
 
 

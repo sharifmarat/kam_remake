@@ -6,7 +6,8 @@ uses
   {$IFDEF WDC} System.IOUtils, {$ENDIF}
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  Classes, SysUtils;
+  Classes, SysUtils,
+  KM_WorkerThread;
 
   //Read text file into ANSI string (scripts, locale texts)
   function ReadTextA(const afilename: UnicodeString): AnsiString;
@@ -17,6 +18,8 @@ uses
   //Copy a file (CopyFile is different between Delphi and Lazarus)
   procedure KMCopyFile(const aSrc, aDest: UnicodeString); overload;
   procedure KMCopyFile(const aSrc, aDest: UnicodeString; aOverwrite: Boolean); overload;
+
+  procedure KMCopyFileAsync(const aSrc, aDest: UnicodeString; aOverwrite: Boolean; aWorkerThread: TKMWorkerThread);
 
   //Delete a folder (DeleteFolder is different between Delphi and Lazarus)
   procedure KMDeleteFolder(const aPath: UnicodeString);
@@ -172,11 +175,50 @@ begin
 end;
 
 
+procedure KMCopyFileAsync(const aSrc, aDest: UnicodeString; aOverwrite: Boolean; aWorkerThread: TKMWorkerThread);
+begin
+  {$IFDEF WDC}
+  aWorkerThread.QueueWork(procedure
+  begin
+    KMCopyFile(aSrc, aDest, aOverwrite);
+  end);
+  {$ELSE}
+  KMCopyFile(aSrc, aDest, aOverwrite);
+  {$ENDIF}
+end;
+
+
 procedure KMDeleteFolder(const aPath: UnicodeString);
+{$IFDEF WDC}
+var S: string;
+{$ENDIF}
 begin
   if DirectoryExists(aPath) then
-    {$IFDEF FPC} DeleteDirectory(aPath, False); {$ENDIF}
-    {$IFDEF WDC} TDirectory.Delete(aPath, True); {$ENDIF}
+  begin
+    {$IFDEF FPC}
+      DeleteDirectory(aPath, False);
+    {$ENDIF}
+    {$IFDEF WDC}
+
+      //TDirectory.Delete will sometimes delay deletion due to Windows behaviour
+      //Suggested workarounds:
+      // - Empty the directory first (seems to work, commented out below)
+      // - Move the directory to a temporary name then delete it (sounds more robust)
+      //Discussions of workarounds:
+      //https://stackoverflow.com/questions/42809389/tdirectory-delete-seems-to-be-asynchronous
+      //https://github.com/dotnet/runtime/issues/27958
+
+      //Generate a temporary name based on time and random number
+      S := TDirectory.GetParent(ExcludeTrailingPathDelimiter(aPath)) + PathDelim + IntToStr(Random(MaxInt)) + UIntToStr(TimeGet);
+      TDirectory.Move(aPath, S);
+      TDirectory.Delete(S, True);
+
+      //for S in TDirectory.GetFiles(aPath) do
+      //  DeleteFile(S);
+      //TDirectory.Delete(aPath, True);
+      //Assert(not DirectoryExists(aPath));
+    {$ENDIF}
+  end;
 end;
 
 

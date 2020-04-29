@@ -93,7 +93,7 @@ begin
 
 
   RunnerClass := RunnerList[I]; // ID of running test - planner / builder / predictor etc.
-  Runner := RunnerClass.Create(nil); // No render in parallel run
+  Runner := RunnerClass.Create(nil, nil); // No render in parallel run
   try
     Log('Start simulation');
     Runner.Duration := fSimSetup.SimTimeInMin; // Minutes of simulation

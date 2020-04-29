@@ -84,6 +84,8 @@ type
 
   TKMTerrainKindsArray = array of TKMTerrainKind;
 
+  TKMTerrainKindCorners = array[0..3] of TKMTerrainKind;
+
 const
   TER_KIND_ORDER: array[tkCustom..tkLava] of Integer =
     (0,1,2,3,4,5,6,7,8,9,10,11,
@@ -777,11 +779,11 @@ begin
 end;
 
 
+//@Deprecated
 function TKMResTileset.TileIsFactorable(aTile: Word): Boolean;
 begin
   //List of tiles that cannot be factored (coordinates outside the map return true)
-  Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206])
-            and (aTile <> 300);
+  Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206]);
 end;
 
 

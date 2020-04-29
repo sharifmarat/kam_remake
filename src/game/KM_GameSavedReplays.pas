@@ -3,7 +3,7 @@ unit KM_GameSavedReplays;
 interface
 uses
   Generics.Collections,
-  KM_CommonClasses;
+  KM_CommonClasses, KM_WorkerThread;
 
 type
   TKMSavedReplay = class
@@ -46,14 +46,13 @@ type
     procedure Save(aSaveStream: TKMemoryStream);
     procedure Load(aLoadStream: TKMemoryStream);
 
-    procedure SaveToFile(const aFileName: UnicodeString);
+    procedure SaveToFileAsync(const aFileName: UnicodeString; aWorkerThread: TKMWorkerThread);
     procedure LoadFromFile(const aFileName: UnicodeString);
   end;
 
 implementation
 uses
-  SysUtils;
-
+  SysUtils, Classes;
 
 { TKMSavedReplays }
 constructor TKMSavedReplays.Create();
@@ -152,17 +151,13 @@ begin
 end;
 
 
-procedure TKMSavedReplays.SaveToFile(const aFileName: UnicodeString);
+procedure TKMSavedReplays.SaveToFileAsync(const aFileName: UnicodeString; aWorkerThread: TKMWorkerThread);
 var
   S: TKMemoryStreamBinary;
 begin
   S := TKMemoryStreamBinary.Create;
-  try
-    Save(S);
-    S.SaveToFile(aFileName);
-  finally
-    S.Free;
-  end;
+  Save(S);
+  TKMemoryStream.AsyncSaveToFileCompressedAndFree(S, aFileName, 'SavedReplaysCompressed', aWorkerThread);
 end;
 
 
@@ -174,7 +169,7 @@ begin
 
   S := TKMemoryStreamBinary.Create;
   try
-    S.LoadFromFile(aFileName);
+    S.LoadFromFileCompressed(aFileName, 'SavedReplaysCompressed');
     Load(S);
   finally
     S.Free;

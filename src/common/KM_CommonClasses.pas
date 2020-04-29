@@ -2,7 +2,7 @@ unit KM_CommonClasses;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, SysUtils, KM_Points, KM_CommonTypes;
+  Classes, SysUtils, KM_Points, KM_CommonTypes, KM_WorkerThread;
 
 
 type
@@ -82,6 +82,12 @@ type
     //ZLib's decompression streams don't work with the normal TStreams.CopyFrom since
     //it uses ReadBuffer. This procedure will work when Source is a TDecompressionStream
     procedure CopyFromDecompression(Source: TStream);
+
+    procedure SaveToFileCompressed(const aFileName: string; const aMarker: string);
+    procedure LoadFromFileCompressed(const aFileName: string; const aMarker: string);
+
+    class procedure AsyncSaveToFileAndFree(var aStream; const aFileName: string; aWorkerThread: TKMWorkerThread);
+    class procedure AsyncSaveToFileCompressedAndFree(var aStream; const aFileName: string; const aMarker: string; aWorkerThread: TKMWorkerThread);
   end;
 
   // Extended with custom Read/Write commands which accept various types without asking for their length
@@ -386,7 +392,10 @@ type
 
 implementation
 uses
-  Math, KM_CommonUtils;
+  Math,
+  {$IFDEF FPC} zstream, {$ENDIF}
+  {$IFDEF WDC} ZLib, {$ENDIF}
+  KM_CommonUtils;
 
 const
   MAPS_CRC_DELIMITER = ':';
@@ -445,6 +454,63 @@ begin
 end;
 
 
+class procedure TKMemoryStream.AsyncSaveToFileAndFree(var aStream;
+  const aFileName: string; aWorkerThread: TKMWorkerThread);
+var
+  LocalStream: TKMemoryStream;
+begin
+  Assert(TObject(aStream) is TKMemoryStream);
+  LocalStream := TKMemoryStream(aStream);
+  Pointer(aStream) := nil; //So caller doesn't use it by mistake
+
+  {$IFDEF WDC}
+    aWorkerThread.QueueWork(procedure
+    begin
+      try
+        LocalStream.SaveToFile(aFileName);
+      finally
+        LocalStream.Free;
+      end;
+    end);
+  {$ELSE}
+    try
+      LocalStream.SaveToFile(aFileName);
+    finally
+      LocalStream.Free;
+    end;
+  {$ENDIF}
+end;
+
+
+class procedure TKMemoryStream.AsyncSaveToFileCompressedAndFree(
+  var aStream; const aFileName: string; const aMarker: string;
+  aWorkerThread: TKMWorkerThread);
+var
+  LocalStream: TKMemoryStream;
+begin
+  Assert(TObject(aStream) is TKMemoryStream);
+  LocalStream := TKMemoryStream(aStream);
+  Pointer(aStream) := nil; //So caller doesn't use it by mistake
+
+  {$IFDEF WDC}
+    aWorkerThread.QueueWork(procedure
+    begin
+      try
+        LocalStream.SaveToFileCompressed(aFileName, aMarker);
+      finally
+        LocalStream.Free;
+      end;
+    end);
+  {$ELSE}
+    try
+      LocalStream.SaveToFileCompressed(aFileName, aMarker);
+    finally
+      LocalStream.Free;
+    end;
+  {$ENDIF}
+end;
+
+
 procedure TKMemoryStream.CopyFromDecompression(Source: TStream);
 const
   MaxBufSize = $F000;
@@ -463,6 +529,51 @@ begin
     end;
   finally
     FreeMem(Buffer, MaxBufSize);
+  end;
+end;
+
+
+procedure TKMemoryStream.SaveToFileCompressed(const aFileName: string; const aMarker: string);
+var
+  S: TKMemoryStreamBinary;
+  CS: TCompressionStream;
+begin
+  S := TKMemoryStreamBinary.Create;
+  try
+    S.PlaceMarker(aMarker);
+
+    CS := TCompressionStream.Create(cldefault, S);
+    try
+      CS.CopyFrom(Self, 0);
+    finally
+      CS.Free;
+    end;
+
+    S.SaveToFile(aFileName);
+  finally
+    S.Free;
+  end;
+end;
+
+
+procedure TKMemoryStream.LoadFromFileCompressed(const aFileName: string; const aMarker: string);
+var
+  S: TKMemoryStreamBinary;
+  DS: TDecompressionStream;
+begin
+  S := TKMemoryStreamBinary.Create;
+  try
+    S.LoadFromFile(aFileName);
+    S.CheckMarker(aMarker);
+    DS := TDecompressionStream.Create(S);
+    try
+      CopyFromDecompression(DS);
+      Position := 0;
+    finally
+      DS.Free;
+    end;
+  finally
+    S.Free;
   end;
 end;
 
@@ -1290,6 +1401,7 @@ begin
   if I > 0 then
     Read(Pointer(Value)^, I);
 end;
+
 
 procedure TKMemoryStream.WriteHugeString(const Value: AnsiString);
 var I: Cardinal;

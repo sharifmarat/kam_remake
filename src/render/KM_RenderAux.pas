@@ -19,7 +19,7 @@ type
     procedure Circle(x, y, rad: Single; Fill, Line: TColor4);
     procedure CircleOnTerrain(x, y, rad: Single; Fill, Line: TColor4);
     procedure Dot(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
-    procedure DotOnTerrain(x, y: Single; aCol: TColor4);
+    procedure DotOnTerrain(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
     procedure LineOnTerrain(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
     procedure LineOnTerrain(const A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
     procedure LineOnTerrain(const A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
@@ -33,6 +33,7 @@ type
     procedure TileTerrainKinds(const aRect: TKMRect);
     procedure TileTerrainOverlays(const aRect: TKMRect);
     procedure TileTerrainJamMeter(const aRect: TKMRect);
+    procedure TileTerrainHeight(const aRect: TKMRect);
     procedure Passability(const aRect: TKMRect; aPass: Byte);
     procedure RenderResizeMap(const aExceptRect: TKMRect);
     procedure Projectile(x1, y1, x2, y2: Single);
@@ -193,11 +194,11 @@ begin
 end;
 
 
-procedure TRenderAux.DotOnTerrain(x, y: Single; aCol: TColor4);
+procedure TRenderAux.DotOnTerrain(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
   glColor4ubv(@aCol);
-  RenderDot(X,gTerrain.FlatToHeight(X, Y));
+  RenderDot(X, gTerrain.FlatToHeight(X, Y), aSize);
 end;
 
 
@@ -423,17 +424,42 @@ begin
 end;
 
 
+procedure TRenderAux.TileTerrainHeight(const aRect: TKMRect);
+const
+  JAM_DRAW_STEP = 3;
+var
+  I, J, K, Limit: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      //Draw text over quads
+      Text(J-0.5, I-0.5, IntToStr(gTerrain.Land[I,J].Height), icCyan);
+end;
+
+
 procedure TRenderAux.Passability(const aRect: TKMRect; aPass: Byte);
+const
+  DRAW_DOT_FOR_PASS: set of TKMTerrainPassability = [tpElevate, tpFactor];
 var
   I, K: Integer;
+  pass: TKMTerrainPassability;
 begin
   if aPass <> 0 then
   begin
+    pass := TKMTerrainPassability(aPass);
     glColor4f(0,1,0,0.25);
-    for I := aRect.Top to aRect.Bottom do
+    for I := aRect.Top to aRect.Bottom do               
       for K := aRect.Left to aRect.Right do
-        if TKMTerrainPassability(aPass) in gTerrain.Land[I,K].Passability then
-          RenderQuad(K,I);
+        if pass in gTerrain.Land[I,K].Passability then
+        begin
+          if pass = tpCutTree then
+            CircleOnTerrain(K-1,I-1,0.25,$3F00FF00,icCyan) //draw circle, because dot could be hidden under Trees
+          else
+          if pass in DRAW_DOT_FOR_PASS then
+            DotOnTerrain(K-1,I-1,icCyan)
+          else
+            RenderQuad(K,I);
+        end;
   end;
 end;
 

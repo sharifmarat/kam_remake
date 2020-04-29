@@ -125,6 +125,7 @@ type
     function GetMiningRect(aRes: TKMWareType): TKMRect;
 
     function ChooseCuttingDirection(const aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
+    procedure DoFlattenTerrain(const Loc: TKMPoint; var aDepth: Byte; aUpdateWalkConnects: Boolean; aIgnoreCanElevate: Boolean);
 
     procedure UpdateWalkConnect(const aSet: TKMWalkConnectSet; aRect: TKMRect; aDiagObjectsEffected: Boolean);
 
@@ -261,7 +262,7 @@ type
     function TileInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function TileInMapCoords(X,Y: Integer; InsetRect: TKMRect): Boolean; overload;
     function VerticeInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
-    function VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
+    function VerticeInMapCoords(const aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function EnsureTileInMapCoords(X, Y: Integer; aInset: Byte = 0): TKMPoint; overload;
     function EnsureTileInMapCoords(const aLoc: TKMPoint; aInset: Byte = 0): TKMPoint; overload;
 
@@ -298,13 +299,16 @@ type
     function TileIsSoil(const Loc: TKMPoint): Boolean; overload;
     function TileIsIce(X, Y: Word): Boolean;
     function TileHasWater(X, Y: Word): Boolean;
-    function TileIsFactorable(const Loc: TKMPoint): Boolean;
+    function VerticeIsFactorable(const Loc: TKMPoint): Boolean;
     function TileIsWalkable(const Loc: TKMPoint): Boolean;
     function TileIsRoadable(const Loc: TKMPoint): Boolean;
 
     function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
     function TileCornersTerrains(aX, aY: Word): TKMWordArray;
-    function TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
+    function TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
+    procedure GetTileCornersTerKinds(aX, aY: Word; out aCornerTerKinds: TKMTerrainKindCorners);
+
+    procedure GetVerticeTerKinds(const aLoc: TKMPoint; out aVerticeTerKinds: TKMTerrainKindCorners);
 
     function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
     function TileHasRoad(X,Y: Integer): Boolean; overload;
@@ -571,7 +575,7 @@ const
     L, D, adj, hMid: Integer;
     TileBasic: TKMTerrainTileBasic;
     terKind: TKMTerrainKind;
-    CornersTerKinds: TKMTerrainKindsArray;
+    cornersTerKinds: TKMTerrainKindCorners;
     tileOwner: TKMHandID;
   begin
     tileOwner := PLAYER_NONE;
@@ -581,7 +585,7 @@ const
       //Check if terrainKind is same for all 4 corners
       if not TileTryGetTerKind(aFromX, aFromY, terKind) then
       begin
-        CornersTerKinds := TileCornersTerKinds(aFromX, aFromY);
+        GetTileCornersTerKinds(aFromX, aFromY, cornersTerKinds);
 
         if aDir = dirNA then // that should never happen usually
           terKind := tkGrass
@@ -1132,7 +1136,7 @@ begin
 end;
 
 
-function TKMTerrain.VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean;
+function TKMTerrain.VerticeInMapCoords(const aCell: TKMPoint; Inset: Byte = 0): Boolean;
 begin
   Result := VerticeInMapCoords(aCell.X, aCell.Y, Inset);
 end;
@@ -1155,19 +1159,19 @@ end;
 
 function TKMTerrain.TileGoodForIronMine(X,Y: Word): Boolean;
 var
-  CornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Result :=
     (fTileset.TileIsGoodForIronMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    CornersTKinds := TileCornersTerKinds(X, Y);
+    GetTileCornersTerKinds(X, Y, cornersTKinds);
     Result :=
-          (CornersTKinds[0] in [tkIron, tkIronMount])
-      and (CornersTKinds[1] in [tkIron, tkIronMount])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[2]])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[3]]);
+          (cornersTKinds[0] in [tkIron, tkIronMount])
+      and (cornersTKinds[1] in [tkIron, tkIronMount])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[2]])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[3]]);
   end;
 end;
 
@@ -1185,19 +1189,19 @@ end;
 
 function TKMTerrain.TileGoodForGoldMine(X,Y: Word): Boolean;
 var
-  CornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Result :=
     (fTileset.TileIsGoodForGoldMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    CornersTKinds := TileCornersTerKinds(X, Y);
+    GetTileCornersTerKinds(X, Y, cornersTKinds);
     Result :=
-          (CornersTKinds[0] in [tkGold, tkGoldMount])
-      and (CornersTKinds[1] in [tkGold, tkGoldMount])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[2]])
-      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[3]]);
+          (cornersTKinds[0] in [tkGold, tkGoldMount])
+      and (cornersTKinds[1] in [tkGold, tkGoldMount])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[2]])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[cornersTKinds[3]]);
   end;
 end;
 
@@ -1348,12 +1352,12 @@ end;
 function TKMTerrain.TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind): Boolean;
 var
   K: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := False;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
   for K := 0 to 3 do
-    if CornersTerKinds[K] = aTerKind then
+    if cornersTerKinds[K] = aTerKind then
     begin
       Result := True;
       Exit;
@@ -1364,23 +1368,24 @@ end;
 
 function TKMTerrain.TileHasTerrainKindPart(X, Y: Word; aTerKind: TKMTerrainKind; aDir: TKMDirection): Boolean;
 var
-  CornersTKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   Result := False;
-  CornersTKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTKinds);
 
   case aDir of
     dirNA:  Result := TileHasStone(X, Y);
-    dirN:   Result := (CornersTKinds[0] = aTerKind) and (CornersTKinds[1] = aTerKind);
-    dirNE:  Result := (CornersTKinds[1] = aTerKind);
-    dirE:   Result := (CornersTKinds[1] = aTerKind) and (CornersTKinds[2] = aTerKind);
-    dirSE:  Result := (CornersTKinds[2] = aTerKind);
-    dirS:   Result := (CornersTKinds[2] = aTerKind) and (CornersTKinds[3] = aTerKind);
-    dirSW:  Result := (CornersTKinds[3] = aTerKind);
-    dirW:   Result := (CornersTKinds[3] = aTerKind) and (CornersTKinds[0] = aTerKind);
-    dirNW:  Result := (CornersTKinds[0] = aTerKind);
+    dirN:   Result := (cornersTKinds[0] = aTerKind) and (cornersTKinds[1] = aTerKind);
+    dirNE:  Result := (cornersTKinds[1] = aTerKind);
+    dirE:   Result := (cornersTKinds[1] = aTerKind) and (cornersTKinds[2] = aTerKind);
+    dirSE:  Result := (cornersTKinds[2] = aTerKind);
+    dirS:   Result := (cornersTKinds[2] = aTerKind) and (cornersTKinds[3] = aTerKind);
+    dirSW:  Result := (cornersTKinds[3] = aTerKind);
+    dirW:   Result := (cornersTKinds[3] = aTerKind) and (cornersTKinds[0] = aTerKind);
+    dirNW:  Result := (cornersTKinds[0] = aTerKind);
   end;
 end;
+
 
 function TerKindArrayContains(aElement: TKMTerrainKind; const aArray: array of TKMTerrainKind): Boolean;
 var
@@ -1396,12 +1401,12 @@ end;
 function TKMTerrain.TileHasOnlyTerrainKinds(X, Y: Word; const aTerKinds: array of TKMTerrainKind): Boolean;
 var
   I: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := True;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
   for I := 0 to 3 do
-    if not TerKindArrayContains(CornersTerKinds[I], aTerKinds) then
+    if not TerKindArrayContains(cornersTerKinds[I], aTerKinds) then
       Exit(False);
 end;
 
@@ -1409,12 +1414,12 @@ end;
 function TKMTerrain.TileHasOnlyTerrainKind(X, Y: Word; const aTerKind: TKMTerrainKind): Boolean;
 var
   I: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := True;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
   for I := 0 to 3 do
-    if CornersTerKinds[I] <> aTerKind then
+    if cornersTerKinds[I] <> aTerKind then
       Exit(False);
 end;
 
@@ -1423,13 +1428,13 @@ end;
 function TKMTerrain.TileTryGetTerKind(X, Y: Word; var aTerKind: TKMTerrainKind): Boolean;
 var
   I: Integer;
-  CornersTerKinds: TKMTerrainKindsArray;
+  cornersTerKinds: TKMTerrainKindCorners;
 begin
   Result := True;
-  CornersTerKinds := TileCornersTerKinds(X,Y);
-  aTerKind := CornersTerKinds[0];
+  GetTileCornersTerKinds(X, Y, cornersTerKinds);
+  aTerKind := cornersTerKinds[0];
   for I := 1 to 3 do
-    if CornersTerKinds[I] <> aTerKind then
+    if cornersTerKinds[I] <> aTerKind then
     begin
       aTerKind := tkCustom;
       Exit(False); // Corners has different terKinds, return tkCustom then
@@ -1470,7 +1475,7 @@ const
   STRICT_TERKINDS: array[0..4] of TKMTerrainKind = (tkGrassyWater, tkSwamp, tkIce, tkWater, tkFastWater);
 var
   I, K, Cnt: Integer;
-  Corners: TKMTerrainKindsArray;
+  corners: TKMTerrainKindCorners;
 begin
   Result := False;
 
@@ -1481,19 +1486,19 @@ begin
   else
   begin
     Cnt := 0;
-    Corners := TileCornersTerKinds(X,Y);
+    GetTileCornersTerKinds(X, Y, corners);
     for K := 0 to 3 do
     begin
       for I := 0 to High(PROHIBIT_TERKINDS) do
-        if Corners[K] = PROHIBIT_TERKINDS[I] then
+        if corners[K] = PROHIBIT_TERKINDS[I] then
           Exit(False);
 
       if aStrictCheck then
         for I := 0 to High(STRICT_TERKINDS) do
-          if Corners[K] = STRICT_TERKINDS[I] then
+          if corners[K] = STRICT_TERKINDS[I] then
             Exit(False);
 
-      if aCheckTileFunc(BASE_TERRAIN[Corners[K]]) then
+      if aCheckTileFunc(BASE_TERRAIN[corners[K]]) then
         Inc(Cnt);
     end;
 
@@ -1609,10 +1614,27 @@ begin
 end;   
 
 
-//Check if this tile can be factored
-function TKMTerrain.TileIsFactorable(const Loc: TKMPoint): Boolean;
+function TKMTerrain.VerticeIsFactorable(const Loc: TKMPoint): Boolean;
+const
+  //Non factorable terkinds
+  NON_FACT_TER_KINDS: set of TKMTerrainKind = [tkIron, tkIronMount, tkGold, tkGoldMount, tkLava, tkAbyss, tkCustom];
+
+var
+  I: Integer;
+  verticeTKinds: TKMTerrainKindCorners;
 begin
-  Result := TileInMapCoords(Loc.X,Loc.Y) and fTileset.TileIsFactorable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+  if   not TileInMapCoords(Loc.X,     Loc.Y)
+    or not TileInMapCoords(Loc.X - 1, Loc.Y)
+    or not TileInMapCoords(Loc.X,     Loc.Y - 1)
+    or not TileInMapCoords(Loc.X - 1, Loc.Y - 1) then Exit(False);
+
+  Result := True;
+
+  GetVerticeTerKinds(Loc, verticeTKinds);
+
+  for I := 0 to 3 do
+    if verticeTKinds[I] in NON_FACT_TER_KINDS then
+      Exit(False);
 end;
 
 
@@ -1633,7 +1655,7 @@ end;
 //Get tile corner terrain id
 function TKMTerrain.TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
 const
-  TOO_BIG_VALUE = 10000;
+  TOO_BIG_VALUE = 50000;
 var
   L: Integer;
 begin
@@ -1656,37 +1678,57 @@ end;
 function TKMTerrain.TileCornersTerrains(aX, aY: Word): TKMWordArray;
 var
   K: Integer;
-  TKinds: TKMTerrainKindsArray;
+  cornersTKinds: TKMTerrainKindCorners;
 begin
   SetLength(Result, 4);
-  TKinds := TileCornersTerKinds(aX, aY);
+  GetTileCornersTerKinds(aX, aY, cornersTKinds);
   for K := 0 to 3 do
-    Result[K] := BASE_TERRAIN[TKinds[K]];
+    Result[K] := BASE_TERRAIN[cornersTKinds[K]];
+end;
+
+
+function TKMTerrain.TileCornerTerKind(aX, aY: Word; aCorner: Byte): TKMTerrainKind;
+var
+  cornersTKinds: TKMTerrainKindCorners;
+begin
+  Assert(InRange(aCorner, 0, 3));
+  
+  GetTileCornersTerKinds(aX, aY, cornersTKinds);
+  Result := cornersTKinds[aCorner];
 end;
 
 
 //Get tile corners terrain kinds
-function TKMTerrain.TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
+procedure TKMTerrain.GetTileCornersTerKinds(aX, aY: Word; out aCornerTerKinds: TKMTerrainKindCorners);
 var
   K, L: Integer;
 begin
-  SetLength(Result, 4);
   for K := 0 to 3 do
   begin
-    Result[K] := tkCustom;
+    aCornerTerKinds[K] := tkCustom;
     with gTerrain.Land[aY,aX] do
     begin
       if BaseLayer.Corners[K] then
-        Result[K] := TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]
+        aCornerTerKinds[K] := TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]
       else
         for L := 0 to LayersCnt - 1 do
           if Layer[L].Corners[K] then
           begin
-            Result[K] := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind;
+            aCornerTerKinds[K] := gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind;
             Break;
           end;
     end;
   end;
+end;
+
+
+//Get vertice terrain kinds
+procedure TKMTerrain.GetVerticeTerKinds(const aLoc: TKMPoint; out aVerticeTerKinds: TKMTerrainKindCorners);
+begin
+  aVerticeTerKinds[0] := TileCornerTerKind(aLoc.X - 1, aLoc.Y - 1, 2); //  0 | 1
+  aVerticeTerKinds[1] := TileCornerTerKind(aLoc.X    , aLoc.Y - 1, 3); //  __|__
+  aVerticeTerKinds[2] := TileCornerTerKind(aLoc.X    , aLoc.Y    , 0); //    |
+  aVerticeTerKinds[3] := TileCornerTerKind(aLoc.X - 1, aLoc.Y    , 1); //  3 | 2
 end;
 
 
@@ -2949,6 +2991,9 @@ begin
       FallingTrees.Add(Loc, ChopableTrees[I, caAgeFall], fAnimStep);
       if gMySpectator.FogOfWar.CheckTileRevelation(Loc.X, Loc.Y) >= 255 then
         gSoundPlayer.Play(sfxTreeDown, Loc, True);
+
+      //Update passability immidiately
+      UpdatePassability(KMRectGrow(KMRect(Loc), 1));
       Exit(True);
     end;
 end;
@@ -3534,11 +3579,8 @@ begin
     and (Land[Loc.Y,Loc.X].TileLock <> tlHouse) then
     AddPassability(tpWorker);
 
-  //Check all 4 tiles that border with this vertex
-  if TileIsFactorable(KMPoint(Loc.X  ,Loc.Y))
-    and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y))
-    and TileIsFactorable(KMPoint(Loc.X  ,Loc.Y-1))
-    and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y-1)) then
+  //Check all 4 corners ter kinds around vertice 
+  if VerticeIsFactorable(Loc) then
     AddPassability(tpFactor);
 
   //Check for houses around this vertice(!)
@@ -4027,9 +4069,15 @@ end;
 //Interpolate between 12 vertices surrounding this tile (X and Y, no diagonals)
 //Also it is FlattenTerrain duty to preserve walkability if there are units standing
 //aIgnoreCanElevate ignores CanElevate constraint which prevents crashes during stonemining (hacky)
-procedure TKMTerrain.FlattenTerrain(const Loc: TKMPoint; aUpdateWalkConnects: Boolean = True; aIgnoreCanElevate: Boolean = False);
+procedure TKMTerrain.DoFlattenTerrain(const Loc: TKMPoint; var aDepth: Byte; aUpdateWalkConnects: Boolean; aIgnoreCanElevate: Boolean);
+const
+  // Max depth of recursion for flatten algorythm to use tpElevate as a restriction
+  // After depth goes beyond this value we omit tpElevate restriction and allow to change tiles height under any houses
+  // Its needed, because there is still a possibility to get into infinite recursion loop EnsureRange -> DoFlattenTerrain -> EnsureRange -> ...
+  FLATTEN_RECUR_USE_ELEVATE_MAX_DEPTH = 16;
+
   //If tiles with units standing on them become unwalkable we should try to fix them
-  procedure EnsureWalkable(aX,aY: Word);
+  procedure EnsureWalkable(aX,aY: Word; var aDepth: Byte);
   begin
     //We did not recalculated passability yet, hence tile has CanWalk but CheckHeightPass=False already
     if (tpWalk in Land[aY,aX].Passability)
@@ -4039,7 +4087,7 @@ procedure TKMTerrain.FlattenTerrain(const Loc: TKMPoint; aUpdateWalkConnects: Bo
     and not fMapEditor //Allow units to become "stuck" in MapEd, as height changing is allowed anywhere
     then
       //This recursive call should be garanteed to exit, as eventually the terrain will be flat enough
-      FlattenTerrain(KMPoint(aX,aY), False, aIgnoreCanElevate); //WalkConnect should be done at the end
+      DoFlattenTerrain(KMPoint(aX,aY), aDepth, False, aIgnoreCanElevate or (aDepth > FLATTEN_RECUR_USE_ELEVATE_MAX_DEPTH)); //WalkConnect should be done at the end
   end;
 
   function CanElevateAt(aX, aY: Word): Boolean;
@@ -4069,6 +4117,8 @@ var
 begin
   Assert(TileInMapCoords(Loc.X, Loc.Y), 'Can''t flatten tile outside map coordinates');
 
+  Inc(aDepth); //Increase depth
+
   if aUpdateWalkConnects then
     fBoundsWC := KMRect(Loc.X, Loc.Y, Loc.X, Loc.Y);
 
@@ -4086,15 +4136,19 @@ begin
   Assert(VertsFactored <> 0); //Non-neighbour verts will always be factored
   Avg := Round(Avg / VertsFactored);
 
-  if CanElevateAt(Loc.X  , Loc.Y  ) then Land[Loc.Y  ,Loc.X  ].Height := Mix(Avg, Land[Loc.Y  ,Loc.X  ].Height, 0.5);
-  if CanElevateAt(Loc.X+1, Loc.Y  ) then Land[Loc.Y  ,Loc.X+1].Height := Mix(Avg, Land[Loc.Y  ,Loc.X+1].Height, 0.5);
-  if CanElevateAt(Loc.X  , Loc.Y+1) then Land[Loc.Y+1,Loc.X  ].Height := Mix(Avg, Land[Loc.Y+1,Loc.X  ].Height, 0.5);
-  if CanElevateAt(Loc.X+1, Loc.Y+1) then Land[Loc.Y+1,Loc.X+1].Height := Mix(Avg, Land[Loc.Y+1,Loc.X+1].Height, 0.5);
+  if CanElevateAt(Loc.X  , Loc.Y  ) then
+    Land[Loc.Y  ,Loc.X  ].Height := Mix(Avg, Land[Loc.Y  ,Loc.X  ].Height, 0.5);
+  if CanElevateAt(Loc.X+1, Loc.Y  ) then
+    Land[Loc.Y  ,Loc.X+1].Height := Mix(Avg, Land[Loc.Y  ,Loc.X+1].Height, 0.5);
+  if CanElevateAt(Loc.X  , Loc.Y+1) then
+    Land[Loc.Y+1,Loc.X  ].Height := Mix(Avg, Land[Loc.Y+1,Loc.X  ].Height, 0.5);
+  if CanElevateAt(Loc.X+1, Loc.Y+1) then
+    Land[Loc.Y+1,Loc.X+1].Height := Mix(Avg, Land[Loc.Y+1,Loc.X+1].Height, 0.5);
 
   //All 9 tiles around and including this one could have become unwalkable and made a unit stuck, so check them all
   for I := Max(Loc.Y-1, 1) to Min(Loc.Y+1, fMapY-1) do
     for K := Max(Loc.X-1, 1) to Min(Loc.X+1, fMapX-1) do
-      EnsureWalkable(K, I);
+      EnsureWalkable(K, I, aDepth);
 
   UpdateLighting(KMRect(Loc.X-2, Loc.Y-2, Loc.X+3, Loc.Y+3));
   //Changing height will affect the cells around this one
@@ -4102,6 +4156,16 @@ begin
 
   if aUpdateWalkConnects then
     UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrow(fBoundsWC, 1), False);
+end;
+
+
+//Flatten terrain loc
+procedure TKMTerrain.FlattenTerrain(const Loc: TKMPoint; aUpdateWalkConnects: Boolean = True; aIgnoreCanElevate: Boolean = False);
+var
+  depth: Byte;
+begin
+  depth := 0;
+  DoFlattenTerrain(Loc, depth, aUpdateWalkConnects, aIgnoreCanElevate);
 end;
 
 
@@ -4702,6 +4766,8 @@ begin
 
       WriteTileToStream(SaveStream, TileBasic, Land[I,K].TileOwner, True);
 
+      SaveStream.Write(Land[I,K].Passability, SizeOf(Land[I,K].Passability));
+      SaveStream.Write(Land[I,K].WalkConnect, SizeOf(Land[I,K].WalkConnect));
       SaveStream.Write(Land[I,K].TreeAge);
       SaveStream.Write(Land[I,K].FieldAge);
       SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
@@ -4736,12 +4802,16 @@ begin
       Land[I,J].BaseLayer := TileBasic.BaseLayer;
       Land[I,J].Height := TileBasic.Height;
       Land[I,J].Obj := TileBasic.Obj;
+      Land[I,J].IsCustom := TileBasic.IsCustom;
+      Land[I,J].BlendingLvl := TileBasic.BlendingLvl;
       Land[I,J].TileOverlay := TileBasic.TileOverlay;
       Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
       for L := 0 to 2 do
         Land[I,J].Layer[L] := TileBasic.Layer[L];
 
+      LoadStream.Read(Land[I,J].Passability, SizeOf(Land[I,J].Passability));
+      LoadStream.Read(Land[I,J].WalkConnect, SizeOf(Land[I,J].WalkConnect));
       LoadStream.Read(Land[I,J].TreeAge);
       LoadStream.Read(Land[I,J].FieldAge);
       LoadStream.Read(Land[I,J].TileLock,SizeOf(Land[I,J].TileLock));
@@ -4758,10 +4828,7 @@ begin
   fFinder := TKMTerrainFinder.Create;
 
   UpdateLighting(MapRect);
-  UpdatePassability(MapRect);
-
-  UpdateWalkConnect([wcWalk, wcRoad, wcFish, wcWork], MapRect, True);
-
+  // Do not update Passability and WalkConnect, since we loaded it from the stream
   gLog.AddTime('Terrain loaded');
 end;
 
@@ -5104,7 +5171,7 @@ begin
       if aGameRev > 10745 then //Blending option appeared only after r10745
         aStream.Read(aTileBasic.BlendingLvl)
       else
-        aTileBasic.BlendingLvl := 50;
+        aTileBasic.BlendingLvl := TERRAIN_DEF_BLENDING_LVL;
 
       for I := 0 to aTileBasic.LayersCnt - 1 do
       begin

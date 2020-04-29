@@ -10,6 +10,7 @@ uses
 type
   TKMRunnerCommon = class;
   TKMRunnerClass = class of TKMRunnerCommon;
+  TKMRunnerMapsType = (rmtClassic, rmtMP8, rmtFight, rmtCoop);
 
   TKMRunResults = record
     ChartsCount: Integer; //How many charts return
@@ -28,20 +29,29 @@ type
     fResults: TKMRunResults;
     fIntParam: Integer;
     fIntParam2: Integer;
-    fOnStopSimulation: TBooleanFuncSimple;
+    fOnPause: TBooleanFuncSimple;
+    fOnStop: TBooleanFuncSimple;
     fOnBeforeTick: TBoolCardFuncSimple;
     fOnTick: TBoolCardFuncSimple;
     procedure SetUp; virtual;
     procedure TearDown; virtual;
     procedure Execute(aRun: Integer); virtual; abstract;
-    procedure SimulateGame(aStartTick: Word = 0; aEndTick: Integer = -1);
+    procedure SimulateGame(aStartTick: Integer = 0; aEndTick: Integer = -1);
     procedure ProcessRunResults;
   public
     Duration: Integer;
+    Seed: Integer;
+    AIType: TKMAIType;
+    MapsType: TKMRunnerMapsType;
     OnProgress: TUnicodeStringEvent;
+    OnProgress_Left: TUnicodeStringEvent;
+    OnProgress_Left2: TUnicodeStringEvent;
+    OnProgress_Left3: TUnicodeStringEvent;
     OnProgress2: TUnicodeStringEvent;
     OnProgress3: TUnicodeStringEvent;
-    constructor Create(aRenderTarget: TKMRenderControl); reintroduce;
+    OnProgress4: TUnicodeStringEvent;
+    OnProgress5: TUnicodeStringEvent;
+    constructor Create(aRenderTarget: TKMRenderControl; {aOnPause, }aOnStop: TBooleanFuncSimple); reintroduce;
     function Run(aCount: Integer): TKMRunResults;
   end;
 
@@ -63,12 +73,17 @@ end;
 
 
 { TKMRunnerCommon }
-constructor TKMRunnerCommon.Create(aRenderTarget: TKMRenderControl);
+constructor TKMRunnerCommon.Create(aRenderTarget: TKMRenderControl; {aOnPause, }aOnStop: TBooleanFuncSimple);
 begin
   inherited Create;
 
   fRenderTarget := aRenderTarget;
+
+//  fOnPause := aOnPause;
+  fOnStop := aOnStop;
+
   fIntParam := 0;
+  AIType := aitNone;
 end;
 
 
@@ -199,7 +214,7 @@ end;
 //end;
 
 
-procedure TKMRunnerCommon.SimulateGame(aStartTick: Word = 0; aEndTick: Integer = -1);
+procedure TKMRunnerCommon.SimulateGame(aStartTick: Integer = 0; aEndTick: Integer = -1);
 var
   I, IntParam, TestParam: Integer;
 begin
@@ -216,16 +231,6 @@ begin
       and not fOnBeforeTick(I+1) then
       Exit;
 
-    if I = 15663 then
-    begin
-      IntParam := 23*Sign(I) + aStartTick*fRun - Round(321*Math.Power(fRun, 2));
-      gLog.LogDelivery('IntParam' + IntToStr(IntParam));
-      if IntParam > 321333 then
-        gGameApp.Game.UpdateGame(nil);
-    end;
-
-
-
     gGameApp.Game.UpdateGame(nil);
     gGameApp.Render(False);
 
@@ -233,8 +238,8 @@ begin
       and not fOnTick(I+1) then
       Exit;
 
-    if Assigned(fOnStopSimulation)
-      and fOnStopSimulation then
+    if Assigned(fOnStop)
+      and fOnStop then
       Exit;
 
     fResults.Times[fRun, I] := TimeGet - fResults.Times[fRun, I];

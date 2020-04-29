@@ -4,6 +4,7 @@ interface
 uses
   ExtCtrls,
   {$IFDEF USE_MAD_EXCEPT} MadExcept, {$ENDIF}
+  KM_WorkerThread,
   KM_Networking,
   KM_PathFinding,
   KM_GameInputProcess, KM_GameSavedReplays, KM_GameOptions, KM_Scripting, KM_MapEditor, KM_Campaigns, KM_Render, KM_Sound,
@@ -76,8 +77,6 @@ type
     fGameSpeedChangeTime: Cardinal; //time of last game speed change
     fPausedTicksCnt: Cardinal;
 
-    fLastAutosaveTime: Cardinal;
-
     fLastTimeUserAction: Cardinal;
     fLastAfkMessageSent: Cardinal;
 
@@ -85,6 +84,8 @@ type
     fGameSeed: Integer;
 
     fLoadFromFile: UnicodeString; //Path to file, from which game was loaded. '.bas' file for replays
+
+    fSaveWorkerThread: TKMWorkerThread;
 
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
@@ -286,7 +287,7 @@ var
 implementation
 uses
   Classes, Controls, Dialogs, SysUtils, KromUtils, Math, TypInfo,
-  {$IFDEF WDC} UITypes, System.Threading, {$ENDIF}
+  {$IFDEF WDC} UITypes, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields,
   KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo, KM_GameClasses,
@@ -294,7 +295,6 @@ uses
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults,
   KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_RandomChecks, KM_DevPerfLog, KM_DevPerfLogTypes;
-
 
 //Create template for the Game
 //aRender - who will be rendering the Game session
@@ -304,6 +304,12 @@ const
   UIMode: array[TKMGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
 begin
   inherited Create;
+
+  fSaveWorkerThread := TKMWorkerThread.Create;
+
+  {$IFDEF DEBUG}
+  TThread.NameThreadForDebugging('SaveWorker', fSaveWorkerThread.ThreadID);
+  {$ENDIF}
 
   fGameMode := aGameMode;
   fNetworking := aNetworking;
@@ -453,6 +459,9 @@ begin
 
   if Assigned(fOnDestroy) then
     fOnDestroy();
+
+  //This will ensure all queued work is completed before destruction
+  FreeAndNil(fSaveWorkerThread);
 
   inherited;
 end;
@@ -939,6 +948,7 @@ begin
   gLog.AddTime('Creating crash report...');
 
   //Attempt to save the game, but if the state is too messed up it might fail
+  fSaveWorkerThread.fSynchronousExceptionMode := True; //Do saving synchronously in main thread
   try
     if (fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate])
       and not (fGamePlayInterface.UIMode = umReplay) then //In case game mode was altered or loaded with logical error
@@ -955,6 +965,7 @@ begin
     on E : Exception do
       gLog.AddTime('Exception while trying to save game for crash report: ' + E.ClassName + ': ' + E.Message);
   end;
+  fSaveWorkerThread.fSynchronousExceptionMode := False;
 
   MissionFile := GetMissionFile;
   Path := ExtractFilePath(ExeDir + MissionFile);
@@ -1264,24 +1275,27 @@ procedure TKMGame.AutoSave(aTimestamp: TDateTime);
 {$IFDEF WDC}
 var
   LocalIsMultiPlayerOrSpec: Boolean;
+//  T: Int64;
 {$ENDIF}
 begin
+  //T := TimeGetUsec;
+
   Save('autosave', aTimestamp); //Save to temp file
 
   //If possible perform file deletion/renaming in a different thread so we don't delay game
   {$IFDEF WDC}
     //Avoid accessing Self from async thread, copy required states to local variables
     LocalIsMultiPlayerOrSpec := IsMultiPlayerOrSpec;
-    TTask.Run(procedure
+    fSaveWorkerThread.QueueWork(procedure
     begin
-      {$IFDEF DEBUG}
-      TThread.NameThreadForDebugging('Game.AutoSave');
-      {$ENDIF}
       DoAutoSaveRename(LocalIsMultiPlayerOrSpec);
     end);
   {$ELSE}
     DoAutoSaveRename(IsMultiPlayerOrSpec);
   {$ENDIF}
+
+  //T := TimeGetUsec - T;
+  //gLog.AddTime('Autosave took '+IntToStr(T));
 end;
 
 
@@ -1981,43 +1995,46 @@ begin
 
   SaveStream := TKMemoryStreamBinary.Create;
 
-  try
-    SaveGameToStream(aTimestamp, SaveStream);
+  SaveGameToStream(aTimestamp, SaveStream);
 
-    //Makes the folders in case they were deleted.
-    //Should do before save Minimap file for MP game
-    if (aPathName <> '') then
+  //Makes the folders in case they were deleted.
+  //Should do before save Minimap file for MP game
+  if (aPathName <> '') then
+  begin
+    //Doing this async would mean that every part of saving must be done async
+    //Seems error prone so I disabled it for now. It only takes ~0.3ms in my tests
+    ForceDirectories(ExtractFilePath(aPathName));
+    {fSaveWorkerThread.QueueWork(procedure
+    begin
       ForceDirectories(ExtractFilePath(aPathName));
+    end);}
+  end;
 
-    //In MP each player has his own perspective, hence we dont save minimaps in the main save file to avoid cheating,
-    //but save minimap in separate file with local game data
-    if IsMultiPlayerOrSpec and (aMPLocalDataPathName <> '') then
-    begin
+  //In MP each player has his own perspective, hence we dont save minimaps in the main save file to avoid cheating,
+  //but save minimap in separate file with local game data
+  if IsMultiPlayerOrSpec and (aMPLocalDataPathName <> '') then
+  begin
+    try
+      GameMPLocalData := TKMGameMPLocalData.Create(fLastReplayTick, fNetworking.MyNetPlayer.StartLocation, fGamePlayInterface.Minimap);
       try
-        GameMPLocalData := TKMGameMPLocalData.Create(fLastReplayTick, fNetworking.MyNetPlayer.StartLocation, fGamePlayInterface.Minimap);
-        try
-          GameMPLocalData.SaveToFile(aMPLocalDataPathName);
-        finally
-          FreeAndNil(GameMPLocalData);
-        end;
-      except
-        on E: Exception do
-          //Ignore any errors while saving minimap, because its optional for MP games
-          gLog.AddTime('Error while saving save minimap to ' + aMPLocalDataPathName + ': ' + E.Message
-            {$IFDEF WDC}+ sLineBreak + E.StackTrace{$ENDIF}
-            );
-      end
-    end;
-    SaveStream.SaveToFile(aPathName); //Some 70ms for TPR7 map
-    if DoSaveGameAsText then
-    begin
-      SaveGameToStream(aTimestamp, SaveStreamTxt);
-      SaveStreamTxt.SaveToFile(aPathName + EXT_SAVE_TXT_DOT);
-    end;
-  finally
-    FreeAndNil(SaveStream);
-    if DoSaveGameAsText then
-      FreeAndNil(SaveStreamTxt);
+        GameMPLocalData.SaveToFileAsync(aMPLocalDataPathName, fSaveWorkerThread);
+      finally
+        FreeAndNil(GameMPLocalData);
+      end;
+    except
+      on E: Exception do
+        //Ignore any errors while saving minimap, because its optional for MP games
+        gLog.AddTime('Error while saving save minimap to ' + aMPLocalDataPathName + ': ' + E.Message
+          {$IFDEF WDC}+ sLineBreak + E.StackTrace{$ENDIF}
+          );
+    end
+  end;
+
+  TKMemoryStream.AsyncSaveToFileAndFree(SaveStream, aPathName, fSaveWorkerThread);
+  if DoSaveGameAsText then
+  begin
+    SaveGameToStream(aTimestamp, SaveStreamTxt);
+    TKMemoryStream.AsyncSaveToFileAndFree(SaveStreamTxt, aPathName + EXT_SAVE_TXT_DOT, fSaveWorkerThread);
   end;
 
   gLog.AddTime('Saving game end: ' + aPathName);
@@ -2035,6 +2052,9 @@ procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
 var
   fullPath, RngPath, mpLocalDataPath, NewSaveName: UnicodeString;
 begin
+  //Wait for previous save async tasks to complete before proceeding
+  fSaveWorkerThread.WaitForAllWorkToComplete;
+
   //Convert name to full path+name
   fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiplayer);
   mpLocalDataPath := SaveName(aSaveName, EXT_SAVE_MP_LOCAL, IsMultiplayer);
@@ -2054,28 +2074,28 @@ begin
   begin
     //Game was saved from replay (.bas file)
     if FileExists(fLoadFromFile) then
-      KMCopyFile(fLoadFromFile, NewSaveName, True);
+      KMCopyFileAsync(fLoadFromFile, NewSaveName, True, fSaveWorkerThread);
   end else
     //Normally saved game
     {$IFDEF PARALLEL_RUNNER}
-      KMCopyFile(SaveName('basesave_thread_'+IntToStr(THREAD_NUMBER), EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
+      KMCopyFileAsync(SaveName('basesave_thread_'+IntToStr(THREAD_NUMBER), EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True, fSaveWorkerThread);
     {$ELSE}
-      KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
+      KMCopyFileAsync(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True, fSaveWorkerThread);
     {$ENDIF}
 
   //Save replay queue
   gLog.AddTime('Saving replay info');
   // Save replay info
-  fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
+  fGameInputProcess.SaveToFileAsync(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT), fSaveWorkerThread);
 
   // Save checkpoints
   if gGameApp.GameSettings.SaveCheckpoints and not SKIP_SAVE_SAVPTS_TO_FILE then
-    fSavedReplays.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT));
+    fSavedReplays.SaveToFileAsync(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT), fSaveWorkerThread);
 
   if DoSaveRandomChecks then
     try
       RngPath := ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT);
-      gRandomCheckLogger.SaveToPath(RngPath);
+      gRandomCheckLogger.SaveToPathAsync(RngPath, fSaveWorkerThread);
     except
       on E: Exception do
         gLog.AddTime('Error saving random checks to ' + RngPath); //Silently log error, don't propagate error further
@@ -2449,9 +2469,6 @@ procedure TKMGame.IssueAutosaveCommand(aAfterPT: Boolean = False);
 var
   GICType: TKMGameInputCommandType;
 begin
-  if (fLastAutosaveTime > 0) and (GetTimeSince(fLastAutosaveTime) < AUTOSAVE_NOT_MORE_OFTEN_THEN) then
-    Exit; //Do not do autosave too often, because it can produce IO errors. Can happen on very fast speedups
-
   if aAfterPT then
     GICType := gicGameAutoSaveAfterPT
   else
@@ -2462,14 +2479,12 @@ begin
     if fNetworking.IsHost then
     begin
       fGameInputProcess.CmdGame(GICType, UTCNow); //Timestamp must be synchronised
-      fLastAutosaveTime := TimeGet;
     end;
   end
   else
     if gGameApp.GameSettings.Autosave then
     begin
       fGameInputProcess.CmdGame(GICType, UTCNow);
-      fLastAutosaveTime := TimeGet;
     end;
 end;
 

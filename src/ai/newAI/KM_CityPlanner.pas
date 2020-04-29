@@ -385,6 +385,7 @@ begin
 
   fRoadPlanner.Load(LoadStream);
   fRoadShortcutPlanner.Load(LoadStream);
+  fFieldEval.OwnerUpdate(fOwner); // UPDATE OWNER AFTER LOAD
 end;
 
 
@@ -2387,6 +2388,7 @@ begin
   begin
     BestGain := 0;
     BestLoc := KMPOINT_ZERO;
+    gAIFields.Eye.BuildFF.UpdateState();
     for K := fForestsInfo.Count-1 downto 0 do
     begin
       Loc := fForestsInfo.Forests[K].Loc;

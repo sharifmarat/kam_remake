@@ -146,6 +146,7 @@ var
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
   SHOW_TERRAIN_OVERLAYS   :Boolean = False; //Show terrain tile overlays
+  SHOW_TERRAIN_HEIGHT     :Boolean = False; //Show terrain tile overlays
   SHOW_TERRAIN_TILES_GRID :Boolean = False; //Show terrain tiles grid
   SHOW_BRUSH_APPLY_AREA   :Boolean = False; //Show brushes apply area
   SHOW_TERRAIN_WIRES      :Boolean = False; //Makes terrain height visible
@@ -260,7 +261,6 @@ const
   AUTOSAVE_FREQUENCY_MAX  = 3000;
   AUTOSAVE_FREQUENCY_DEFAULT      = 600; //How often to do autosave, every N ticks
   AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX = 5; //Max number of autosaves to be included into crashreport
-  AUTOSAVE_NOT_MORE_OFTEN_THEN = 10000; //= 10s - Time in ms, how often we can make autosaves. On high speedups we can get IO errors because of too often saves
 
   // Checkpoint, which are made in the memory while watching replay
   REPLAY_AUTOSAVE_FREQUENCY_MIN = 30*10; //30 sec
@@ -492,7 +492,7 @@ type
     tpElevate,     // Nodes which are forbidden to be elevated by workers (house basements, water, etc..)
     tpWorker,      // Like CanWalk but allows walking on building sites
     tpOwn,         // For AI ownership
-    tpFactor       // Allows vertex (top left) to be factored as a neighbour in flattening algorithm
+    tpFactor       // Allows vertex (top left) to be factored as a neighbour in flattening algorithm (it is to stop mines flattening strangely due to surrounding hills)
   );
   TKMTerrainPassabilitySet = set of TKMTerrainPassability;
 

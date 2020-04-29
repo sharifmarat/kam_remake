@@ -39,10 +39,11 @@ type
     fSpeed: Byte;
 
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
-    function GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
-    function GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
-    function GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
-    function GetTileCornersTKinds(aCell: TKMPoint; aGetOnlyTileCornersTK: Boolean = False; aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
+    function GetVertexCornerTerKinds(X,Y: Word; var aCornersTerKinds: TKMTerrainKindCorners): Integer;
+    procedure GetTileOwnCornersTKinds(const aCell: TKMPoint; var aCornersTerKinds: TKMTerrainKindCorners);
+    procedure GetTileLandNodeTKinds(const aCell: TKMPoint; var aCornersTerKinds: TKMTerrainKindCorners);
+    procedure GetTileCornersTKinds(const aCell: TKMPoint; out aCornersTerKinds: TKMTerrainKindCorners;
+                                   aGetOnlyTileCornersTK: Boolean = False; aGetOnlyLandNodeTK: Boolean = False);
     procedure BrushTile(const X, Y: Integer);
     procedure BrushTerrainTile(const X, Y: Integer; aTerKind: TKMTerrainKind);
     procedure MagicBrush(const X,Y: Integer); overload;
@@ -106,7 +107,7 @@ type
 
     procedure FixTerrainKindInfoAtBorders(aMakeCheckpoint: Boolean = True);
     procedure FixTerrainKindInfo(aMakeCheckpoint: Boolean = True); overload;
-    procedure FixTerrainKindInfo(aRect: TKMRect; aMakeCheckpoint: Boolean = True); overload;
+    procedure FixTerrainKindInfo(const aRect: TKMRect; aMakeCheckpoint: Boolean = True); overload;
 
     class function GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
 
@@ -410,64 +411,63 @@ function TKMTerrainPainter.TryGetVertexEffectiveTerKind(X, Y: Word; var aEffecti
 
 var
   I,K,M: Integer;
-  VertexTKinds: TKMTerrainKindsArray;
-  SameTKind, NoCustomTK: Boolean;
-  TKCounts, MostTKIs: array[0..3] of Integer;
-  MostTKCnt, MostTKI, vrxCnt: Integer;
+  vertexTKinds: TKMTerrainKindCorners;
+  sameTKind, noCustomTK: Boolean;
+  terKindCnts, mostTKIs: array[0..3] of Integer;
+  mostTKCnt, mostTKI, vrxCnt: Integer;
 begin
   Result := False;
   aEffectiveTKind := tkCustom;
 
-  VertexTKinds := GetVertexCornerTerKinds(X,Y);
-  vrxCnt := Length(VertexTKinds);
-  SameTKind := True;
+  vrxCnt := GetVertexCornerTerKinds(X, Y, vertexTKinds);
+  sameTKind := True;
 
   Assert(vrxCnt > 0, 'Can''t find vertex corners');
 
   for K := 0 to vrxCnt - 1 do
   begin
-    TKCounts[K] := 0;
-    MostTKIs[K] := 0;
+    terKindCnts[K] := 0;
+    mostTKIs[K] := 0;
   end;
 
   //Find most popular TerKind
   //Count all TerKinds occurrences first
   for K := 0 to vrxCnt - 1 do
     for M := K + 1 to vrxCnt - 1 do
-      if VertexTKinds[K] = VertexTKinds[M] then
-        Inc(TKCounts[K]);
+      if vertexTKinds[K] = vertexTKinds[M] then
+        Inc(terKindCnts[K]);
 
   //Get Most popular one index
-  MostTKCnt := -1;
+  mostTKCnt := -1;
   I := 0;
   for K := 0 to vrxCnt - 1 do
-    if TKCounts[K] > MostTKCnt then
+    if terKindCnts[K] > mostTKCnt then
     begin
       I := 0;
-      MostTKIs[I] := K;
-      MostTKCnt := TKCounts[K];
+      mostTKIs[I] := K;
+      mostTKCnt := terKindCnts[K];
       Inc(I);
     end
     else
-    if TKCounts[K] = MostTKCnt then
+    if terKindCnts[K] = mostTKCnt then
     begin
-      MostTKIs[I] := K;
+      mostTKIs[I] := K;
       Inc(I);
     end;
 
-  MostTKI := MostTKIs[KaMRandom(I, 'TKMTerrainPainter.TryGetVertexEffectiveTerKind')];
+  mostTKI := mostTKIs[KaMRandom(I, 'TKMTerrainPainter.TryGetVertexEffectiveTerKind')];
 
-  NoCustomTK := VertexTKinds[0] <> tkCustom;
+  noCustomTK := vertexTKinds[0] <> tkCustom;
   for K := 1 to vrxCnt - 1 do
   begin
-    SameTKind := SameTKind and EqualTKinds(VertexTKinds[K], VertexTKinds[K-1]);
-    NoCustomTK := NoCustomTK and (VertexTKinds[K] <> tkCustom);
+    sameTKind := sameTKind and EqualTKinds(vertexTKinds[K], vertexTKinds[K-1]);
+    noCustomTK := noCustomTK and (vertexTKinds[K] <> tkCustom);
   end;
 
   //Replace TerKind with most popular one if there all TerKinds are equal or if there is no custom TerKinds
-  if SameTKind or NoCustomTK then
+  if sameTKind or noCustomTK then
   begin
-    aEffectiveTKind := VertexTKinds[MostTKI];
+    aEffectiveTKind := vertexTKinds[mostTKI];
     Result := True;
   end;
 end;
@@ -488,7 +488,7 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.FixTerrainKindInfo(aRect: TKMRect; aMakeCheckpoint: Boolean = True);
+procedure TKMTerrainPainter.FixTerrainKindInfo(const aRect: TKMRect; aMakeCheckpoint: Boolean = True);
 var
   I,J: Integer;
   TerKind: TKMTerrainKind;
@@ -654,50 +654,49 @@ end;
 
 
 //Get tile corners terkinds (TKinds, based on TILE_CORNERS_TERRAIN_KINDS or generated mask)
-function TKMTerrainPainter.GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+procedure TKMTerrainPainter.GetTileOwnCornersTKinds(const aCell: TKMPoint; var aCornersTerKinds: TKMTerrainKindCorners);
 begin
-  Result := GetTileCornersTKinds(aCell, True);
+  GetTileCornersTKinds(aCell, aCornersTerKinds, True);
 end;
 
 
-function TKMTerrainPainter.GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+procedure TKMTerrainPainter.GetTileLandNodeTKinds(const aCell: TKMPoint; var aCornersTerKinds: TKMTerrainKindCorners);
 begin
-  Result := GetTileCornersTKinds(aCell, False, True);
+  GetTileCornersTKinds(aCell, aCornersTerKinds, False, True);
 end;
 
 
-function TKMTerrainPainter.GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
+function TKMTerrainPainter.GetVertexCornerTerKinds(X,Y: Word; var aCornersTerKinds: TKMTerrainKindCorners): Integer;
 var
-  I: Integer;
+  cornersTerKinds: TKMTerrainKindCorners;
 
   procedure CheckTile(aX, aY: Word; aCorner: Byte);
   begin
     if gTerrain.TileInMapCoords(aX, aY) then
     begin
-      Result[I] := GetTileOwnCornersTKinds(KMPoint(aX, aY))[aCorner];
-      Inc(I);
+      GetTileOwnCornersTKinds(KMPoint(aX, aY), cornersTerKinds);
+
+      aCornersTerKinds[Result] := cornersTerKinds[aCorner];
+      Inc(Result);
     end;
   end;
 
 begin
-  SetLength(Result, 4);
-
-  I := 0;
+  Result := 0;
 
   CheckTile(X-1, Y-1, 2);
   CheckTile(X  , Y-1, 3);
   CheckTile(X  , Y  , 0);
   CheckTile(X-1, Y  , 1);
-
-  SetLength(Result, I);
 end;
 
 
-function TKMTerrainPainter.GetTileCornersTKinds(aCell: TKMPoint;
-                                                      aGetOnlyTileCornersTK: Boolean = False;
-                                                      aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
+procedure TKMTerrainPainter.GetTileCornersTKinds(const aCell: TKMPoint;
+                                                out aCornersTerKinds: TKMTerrainKindCorners;
+                                                aGetOnlyTileCornersTK: Boolean = False;
+                                                aGetOnlyLandNodeTK: Boolean = False);
 var
-  TerKindFound: array [0..3] of Boolean;
+  terKindFound: array [0..3] of Boolean;
 
   procedure CheckTerKind(aX,aY,aI: Integer);
   var
@@ -710,25 +709,23 @@ var
     TerKind := LandTerKind[aY,aX].TerKind;
     if TerKind <> tkCustom then
     begin
-      TerKindFound[aI] := True;
-      Result[aI] := TerKind;
+      terKindFound[aI] := True;
+      aCornersTerKinds[aI] := TerKind;
     end;
   end;
 
 var
   I,L: Integer;
-  Tile: TKMTerrainTileBasic;
+  tile: TKMTerrainTileBasic;
 
 begin
   Assert(not (aGetOnlyTileCornersTK and aGetOnlyLandNodeTK)); //At least 1 of those parameters should be False
 
-  SetLength(Result, 4);
-
   //Init with tkCustom
   for I := 0 to 3 do
   begin
-    TerKindFound[I] := False;
-    Result[I] := tkCustom;
+    terKindFound[I] := False;
+    aCornersTerKinds[I] := tkCustom;
   end;
 
   //Get tile corners TKinds based on LandTerKind
@@ -744,25 +741,25 @@ begin
   if not aGetOnlyLandNodeTK and gTerrain.TileInMapCoords(aCell) then
   begin
     if fUseTempLand then
-      Tile := fTempLand[aCell.Y, aCell.X]
+      tile := fTempLand[aCell.Y, aCell.X]
     else
-      Tile := GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]);
+      tile := GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]);
 
     for I := 0 to 3 do
-      if not TerKindFound[I] then
+      if not terKindFound[I] then
       begin
-        if Tile.BaseLayer.Corners[I] then
-          Result[I] := TILE_CORNERS_TERRAIN_KINDS[Tile.BaseLayer.Terrain, (I + 4 - Tile.BaseLayer.Rotation) mod 4]
+        if tile.BaseLayer.Corners[I] then
+          aCornersTerKinds[I] := TILE_CORNERS_TERRAIN_KINDS[tile.BaseLayer.Terrain, (I + 4 - tile.BaseLayer.Rotation) mod 4]
         else
-          for L := 0 to Tile.LayersCnt - 1 do
-            if Tile.Layer[L].Corners[I] then
-              Result[I] := gRes.Sprites.GetGenTerrainInfo(Tile.Layer[L].Terrain).TerKind;
+          for L := 0 to tile.LayersCnt - 1 do
+            if tile.Layer[L].Corners[I] then
+              aCornersTerKinds[I] := gRes.Sprites.GetGenTerrainInfo(tile.Layer[L].Terrain).TerKind;
       end;
   end;
 end;
 
 
-function GetMaskType(aCornerTerKinds: TKMTerrainKindsArray; var aLayerOrder: array of TKMTileMaskInfo): TKMTileMaskType;
+function GetMaskType(aCornerTerKinds: TKMTerrainKindCorners; var aLayerOrder: array of TKMTileMaskInfo): TKMTileMaskType;
 var
   A,B,C,D: TKMTerrainKind;
   I, J, Tmp: Integer;
@@ -1049,6 +1046,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
     DiagTerKind: TKMTerrainKind;
     HasCornerTiles: Boolean;
     TerKinds: array [0..2] of TKMTerrainKind;
+    cornersTerKinds: TKMTerrainKindCorners;
   begin
     Result := tkCustom;
     case aCorner of
@@ -1080,7 +1078,8 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
         //so f.e. for 0 corner, and tile 'above' (tile to the top from tasrget cell(aCell)) we have to get terrainKind from corner 3
         //3 = 1 (I, start from top left alwaysm top tile is the 2nd tile) + 0 (aCorner) + 2
         //and so on
-        TerKinds[K] := GetTileCornersTKinds(RectCorners[J])[(I+aCorner+2) mod 4];
+        GetTileCornersTKinds(RectCorners[J], cornersTerKinds);
+        TerKinds[K] := cornersTerKinds[(I+aCorner+2) mod 4];
         // Find diagTerKind, as its preferrable over other cells
         if (aCell.X <> RectCorners[J].X) and (aCell.Y <> RectCorners[J].Y) then
           DiagTerKind := TerKinds[K];
@@ -1110,27 +1109,24 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
     end;
   end;
 
-  function GetTerKindsAround(aCell: TKMPoint): TKMTerrainKindsArray;
+  procedure GetTerKindsAround(aCell: TKMPoint; out aCornersTerKinds: TKMTerrainKindCorners);
   var
     I: Integer;
     TerKind: TKMTerrainKind;
     TerKindFound: array[0..3] of Boolean;
   begin
-    SetLength(Result, 4);
-
     //get all 4 terkind for corners
     for I := 0 to 3 do
     begin
       TerKind := GetCornerTerKind(I, aCell, TerKindFound[I]);
       if TerKindFound[I] then
-        Result[I] := TerKind;
+        aCornersTerKinds[I] := TerKind;
     end;
 
     //For corner, where no terkind from around tiles were found - replace it with neighbour corner terkind (there can't be 2 missed terkinds in a row)
     for I := 0 to 3 do
       if not TerKindFound[I] then
-        Result[I] := Result[(I+1) mod 4];
-
+        aCornersTerKinds[I] := aCornersTerKinds[(I+1) mod 4];
   end;
 
   function HasCollision(aTerKind1, aTerKind2: TKMTerrainKind): Boolean;
@@ -1155,9 +1151,9 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
   procedure ApplyMagicBrush(MaskKind: TKMTileMaskKind);
   var
     I: Integer;
-    TileOwnTerKinds: TKMTerrainKindsArray;
-    TileNodeTerKinds: TKMTerrainKindsArray;
-    AroundTerKinds: TKMTerrainKindsArray;
+    tileOwnTerKinds: TKMTerrainKindCorners;
+    tileNodeTerKinds: TKMTerrainKindCorners;
+    aroundTerKinds: TKMTerrainKindCorners;
     CollisionFound: Boolean;
     LayerOrder: array of TKMTileMaskInfo;
     MaskType: TKMTileMaskType;
@@ -1165,23 +1161,23 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
     //Do not check tile node corners when using 'force paint' mode
     if not fOverrideCustomTiles then
     begin
-      TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
+      GetTileLandNodeTKinds(KMPoint(X,Y), tileNodeTerKinds);
 
       for I := 0 to 3 do
-        if TileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
+        if tileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
           Exit;
     end;
 
-    TileOwnTerKinds := GetTileOwnCornersTKinds(KMPoint(X,Y));
-    AroundTerKinds := GetTerKindsAround(KMPoint(X,Y));
+    GetTileOwnCornersTKinds(KMPoint(X,Y), tileOwnTerKinds);
+    GetTerKindsAround(KMPoint(X,Y), aroundTerKinds);
 
     for I := 0 to 3 do
-      if AroundTerKinds[I] = tkCustom then  // Do not set masks if at least 1 around corner is custom
+      if aroundTerKinds[I] = tkCustom then  // Do not set masks if at least 1 around corner is custom
         Exit;
 
     CollisionFound := False;
     for I := 0 to 3 do
-      if HasCollision(TileOwnTerKinds[I], AroundTerKinds[I]) then
+      if HasCollision(tileOwnTerKinds[I], aroundTerKinds[I]) then
       begin
         CollisionFound := True;
         Break;
@@ -1194,7 +1190,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer; aMaskKind: TKMTileMas
         for I := 0 to 3 do
           LayerOrder[I].SubType := mstMain;
 
-        MaskType := GetMaskType(AroundTerKinds, LayerOrder);
+        MaskType := GetMaskType(aroundTerKinds, LayerOrder);
 
         BaseLayer.Terrain := BASE_TERRAIN[LayerOrder[0].TerKind];
         BaseLayer.Rotation := 0;

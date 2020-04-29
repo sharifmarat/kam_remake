@@ -9,7 +9,7 @@ uses
 
 type
   TForm2 = class(TForm)
-    Button1: TButton;
+    btnRun: TButton;
     seCycles: TSpinEdit;
     Label1: TLabel;
     ListBox1: TListBox;
@@ -33,21 +33,43 @@ type
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
+    seSeed: TSpinEdit;
+    Label7: TLabel;
+    Label8: TLabel;
+    Label9: TLabel;
+    Label10: TLabel;
+    Label11: TLabel;
+    Label12: TLabel;
+    rgAIType: TRadioGroup;
+    btnStop: TButton;
+    btnPause: TButton;
+    rgMaps: TRadioGroup;
     procedure FormCreate(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure btnRunClick(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
     procedure TabSheetResize(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
+    procedure btnStopClick(Sender: TObject);
+    procedure btnPauseClick(Sender: TObject);
   private
     fY: array of TLabel;
     fX: array of TLabel;
     fResults: TKMRunResults;
     fRunTime: string;
+    fStopped: Boolean;
+    fPaused: Boolean;
     RenderArea: TKMRenderControl;
+    function IsStopped: Boolean;
+    function IsPaused: Boolean;
     procedure RunnerProgress(const aValue: UnicodeString);
     procedure RunnerProgress2(const aValue: UnicodeString);
     procedure RunnerProgress3(const aValue: UnicodeString);
+    procedure RunnerProgress4(const aValue: UnicodeString);
+    procedure RunnerProgress5(const aValue: UnicodeString);
+    procedure RunnerProgress_Left(const aValue: UnicodeString);
+    procedure RunnerProgress_Left2(const aValue: UnicodeString);
+    procedure RunnerProgress_Left3(const aValue: UnicodeString);
     procedure RefreshResults(aImg: TImage);
     procedure RefreshDistribution(aImg: TImage);
     procedure RefreshTimes(aImg: TImage);
@@ -61,6 +83,8 @@ var
 
 implementation
 {$R *.dfm}
+uses
+  KM_CommonTypes;
 
 
 const
@@ -78,6 +102,14 @@ end;
 {$ENDIF}
 
 
+procedure TForm2.btnStopClick(Sender: TObject);
+begin
+  fStopped := True;
+  btnStop.Enabled := False;
+end;
+
+
+
 procedure TForm2.FormCreate(Sender: TObject);
 var
   I: Integer;
@@ -93,8 +125,12 @@ begin
   if Length(RunnerList) > 0 then
   begin
     ListBox1.ItemIndex := 0;
-    Button1.Enabled := True
+    btnRun.Enabled := True;
+    btnStop.Enabled := False;
+    btnPause.Enabled := False;
   end;
+
+  Caption := ExtractFileName(Application.ExeName);
 end;
 
 
@@ -104,7 +140,9 @@ var
 begin
   ID := ListBox1.ItemIndex;
   if ID = -1 then Exit;
-  Button1.Enabled := True;
+  btnRun.Enabled := True;
+  btnStop.Enabled := False;
+  btnPause.Enabled := False;
 end;
 
 
@@ -133,7 +171,26 @@ begin
 end;
 
 
-procedure TForm2.Button1Click(Sender: TObject);
+function TForm2.IsStopped: Boolean;
+begin
+  Result := fStopped;
+end;
+
+
+function TForm2.IsPaused: Boolean;
+begin
+  Result := fPaused;
+end;
+
+
+procedure TForm2.btnPauseClick(Sender: TObject);
+begin
+  fPaused := True;
+  btnPause.Enabled := False;
+end;
+
+
+procedure TForm2.btnRunClick(Sender: TObject);
 var
   T: Cardinal;
   ID, Count: Integer;
@@ -145,22 +202,39 @@ begin
   Count := seCycles.Value;
   if Count <= 0 then Exit;
 
+  fStopped := False;
+
   Memo1.Clear;
-  Button1.Enabled := False;
+  btnRun.Enabled := False;
+  btnStop.Enabled := True;
+  btnPause.Enabled := False; //Always disabled for now
   try
     RunnerClass := RunnerList[ID];
 
     if chkRender.Checked then
-      Runner := RunnerClass.Create(RenderArea)
+      Runner := RunnerClass.Create(RenderArea, {IsPaused, }IsStopped)
     else
-      Runner := RunnerClass.Create(nil);
+      Runner := RunnerClass.Create(nil, {IsPaused, }IsStopped);
 
     Runner.OnProgress := RunnerProgress;
+    Runner.OnProgress_Left := RunnerProgress_Left;
+    Runner.OnProgress_Left2 := RunnerProgress_Left2;
+    Runner.OnProgress_Left3 := RunnerProgress_Left3;
     Runner.OnProgress2 := RunnerProgress2;
     Runner.OnProgress3 := RunnerProgress3;
+    Runner.OnProgress4 := RunnerProgress4;
+    Runner.OnProgress5 := RunnerProgress5;
     try
       T := GetTickCount;
       Runner.Duration := seDuration.Value;
+      Runner.Seed := seSeed.Value;
+      if rgAIType.ItemIndex = 0 then
+        Runner.AIType := aitClassic
+      else
+        Runner.AIType := aitAdvanced;
+
+      Runner.MapsType := TKMRunnerMapsType(rgMaps.ItemIndex);
+
       fResults := Runner.Run(Count);
       fRunTime := 'Done in ' + IntToStr(GetTickCount - T) + ' ms';
     finally
@@ -169,7 +243,9 @@ begin
 
     PageControl1Change(nil);
   finally
-    Button1.Enabled := True;
+    btnRun.Enabled := True;
+    btnStop.Enabled := False;
+    btnPause.Enabled := False;
   end;
 end;
 
@@ -369,6 +445,45 @@ begin
   Application.ProcessMessages;
 end;
 
+
+procedure TForm2.RunnerProgress4(const aValue: UnicodeString);
+begin
+  Label8.Caption := aValue;
+  Label8.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress5(const aValue: UnicodeString);
+begin
+  Label12.Caption := aValue;
+  Label12.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress_Left(const aValue: UnicodeString);
+begin
+  Label9.Caption := aValue;
+  Label9.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress_Left2(const aValue: UnicodeString);
+begin
+  Label10.Caption := aValue;
+  Label10.Refresh;
+  Application.ProcessMessages;
+end;
+
+
+procedure TForm2.RunnerProgress_Left3(const aValue: UnicodeString);
+begin
+  Label11.Caption := aValue;
+  Label11.Refresh;
+  Application.ProcessMessages;
+end;
 
 
 procedure TForm2.TabSheetResize(Sender: TObject);

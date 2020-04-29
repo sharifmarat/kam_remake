@@ -229,11 +229,14 @@ function GetTerrainTileBasic(aTile: TKMTerrainTile): TKMTerrainTileBasic;
 var
   L: Integer;
 begin
-  Result.BaseLayer := aTile.BaseLayer;
-  Result.LayersCnt := aTile.LayersCnt;
-  Result.Height    := aTile.Height;
-  Result.Obj       := aTile.Obj;
-  Result.IsCustom  := aTile.IsCustom;
+  Result.BaseLayer    := aTile.BaseLayer;
+  Result.LayersCnt    := aTile.LayersCnt;
+  Result.Height       := aTile.Height;
+  Result.Obj          := aTile.Obj;
+  Result.IsCustom     := aTile.IsCustom;
+  Result.BlendingLvl  := aTile.BlendingLvl;
+  Result.TileOverlay  := aTile.TileOverlay;
+
   for L := 0 to 2 do
     Result.Layer[L] := aTile.Layer[L];
 end;
