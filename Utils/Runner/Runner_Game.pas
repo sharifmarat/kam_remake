@@ -1224,9 +1224,9 @@ begin
   end;
 
   // Make more frequent saves and smaller replay length
-  savesFreq := SAVEPT_FREQ div 2*(Byte(MapsType = rmtFight));
+  savesFreq := SAVEPT_FREQ div (1 + (Byte(MapsType = rmtFight)));
   savesCnt := (SIMUL_TIME_MAX div savesFreq);
-  replayLength := REPLAY_LENGTH div 3*(Byte(MapsType = rmtFight));
+  replayLength := REPLAY_LENGTH div (1 + 2*(Byte(MapsType = rmtFight)));
 
 //  for K := Low(MAPS) to High(MAPS) do
 //  for K := 5 to High(MAPS) do
