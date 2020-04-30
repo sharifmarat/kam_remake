@@ -1352,7 +1352,7 @@ begin
       or ((fUnit is TKMUnitWarrior)
         and (gMySpectator.Selected is TKMUnitGroup)
         and (TKMUnitGroup(gMySpectator.Selected).SelectedUnit = fUnit)) then
-      gRenderAux.UnitRoute(NodeList, NodePos, byte(fUnit.UnitType));
+      gRenderAux.UnitRoute(NodeList, NodePos, fUnit.UID);
 end;
 
 

@@ -51,7 +51,7 @@ type
     procedure TextAtCorner(pX, pY: Integer; const aCorner: Byte; const aText: string; aCol: TColor4);
     procedure UnitMoves(const aRect: TKMRect);
     procedure UnitPointers(pX, pY: Single; Count: Integer);
-    procedure UnitRoute(NodeList: TKMPointList; Pos: Integer; aUnitType: Byte);
+    procedure UnitRoute(NodeList: TKMPointList; Pos: Integer; aUID: Integer);
     procedure Wires(const aRect: TKMRect);
     procedure RenderWireTile(const P: TKMPoint; Col: TColor4; aInset: Single = 0.0);
   end;
@@ -633,21 +633,25 @@ begin
 end;
 
 
-procedure TRenderAux.UnitRoute(NodeList: TKMPointList; Pos: Integer; aUnitType: Byte);
+procedure TRenderAux.UnitRoute(NodeList: TKMPointList; Pos: Integer; aUID: Integer);
 var
   I, K: Integer;
   FaceX, FaceY: Single;
+  col: TKMColor3f;
 begin
   if NodeList.Count = 0 then Exit;
   TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
-  case aUnitType of
-    1: glColor3f(1,0,0); //Serf
-    10: glColor3f(1,0,1); //Worker
-    15..30: glColor3f(0,1,0); //Army
-    31..38: glColor3f(0,0.5,0); //Animals
-    else glColor3f(1,1,0); //Citizens
-  end;
+//  case aUnitType of
+//    1: glColor3f(1,0,0); //Serf
+//    10: glColor3f(1,0,1); //Worker
+//    15..30: glColor3f(0,1,0); //Army
+//    31..38: glColor3f(0,0.5,0); //Animals
+//    else glColor3f(1,1,0); //Citizens
+//  end;
+
+  col := TKMColor3f.RandomWSeed(aUID);
+  glColor3f(col.R, col.G, col.B);
 
   for I := 0 to NodeList.Count - 1 do
     RenderDotOnTile(NodeList[I].X + 0.5, NodeList[I].Y + 0.5);
