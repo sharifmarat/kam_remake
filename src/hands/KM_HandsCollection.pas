@@ -25,6 +25,8 @@ type
     function GetHand(aIndex: Integer): TKMHand; inline;
     procedure SetHandsTeamColors;
     procedure AllianceChanged;
+
+    function FindPlaceForUnit(aX, aY: Integer; aUnit: TKMUnit; aUnitType: TKMUnitType; out aPlacePoint: TKMPoint; aRequiredWalkConnect: Byte): Boolean; overload;
   public
     constructor Create;
     destructor Destroy; override;
@@ -62,7 +64,8 @@ type
     function GetGroupByMember(aWarrior: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TObject;
     function UnitCount: Integer;
-    function FindPlaceForUnit(PosX,PosY:integer; aUnitType: TKMUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+    function FindPlaceForUnit(aX, aY: Integer; aUnit: TKMUnit; var aPlacePoint: TKMPoint; aRequiredWalkConnect: Byte): Boolean; overload;
+    function FindPlaceForUnit(aX, aY: Integer; aUnitType: TKMUnitType; var aPlacePoint: TKMPoint; aRequiredWalkConnect: Byte): Boolean; overload;
 
     //Check how Player1 feels towards Player2
     //Note: this is position dependant, e.g. Player1 may be allied with
@@ -659,8 +662,27 @@ begin
 end;
 
 
+function TKMHandsCollection.FindPlaceForUnit(aX, aY: Integer; aUnit: TKMUnit; var aPlacePoint: TKMPoint; aRequiredWalkConnect: Byte): Boolean;
+begin
+  Result := FindPlaceForUnit(aX, aY, aUnit, aUnit.UnitType, aPlacePoint, aRequiredWalkConnect);
+end;
+
+
+function TKMHandsCollection.FindPlaceForUnit(aX, aY: Integer; aUnitType: TKMUnitType; var aPlacePoint: TKMPoint; aRequiredWalkConnect: Byte): Boolean;
+begin
+  Result := FindPlaceForUnit(aX, aY, nil, aUnitType, aPlacePoint, aRequiredWalkConnect);
+end;
+
+
 {Should return closest position where unit can be placed}
-function TKMHandsCollection.FindPlaceForUnit(PosX,PosY:integer; aUnitType: TKMUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+function TKMHandsCollection.FindPlaceForUnit(aX, aY: Integer; aUnit: TKMUnit; aUnitType: TKMUnitType; out aPlacePoint: TKMPoint; aRequiredWalkConnect: Byte): Boolean;
+
+  //Unit can be placed on terrain if this tile is not occupied, or if its already occupied by this one unit
+  function CanPlaceUnitOnTerrain(P: TKMPoint): Boolean;
+  begin
+    Result := (gTerrain.Land[P.Y,P.X].IsUnit = nil) or (aUnit = gTerrain.Land[P.Y,P.X].IsUnit);
+  end;
+
 var
   I: Integer;
   P: TKMPoint;
@@ -671,14 +693,15 @@ begin
 
   for I := 0 to MAX_UNITS_AROUND_HOUSE do
   begin
-    P := GetPositionFromIndex(KMPoint(PosX, PosY), I);
+    P := GetPositionFromIndex(KMPoint(aX, aY), I);
     if gTerrain.TileInMapCoords(P.X, P.Y) then
     begin
-      if gTerrain.CheckPassability(P, Pass) and not gTerrain.HasUnit(P)
-      //If RequiredWalkConnect is invalid (0) it means we don't care
-      and ((RequiredWalkConnect = 0) or (gTerrain.GetWalkConnectID(P) = RequiredWalkConnect)) then
+      if gTerrain.CheckPassability(P, Pass)
+        and CanPlaceUnitOnTerrain(P)
+        //If RequiredWalkConnect is invalid (0) it means we don't care
+        and ((aRequiredWalkConnect = 0) or (gTerrain.GetWalkConnectID(P) = aRequiredWalkConnect)) then
       begin
-        PlacePoint := P; // Assign if all test are passed
+        aPlacePoint := P; // Assign if all test are passed
         Result := True;
         Exit;
       end;

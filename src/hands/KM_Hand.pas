@@ -482,16 +482,13 @@ end;
 //User can cancel the training, so we don't add unit to stats just yet
 function TKMHand.TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 begin
-  Result := fUnits.AddUnit(fID, aUnitType, Position, False);
+  // Add unit and specify that its made inside house (so there is no need to occupy terrain tile)
+  Result := fUnits.AddUnit(fID, aUnitType, Position, False, 0, True);
   Result.OnUnitDied := UnitDied;
   Result.OnUnitTrained := UnitTrained;
 
   if Result is TKMUnitWarrior then
     TKMUnitWarrior(Result).OnWarriorWalkOut := WarriorWalkedOut;
-
-  //Adding a unit automatically sets gTerrain.IsUnit, but since the unit was trained
-  //inside School/Barracks we don't need that
-  gTerrain.UnitRem(Position);
 
   //Do not add unit to statistic just yet, wait till it's training complete
 end;

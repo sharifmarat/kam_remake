@@ -249,6 +249,7 @@ type
 
     procedure UnitAdd(const LocTo: TKMPoint; aUnit: Pointer);
     procedure UnitRem(const LocFrom: TKMPoint);
+    procedure UnitWalkInsideHouse(const aHouseEntrance: TKMPoint; aUnit: Pointer);
     procedure UnitWalk(const LocFrom,LocTo: TKMPoint; aUnit: Pointer);
     procedure UnitSwap(const LocFrom,LocTo: TKMPoint; UnitFrom: Pointer);
     procedure UnitVertexAdd(const LocTo: TKMPoint; Usage: TKMVertexUsage); overload;
@@ -3981,6 +3982,17 @@ begin
   if not DO_UNIT_INTERACTION then Exit;
 
   Land[LocFrom.Y,LocFrom.X].IsUnit := nil;
+end;
+
+
+{ Mark tile as occupied and update occupied unit}
+// We have no way of knowing whether a unit is inside a house, or several units exit a house at once
+// when exiting the game and destroying all units this will cause asserts.
+procedure TKMTerrain.UnitWalkInsideHouse(const aHouseEntrance: TKMPoint; aUnit: Pointer);
+begin
+  if not DO_UNIT_INTERACTION then Exit;
+
+  Land[aHouseEntrance.Y,aHouseEntrance.X].IsUnit := aUnit;
 end;
 
 
