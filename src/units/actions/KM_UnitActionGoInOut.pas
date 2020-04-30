@@ -254,11 +254,17 @@ procedure TKMUnitActionGoInOut.WalkIn;
 begin
   fUnit.Direction := dirN;  //one cell up
   fUnit.NextPosition := KMPointAbove(fUnit.CurrPosition);
-  gTerrain.UnitRem(fUnit.CurrPosition); //Unit does not occupy a tile while inside
+  gTerrain.UnitRem(fUnit.CurrPosition); // Release tile at point below house entrance
+  // Unit occupy a tile on a terrain while he is walking inside house
+  // House could be destroyed while while unit was walking in it, so we need to have a tile occupied on terrain for that case
+  // After house was destroyed other unit could go there / smth could be placed with as script,
+  // but this unit is still walking into house so we have keep it consistent:
+  // unit occupied tile if he is standing on that tile or he is going to get onto that tile
+  gTerrain.UnitWalkInsideHouse(fUnit.NextPosition, fUnit);
 
   //We are walking straight
   if fStreet.X = fDoor.X then
-   IncDoorway;
+    IncDoorway;
 end;
 
 
@@ -278,7 +284,7 @@ begin
 
   //We are walking straight
   if fStreet.X = fDoor.X then
-   IncDoorway;
+    IncDoorway;
 end;
 
 
@@ -410,6 +416,16 @@ begin
 
       if fHouse <> nil then
         fUnit.InHouse := fHouse;
+
+      // Release tile, occupied under the house entrance
+      // Unit occupied tile, when he was walking inside house, because he could interact with terrain
+      // if house was destroyed while he was during walk-in process
+      // But when unit entered house he is not on terrain anymore, but is somewhere in the house and he can't interact with terrain
+      // Do not remove tile occupation if house was destroyed while unit was walking in it
+      // we want to keep this place for exact this unit, so he will be not teleported to some other loc under the house
+      // (do not allow other units inside house to get this place occasionaly on house destruction in FindPlaceForUnit method)
+      if (fHouse <> nil) and not fHouse.IsDestroyed then
+        gTerrain.UnitRem(fUnit.CurrPosition);
     end
     else
     begin
