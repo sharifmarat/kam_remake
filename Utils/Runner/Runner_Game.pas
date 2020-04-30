@@ -1032,7 +1032,7 @@ var
 begin
   gameMode := gGame.GameMode;
   gGame.SetGameMode(gmSingle);
-  gGame.Save(aSaveName);
+  gGame.SaveAndWait(aSaveName); //Save game and wait for async worker to complete all of his jobs
   gGame.SetGameMode(gameMode);
 end;
 
