@@ -109,6 +109,7 @@ type
     R,G,B: Single;
     function ToCardinal: Cardinal;
     class function Generic(aIndex: Integer): TKMColor3f; static;
+    class function RandomWSeed(aSeed: Integer): TKMColor3f; static;
   end;
 //             Result := R + G shl 8 + B shl 16 + A shl 24;
   TKMColor4f = record
@@ -125,7 +126,7 @@ const
 
 implementation
 uses
-  Math;
+  Math, KM_CommonUtils;
 
 { TKMColor3f }
 function TKMColor3f.ToCardinal: Cardinal;
@@ -147,6 +148,14 @@ const
   );
 begin
   Result := GENERIC_COLORS[aIndex mod MAX_GENERIC_COLORS];
+end;
+
+
+class function TKMColor3f.RandomWSeed(aSeed: Integer): TKMColor3f;
+begin
+  Result.R := KaMRandomWSeedS1(aSeed, 1);
+  Result.G := KaMRandomWSeedS1(aSeed, 1);
+  Result.B := KaMRandomWSeedS1(aSeed, 1);
 end;
 
 
