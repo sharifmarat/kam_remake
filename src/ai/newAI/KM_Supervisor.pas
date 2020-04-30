@@ -450,6 +450,7 @@ begin
             break;
           end;
         Dec(CntA);
+        // Swap groups so groups < CntA waits for orders but threat is computed from all
         G := A[IdxA];
         A[IdxA] := A[CntA];
         A[CntA] := G;
@@ -470,6 +471,7 @@ begin
           CG := gHands[ A[IdxA].Owner ].AI.ArmyManagement.AttackNew.CombatGroup[ A[IdxA] ];
           CG.TargetGroup := TKMUnitWarrior(U).Group;
           Dec(CntA);
+          // Swap groups so groups < CntA waits for orders but threat is computed from all
           G := A[IdxA];
           A[IdxA] := A[CntA];
           A[CntA] := G;
@@ -617,6 +619,9 @@ begin
       end;
     end;
   end;
+  // Remove groups with orders from A (the rest is going to get command to walk)
+  for IdxA := cntA to Length(A) - 1 do
+    A[IdxA] := nil;
 
   Result := A;
 end;
