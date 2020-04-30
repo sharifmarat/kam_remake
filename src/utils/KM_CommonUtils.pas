@@ -65,6 +65,7 @@ uses
   function GetKaMSeed: Integer;
   function KaMRandomWSeed(var aSeed: Integer): Extended; overload;
   function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer; overload;
+  function KaMRandomWSeedS1(var aSeed: Integer; aMax: Integer): Single;
   function KaMRandomWSeedI2(var aSeed: Integer; Range_Both_Directions: Integer): Integer;
   function KaMRandom(const aCaller: AnsiString; aLogRng: Boolean = True): Extended; overload;
   function KaMRandom(aMax: Integer; const aCaller: AnsiString; aLogRng: Boolean = True): Integer; overload;
@@ -1209,6 +1210,12 @@ begin
     Result := Trunc(KaMRandomWSeed(aSeed)*aMax)
   else
     Result := Random(aMax);
+end;
+
+
+function KaMRandomWSeedS1(var aSeed: Integer; aMax: Integer): Single;
+begin
+  Result := KaMRandomWSeed(aSeed, Round(aMax*10000))/10000;
 end;
 
 
