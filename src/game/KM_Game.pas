@@ -265,6 +265,7 @@ type
 
     procedure Save(const aSaveName: UnicodeString); overload;
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
+    procedure SaveAndWait(const aSaveName: UnicodeString);
 
     function GetCurrectTickSaveCRC: Cardinal;
     {$IFDEF USE_MAD_EXCEPT}
@@ -2039,6 +2040,16 @@ begin
   end;
 
   gLog.AddTime('Saving game end: ' + aPathName);
+end;
+
+
+// Save game and wait till async worker complete all of its jobs
+procedure TKMGame.SaveAndWait(const aSaveName: UnicodeString);
+begin
+  Save(aSaveName);
+
+  //Wait for previous save async tasks to complete before proceeding
+  fSaveWorkerThread.WaitForAllWorkToComplete;
 end;
 
 
