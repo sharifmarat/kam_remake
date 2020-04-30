@@ -4,6 +4,7 @@ const
   AUTOFEED_TIME = 9000;
   DEPOSITS_TIME = 600;
   CONFIRM_TIME = 3000;
+  IDLE_TIME = 50;
 
 
 type
@@ -525,6 +526,102 @@ begin
 end;
 
 
+function OutOfAIBase(G: Integer): Boolean;
+var
+  X, Y, aU: Integer;
+begin
+  Result := False;
+  if G <= 0 then
+    Exit;
+  if States.GroupMemberCount(G) <= 0 then
+    Exit;
+  aU := States.GroupMember(G, States.KaMRandomI(States.GroupMemberCount(G)));
+  X := States.UnitPositionX(aU);
+  Y := States.UnitPositionY(aU);
+  case X of
+    1..50:    Result := Y < 83;
+    51..63:   Result := Y < 98;
+    64..71:   Result := Y < 35 + X;
+    72..77:   Result := Y < 105;
+    78..86:   Result := Y < 27 + X;
+    87..125:  Result := Y < 112;
+    126..139: Result := Y < 107;
+    140..154: Result := Y < 100;
+    155..163: Result := Y < 97 - Round((X - 155) * 0.5);
+    164..175: Result := Y < 93;
+  end;
+end;
+
+
+function HasHouses(aPlayer: Integer): Boolean;
+begin
+  Result := False;
+  if States.PlayerEnabled(aPlayer) then
+    Result := Length(States.PlayerGetAllHouses(aPlayer)) > 0;
+end;
+
+
+function HasUnits(aPlayer: Integer): Boolean;
+begin
+  Result := False;
+  if States.PlayerEnabled(aPlayer) then
+    Result := Length(States.PlayerGetAllUnits(aPlayer)) > 0;
+end;
+
+
+procedure CheckIdleGroups;
+var
+  Groups: array of Integer;
+  I, K, X, Y, R: Integer;
+begin
+  for K := 4 to 11 do
+  begin
+    Groups := States.PlayerGetAllGroups(K);
+    if Length(Groups) > 0 then
+      for I := 0 to Length(Groups) - 1 do
+        if (States.GroupIdle(Groups[I]))
+        and (OutOfAIBase(Groups[I])) then
+        begin
+          X := States.UnitPositionX(States.GroupMember(Groups[I], 0));
+          Y := States.UnitPositionY(States.GroupMember(Groups[I], 0));
+          R := Round(States.KaMRandom * 100);
+          if (HasHouses(0))
+          and (X < 70)
+          and (R < 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestHouse(0, X, Y, -1));
+          if (HasHouses(1))
+          and (X > 70)
+          and (R > 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestHouse(1, X, Y, -1));
+          if (HasHouses(1))
+          and (X < 70)
+          and (R >= 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestHouse(1, X, Y, -1));
+          if (HasHouses(0))
+          and (X > 70)
+          and (R <= 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestHouse(0, X, Y, -1));
+          if (HasUnits(0))
+          and (X < 70)
+          and (R < 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestUnit(0, X, Y, -1));
+          if (HasUnits(1))
+          and (X > 70)
+          and (R >= 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestUnit(1, X, Y, -1));
+          if (HasUnits(1))
+          and (X < 70)
+          and (R > 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestUnit(1, X, Y, -1));
+          if (HasUnits(0))
+          and (X > 70)
+          and (R <= 50) then
+            Actions.GroupOrderAttackHouse(Groups[I], States.ClosestUnit(0, X, Y, -1));
+        end;
+  end;
+end;
+
+
 procedure UpdateAttackTimers;
 var
   Pos: TKMPoint;
@@ -540,7 +637,7 @@ begin
                Actions.AIAttackAdd(4, True, 51000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                Actions.AIAttackAdd(5, True, 51000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                Actions.AIAttackAdd(6, True, 45000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
-               Actions.AIAttackAdd(9, True, 63000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(7, True, 63000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                Actions.AIAttackAdd(10, True, 45000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                Actions.AIAttackAdd(11, True, 63000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
              end;
@@ -553,7 +650,7 @@ begin
                 Actions.AIAttackAdd(4, True, 48000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                 Actions.AIAttackAdd(5, True, 48000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                 Actions.AIAttackAdd(6, True, 42000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
-                Actions.AIAttackAdd(9, True, 60000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+                Actions.AIAttackAdd(7, True, 60000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                 Actions.AIAttackAdd(10, True, 42000, 40, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
                 Actions.AIAttackAdd(11, True, 60000, 48, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
               end;
@@ -573,12 +670,12 @@ begin
                Actions.AIEquipRate(5, 1, 375);
                Actions.AIEquipRate(6, 0, 375);
                Actions.AIEquipRate(6, 1, 375);
-               Actions.AIEquipRate(7, 0, 225);
-               Actions.AIEquipRate(7, 1, 225);
+               Actions.AIEquipRate(7, 0, 450);
+               Actions.AIEquipRate(7, 1, 450);
                Actions.AIEquipRate(8, 0, 225);
                Actions.AIEquipRate(8, 1, 225);
-               Actions.AIEquipRate(9, 0, 450);
-               Actions.AIEquipRate(9, 1, 450);
+               Actions.AIEquipRate(9, 0, 225);
+               Actions.AIEquipRate(9, 1, 225);
                Actions.AIEquipRate(10, 0, 375);
                Actions.AIEquipRate(10, 1, 375);
                Actions.AIEquipRate(11, 0, 450);
@@ -586,7 +683,7 @@ begin
                Actions.AIRecruitDelay(4, 35250);
                Actions.AIRecruitDelay(5, 35250);
                Actions.AIRecruitDelay(6, 12000);
-               Actions.AIRecruitDelay(9, 27000);
+               Actions.AIRecruitDelay(7, 19600);
                Actions.AIRecruitDelay(10, 5250);
                Actions.AIRecruitDelay(11, 27000);
              end;
@@ -598,12 +695,12 @@ begin
                 Actions.AIEquipRate(5, 1, 325);
                 Actions.AIEquipRate(6, 0, 330);
                 Actions.AIEquipRate(6, 1, 330);
-                Actions.AIEquipRate(7, 0, 220);
-                Actions.AIEquipRate(7, 1, 220);
+                Actions.AIEquipRate(7, 0, 400);
+                Actions.AIEquipRate(7, 1, 400);
                 Actions.AIEquipRate(8, 0, 220);
                 Actions.AIEquipRate(8, 1, 220);
-                Actions.AIEquipRate(9, 0, 400);
-                Actions.AIEquipRate(9, 1, 400);
+                Actions.AIEquipRate(9, 0, 220);
+                Actions.AIEquipRate(9, 1, 220);
                 Actions.AIEquipRate(10, 0, 330);
                 Actions.AIEquipRate(10, 1, 330);
                 Actions.AIEquipRate(11, 0, 400);
@@ -611,7 +708,7 @@ begin
                 Actions.AIRecruitDelay(4, 34350);
                 Actions.AIRecruitDelay(5, 34350);
                 Actions.AIRecruitDelay(6, 12960);
-                Actions.AIRecruitDelay(9, 28000);
+                Actions.AIRecruitDelay(7, 24180);
                 Actions.AIRecruitDelay(10, 7020);
                 Actions.AIRecruitDelay(11, 28000);
               end;
@@ -623,12 +720,12 @@ begin
                Actions.AIEquipRate(5, 1, 285);
                Actions.AIEquipRate(6, 0, 285);
                Actions.AIEquipRate(6, 1, 285);
-               Actions.AIEquipRate(7, 0, 100);
-               Actions.AIEquipRate(7, 1, 100);
+               Actions.AIEquipRate(7, 0, 363);
+               Actions.AIEquipRate(7, 1, 363);
                Actions.AIEquipRate(8, 0, 100);
                Actions.AIEquipRate(8, 1, 100);
-               Actions.AIEquipRate(9, 0, 363);
-               Actions.AIEquipRate(9, 1, 363);
+               Actions.AIEquipRate(9, 0, 100);
+               Actions.AIEquipRate(9, 1, 100);
                Actions.AIEquipRate(10, 0, 285);
                Actions.AIEquipRate(10, 1, 285);
                Actions.AIEquipRate(11, 0, 363);
@@ -636,9 +733,9 @@ begin
                Actions.AIRecruitDelay(4, 33030);
                Actions.AIRecruitDelay(5, 33030);
                Actions.AIRecruitDelay(6, 13920);
-               Actions.AIRecruitDelay(9, 27960);
+               Actions.AIRecruitDelay(7, 20330);
                Actions.AIRecruitDelay(10, 8790);
-               Actions.AIRecruitDelay(11, 27000);
+               Actions.AIRecruitDelay(11, 27960);
              end;
 
     mdHard2: begin
@@ -648,12 +745,12 @@ begin
                Actions.AIEquipRate(5, 1, 250);
                Actions.AIEquipRate(6, 0, 255);
                Actions.AIEquipRate(6, 1, 255);
-               Actions.AIEquipRate(7, 0, 100);
-               Actions.AIEquipRate(7, 1, 100);
+               Actions.AIEquipRate(7, 0, 325);
+               Actions.AIEquipRate(7, 1, 325);
                Actions.AIEquipRate(8, 0, 100);
                Actions.AIEquipRate(8, 1, 100);
-               Actions.AIEquipRate(9, 0, 325);
-               Actions.AIEquipRate(9, 1, 325);
+               Actions.AIEquipRate(9, 0, 100);
+               Actions.AIEquipRate(9, 1, 100);
                Actions.AIEquipRate(10, 0, 255);
                Actions.AIEquipRate(10, 1, 255);
                Actions.AIEquipRate(11, 0, 325);
@@ -661,7 +758,7 @@ begin
                Actions.AIRecruitDelay(4, 34500);
                Actions.AIRecruitDelay(5, 34500);
                Actions.AIRecruitDelay(6, 16560);
-               Actions.AIRecruitDelay(9, 31000);
+               Actions.AIRecruitDelay(7, 24180);
                Actions.AIRecruitDelay(10, 11970);
                Actions.AIRecruitDelay(11, 31000);
              end;
@@ -673,12 +770,12 @@ begin
                Actions.AIEquipRate(5, 1, 225);
                Actions.AIEquipRate(6, 0, 225);
                Actions.AIEquipRate(6, 1, 225);
-               Actions.AIEquipRate(7, 0, 50);
-               Actions.AIEquipRate(7, 1, 50);
+               Actions.AIEquipRate(7, 0, 285);
+               Actions.AIEquipRate(7, 1, 285);
                Actions.AIEquipRate(8, 0, 50);
                Actions.AIEquipRate(8, 1, 50);
-               Actions.AIEquipRate(9, 0, 285);
-               Actions.AIEquipRate(9, 1, 285);
+               Actions.AIEquipRate(9, 0, 50);
+               Actions.AIEquipRate(9, 1, 50);
                Actions.AIEquipRate(10, 0, 225);
                Actions.AIEquipRate(10, 1, 225);
                Actions.AIEquipRate(11, 0, 285);
@@ -686,7 +783,7 @@ begin
                Actions.AIRecruitDelay(4, 35550);
                Actions.AIRecruitDelay(5, 35550);
                Actions.AIRecruitDelay(6, 19200);
-               Actions.AIRecruitDelay(9, 34200);
+               Actions.AIRecruitDelay(7, 28200);
                Actions.AIRecruitDelay(10, 15150);
                Actions.AIRecruitDelay(11, 34200);
              end;
@@ -902,6 +999,9 @@ begin
 
   if States.GameTime mod DEPOSITS_TIME = 0 then
     UpdateDeposits;
+
+  if States.GameTime mod IDLE_TIME = 0 then
+    CheckIdleGroups;
 
   if States.GameTime = 2400 then
     Actions.ShowMsg(-1, '<$8>');

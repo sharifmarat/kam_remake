@@ -4,6 +4,7 @@ const
   AUTOFEED_TIME = 8000;
   GIFT_TIME = 9000;
   TARGETS_TIME = 6000;
+  WILD_TIME = 1200;
 
 var
   Ware, Count: array[0..3] of Integer;
@@ -66,20 +67,20 @@ begin
   case States.MissionDifficulty of
 
     mdEasy1: begin
-               Actions.AIEquipRate(4, 0, 300);
-               Actions.AIEquipRate(4, 1, 300);
-               Actions.AIEquipRate(5, 0, 300);
-               Actions.AIEquipRate(5, 1, 300);
-               Actions.AIEquipRate(6, 0, 300);
-               Actions.AIEquipRate(6, 1, 300);
-               Actions.AIEquipRate(7, 0, 300);
-               Actions.AIEquipRate(7, 1, 300);
-               Actions.AIEquipRate(8, 0, 250);
-               Actions.AIEquipRate(8, 1, 250);
-               Actions.AIEquipRate(9, 0, 400);
-               Actions.AIEquipRate(9, 1, 400);
-               Actions.AIEquipRate(10, 0, 400);
-               Actions.AIEquipRate(10, 1, 400);
+               Actions.AIEquipRate(4, 0, 255);
+               Actions.AIEquipRate(4, 1, 255);
+               Actions.AIEquipRate(5, 0, 255);
+               Actions.AIEquipRate(5, 1, 255);
+               Actions.AIEquipRate(6, 0, 255);
+               Actions.AIEquipRate(6, 1, 255);
+               Actions.AIEquipRate(7, 0, 255);
+               Actions.AIEquipRate(7, 1, 255);
+               Actions.AIEquipRate(8, 0, 220);
+               Actions.AIEquipRate(8, 1, 220);
+               Actions.AIEquipRate(9, 0, 320);
+               Actions.AIEquipRate(9, 1, 320);
+               Actions.AIEquipRate(10, 0, 320);
+               Actions.AIEquipRate(10, 1, 320);
                for I := 4 to 11 do
                  Actions.AIAttackRemoveAll(I);
                Pos.X := 0;
@@ -94,20 +95,20 @@ begin
              end;
 
     mdNormal: begin
-                Actions.AIEquipRate(4, 0, 250);
-                Actions.AIEquipRate(4, 1, 250);
-                Actions.AIEquipRate(5, 0, 250);
-                Actions.AIEquipRate(5, 1, 250);
-                Actions.AIEquipRate(6, 0, 250);
-                Actions.AIEquipRate(6, 1, 250);
-                Actions.AIEquipRate(7, 0, 250);
-                Actions.AIEquipRate(7, 1, 250);
-                Actions.AIEquipRate(8, 0, 250);
-                Actions.AIEquipRate(8, 1, 250);
-                Actions.AIEquipRate(9, 0, 350);
-                Actions.AIEquipRate(9, 1, 350);
-                Actions.AIEquipRate(10, 0, 350);
-                Actions.AIEquipRate(10, 1, 350);
+                Actions.AIEquipRate(4, 0, 175);
+                Actions.AIEquipRate(4, 1, 175);
+                Actions.AIEquipRate(5, 0, 175);
+                Actions.AIEquipRate(5, 1, 175);
+                Actions.AIEquipRate(6, 0, 175);
+                Actions.AIEquipRate(6, 1, 175);
+                Actions.AIEquipRate(7, 0, 175);
+                Actions.AIEquipRate(7, 1, 175);
+                Actions.AIEquipRate(8, 0, 175);
+                Actions.AIEquipRate(8, 1, 175);
+                Actions.AIEquipRate(9, 0, 225);
+                Actions.AIEquipRate(9, 1, 225);
+                Actions.AIEquipRate(10, 0, 225);
+                Actions.AIEquipRate(10, 1, 225);
               end;
 
     mdHard1: begin
@@ -125,6 +126,17 @@ begin
                Actions.AIEquipRate(9, 1, 150);
                Actions.AIEquipRate(10, 0, 150);
                Actions.AIEquipRate(10, 1, 150);
+               for I := 4 to 11 do
+                 Actions.AIAttackRemoveAll(I);
+               Pos.X := 0;
+               Pos.Y := 0;
+               Actions.AIAttackAdd(8, True, 36000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(4, True, 40000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(5, True, 45000, 30, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(6, True, 54000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(7, True, 57000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(9, True, 60000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
+               Actions.AIAttackAdd(10, True, 63000, 50, 0, 0, 0, 0, True, attClosestBuildingFromStartPos, Pos);
              end;
   end;
 end;
@@ -363,7 +375,7 @@ begin
     and not (States.PlayerDefeated(I)) then
     begin
       Actions.GiveWares(I, Ware[I], Count[I]);
-      Actions.ShowMsg(I, '<$0>');
+      Actions.ShowMsgFormatted(I, '<$0>', [Count[I], States.WareTypeName(Ware[I])]);
     end;
   end;
 end;
@@ -405,5 +417,12 @@ begin
 
   if States.GameTime mod TARGETS_TIME = 0 then
     UpdateTargets;
+
+  if States.GameTime mod WILD_TIME = 0 then
+  begin
+    Actions.PlayWAVAtLocation(-1, 'Wolf' + IntToStr(1 + States.KaMRandomI(4)), 2.5, 32 + States.KaMRandomI(10), Utils.RandomRangeI(140, 176), Utils.RandomRangeI(62, 82));
+    Actions.PlayWAVAtLocation(-1, 'Wolf' + IntToStr(1 + States.KaMRandomI(4)), 2.5, 32 + States.KaMRandomI(10), Utils.RandomRangeI(126, 142), Utils.RandomRangeI(169, 182));
+    Actions.PlayWAVAtLocation(-1, 'Wolf' + IntToStr(1 + States.KaMRandomI(4)), 2.5, 32 + States.KaMRandomI(10), Utils.RandomRangeI(137, 195), Utils.RandomRangeI(180, 188));
+  end;
 
 end;
