@@ -1085,6 +1085,9 @@ var
 begin
   inherited;
   if fAction = nil then exit;
+
+  Assert((fType <> utFish) or (InRange(fFishCount, 1, 5)));
+
   if fType = utFish then
     Act := FishCountAct[fFishCount]
   else
@@ -1109,7 +1112,6 @@ end;
 constructor TKMUnit.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
 begin
   inherited Create;
-
   fUID          := aID;
   fTicker       := fUID; //Units update states will be spread more evenly that way
   fPointerCount := 0;
@@ -1316,7 +1318,7 @@ begin
 
   fIsDead       := True;
   fThought      := thNone;
-  fPositionF     := KMPOINTF_ZERO;
+  fPositionF    := KMPOINTF_ZERO;
   fCurrPosition := KMPOINT_ZERO;
   fPrevPosition := fCurrPosition;
   fNextPosition := fCurrPosition;
@@ -2032,7 +2034,7 @@ begin
         SetAction(nil);
         FreeAndNil(fTask);
         CloseUnit(False); //Close the unit without removing tile usage (because this unit was in a house it has none)
-        Result := true;
+        Exit(True);
         exit;
       end;
       SetCurrPosition(NewCurrPosition); //will update FOW
@@ -2328,7 +2330,6 @@ begin
   // - Action (Atom creating layer (walk 1frame, etc..))
   // - Task (Action creating layer)
   // - specific UpdateState (Task creating layer)
-
   Result := True;
 
   if fAction = nil then

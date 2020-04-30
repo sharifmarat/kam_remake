@@ -3963,7 +3963,8 @@ end;
 {Mark tile as occupied}
 procedure TKMTerrain.UnitAdd(const LocTo: TKMPoint; aUnit: Pointer);
 begin
-  if not DO_UNIT_INTERACTION then exit;
+  if not DO_UNIT_INTERACTION then Exit;
+
   Assert(Land[LocTo.Y,LocTo.X].IsUnit = nil, 'Tile already occupied at '+TypeToString(LocTo));
   Land[LocTo.Y,LocTo.X].IsUnit := aUnit
 end;
@@ -3974,7 +3975,8 @@ end;
 // when exiting the game and destroying all units this will cause asserts.
 procedure TKMTerrain.UnitRem(const LocFrom: TKMPoint);
 begin
-  if not DO_UNIT_INTERACTION then exit;
+  if not DO_UNIT_INTERACTION then Exit;
+
   Land[LocFrom.Y,LocFrom.X].IsUnit := nil;
 end;
 
