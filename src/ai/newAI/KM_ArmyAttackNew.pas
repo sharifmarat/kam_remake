@@ -257,6 +257,8 @@ end;
 
 procedure TKMCombatGroup.SetTargetPosition(aLoc: TKMPointDir);
 begin
+  SetTargetGroup(nil);
+  SetTargetHouse(nil);
   fTargetPosition := aLoc;
   fWalkTimeLimit := gGame.GameTick + KMDistanceAbs(fTargetPosition.Loc, Position) * 5;
 end;
