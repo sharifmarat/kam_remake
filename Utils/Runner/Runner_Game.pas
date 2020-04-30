@@ -1181,11 +1181,11 @@ const
 
   cnt_MAP_SIMULATIONS = 10;
 
-  SIMUL_TIME_MAX = 10*60*180; //1 hour
-  SAVEPT_FREQ = 10*60*1; //every 1 min
-  REPLAY_LENGTH = 1500; // ticks to find RNG mismatch
+  SIMUL_TIME_MAX: Integer = 10*60*180; //1 hour
+  SAVEPT_FREQ: Integer = 10*60*1; //every 1 min
+  REPLAY_LENGTH: Integer = 1500; // ticks to find RNG mismatch
 //  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
-  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+//  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
   LOAD_SAVEPT_AT_TICK = 0;
   SKIP_FIRST_SAVEPT_CNT = 15; //Skip first savepoints to save some time
 
@@ -1202,7 +1202,7 @@ const
 
 var
   K,L,I,M: Integer;
-  desyncCnt, mapsCnt: Integer;
+  desyncCnt, mapsCnt, savesFreq, savesCnt, replayLength: Integer;
   simulLastTick, totalRuns, totalLoads: Integer;
 begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
@@ -1222,6 +1222,11 @@ begin
     rmtFight:   mapsCnt := Length(FIGHT_MAPS);
     rmtCoop:    mapsCnt := Length(COOP_MAPS);
   end;
+
+  // Make more frequent saves and smaller replay length
+  savesFreq := SAVEPT_FREQ div 2*(Byte(MapsType = rmtFight));
+  savesCnt := (SIMUL_TIME_MAX div savesFreq);
+  replayLength := REPLAY_LENGTH div 3*(Byte(MapsType = rmtFight));
 
 //  for K := Low(MAPS) to High(MAPS) do
 //  for K := 5 to High(MAPS) do
@@ -1261,8 +1266,8 @@ begin
       gGameApp.GameSettings.DebugSaveGameAsText := True;
 
       gGameApp.GameSettings.SaveCheckpoints := True;
-      gGameApp.GameSettings.SaveCheckpointsFreq := SAVEPT_FREQ;
-      gGameApp.GameSettings.SaveCheckpointsLimit := SAVEPT_CNT;
+      gGameApp.GameSettings.SaveCheckpointsFreq := savesFreq;
+      gGameApp.GameSettings.SaveCheckpointsLimit := savesCnt;
 
 //      LOG_GAME_TICK := True;
 //      Include(gLog.MessageTypes, lmtCommands);
@@ -1279,12 +1284,12 @@ begin
 
       gGame.SetGameMode(gmReplaySingle);
 
-      for I := 0 to SAVEPT_CNT - 1 do
+      for I := 0 to savesCnt - 1 do
       begin
         if LOAD_SAVEPT_AT_TICK <> 0 then
           fSavePointTick := LOAD_SAVEPT_AT_TICK
         else
-          fSavePointTick := (I + SKIP_FIRST_SAVEPT_CNT) * SAVEPT_FREQ;
+          fSavePointTick := (I + Byte(MapsType <> rmtFight)*SKIP_FIRST_SAVEPT_CNT) * savesFreq;
 
         if gGameApp.TryLoadSavedReplay(fSavePointTick) then
         begin
@@ -1296,7 +1301,7 @@ begin
           fRunKind := drkReplay;
           gGame.GameInputProcess.OnReplayDesync := ReplayCrashed;
 
-          SimulateGame(fSavePointTick + 1, Min(fSavePointTick + REPLAY_LENGTH, simulLastTick));
+          SimulateGame(fSavePointTick + 1, Min(fSavePointTick + replayLength, simulLastTick));
 
           // RNG mismatch found. Simulate game to collect every tick save CRC
           if fRngMismatchFound then
