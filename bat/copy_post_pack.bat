@@ -62,7 +62,8 @@ if %IncludeScriptingEditor%==True (
 xcopy "%ScriptingEditorDir%"\bin\ScriptingEditor.exe* "%kam_folder%"\Utils\ScriptingEditor /y /r /i
 xcopy "%ScriptingEditorDir%"\bin\SE_Data_KMR "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ /y /r /s
 xcopy "%ScriptingEditorDir%"\bin\SE_Data\Examples "%kam_folder%"\Utils\ScriptingEditor\SE_Data\Examples\ /y /r /s
-erase "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ScriptValidator.exe
+xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ScriptValidator.exe* /y /r /i
+REM erase "%kam_folder%"\Utils\ScriptingEditor\SE_Data\ScriptValidator.exe
 @REM no need for OLD and Logs folders there
 rmdir /S /Q "%kam_folder%"\Utils\ScriptingEditor\SE_Data\OLD
 rmdir /S /Q "%kam_folder%"\Utils\ScriptingEditor\SE_Data\Logs
