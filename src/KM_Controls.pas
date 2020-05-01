@@ -4992,7 +4992,7 @@ begin
   inherited;
 
   fButtonDec.Left := Left;
-  fButtonInc.Top := Left + Width - 20;
+  fButtonInc.Left := Left + Width - 20;
 end;
 
 
@@ -8285,9 +8285,15 @@ constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; co
                                  aImageType: TKMPopUpBGImageType = pubgitYellow; aShowBevel: Boolean = True;
                                  aShowShadeBevel: Boolean = True);
 var
-  imgWPad, imgTop: Integer;
+  imgWPad, imgTop, topMargin: Integer;
 begin
-  inherited Create(aParent, (aParent.Width div 2) - (aWidth div 2), (aParent.Height div 2) - (aHeight div 2), aWidth, aHeight);
+  case aImageType of
+    pubgitGray:         topMargin := 20;
+    pubgitYellow:       topMargin := 25;
+    pubgitScrollWCross: topMargin := 20;
+  end;
+
+  inherited Create(aParent, Max(0, (aParent.Width div 2) - (aWidth div 2)), Max(topMargin, (aParent.Height div 2) - (aHeight div 2)), aWidth, aHeight);
 
   fBGImageType := aImageType;
 
@@ -8300,8 +8306,8 @@ begin
     BevelShade := TKMBevel.Create(Self, -2000,  -2000, 5000, 5000);
 
   case fBGImageType of
-    pubgitGray:    ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70,  15, rxGuiMain);
-    pubgitYellow:  ImageBG := TKMImage.Create(Self, -25, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
+    pubgitGray:    ImageBG := TKMImage.Create(Self, -topMargin, -50, aWidth + 40, aHeight + 70,  15, rxGuiMain);
+    pubgitYellow:  ImageBG := TKMImage.Create(Self, -topMargin, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
     pubgitScrollWCross:
       begin
         imgTop := -(aHeight div 10) - 10;

@@ -25,7 +25,7 @@ type
     procedure TilesRefresh(Sender: TObject);
     function GetTileTexIDFromTag(aTag: Byte; aScrollPosition: Integer = -1): Word;
     function IsTileVisible(aTextId: Integer): Boolean;
-    procedure TilesPalette_CloseUpd(Sender: TObject);
+    procedure TilesPalette_ToggleVisibility(Sender: TObject);
   protected
     Panel_Tiles: TKMPanel;
       TilesTable: array [0..MAPED_TILES_X * MAPED_TILES_Y - 1] of TKMButtonFlat; //how many are visible?
@@ -40,6 +40,7 @@ type
         TilesPaletteRandom: TKMCheckBox;
         TilesPaletteMagicWater, TilesPaletteEyedropper, TilesPaletteRotate: TKMButtonFlat;
         NumEdit_SetTilePaletteNumber: TKMNumericEdit;
+        Button_ClosePalette: TKMButton;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -48,6 +49,7 @@ type
     procedure TilesTableSetTileTexId(aTexId: Integer);
     procedure Show;
     procedure Hide;
+    procedure Resize;
     procedure UpdateState;
     function Visible: Boolean; override;
     function IsFocused: Boolean; override;
@@ -61,7 +63,6 @@ uses
   KM_Utils;
 
 const
-  PAL_1ST_ROW = 29; // Ends at the end of stones
   //Tiles table was initially made by JBSnorro, thanks to him :)
   MapEdTileRemap: array [0..TABLE_ELEMS - 1] of Integer = (
      1,73,74,75, 37, 21, 22, 38, 33, 34, 32,181,173,177,129,130,131,132,133,  0,274,270,269,267,268,271,272,273,303, 49,193,197,217,225,  0,  0, 45, 24, 13, 23,208,224, 26,216,  8,  0, 358,359,362,363,366,367,382,384,386,454,455,458,459,462,463,514,515,518,519,522,523,538,540,541,574,575,578,583,579,582,
@@ -78,19 +79,28 @@ const
 var
   TABLE_ELEMS_CNT: Integer;
 
+const
+  PAL_S = 34;
+
+  PAL_ROWS: array [0..3] of Integer = (0, 29, 46, 76);
+  PAL_Y_GAP = 5;
+  MAX_ROW_SIZE = 30;
+
 
 constructor TKMMapEdTerrainTiles.Create(aParent: TKMPanel);
 const
   BTN_SIZE_S = 34;
   BTN_SIZE = 36;
-  PAL_S = 34;
+
 
   TB_TLS_M = 9;
   TB_TLS_R = 9;
   TB_TLS_S = 13;
   TB_TLS_T = 13;
+
+
 var
-  J,K,X,Y,row,TexID,palH: Integer;
+  I,J,K,X,Y,lineWidthCnt,TexID,palW,palH, row, index: Integer;
 begin
   inherited Create;
 
@@ -144,33 +154,46 @@ begin
   TilesPalette_Button.Caption := gResTexts[TX_MAPED_TERRAIN_TILES_PALETTE];
   TilesPalette_Button.CapOffsetY := -11;
   TilesPalette_Button.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_TILES_PALETTE, SC_MAPEDIT_TILES_PALETTE);
-  TilesPalette_Button.OnClick := TilesPalette_CloseUpd;
+  TilesPalette_Button.OnClick := TilesPalette_ToggleVisibility;
 
-  palH := 2*MAPED_TILES_Y*PAL_S + 15;
+  palW := MAX_ROW_SIZE * PAL_S + 60;
+  palH := (Length(PAL_ROWS) - 1)*MAPED_TILES_Y*PAL_S + Length(PAL_ROWS) * PAL_Y_GAP + 40;
 
-  Panel_TilesPalettePopup := TKMPopUpPanel.Create(aParent.MasterControl.MasterPanel, 1000, palH + 10, gResTexts[TX_MAPED_TERRAIN_TILES_PALETTE],
-                                                  pubgitScrollWCross, True, False);
+  Panel_TilesPalettePopup := TKMPopUpPanel.Create(aParent.MasterControl.MasterPanel, palW, palH, gResTexts[TX_MAPED_TERRAIN_TILES_PALETTE],
+                                                  pubgitYellow);//, True, False);
   Panel_TilesPalettePopup.DragEnabled := True;
-  Panel_TilesPalettePopup.CapOffsetY := -15;
-    Panel_TilesPalette := TKMScrollPanel.Create(Panel_TilesPalettePopup, 5, 5, 990, palH, [saHorizontal, saVertical], bsGame, ssGame);
-      row := TABLE_ELEMS div MAPED_TILES_Y;
-      for J := 0 to MAPED_TILES_Y - 1 do
-        for K := 0 to row - 1 do
-        begin
-          X := ((K mod PAL_1ST_ROW) + (K div PAL_1ST_ROW)*(((2*PAL_1ST_ROW - row) div 2) + 2)) * PAL_S;
-          Y := (J + MAPED_TILES_Y*(K div PAL_1ST_ROW)) * PAL_S + 5*(K div PAL_1ST_ROW);
-          TexID := MapEdTileRemap[J * row + K];
-          TilesPaletteTbl[J * row + K] := TKMButtonFlat.Create(Panel_TilesPalette, X, Y, 32, 32, TexID, rxTiles);
-          TilesPaletteTbl[J * row + K].Tag :=  J * row + K; //Store ID
-          TilesPaletteTbl[J * row + K].Clickable := TexID <> 0;
-          TilesPaletteTbl[J * row + K].HideHighlight := TexID = 0;
-          TilesPaletteTbl[J * row + K].OnClick := TilesChange;
-          if TexID = 0 then
-            TilesPaletteTbl[J * row + K].Hint := ''
-          else
-            //Show 0..N-1 to be consistent with objects and script commands like States.MapTileObject
-            TilesPaletteTbl[J * row + K].Hint := IntToStr(TexID - 1);
-        end;
+  Panel_TilesPalettePopup.Anchors := [anTop];
+  Panel_TilesPalettePopup.CapOffsetY := 5;
+    Panel_TilesPalette := TKMScrollPanel.Create(Panel_TilesPalettePopup, 20, 5, palW - 40,
+                                                palH - 20, [saVertical], bsGame, ssGame);
+    Panel_TilesPalette.AnchorsStretch;
+      lineWidthCnt := TABLE_ELEMS div MAPED_TILES_Y;
+      for row := Low(PAL_ROWS) to High(PAL_ROWS) - 1 do
+        for I := PAL_ROWS[row] to PAL_ROWS[row + 1] - 1 do
+          for J := 0 to MAPED_TILES_Y - 1 do
+          begin
+            K := I - PAL_ROWS[row];
+            index := J * lineWidthCnt + I;
+
+            X := K * PAL_S;
+            if row = 1 then
+              X := X + 8 * PAL_S;
+//              X := X + (MAX_ROW_SIZE - (PAL_ROWS[row + 1] - PAL_ROWS[row])) * PAL_S;
+
+            Y := (J + MAPED_TILES_Y*row) * PAL_S + PAL_Y_GAP*row;
+
+            TexID := MapEdTileRemap[index];
+            TilesPaletteTbl[index] := TKMButtonFlat.Create(Panel_TilesPalette, X, Y, 32, 32, TexID, rxTiles);
+            TilesPaletteTbl[index].Tag :=  J * lineWidthCnt + K; //Store ID
+            TilesPaletteTbl[index].Clickable := TexID <> 0;
+            TilesPaletteTbl[index].HideHighlight := TexID = 0;
+            TilesPaletteTbl[index].OnClick := TilesChange;
+            if TexID = 0 then
+              TilesPaletteTbl[J * lineWidthCnt + K].Hint := ''
+            else
+              //Show 0..N-1 to be consistent with objects and script commands like States.MapTileObject
+              TilesPaletteTbl[J * lineWidthCnt + K].Hint := IntToStr(TexID - 1);
+          end;
 
       TilesPaletteMagicWater := TKMButtonFlat.Create(Panel_TilesPalette, 0, (MAPED_TILES_Y + 1)*PAL_S, BTN_SIZE_S, BTN_SIZE_S, 670);
       TilesPaletteMagicWater.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_MAGIC_WATER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
@@ -184,8 +207,7 @@ begin
       TilesPaletteRotate.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_ROTATE_TILE, SC_MAPEDIT_SUB_MENU_ACTION_3);
       TilesPaletteRotate.OnClick := TilesChange;
 
-      NumEdit_SetTilePaletteNumber := TKMNumericEdit.Create(Panel_TilesPalette, 3*BTN_SIZE_S + 25, (MAPED_TILES_Y + 1)*PAL_S + ((PAL_S - 20) div 2), 0, MAX_TILE_TO_SHOW - 1);
-      NumEdit_SetTilePaletteNumber.Anchors := [anTop, anRight];
+      NumEdit_SetTilePaletteNumber := TKMNumericEdit.Create(Panel_TilesPalette, 3*BTN_SIZE_S + 35, (MAPED_TILES_Y + 1)*PAL_S + ((PAL_S - 20) div 2), 0, MAX_TILE_TO_SHOW - 1);
       NumEdit_SetTilePaletteNumber.Hint := gResTexts[TX_MAPED_TERRAIN_TILE_ID_EDIT_HINT];
       NumEdit_SetTilePaletteNumber.OnChange := TilesChange;
       NumEdit_SetTilePaletteNumber.AutoFocusable := False;
@@ -194,6 +216,13 @@ begin
       TilesPaletteRandom.Checked := True;
       TilesPaletteRandom.OnClick := TilesChange;
       TilesPaletteRandom.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_TILES_RANDOM_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
+
+      Button_ClosePalette  := TKMButton.Create(Panel_TilesPalette, 0, (MAPED_TILES_Y + 5)*PAL_S + BTN_SIZE + 5,
+                                               207, 30, gResTexts[TX_MAPED_TERRAIN_CLOSE_PALETTE], bsGame);
+      Button_ClosePalette.Anchors := [anLeft];
+      Button_ClosePalette.OnClick := TilesPalette_ToggleVisibility;
+
+  Resize;
 
 
   fSubMenuActionsEvents[0] := TilesChange;
@@ -293,7 +322,7 @@ begin
 end;
 
 
-procedure TKMMapEdTerrainTiles.TilesPalette_CloseUpd(Sender: TObject);
+procedure TKMMapEdTerrainTiles.TilesPalette_ToggleVisibility(Sender: TObject);
 begin
   Panel_TilesPalettePopup.ToggleVisibility;
 end;
@@ -333,6 +362,19 @@ begin
     Panel_TilesPalettePopup.ToggleVisibility;
     aHandled := True;
   end;
+end;
+
+
+procedure TKMMapEdTerrainTiles.Resize;
+var
+  palW, palH: Integer;
+begin
+  palW := MAX_ROW_SIZE * PAL_S + 40;
+  palH := (Length(PAL_ROWS) - 1)*MAPED_TILES_Y*PAL_S + Length(PAL_ROWS) * PAL_Y_GAP + 20;
+
+  Panel_TilesPalettePopup.Top    := Max(((Panel_TilesPalettePopup.Parent.Height - palH) div 2) + 20, 20);
+//  Panel_TilesPalettePopup.Width  := Min(palW, Panel_TilesPalettePopup.Parent.Width - 30);
+  Panel_TilesPalettePopup.Height := Min(palH, Panel_TilesPalettePopup.Parent.Height - 70);
 end;
 
 
