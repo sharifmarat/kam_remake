@@ -8287,6 +8287,7 @@ constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; co
 var
   imgWPad, imgTop, topMargin: Integer;
 begin
+  topMargin := 0;
   case aImageType of
     pubgitGray:         topMargin := 20;
     pubgitYellow:       topMargin := 25;

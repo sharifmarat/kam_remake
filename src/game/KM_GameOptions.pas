@@ -19,7 +19,7 @@ type
     procedure Reset;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
-    function ToString: string;
+    function ToString: string; reintroduce;
   end;
 
 

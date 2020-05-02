@@ -367,9 +367,9 @@ end;
 
 procedure TKMMapEdTerrainTiles.Resize;
 var
-  palW, palH: Integer;
+  {palW, }palH: Integer;
 begin
-  palW := MAX_ROW_SIZE * PAL_S + 40;
+//  palW := MAX_ROW_SIZE * PAL_S + 40;
   palH := (Length(PAL_ROWS) - 1)*MAPED_TILES_Y*PAL_S + Length(PAL_ROWS) * PAL_Y_GAP + 20;
 
   Panel_TilesPalettePopup.Top    := Max(((Panel_TilesPalettePopup.Parent.Height - palH) div 2) + 20, 20);
