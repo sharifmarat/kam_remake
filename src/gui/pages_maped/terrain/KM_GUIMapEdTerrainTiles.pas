@@ -189,10 +189,10 @@ begin
             TilesPaletteTbl[index].HideHighlight := TexID = 0;
             TilesPaletteTbl[index].OnClick := TilesChange;
             if TexID = 0 then
-              TilesPaletteTbl[J * lineWidthCnt + K].Hint := ''
+              TilesPaletteTbl[index].Hint := ''
             else
               //Show 0..N-1 to be consistent with objects and script commands like States.MapTileObject
-              TilesPaletteTbl[J * lineWidthCnt + K].Hint := IntToStr(TexID - 1);
+              TilesPaletteTbl[index].Hint := IntToStr(TexID - 1);
           end;
 
       TilesPaletteMagicWater := TKMButtonFlat.Create(Panel_TilesPalette, 0, (MAPED_TILES_Y + 1)*PAL_S, BTN_SIZE_S, BTN_SIZE_S, 670);
