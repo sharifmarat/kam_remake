@@ -209,13 +209,16 @@ begin
       //https://github.com/dotnet/runtime/issues/27958
 
       //Generate a temporary name based on time and random number
-      S := TDirectory.GetParent(ExcludeTrailingPathDelimiter(aPath)) + PathDelim + IntToStr(Random(MaxInt)) + UIntToStr(TimeGet);
-      TDirectory.Move(aPath, S);
-      TDirectory.Delete(S, True);
+      //S := TDirectory.GetParent(ExcludeTrailingPathDelimiter(aPath)) + PathDelim + IntToStr(Random(MaxInt)) + UIntToStr(TimeGet);
+      //TDirectory.Move(aPath, S);
+      //TDirectory.Delete(S, True);
 
-      //for S in TDirectory.GetFiles(aPath) do
-      //  DeleteFile(S);
-      //TDirectory.Delete(aPath, True);
+      // Rename folder approach could trigger antivirus sometimes (f.e. Kaspersky)
+      // so there could be many (almost) empty folders after antivirus block folders deletion
+      // "(folder deletion is potentionly dangeroues operation because of data corruption)"
+      for S in TDirectory.GetFiles(aPath) do
+        DeleteFile(S);
+      TDirectory.Delete(aPath, True);
       //Assert(not DirectoryExists(aPath));
     {$ENDIF}
   end;
