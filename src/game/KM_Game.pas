@@ -306,6 +306,9 @@ const
 begin
   inherited Create;
 
+  // Suppress Alt key for menu while in the game. We can use Alt key as a modificator for some hotkeys (for School hotkeys, f.e.)
+  gMain.FormMain.SuppressAltForMenu := True;
+
   fSaveWorkerThread := TKMWorkerThread.Create;
 
   {$IFDEF DEBUG}
@@ -412,6 +415,8 @@ end;
 //Destroy what was created
 destructor TKMGame.Destroy;
 begin
+  gMain.FormMain.SuppressAltForMenu := False;
+
   //We might have crashed part way through .Create, so we can't assume ANYTHING exists here.
   //Doing so causes a 2nd exception which overrides 1st. Hence check <> nil on everything except Frees, TObject.Free does that already.
 
