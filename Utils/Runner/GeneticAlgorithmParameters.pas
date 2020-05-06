@@ -130,10 +130,13 @@ end;
 
 
 procedure TGAParameterization.SetParameters(const aSet: TAIParSet; const aIdv: TGAIndividual; aLogIt: Boolean = False);
+{$IFDEF DEBUG_NewAI}
 var
   K: Integer;
   Idx: TAIPar;
+{$ENDIF}
 begin
+{$IFDEF DEBUG_NewAI}
   K := 0;
   for Idx in aSet do
   begin
@@ -142,6 +145,7 @@ begin
   end;
   if aLogIt then
     LogParameters();
+{$ENDIF}
 end;
 
 
