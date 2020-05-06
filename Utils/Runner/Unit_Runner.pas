@@ -216,7 +216,7 @@ end;
 
 procedure TKMRunnerCommon.SimulateGame(aStartTick: Integer = 0; aEndTick: Integer = -1);
 var
-  I, IntParam, TestParam: Integer;
+  I: Integer;
 begin
   if (aEndTick = -1) then
     aEndTick := fResults.TimesCount - 1

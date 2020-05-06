@@ -185,12 +185,10 @@ type
 
   TKMRunnerAAIPerformanceTest = class(TKMRunnerCommon)
   private
-    fBestScore, fWorstScore, fAverageScore: Double;
     fMap: string;
     fRun: Integer;
     fStartTime: Cardinal;
     procedure Reset;
-    procedure Log(const aString: string);
   protected
     procedure SetUp(); override;
     procedure TearDown(); override;
@@ -1564,12 +1562,6 @@ end;
 
 
 { TKMRunnerAAIPerformanceTest }
-procedure TKMRunnerAAIPerformanceTest.Log(const aString: string);
-begin
-
-end;
-
-
 procedure TKMRunnerAAIPerformanceTest.Reset;
 begin
   fStartTime := TimeGet;
@@ -1672,9 +1664,9 @@ const
 
 
 var
-  K,L,I,M, runsCnt: Integer;
-  desyncCnt, mapsCnt, savesFreq, savesCnt, replayLength: Integer;
-  simulLastTick, totalRuns, totalLoads: Integer;
+  K,L: Integer;
+//  mapsCnt: Integer;
+  simulLastTick, totalRuns: Integer;
 
   mapT1, mapT2, score: Cardinal;
 begin
@@ -1682,27 +1674,11 @@ begin
   PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
 //  MAKE_SAVEPT_AT_TICK := 40800;
 
-  M := 0;
-  desyncCnt := 0;
   totalRuns := 0;
-  totalLoads := 0;
   fStartTime := TimeGet;
 
-  mapsCnt := 0;
+//  mapsCnt := 0;
   score := 0;
-  runsCnt := 0;
-
-  case MapsType of
-    rmtClassic: mapsCnt := Length(MAPS);
-    rmtMP8:     mapsCnt := Length(MAPS_8P);
-    rmtFight:   mapsCnt := Length(FIGHT_MAPS);
-    rmtCoop:    mapsCnt := Length(COOP_MAPS);
-  end;
-
-  // Make more frequent saves and smaller replay length
-  savesFreq := SAVEPT_FREQ div (1 + (Byte(MapsType = rmtFight)));
-  savesCnt := (SIMUL_TIME_MAX div savesFreq);
-  replayLength := REPLAY_LENGTH div (1 + 2*(Byte(MapsType = rmtFight)));
 
   for K := 1 to MAPS_TO_TEST do
 //  for K := 5 to High(MAPS) do
@@ -1725,7 +1701,7 @@ begin
       Reset;
       Inc(totalRuns);
       fRun := L;
-      CUSTOM_SEED_VALUE := L + M*cnt_MAP_SIMULATIONS + Seed;
+      CUSTOM_SEED_VALUE := L + Seed;
 
       OnProgress3('Seed: ' + IntToStr(CUSTOM_SEED_VALUE));
 
@@ -1738,8 +1714,6 @@ begin
       gGameApp.GameSettings.DebugSaveGameAsText := True;
 
       gGameApp.GameSettings.SaveCheckpoints := False;
-//      gGameApp.GameSettings.SaveCheckpointsFreq := savesFreq;
-//      gGameApp.GameSettings.SaveCheckpointsLimit := savesCnt;
 
 //      LOG_GAME_TICK := True;
 //      Include(gLog.MessageTypes, lmtCommands);
@@ -1748,7 +1722,6 @@ begin
       SimulateGame(0, DEFAULT_PEACE_TIME*60*10);
       mapT2 := GetTimeSince(mapT1);
       score := score + mapT2;
-      Inc(runsCnt);
 
 //      LOG_GAME_TICK := False;
 //      Exclude(gLog.MessageTypes, lmtCommands);
@@ -1763,9 +1736,7 @@ begin
     end;
   end;
 
-
-
-  OnProgress_Left(Format('Score: %d', [Round(score / runsCnt)]));
+  OnProgress_Left(Format('Score: %d', [Round(score / totalRuns)]));
 
   gGameApp.StopGame(grSilent);
 end;
