@@ -61,7 +61,8 @@ type
     procedure Button13Click(Sender: TObject);
     procedure Button14Click(Sender: TObject);
   private
-    function ValidateUnitName(aValue: String): Boolean;
+    function ValidateKMUnitName(aValue: String): Boolean;
+    function ValidateUtilsUnitName(aValue: String): Boolean;
     procedure AddAIPlayersToMPMaps(aAICommandTxt: String);
     procedure AddMissingAIPlayers;
     procedure AddAdvancedAIPlayersToMPMaps;
@@ -735,9 +736,15 @@ begin
 end;
 
 
-function TForm1.ValidateUnitName(aValue: String): Boolean;
+function TForm1.ValidateKMUnitName(aValue: String): Boolean;
 begin
   Result := AnsiEndsText('.pas', aValue) and AnsiStartsText('KM_', aValue);
+end;
+
+
+function TForm1.ValidateUtilsUnitName(aValue: String): Boolean;
+begin
+  Result := AnsiEndsText('.pas', aValue); //Utils could have any unit name
 end;
 
 
@@ -752,7 +759,9 @@ begin
   SL := TStringList.Create;
   PathToUnits := TStringList.Create;
   try
-    GetAllPathsInDir(IncludeTrailingBackslash(ExeDir) + PathDelim + 'src', PathToUnits, ValidateUnitName);
+    GetAllPathsInDir(IncludeTrailingBackslash(ExeDir) + PathDelim + 'src', PathToUnits, ValidateKMUnitName);
+
+    GetAllPathsInDir(IncludeTrailingBackslash(ExeDir) + PathDelim + 'Utils', PathToUnits, ValidateUtilsUnitName);
 
     PathToExt := IncludeTrailingBackslash(ExeDir) + PathDelim + 'src' + PathDelim + 'ext' + PathDelim;
     PathToUnits.Add(PathToExt + 'KromUtils.pas');
