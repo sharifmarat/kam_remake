@@ -58,7 +58,7 @@ type
 
     function Visible: Boolean;
     procedure Hide;
-    procedure KeyUp(Key: Word; Shift: TShiftState);
+    procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 
     procedure ShowUnitInfo(aUnit: TKMUnit; aAskDismiss: Boolean = False);
     procedure ShowGroupInfo(Sender: TKMUnitGroup; aAskDismiss: Boolean = False);
@@ -508,29 +508,74 @@ begin
 end;
 
 
-procedure TKMGUIGameUnit.KeyUp(Key: Word; Shift: TShiftState);
+procedure TKMGUIGameUnit.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if aHandled then Exit;
+
   // Standard army shortcuts from KaM
   if Key = gResKeys[SC_ARMY_HALT].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_Stop.Click;
+    if Panel_Army.Visible and Button_Army_Stop.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_Stop.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_LINK].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_Join.Click;
+    if Panel_Army.Visible and Button_Army_Join.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_Join.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_SPLIT].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_Split.Click;
+    if Panel_Army.Visible and Button_Army_Split.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_Split.Click;
+      aHandled := True;
+    end;
 
   // Additional hotkeys for all group orders
   if Key = gResKeys[SC_ARMY_FOOD].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_Feed.Click;
+    if Panel_Army.Visible and Button_Army_Feed.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_Feed.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_STORM].Key then
-    if Panel_Army.Visible and Button_Army_Storm.Enabled and not OnSelectingTroopDirection(nil) then Button_Army_Storm.Click;
+    if Panel_Army.Visible and Button_Army_Storm.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_Storm.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_ADD_LINE].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_ForDown.Click;
+    if Panel_Army.Visible and Button_Army_ForDown.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_ForDown.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_DEL_LINE].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_ForUp.Click;
+    if Panel_Army.Visible and Button_Army_ForUp.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_ForUp.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_ROTATE_CW].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_RotCW.Click;
+    if Panel_Army.Visible and Button_Army_RotCW.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_RotCW.Click;
+      aHandled := True;
+    end;
+
   if Key = gResKeys[SC_ARMY_ROTATE_CCW].Key then
-    if Panel_Army.Visible and not OnSelectingTroopDirection(nil) then Button_Army_RotCCW.Click;
+    if Panel_Army.Visible and Button_Army_RotCCW.Enabled and not OnSelectingTroopDirection(nil) then
+    begin
+      Button_Army_RotCCW.Click;
+      aHandled := True;
+    end;
 end;
 
 

@@ -265,6 +265,7 @@ type
 
     procedure Save(const aSaveName: UnicodeString); overload;
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime); overload;
+    procedure SaveAndWait(const aSaveName: UnicodeString);
 
     function GetCurrectTickSaveCRC: Cardinal;
     {$IFDEF USE_MAD_EXCEPT}
@@ -304,6 +305,10 @@ const
   UIMode: array[TKMGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
 begin
   inherited Create;
+
+  // Suppress Alt key for menu while in the game. We can use Alt key as a modificator for some hotkeys (for School hotkeys, f.e.)
+  if gMain <> nil then
+    gMain.FormMain.SuppressAltForMenu := True;
 
   fSaveWorkerThread := TKMWorkerThread.Create;
 
@@ -411,6 +416,9 @@ end;
 //Destroy what was created
 destructor TKMGame.Destroy;
 begin
+  if gMain <> nil then
+    gMain.FormMain.SuppressAltForMenu := False;
+
   //We might have crashed part way through .Create, so we can't assume ANYTHING exists here.
   //Doing so causes a 2nd exception which overrides 1st. Hence check <> nil on everything except Frees, TObject.Free does that already.
 
@@ -661,6 +669,7 @@ begin
 
   fMapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
 
+  gLog.AddTime('Game options: ' + fGameOptions.ToString);
   gLog.AddTime('Gameplay initialized', True);
 end;
 
@@ -2041,6 +2050,16 @@ begin
 end;
 
 
+// Save game and wait till async worker complete all of its jobs
+procedure TKMGame.SaveAndWait(const aSaveName: UnicodeString);
+begin
+  Save(aSaveName);
+
+  //Wait for previous save async tasks to complete before proceeding
+  fSaveWorkerThread.WaitForAllWorkToComplete;
+end;
+
+
 procedure TKMGame.Save(const aSaveName: UnicodeString);
 begin
   Save(aSaveName, UTCNow);
@@ -2390,6 +2409,7 @@ begin
     // Save dummy GIP to know when game was loaded. Good for debug
     fGameInputProcess.CmdGame(gicGameLoadSave, Integer(fGameTick));
 
+  gLog.AddTime('Game options: ' + fGameOptions.ToString);
   gLog.AddTime('After game loading', True);
 end;
 

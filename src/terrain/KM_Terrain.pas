@@ -250,6 +250,7 @@ type
 
     procedure UnitAdd(const LocTo: TKMPoint; aUnit: Pointer);
     procedure UnitRem(const LocFrom: TKMPoint);
+    procedure UnitWalkInsideHouse(const aHouseEntrance: TKMPoint; aUnit: Pointer);
     procedure UnitWalk(const LocFrom,LocTo: TKMPoint; aUnit: Pointer);
     procedure UnitSwap(const LocFrom,LocTo: TKMPoint; UnitFrom: Pointer);
     procedure UnitVertexAdd(const LocTo: TKMPoint; Usage: TKMVertexUsage); overload;
@@ -3963,7 +3964,8 @@ end;
 {Mark tile as occupied}
 procedure TKMTerrain.UnitAdd(const LocTo: TKMPoint; aUnit: Pointer);
 begin
-  if not DO_UNIT_INTERACTION then exit;
+  if not DO_UNIT_INTERACTION then Exit;
+
   Assert(Land[LocTo.Y,LocTo.X].IsUnit = nil, 'Tile already occupied at '+TypeToString(LocTo));
   Land[LocTo.Y,LocTo.X].IsUnit := aUnit
 end;
@@ -3974,8 +3976,20 @@ end;
 // when exiting the game and destroying all units this will cause asserts.
 procedure TKMTerrain.UnitRem(const LocFrom: TKMPoint);
 begin
-  if not DO_UNIT_INTERACTION then exit;
+  if not DO_UNIT_INTERACTION then Exit;
+
   Land[LocFrom.Y,LocFrom.X].IsUnit := nil;
+end;
+
+
+{ Mark tile as occupied and update occupied unit}
+// We have no way of knowing whether a unit is inside a house, or several units exit a house at once
+// when exiting the game and destroying all units this will cause asserts.
+procedure TKMTerrain.UnitWalkInsideHouse(const aHouseEntrance: TKMPoint; aUnit: Pointer);
+begin
+  if not DO_UNIT_INTERACTION then Exit;
+
+  Land[aHouseEntrance.Y,aHouseEntrance.X].IsUnit := aUnit;
 end;
 
 
@@ -4076,6 +4090,11 @@ const
   // Its needed, because there is still a possibility to get into infinite recursion loop EnsureRange -> DoFlattenTerrain -> EnsureRange -> ...
   FLATTEN_RECUR_USE_ELEVATE_MAX_DEPTH = 16;
 
+  // Max depth of recursion
+  // Its quite unlikely, but its possible in thory that we will get into infinite recursion even without tpElevate restriction
+  // Limit max number of attempts to Flatten terrain to keep only walkable tiles, to avoid StackOverflow
+  FLATTEN_RECUR_MAX_DEPTH = 32;
+
   //If tiles with units standing on them become unwalkable we should try to fix them
   procedure EnsureWalkable(aX,aY: Word; var aDepth: Byte);
   begin
@@ -4118,6 +4137,11 @@ begin
   Assert(TileInMapCoords(Loc.X, Loc.Y), 'Can''t flatten tile outside map coordinates');
 
   Inc(aDepth); //Increase depth
+
+  // Stop flattening after a certain point.
+  // Give up on flatten terrain to keep all around tiles walkable if its impossible (or we failed after number of attempts)
+  if aDepth > FLATTEN_RECUR_MAX_DEPTH then
+    Exit;
 
   if aUpdateWalkConnects then
     fBoundsWC := KMRect(Loc.X, Loc.Y, Loc.X, Loc.Y);

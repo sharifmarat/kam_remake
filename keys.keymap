@@ -16,86 +16,89 @@
 15:113// Ratio Menu
 16:114// Statistics Menu
 17:115// Options Menu
-18:72// Halt Command
-19:83// Splitup Command
-20:76// Linkup Command
-21:70// Food Command
-22:88// Storm Command
-23:187// Increase Formation
-24:189// Decrease Formation
-25:190// Turn Clockwise
-26:188// Turn Counterclockwise
-27:116// Normal Game Speed (x1)
-28:117// Game Speed x%s
-29:118// Game Speed x%s
-30:119// Game Speed x%s
-31:66// Beacon
-32:80// Pause
-33:84// Show Teams (MP)
-34:32// Center to Alert
-35:46// Delete Message
-36:13// Show Game Chat (MP)
-37:9// Select next house/unit with same type
-38:0// Switch players color mode
-39:82// Construct road
-40:67// Plough field
-41:87// Lay out wine field
-42:68// Remove building/highlights
-43:49// Select Group 1
-44:50// Select Group 2
-45:51// Select Group 3
-46:52// Select Group 4
-47:53// Select Group 5
-48:54// Select Group 6
-49:55// Select Group 7
-50:56// Select Group 8
-51:57// Select Group 9
-52:48// Select Group 10
-53:0// Select Group 11
-54:0// Select Group 12
-55:0// Select Group 13
-56:0// Select Group 14
-57:0// Select Group 15
-58:0// Select Group 16
-59:0// Select Group 17
-60:0// Select Group 18
-61:0// Select Group 19
-62:0// Select Group 20
-63:0// Open/Close spectator stats panel
-64:78// Play next tick in replay
-65:49// Spectate player 1
-66:50// Spectate player 2
-67:51// Spectate player 3
-68:52// Spectate player 4
-69:53// Spectate player 5
-70:54// Spectate player 6
-71:55// Spectate player 7
-72:56// Spectate player 8
-73:57// Spectate player 9
-74:48// Spectate player 10
-75:189// Spectate player 11
-76:61// Spectate player 12
-77:13// Extra's Menu
-78:112// Terrain Editor
-79:113// Village Planning
-80:114// Visual Scripting
-81:115// Global Scripting
-82:116// Main Menu
-83:49// Sub-menu 1
-84:50// Sub-menu 2
-85:51// Sub-menu 3
-86:52// Sub-menu 4
-87:53// Sub-menu 5
-88:54// Sub-menu 6
-89:81// Sub-menu action 1
-90:87// Sub-menu action 2
-91:69// Sub-menu action 3
-92:82// Sub-menu action 4
-93:84// Sub-menu action 5
-94:89// Sub-menu action 6
-95:85// Sub-menu action 7
-96:32// Objects palette
-97:73// Tiles palette
-98:46// Universal eraser
-99:45// Paint bucket (change owner)
-100:72// History
+18:116// Normal Game Speed (x1)
+19:117// Game Speed x%s
+20:118// Game Speed x%s
+21:119// Game Speed x%s
+22:66// Beacon
+23:80// Pause
+24:84// Show Teams (MP)
+25:32// Center to Alert
+26:46// Delete Message
+27:13// Show Game Chat (MP)
+28:9// Select next house/unit with same type
+29:0// Switch players color mode
+30:81// Construct road
+31:87// Plough field
+32:69// Lay out wine field
+33:82// Remove building/highlights
+34:49// Select Group 1
+35:50// Select Group 2
+36:51// Select Group 3
+37:52// Select Group 4
+38:53// Select Group 5
+39:54// Select Group 6
+40:55// Select Group 7
+41:56// Select Group 8
+42:57// Select Group 9
+43:48// Select Group 10
+44:0// Select Group 11
+45:0// Select Group 12
+46:0// Select Group 13
+47:0// Select Group 14
+48:0// Select Group 15
+49:0// Select Group 16
+50:0// Select Group 17
+51:0// Select Group 18
+52:0// Select Group 19
+53:0// Select Group 20
+54:72// Halt Command
+55:83// Splitup Command
+56:76// Linkup Command
+57:70// Food Command
+58:88// Storm Command
+59:187// Increase Formation
+60:189// Decrease Formation
+61:190// Turn Clockwise
+62:188// Turn Counterclockwise
+63:65// Goto previuos unit
+64:83// Train or Equip unit
+65:68// Goto next unit
+66:0// Open/Close spectator stats panel
+67:78// Play next tick in replay
+68:49// Spectate player 1
+69:50// Spectate player 2
+70:51// Spectate player 3
+71:52// Spectate player 4
+72:53// Spectate player 5
+73:54// Spectate player 6
+74:55// Spectate player 7
+75:56// Spectate player 8
+76:57// Spectate player 9
+77:48// Spectate player 10
+78:189// Spectate player 11
+79:61// Spectate player 12
+80:13// Extra's Menu
+81:112// Terrain Editor
+82:113// Village Planning
+83:114// Visual Scripting
+84:115// Global Scripting
+85:116// Main Menu
+86:49// Sub-menu 1
+87:50// Sub-menu 2
+88:51// Sub-menu 3
+89:52// Sub-menu 4
+90:53// Sub-menu 5
+91:54// Sub-menu 6
+92:81// Sub-menu action 1
+93:87// Sub-menu action 2
+94:69// Sub-menu action 3
+95:82// Sub-menu action 4
+96:84// Sub-menu action 5
+97:89// Sub-menu action 6
+98:85// Sub-menu action 7
+99:32// Objects palette
+100:119// Tiles palette
+101:46// Universal eraser
+102:45// Paint bucket (change owner)
+103:72// History

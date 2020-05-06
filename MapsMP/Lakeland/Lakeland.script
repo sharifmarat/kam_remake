@@ -50,6 +50,64 @@ begin
 end;
 
 
+procedure UpdateAIEquipRates;
+begin
+  case States.MissionDifficulty of
+
+    mdEasy1: begin
+               Actions.AIEquipRate(3, 0, 320);
+               Actions.AIEquipRate(3, 1, 320);
+               Actions.AIEquipRate(4, 0, 320);
+               Actions.AIEquipRate(4, 1, 320);
+               Actions.AIEquipRate(5, 0, 320);
+               Actions.AIEquipRate(5, 1, 320);
+               Actions.AIEquipRate(6, 0, 320);
+               Actions.AIEquipRate(6, 1, 320);
+               Actions.AIEquipRate(7, 0, 320);
+               Actions.AIEquipRate(7, 1, 320);
+               Actions.AIEquipRate(8, 0, 320);
+               Actions.AIEquipRate(8, 1, 320);
+               Actions.AIEquipRate(9, 0, 320);
+               Actions.AIEquipRate(9, 1, 320);
+             end;
+
+    mdNormal: begin
+                Actions.AIEquipRate(3, 0, 240);
+                Actions.AIEquipRate(3, 1, 240);
+                Actions.AIEquipRate(4, 0, 240);
+                Actions.AIEquipRate(4, 1, 240);
+                Actions.AIEquipRate(5, 0, 240);
+                Actions.AIEquipRate(5, 1, 240);
+                Actions.AIEquipRate(6, 0, 240);
+                Actions.AIEquipRate(6, 1, 240);
+                Actions.AIEquipRate(7, 0, 240);
+                Actions.AIEquipRate(7, 1, 240);
+                Actions.AIEquipRate(8, 0, 240);
+                Actions.AIEquipRate(8, 1, 240);
+                Actions.AIEquipRate(9, 0, 240);
+                Actions.AIEquipRate(9, 1, 240);
+              end;
+
+    mdHard1: begin
+               Actions.AIEquipRate(3, 0, 170);
+               Actions.AIEquipRate(3, 1, 170);
+               Actions.AIEquipRate(4, 0, 170);
+               Actions.AIEquipRate(4, 1, 170);
+               Actions.AIEquipRate(5, 0, 170);
+               Actions.AIEquipRate(5, 1, 170);
+               Actions.AIEquipRate(6, 0, 170);
+               Actions.AIEquipRate(6, 1, 170);
+               Actions.AIEquipRate(7, 0, 170);
+               Actions.AIEquipRate(7, 1, 170);
+               Actions.AIEquipRate(8, 0, 170);
+               Actions.AIEquipRate(8, 1, 170);
+               Actions.AIEquipRate(9, 0, 170);
+               Actions.AIEquipRate(9, 1, 170);
+             end;
+  end;
+end;
+
+
 procedure OnMissionStart;
 begin
   Actions.PlayWAVAtLocationLooped(-1, 'Waterfall Creek', 2.5, 32, 29, 76);
@@ -57,6 +115,7 @@ begin
   Actions.PlayWAVAtLocationLooped(-1, 'Small Fall', 2.5, 32, 99, 99);
   BlockWares;
   SetWareDistribution;
+  UpdateAIEquipRates;
 end;
 
 

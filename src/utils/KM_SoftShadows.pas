@@ -235,7 +235,6 @@ procedure TKMSoftShadowConverter.ConvertShadows(ID: Word; aOnlyShadows: Boolean)
 
 var
   X,Y: Integer;
-  Shadow: Boolean;
   OriginalColor: Cardinal;
   RealShadow: Byte;
 begin

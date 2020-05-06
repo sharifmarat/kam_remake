@@ -131,7 +131,7 @@ type
     HitPointsInvulnerable: Boolean;
     Dismissable: Boolean; //Is it allowed to dismiss this unit ?
 
-    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID; aInHouse: Boolean);
     constructor Load(LoadStream: TKMemoryStream); dynamic;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
@@ -285,7 +285,7 @@ type
   private
     fCarry: TKMWareType;
   public
-    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID; aInHouse: Boolean);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
@@ -744,7 +744,7 @@ end;
 
 
 { TKMSerf }
-constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
+constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID; aInHouse: Boolean);
 begin
   inherited;
   fCarry := wtNone;
@@ -995,7 +995,7 @@ end;
 { TKMUnitAnimal }
 constructor TKMUnitAnimal.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
 begin
-  inherited;
+  inherited Create(aID, aUnitType, aLoc, aOwner, False);
 
   //Always start with 5 fish in the group
   if aUnitType = utFish then
@@ -1085,6 +1085,9 @@ var
 begin
   inherited;
   if fAction = nil then exit;
+
+  Assert((fType <> utFish) or (InRange(fFishCount, 1, 5)));
+
   if fType = utFish then
     Act := FishCountAct[fFishCount]
   else
@@ -1106,10 +1109,9 @@ end;
 
 
 { TKMUnit }
-constructor TKMUnit.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
+constructor TKMUnit.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID; aInHouse: Boolean);
 begin
   inherited Create;
-
   fUID          := aID;
   fTicker       := fUID; //Units update states will be spread more evenly that way
   fPointerCount := 0;
@@ -1145,7 +1147,10 @@ begin
   HitPointsInvulnerable := False;
 
   SetActionLockedStay(10, uaWalk); //Must be locked for this initial pause so animals don't get pushed
-  gTerrain.UnitAdd(NextPosition,Self);
+
+  // Do not add units which are trained inside house
+  if not aInHouse then
+    gTerrain.UnitAdd(NextPosition, Self);
 
   //The area around the unit should be visible at the start of the mission
   if InRange(fOwner, 0, MAX_HANDS - 1) then //Not animals
@@ -1316,7 +1321,7 @@ begin
 
   fIsDead       := True;
   fThought      := thNone;
-  fPositionF     := KMPOINTF_ZERO;
+  fPositionF    := KMPOINTF_ZERO;
   fCurrPosition := KMPOINT_ZERO;
   fPrevPosition := fCurrPosition;
   fNextPosition := fCurrPosition;
@@ -2006,6 +2011,7 @@ end;
 function TKMUnit.UpdateVisibility: Boolean;
 var
   NewCurrPosition: TKMPoint;
+  placedOnOccupiedTile: Boolean;
 begin
   Result := False;
   if fInHouse = nil then Exit; //There's nothing to update, we are always visible
@@ -2019,7 +2025,7 @@ begin
     or (TKMUnitActionGoInOut(Action).GetWaitingForPush) then
     begin
       //Position in a spiral nearest to entrance of house, updating IsUnit.
-      if not gHands.FindPlaceForUnit(fInHouse.Entrance.X, fInHouse.Entrance.Y, UnitType, NewCurrPosition, gTerrain.GetWalkConnectID(fInHouse.Entrance)) then
+      if not gHands.FindPlaceForUnit(fInHouse.Entrance.X, fInHouse.Entrance.Y, Self, NewCurrPosition, gTerrain.GetWalkConnectID(fInHouse.Entrance)) then
       begin
         //There is no space for this unit so it must be destroyed
         //todo: re-route to KillUnit and let it sort out that unit is invisible and cant be placed
@@ -2032,18 +2038,22 @@ begin
         SetAction(nil);
         FreeAndNil(fTask);
         CloseUnit(False); //Close the unit without removing tile usage (because this unit was in a house it has none)
-        Result := true;
-        exit;
+        Exit(True);
       end;
       SetCurrPosition(NewCurrPosition); //will update FOW
 
+      // Unit was occupying tile (he was walking inside house when house was destroyed)
+      placedOnOccupiedTile := gTerrain.Land[fCurrPosition.Y, fCurrPosition.X].IsUnit = Self;
       //Make sure these are reset properly
-      Assert(not gTerrain.HasUnit(fCurrPosition));
-      IsExchanging := false;
+      Assert(not gTerrain.HasUnit(fCurrPosition) or placedOnOccupiedTile);
+      IsExchanging := False;
       fPositionF := KMPointF(fCurrPosition);
       fPrevPosition := fCurrPosition;
       fNextPosition := fCurrPosition;
-      gTerrain.UnitAdd(fCurrPosition, Self); //Unit was not occupying tile while inside the house, hence just add do not remove
+
+      // Do not add unit to terrain, if he is already occupying house entrance tile
+      if not placedOnOccupiedTile then
+        gTerrain.UnitAdd(fCurrPosition, Self); //Unit was not occupying tile while inside the house, hence just add do not remove
 
       //OnWarriorWalkOut usually happens in TUnitActionGoInOut, otherwise the warrior doesn't get assigned a group
       //Do this after setting terrain usage since OnWarriorWalkOut calls script events
@@ -2328,7 +2338,6 @@ begin
   // - Action (Atom creating layer (walk 1frame, etc..))
   // - Task (Action creating layer)
   // - specific UpdateState (Task creating layer)
-
   Result := True;
 
   if fAction = nil then
@@ -2440,6 +2449,9 @@ begin
 
   if SHOW_POINTER_DOTS then
     gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(axX), fPositionF.Y + 1   + GetSlide(axY), fPointerCount);
+
+  if SHOW_TILE_UNIT then
+    gRenderAux.CircleOnTerrain(fPositionF.X - 0.5 + GetSlide(axX), fPositionF.Y - 0.5 + GetSlide(axY), 0.35, GetRandomColorWSeed(fUID));
 end;
 
 

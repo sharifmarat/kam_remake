@@ -1,6 +1,13 @@
 program Runner;
 {$I KaM_Remake.inc}
 uses
+  {$IFDEF USE_MAD_EXCEPT}
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
+  {$ENDIF}
   //FastMM4,
   Forms,
   {$IFDEF FPC}

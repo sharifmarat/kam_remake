@@ -100,7 +100,6 @@ type
     procedure PaintFlagPoints(aFirstPass: Boolean);
 
     procedure RenderWireHousePlan(const P: TKMPoint; aHouseType: TKMHouseType);
-    procedure RenderMapEdLayers(const aRect: TKMRect);
     procedure RenderTileOwnerLayer(const aRect: TKMRect);
     procedure RenderTilesGrid(const aRect: TKMRect);
 
@@ -314,8 +313,6 @@ begin
     gPerfLogs.SectionLeave(psFrameTerrain);
     {$ENDIF}
 
-    RenderMapEdLayers(ClipRect);
-
     // House highlight, debug display
     RenderBackgroundUI(ClipRect);
 
@@ -396,6 +393,27 @@ begin
 
   if SHOW_JAM_METER then
     gRenderAux.TileTerrainJamMeter(aRect);
+
+  if SHOW_TILE_OBJECT_ID then
+    gRenderAux.TileTerrainTileObjectID(aRect);
+
+  if SHOW_TILES_OWNER then
+    RenderTileOwnerLayer(aRect);
+
+  if SHOW_TREE_AGE then
+    gRenderAux.TileTerrainTreeAge(aRect);
+
+  if SHOW_FIELD_AGE then
+    gRenderAux.TileTerrainFieldAge(aRect);
+
+  if SHOW_TILE_LOCK then
+    gRenderAux.TileTerrainTileLock(aRect);
+
+  if SHOW_TILE_UNIT then
+    gRenderAux.TileTerrainTileUnit(aRect);
+
+  if SHOW_VERTEX_UNIT then
+    gRenderAux.TileTerrainVertexUnit(aRect);
 
   if SHOW_TERRAIN_TILES_GRID then
     RenderTilesGrid(aRect);
@@ -1526,15 +1544,15 @@ end;
 
 //Render tile owner layer
 procedure TRenderPool.RenderTileOwnerLayer(const aRect: TKMRect);
-var I, K: Integer;
-    P: TKMPoint;
+var
+  I, K: Integer;
+  P: TKMPoint;
 begin
   for I := aRect.Top to aRect.Bottom do
     for K := aRect.Left to aRect.Right do
     begin
       P := KMPoint(K, I);
-      if (mlTileOwner in gGame.MapEditor.VisibleLayers) //If 'tile owner' is in visible layers
-        and (gTerrain.Land[I, K].TileOwner <> PLAYER_NONE) //owner is set for tile
+      if    (gTerrain.Land[I, K].TileOwner <> PLAYER_NONE) //owner is set for tile
         and (gTerrain.TileIsCornField(P)                   // show only for corn + wine + roads
           or gTerrain.TileIsWineField(P)
           or (gTerrain.Land[I, K].TileOverlay = toRoad)) then
@@ -1545,25 +1563,12 @@ end;
 
 //Render tiles grid layer
 procedure TRenderPool.RenderTilesGrid(const aRect: TKMRect);
-var I, K: Integer;
-    P: TKMPoint;
+var
+  I, K: Integer;
 begin
-  if SHOW_TERRAIN_TILES_GRID then
-    for I := aRect.Top to aRect.Bottom do
-      for K := aRect.Left to aRect.Right do
-      begin
-        P := KMPoint(K, I);
-        RenderWireTile(P, icDarkCyan, 0, 1);
-      end;
-end;
-
-
-//Render MapEd layers
-procedure TRenderPool.RenderMapEdLayers(const aRect: TKMRect);
-begin
-  if not gGame.IsMapEditor then Exit;
-
-  RenderTileOwnerLayer(aRect);
+  for I := aRect.Top to aRect.Bottom do
+    for K := aRect.Left to aRect.Right do
+      RenderWireTile(KMPoint(K, I), icDarkCyan, 0, 1);
 end;
 
 

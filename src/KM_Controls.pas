@@ -206,6 +206,8 @@ type
     function GetHint: UnicodeString; virtual;
     procedure SetHint(const aHint: UnicodeString); virtual;
     procedure SetPaintLayer(aPaintLayer: Integer);
+
+    function CanFocusNext: Boolean; virtual;
   public
     Hitable: Boolean; //Can this control be hit with the cursor?
     Focusable: Boolean; //Can this control have focus (e.g. TKMEdit sets this true)
@@ -1351,6 +1353,8 @@ type
     function GetItemString(aIndex: Integer): UnicodeString; override;
 
     function CanChangeSelection: Boolean; override;
+
+    function CanFocusNext: Boolean; override;
   public
     HideSelection: Boolean;
     HighlightError: Boolean;
@@ -1395,6 +1399,7 @@ type
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure KeyPress(Key: Char); override;
+    function KeyUp(Key: Word; Shift: TShiftState): Boolean; override;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -2027,14 +2032,19 @@ begin
 end;
 
 
+function TKMControl.CanFocusNext: Boolean;
+begin
+  Result := True;
+end;
+
+
 function TKMControl.KeyUp(Key: Word; Shift: TShiftState): Boolean;
 begin
   Result := False;
-  if (Key = VK_TAB) and IsFocused then
+  if (Key = VK_TAB) and CanFocusNext and IsFocused then
   begin
     Parent.FocusNext;
-    Result := True;
-    Exit;
+    Exit(True);
   end;
 
   if Assigned(fOnKeyUp) then
@@ -4992,7 +5002,7 @@ begin
   inherited;
 
   fButtonDec.Left := Left;
-  fButtonInc.Top := Left + Width - 20;
+  fButtonInc.Left := Left + Width - 20;
 end;
 
 
@@ -7845,8 +7855,7 @@ end;
 
 function TKMColumnBox.KeyDown(Key: Word; Shift: TShiftState): Boolean;
 begin
-  Result := False;
-  if PassAllKeys then Exit;
+  if PassAllKeys then Exit(False);
   
   Result := inherited;
 end;
@@ -7858,12 +7867,33 @@ begin
 end;
 
 
+function TKMColumnBox.CanFocusNext: Boolean;
+begin
+  Result := not PassAllKeys;
+end;
+
+
 procedure TKMColumnBox.KeyPress(Key: Char);
 begin
   if PassAllKeys then
     Exit
   else
     inherited;
+end;
+
+
+function TKMColumnBox.KeyUp(Key: Word; Shift: TShiftState): Boolean;
+begin
+  Result := False;
+  if PassAllKeys then
+  begin
+    if Assigned(fOnKeyUp) then
+      Result := fOnKeyUp(Self, Key, Shift);
+
+    Exit;
+  end;
+
+  Result := inherited;
 end;
 
 
@@ -8285,9 +8315,16 @@ constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; co
                                  aImageType: TKMPopUpBGImageType = pubgitYellow; aShowBevel: Boolean = True;
                                  aShowShadeBevel: Boolean = True);
 var
-  imgWPad, imgTop: Integer;
+  imgWPad, imgTop, topMargin: Integer;
 begin
-  inherited Create(aParent, (aParent.Width div 2) - (aWidth div 2), (aParent.Height div 2) - (aHeight div 2), aWidth, aHeight);
+  topMargin := 0;
+  case aImageType of
+    pubgitGray:         topMargin := 20;
+    pubgitYellow:       topMargin := 25;
+    pubgitScrollWCross: topMargin := 20;
+  end;
+
+  inherited Create(aParent, Max(0, (aParent.Width div 2) - (aWidth div 2)), Max(topMargin, (aParent.Height div 2) - (aHeight div 2)), aWidth, aHeight);
 
   fBGImageType := aImageType;
 
@@ -8300,8 +8337,8 @@ begin
     BevelShade := TKMBevel.Create(Self, -2000,  -2000, 5000, 5000);
 
   case fBGImageType of
-    pubgitGray:    ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70,  15, rxGuiMain);
-    pubgitYellow:  ImageBG := TKMImage.Create(Self, -25, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
+    pubgitGray:    ImageBG := TKMImage.Create(Self, -topMargin, -50, aWidth + 40, aHeight + 70,  15, rxGuiMain);
+    pubgitYellow:  ImageBG := TKMImage.Create(Self, -topMargin, -80, aWidth + 50, aHeight + 130, 18, rxGuiMain);
     pubgitScrollWCross:
       begin
         imgTop := -(aHeight div 10) - 10;

@@ -234,6 +234,7 @@ end;
 
 procedure TKMMapEdTerrain.Resize;
 begin
+  fGuiTiles.Resize;
   fGuiObjects.Resize;
 end;
 

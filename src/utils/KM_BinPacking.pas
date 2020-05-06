@@ -94,7 +94,7 @@ begin
   BinManager := TBinManager.Create(aMaxSize, aMaxSize, aPad);
   try
     for I := 0 to High(aItems) do
-      if (aItems[I].X * aItems[I].Y <> 0) then
+      if aItems[I].X * aItems[I].Y <> 0 then
         BinManager.Insert(aItems[I]);
 
     BinManager.GetAllItems(aOut);
@@ -141,21 +141,16 @@ function TBin.Insert(const aItem: TIndexItem): TBin;
 begin
   //We can't possibly fit the Item (and our Childs can't either)
   if (aItem.X + fPad*2 > fRect.Width) or (aItem.Y + fPad*2 > fRect.Height) or (fImageID <> 0) then
-  begin
-    Result := nil;
-    Exit;
-  end;
+    Exit(nil);
 
   //If both childs are nil we can stop recursion and accept the Item
   if (fChild1 = nil) and (fChild2 = nil) then
   begin
-
     //If we can perfectly fit the Item
     if (fRect.Width = aItem.X + fPad*2) and (fRect.Height = aItem.Y + fPad*2) then
     begin
       fImageID := aItem.ID;
-      Result := Self;
-      Exit;
+      Exit(Self);
     end;
 
     //Choose axis by which to split (Doc suggest we favor largest free area)
@@ -219,7 +214,7 @@ constructor TBinManager.Create(aWidth, aHeight: Word; aPad: Byte);
 begin
   inherited Create;
 
-  Assert((aWidth > 0) and (aHeight > 0));
+  Assert(aWidth * aHeight > 0);
   fWidth := aWidth;
   fHeight := aHeight;
   fPad := aPad;
@@ -250,9 +245,9 @@ end;
 procedure TBinManager.Insert(const aItem: TIndexItem);
 var
   I: Integer;
-  B: TBin;
+  B, res: TBin;
 begin
-  //Check all Bins (older Bins may still have space for small items)
+  // Check all Bins (older Bins may still have space for small items)
   for I := 0 to fBins.Count - 1 do
   if TBin(fBins[I]).CanFit(aItem) then
   begin
@@ -261,28 +256,29 @@ begin
     if B <> nil then
       Exit //aItem fit
     else
+      // Update the bin capacity (for future items)
       TBin(fBins[I]).DidNotFit(aItem);
   end;
 
-  //Create new Bin
+  // Create new Bin
   if (aItem.X > fWidth) or (aItem.Y > fHeight) then
-    //Create new Bin especially for this big item
+    // Create new Bin especially for this big item
     B := CreateNew(MakePOT(aItem.X + fPad * 2), MakePOT(aItem.Y + fPad * 2))
   else
-    //Use standard Bin size
+    // Use standard Bin size
     B := CreateNew(fWidth, fHeight);
 
-  B.Insert(aItem);
-  Assert(B <> nil);
+  res := B.Insert(aItem);
+  Assert(res <> nil, 'We could not fit the item into a bin, it is now "lost"');
 end;
 
 
-//Write all Bins and images positions into array
+// Write all Bins and images positions into array
 procedure TBinManager.GetAllItems(var aOut: TBinArray);
 var
   I: Integer;
 begin
-  //Recursively scan all Bins
+  // Recursively scan all Bins
   SetLength(aOut, fBins.Count);
   for I := 0 to fBins.Count - 1 do
   begin

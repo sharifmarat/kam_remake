@@ -1,8 +1,8 @@
 Author
-andreus & Andrey988
+andreus & Andrey988 (Classic)
 
 Version
-1.3 (23.03.2020)
+1.4 (19.04.2020)
 
 SetCoop
 
@@ -11,4 +11,7 @@ BlockPeacetime
 BlockTeamSelection
 
 BlockFullMapPreview
+
+DifficultyLevels
+mdEasy1,mdNormal,mdHard1
 

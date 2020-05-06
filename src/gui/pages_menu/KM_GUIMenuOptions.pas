@@ -669,7 +669,7 @@ procedure TKMMenuOptions.KeysRefreshList;
   end;
 
 const
-  KEY_TX: array [TKMFuncArea] of Word = (TX_KEY_COMMON, TX_KEY_GAME, TX_KEY_SPECTATE_REPLAY, TX_KEY_MAPEDIT);
+  KEY_TX: array [TKMFuncArea] of Word = (TX_KEY_COMMON, TX_KEY_GAME, TX_KEY_UNIT, TX_KEY_HOUSE, TX_KEY_SPECTATE_REPLAY, TX_KEY_MAPEDIT);
 var
   I, prevI: Integer;
   K: TKMFuncArea;
@@ -689,7 +689,7 @@ begin
       if (fTempKeys[I].Area = K) and not fTempKeys[I].IsChangableByPlayer then
       begin
         KeyName := fTempKeys.GetKeyNameById(I);
-        if I = SC_DEBUG_WINDOW then
+        if (I = SC_DEBUG_WINDOW) and (KeyName <> '') then
           KeyName := KeyName + ' / Ctrl + ' + KeyName; //Also show Ctrl + F11, for debug window hotkey
         ColumnBox_OptionsKeys.AddItem(MakeListRow([GetFunctionName(fTempKeys[I].TextId), KeyName],
                                                   [$FFFFFFFF, $FFFFFFFF], [$FF0000FF, $FF0000FF], I));

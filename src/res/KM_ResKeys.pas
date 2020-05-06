@@ -6,11 +6,16 @@ uses
   KM_Defaults, KM_ResTexts;
 
 type
-  TKMFuncArea = (faCommon, faGame, faSpecReplay, faMapEdit);
+  TKMFuncArea = (faCommon,
+                 faGame,
+                   faUnit,
+                   faHouse,
+                 faSpecReplay,
+                 faMapEdit);
 
 const
   // Total number of different functions in the game that can have a shortcut
-  FUNC_COUNT = 101;
+  FUNC_COUNT = 104;
 
   // Load key IDs from inc file
   {$I KM_KeyIDs.inc}
@@ -64,16 +69,19 @@ const
 
     // Game Keys
     112, 113, 114, 115,                     // Game menus (F1-F4)
-    72, 83, 76, 70, 88,                     // Army commands (Halt/Split/Link/Food/Storm) (H/S/L/F/X)
-    187, 189, 190, 188,                     // Army commands (Increase form./Decrease form./Turn clockwise/Turn counterclockwise) (=/-/./,)
     116, 117, 118, 119,                     // Speed ups (x1/x3/x6/x10) (F5-F8)
     66, 80, 84,                             // Beacon/Pause/Show team in MP (B, P, T)
     32, 46, 13,                             // Center to alert/Delete message/Show chat (Space, Delete, Return)
     9,                                      // Select next building/unit/group with same type (Tab)
     0,                                      // Player color mode
-    82, 67, 87, 68,                         // Plan road/corn/wine/erase plan(building) (R, C, W, D)
+    81, 87, 69, 82,                         // Plan road/corn/wine/erase plan(building) (R, C, W, D)
     49, 50, 51, 52, 53, 54, 55, 56, 57, 48, // Dynamic selection groups 1-10 (1-9, 0)
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,           // Dynamic selection groups 11-20 (no defaults)
+    //Unit keys
+    72, 83, 76, 70, 88,                     // Army commands (Halt/Split/Link/Food/Storm) (H/S/L/F/X)
+    187, 189, 190, 188,                     // Army commands (Increase form./Decrease form./Turn clockwise/Turn counterclockwise) (=/-/./,)
+    //House keys
+    65, 83, 68,                             // School/Barracks/TH commands (prev unit / equip unit / next unit)
 
     // Spectate/Replay view Keys
     0,                                      // Open/Close spectator statistics panel
@@ -106,8 +114,6 @@ const
 
     // Game Keys
     TX_KEY_FUNC_MENU_BUILD, TX_KEY_FUNC_MENU_RATIO, TX_KEY_FUNC_MENU_STATS, TX_KEY_FUNC_MENU_MAIN,        // Game menus
-    TX_KEY_FUNC_HALT, TX_KEY_FUNC_SPLIT, TX_KEY_FUNC_LINKUP, TX_KEY_FUNC_FOOD, TX_KEY_FUNC_STORM,         // Army commands
-    TX_KEY_FUNC_FORM_INCREASE, TX_KEY_FUNC_FORM_DECREASE, TX_KEY_FUNC_TURN_CW, TX_KEY_FUNC_TURN_CCW,      // Army commands
     TX_KEY_FUNC_GAME_SPEED_1,TX_KEY_FUNC_GAME_SPEED_2,TX_KEY_FUNC_GAME_SPEED_3,TX_KEY_FUNC_GAME_SPEED_4,  // Speed ups
     TX_KEY_FUNC_BEACON, TX_KEY_FUNC_PAUSE, TX_KEY_FUNC_SHOW_TEAMS,                                        // Beacon/Pause/Show team in MP
     TX_KEY_FUNC_CENTER_ALERT, TX_KEY_FUNC_DELETE_MSG, TX_KEY_FUNC_SHOW_GAME_CHAT,                         // Center to alert/Delete message/Show chat
@@ -118,6 +124,11 @@ const
     TX_KEY_FUNC_SELECT_6, TX_KEY_FUNC_SELECT_7, TX_KEY_FUNC_SELECT_8, TX_KEY_FUNC_SELECT_9, TX_KEY_FUNC_SELECT_10,  // Dynamic selection groups 6-10
     TX_KEY_FUNC_SELECT_11,TX_KEY_FUNC_SELECT_12,TX_KEY_FUNC_SELECT_13,TX_KEY_FUNC_SELECT_14,TX_KEY_FUNC_SELECT_15,  // Dynamic selection groups 11-15
     TX_KEY_FUNC_SELECT_16,TX_KEY_FUNC_SELECT_17,TX_KEY_FUNC_SELECT_18,TX_KEY_FUNC_SELECT_19,TX_KEY_FUNC_SELECT_20,  // Dynamic selection groups 16-20
+    //Unit keys
+    TX_KEY_FUNC_HALT, TX_KEY_FUNC_SPLIT, TX_KEY_FUNC_LINKUP, TX_KEY_FUNC_FOOD, TX_KEY_FUNC_STORM,         // Army commands
+    TX_KEY_FUNC_FORM_INCREASE, TX_KEY_FUNC_FORM_DECREASE, TX_KEY_FUNC_TURN_CW, TX_KEY_FUNC_TURN_CCW,      // Army commands
+    //House keys
+    TX_KEY_FUNC_TRAIN_PREV, TX_KEY_FUNC_TRAIN_EQUIP, TX_KEY_FUNC_TRAIN_NEXT,                              // School/Barracks/TH commands
 
     // Spectate MP game/Replay view Keys
     TX_KEY_FUNC_SPECPANEL_DROPBOX_OPEN_CLOSE,
@@ -160,8 +171,10 @@ begin
 
     case I of
       0..13:  fFuncs[I].Area := faCommon;
-      14..62: fFuncs[I].Area := faGame;
-      63..76: fFuncs[I].Area := faSpecReplay;
+      14..53: fFuncs[I].Area := faGame;
+      54..62: fFuncs[I].Area := faUnit;
+      63..65: fFuncs[I].Area := faHouse;
+      66..79: fFuncs[I].Area := faSpecReplay;
       else    fFuncs[I].Area := faMapEdit;
     end;
 
@@ -397,7 +410,11 @@ begin
       if fFuncs[I].Key = aKey then
         case fFuncs[I].Area of
           faCommon:     fFuncs[I].Key := 0;
-          faGame:       if (fFuncs[aId].Area in [faGame, faCommon]) then
+          faGame:       if (fFuncs[aId].Area in [faGame, faUnit, faHouse, faCommon]) then
+                          fFuncs[I].Key := 0;
+          faUnit:       if (fFuncs[aId].Area in [faUnit, faGame, faCommon]) then
+                          fFuncs[I].Key := 0;
+          faHouse:      if (fFuncs[aId].Area in [faHouse, faGame, faCommon]) then
                           fFuncs[I].Key := 0;
           faSpecReplay: if (fFuncs[aId].Area in [faSpecReplay, faCommon]) then
                           fFuncs[I].Key := 0;

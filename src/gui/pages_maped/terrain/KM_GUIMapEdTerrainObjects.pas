@@ -155,19 +155,20 @@ begin
     Bevel_ObjectsPalette := TKMBevel.Create(PopUp_ObjectsPalette, -2000,  -2000, 5000, 5000);
     Bevel_ObjectsPalette.BackAlpha := 0.7;
     Bevel_ObjectsPalette.EdgeAlpha := 0.9;
+    Bevel_ObjectsPalette.OnClickShift := ObjPalette_ClickShift;
 
     Image_ObjectsPalette := TKMImage.Create(PopUp_ObjectsPalette, 0, 0, PopUp_ObjectsPalette.Width, PopUp_ObjectsPalette.Height, 18, rxGuiMain);
     Image_ObjectsPalette.ImageStretch;
+    Image_ObjectsPalette.OnClickShift := ObjPalette_ClickShift;
 
     Scroll_ObjectsPalette := TKMScrollBar.Create(PopUp_ObjectsPalette, PopUp_ObjectsPalette.Width - 20, 25, 20, PopUp_ObjectsPalette.Height - 75, saVertical, bsGame);
     Scroll_ObjectsPalette.MinValue := 0;
     Scroll_ObjectsPalette.Position := 0;
     Scroll_ObjectsPalette.OnChange := ObjectsPalette_Refresh;
 
+    // Add event handlers after Scroll is created
     Image_ObjectsPalette.OnMouseWheel := Scroll_ObjectsPalette.MouseWheel;
-    Image_ObjectsPalette.OnClickShift := ObjPalette_ClickShift;
     Bevel_ObjectsPalette.OnMouseWheel := Scroll_ObjectsPalette.MouseWheel;
-    Bevel_ObjectsPalette.OnClickShift := ObjPalette_ClickShift;
 
     SetLength(ObjectsPaletteTable, fCountCompact);
     for I := 0 to fCountCompact - 1 do
@@ -250,28 +251,28 @@ const
   IMG_ATTR_W: array[TKMTerrainObjectAttribute] of Integer = (14, 19, 23, 18);
   IMG_ATTR_H: array[TKMTerrainObjectAttribute] of Integer = (14, 19, 22, 14);
 var
-  I, Index: Integer;
+  I, index: Integer;
   TOA: TKMTerrainObjectAttribute;
   attributes: TKMTerrainObjectAttributeSet;
 begin
   attributes := UpdateObjAttributesAndDesc(ObjectsPaletteTable[aBtnID], fCompactToMapElem[aBtnID]);
-  Index := 0;
+  index := 0;
 //  for TOA := Low(TKMTerrainObjectAttribute) to High(TKMTerrainObjectAttribute) do
   for TOA := toaChoppableTree to toaChoppableTree do
   begin
     if TOA in attributes then
     begin
-      Image_ObjectAttributes[Index, aBtnID].Visible := True;
-      Image_ObjectAttributes[Index, aBtnID].Left := ObjectsPaletteTable[aBtnID].Left + 2 + ATTR_IMG_SIZE*Index;
-      Image_ObjectAttributes[Index, aBtnID].Top := ObjectsPaletteTable[aBtnID].Bottom - IMG_ATTR_H[TOA] - 10;
-      Image_ObjectAttributes[Index, aBtnID].Width := IMG_ATTR_W[TOA];
-      Image_ObjectAttributes[Index, aBtnID].Height := IMG_ATTR_H[TOA];
-      Image_ObjectAttributes[Index, aBtnID].TexID := IMG_ATTR_TEXID[TOA];
-      Inc(Index);
+      Image_ObjectAttributes[index, aBtnID].Visible := True;
+      Image_ObjectAttributes[index, aBtnID].Left := ObjectsPaletteTable[aBtnID].Left + 2 + ATTR_IMG_SIZE*index;
+      Image_ObjectAttributes[index, aBtnID].Top := ObjectsPaletteTable[aBtnID].Bottom - IMG_ATTR_H[TOA] - 10;
+      Image_ObjectAttributes[index, aBtnID].Width := IMG_ATTR_W[TOA];
+      Image_ObjectAttributes[index, aBtnID].Height := IMG_ATTR_H[TOA];
+      Image_ObjectAttributes[index, aBtnID].TexID := IMG_ATTR_TEXID[TOA];
+      Inc(index);
     end;
   end;
-  for I := Index to High(Image_ObjectAttributes) do
-    Image_ObjectAttributes[Index, aBtnID].Hide;
+  for I := index to High(Image_ObjectAttributes) do
+    Image_ObjectAttributes[I, aBtnID].Hide;
 end;
 
 
@@ -356,7 +357,11 @@ begin
 
   // Make invisible all palette buttons at the end of the list, after shown buttons 'page'
   for I := K + 1 to fCountCompact - 1 do
+  begin
     ObjectsPaletteTable[I].Visible := False;
+    for J := Low(Image_ObjectAttributes) to High(Image_ObjectAttributes) do
+      Image_ObjectAttributes[J, I].Hide;
+  end;
 
   // Make invisible all palette buttons at the start of the list, before shown buttons 'page'
   for I := 0 to Scroll_ObjectsPalette.Position - 1 do

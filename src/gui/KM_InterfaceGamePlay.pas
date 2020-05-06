@@ -3469,7 +3469,8 @@ begin
       ReplayClick(Button_ReplayStep);
   end;
 
-  fGuiGameUnit.KeyUp(Key, Shift);
+  fGuiGameUnit.KeyUp(Key, Shift, KeyHandled);
+  fGuiGameHouse.KeyUp(Key, Shift, KeyHandled);
 
   // All the following keys don't work in Replay, because they alter game state
   // which is nonsense

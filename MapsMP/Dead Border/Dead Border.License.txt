@@ -15,3 +15,5 @@ Script is licensed under GPLv2, you can find its text here: http://www.gnu.org/l
 'Fall.wav' derived from ingvellir waterfall hard 2.wav by dikolson under CC 0 License
 
 'Small Fall.wav' derived from waterfall_loop_01.mp3 by stuartduffield under http://www.freesfx.co.uk/license
+
+'Wolf.ogg' and 'Quack.ogg' deriver from NoiseFX sound library
