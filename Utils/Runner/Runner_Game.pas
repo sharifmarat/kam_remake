@@ -182,6 +182,21 @@ type
     procedure Execute(aRun: Integer); override;
   end;
 
+
+  TKMRunnerAAIPerformanceTest = class(TKMRunnerCommon)
+  private
+    fBestScore, fWorstScore, fAverageScore: Double;
+    fMap: string;
+    fRun: Integer;
+    fStartTime: Cardinal;
+    procedure Reset;
+    procedure Log(const aString: string);
+  protected
+    procedure SetUp(); override;
+    procedure TearDown(); override;
+    procedure Execute(aRun: Integer); override;
+  end;
+
   TKMRunnerStone = class(TKMRunnerCommon)
   protected
     procedure SetUp; override;
@@ -1548,6 +1563,213 @@ begin
 end;
 
 
+{ TKMRunnerAAIPerformanceTest }
+procedure TKMRunnerAAIPerformanceTest.Log(const aString: string);
+begin
+
+end;
+
+
+procedure TKMRunnerAAIPerformanceTest.Reset;
+begin
+  fStartTime := TimeGet;
+end;
+
+
+procedure TKMRunnerAAIPerformanceTest.SetUp();
+begin
+  inherited;
+
+//  fDesyncsDir := Format('%s..\Desyncs\', [ExeDir]);
+//  ForceDirectories(fDesyncsDir);
+//
+//  SetLength(fTickCRC, fResults.TimesCount);
+//
+//  fOnTick := TickPlayed;
+//  fOnBeforeTick := BeforeTickPlayed;
+
+  // Deactivate KaM log
+  if (gLog = nil) then
+    gLog := TKMLog.Create(Format('%sUtils\Runner\Runner_Log.log',[ExeDir]));
+  gLog.MessageTypes := [];
+
+  gLog.SetDefaultMessageTypes;
+
+//  Include(gLog.MessageTypes, lmtRandomChecks);
+//  Include(gLog.MessageTypes, lmtCommands);
+
+//  LOG_GAME_TICK := True;
+  USE_CUSTOM_SEED := True;
+
+  CALC_EXPECTED_TICK := False;
+  CRASH_ON_REPLAY := False;
+  SAVE_GAME_AS_TEXT := True;
+  ALLOW_SAVE_IN_REPLAY := True;
+  SAVE_GAME_AS_TEXT := False;
+  GAME_NO_UPDATE_ON_TIMER := True;
+  GAME_SAVE_STRIP_FOR_CRC := True;
+  SKIP_SAVE_SAVPTS_TO_FILE := True;
+  SAVE_RANDOM_CHECKS := False;
+//  GAME_SAVE_CHECKPOINT_FREQ_MIN := 0;
+//  GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX := 0;
+
+//  Include(gLog.MessageTypes, lmtRandomChecks)
+end;
+
+
+procedure TKMRunnerAAIPerformanceTest.TearDown();
+begin
+
+  inherited;
+end;
+
+
+procedure TKMRunnerAAIPerformanceTest.Execute(aRun: Integer);
+const
+  // Maps for simulation (I dont use for loop in this array)
+  MAPS: array [1..17] of String = ('Across the Desert','Mountainous Region','Battle Sun','Neighborhood Clash','Valley of the Equilibrium','Wilderness',
+                                   'Border Rivers','Blood and Ice','A Midwinter''s Day','Coastal Expedition','Defending the Homeland','Eruption',
+                                   'Forgotten Lands','Golden Cliffs','Rebound','Riverlands', 'Shadow Realm');
+  MAPS_8P: array [1..29] of String = ('A War of Justice','Babylon','Back in the Desert','Center Castle Looting','Cold Water 8P',
+                                   'Complication in Simplicity','Crystalline Falls','Cursed Ravine','Dance of Death','Dead of Winter',
+                                   'Drastic Measures','Ending the Tyranny','Twin Peaks','Valley of the Equilibrium 8P', 'Frozen Waters',
+                                   'Hand in Hand','Mega Land','Nibenay Basin','Paradise Island','Reborn','Rich Land','Tale of Two Lands',
+                                   'The Final Frontier','The Last Port','The Same Rocks','The Valley of Dangers 2','Volcanic Violence',
+                                   'Volcano Valley','Voros Arany');
+  //Fighting maps
+  FIGHT_MAPS: array[1..33] of string = ('Icewind Valley 6P', 'Red Valley', 'Clarity Falls - Escape', 'Enter the Heat', 'Pirate Bond',
+                                  'Sharks Islands', 'Dangerous Shore', 'Ambushed', 'Bannockburn','Battle of Great Generals',
+                                  'Gorges', 'Spring of Events', 'Inner Struggle', 'Last Fight for Oasis','Lost Road',
+                                  'River Crossing','Shoulder to Shoulder','The Pirates','Unknown Danger','Battle in the Ruined City',
+                                  'Lost City Struggle','Cross','Cursed Land','Gunplay','Icewind Valley','Rocky Mountains',
+                                  'Shallows of Death','Snow Cross','The Citadel','The King Says','Tundra','Atoll','Coastal Encounter');
+
+  COOP_MAPS: array[1..45] of string = ('A Clash of Kings', 'A Farmers Wish Coop', 'A Southern Journey', 'A Way East', 'Bridgecal Dundee',
+                                  'Coalical Dundee', 'Dead Border','Hillycal Dundee','Lakeland','No Escape','Northern Islands I',
+                                  'Return to Moorbach','Siege of Castle Fennford','The Cracker','The Dig','TPR 03','TPR 04','TPR 05',
+                                  'TPR 06','TPR 07','TPR 08','TPR 09','TPR 10','TPR 11','TPR 12','TPR 13','TPR 14','Tropical Dundee',
+                                  'TSK 03','TSK 06','TSK 07','TSK 08','TSK 09','TSK 10','TSK 11','TSK 12','TSK 13','TSK 14','TSK 15','TSK 16',
+                                  'TSK 17','TSK 18','TSK 19','TSK 20','Waterfall Dundee');
+
+  SIMUL_TIME_MAX: Integer = 10*60*180; //1 hour
+  SAVEPT_FREQ: Integer = 10*60*1; //every 1 min
+  REPLAY_LENGTH: Integer = 1500; // ticks to find RNG mismatch
+//  SAVEPT_CNT = 1; //(SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+//  SAVEPT_CNT = (SIMUL_TIME_MAX div SAVEPT_FREQ) - 1;
+  LOAD_SAVEPT_AT_TICK = 0;
+  SKIP_FIRST_SAVEPT_CNT = 15; //Skip first savepoints to save some time
+
+  MAPS_TO_TEST = 3;
+  cnt_MAP_SIMULATIONS = 1;
+
+  procedure StartGame;
+  var
+    mapFullName: string;
+  begin
+    mapFullName := Format('%sMapsMP\%s\%s.dat',[ExeDir,fMap,fMap]);
+    gGameApp.NewSingleMap(mapFullName, fMap, -1, 0, mdNone, AIType);
+  end;
+
+
+var
+  K,L,I,M, runsCnt: Integer;
+  desyncCnt, mapsCnt, savesFreq, savesCnt, replayLength: Integer;
+  simulLastTick, totalRuns, totalLoads: Integer;
+
+  mapT1, mapT2, score: Cardinal;
+begin
+  DEFAULT_PEACE_TIME := 60;
+  PAUSE_GAME_AT_TICK := -1;    //Pause at specified game tick
+//  MAKE_SAVEPT_AT_TICK := 40800;
+
+  M := 0;
+  desyncCnt := 0;
+  totalRuns := 0;
+  totalLoads := 0;
+  fStartTime := TimeGet;
+
+  mapsCnt := 0;
+  score := 0;
+  runsCnt := 0;
+
+  case MapsType of
+    rmtClassic: mapsCnt := Length(MAPS);
+    rmtMP8:     mapsCnt := Length(MAPS_8P);
+    rmtFight:   mapsCnt := Length(FIGHT_MAPS);
+    rmtCoop:    mapsCnt := Length(COOP_MAPS);
+  end;
+
+  // Make more frequent saves and smaller replay length
+  savesFreq := SAVEPT_FREQ div (1 + (Byte(MapsType = rmtFight)));
+  savesCnt := (SIMUL_TIME_MAX div savesFreq);
+  replayLength := REPLAY_LENGTH div (1 + 2*(Byte(MapsType = rmtFight)));
+
+  for K := 1 to MAPS_TO_TEST do
+//  for K := 5 to High(MAPS) do
+//  while M < mapsCnt do
+  begin
+//    K := Random(mapsCnt) + 1;
+    fMap := MAPS[K];
+//    case MapsType of
+//      rmtClassic: fMap := MAPS[K];
+//      rmtMP8:     fMap := MAPS_8P[K];
+//      rmtFight:   fMap := FIGHT_MAPS[K];
+//      rmtCoop:    fMap := COOP_MAPS[K];
+//    end;
+
+//    Inc(M);
+
+    for L := 1 to cnt_MAP_SIMULATIONS do
+//    L := 1;
+    begin
+      Reset;
+      Inc(totalRuns);
+      fRun := L;
+      CUSTOM_SEED_VALUE := L + M*cnt_MAP_SIMULATIONS + Seed;
+
+      OnProgress3('Seed: ' + IntToStr(CUSTOM_SEED_VALUE));
+
+      OnProgress_Left('');
+      OnProgress_Left2('');
+      OnProgress_Left3('');
+
+      StartGame;
+
+      gGameApp.GameSettings.DebugSaveGameAsText := True;
+
+      gGameApp.GameSettings.SaveCheckpoints := False;
+//      gGameApp.GameSettings.SaveCheckpointsFreq := savesFreq;
+//      gGameApp.GameSettings.SaveCheckpointsLimit := savesCnt;
+
+//      LOG_GAME_TICK := True;
+//      Include(gLog.MessageTypes, lmtCommands);
+
+      mapT1 := TimeGet;
+      SimulateGame(0, DEFAULT_PEACE_TIME*60*10);
+      mapT2 := GetTimeSince(mapT1);
+      score := score + mapT2;
+      Inc(runsCnt);
+
+//      LOG_GAME_TICK := False;
+//      Exclude(gLog.MessageTypes, lmtCommands);
+
+      simulLastTick := min(SIMUL_TIME_MAX, fResults.TimesCount - 1);
+
+      OnProgress2(fMap + ' Run ' + IntToStr(L));
+
+      if Assigned(fOnStop)
+        and fOnStop then
+        Exit;
+    end;
+  end;
+
+
+
+  OnProgress_Left(Format('Score: %d', [Round(score / runsCnt)]));
+
+  gGameApp.StopGame(grSilent);
+end;
+
 
 
 { TKMRunnerStone }
@@ -1948,6 +2170,7 @@ end;
 
 initialization
   RegisterRunner(TKMRunnerDesyncTest);
+  RegisterRunner(TKMRunnerAAIPerformanceTest);
   RegisterRunner(TKMRunnerPushModes);
   RegisterRunner(TKMRunnerGA_TestParRun);
   RegisterRunner(TKMRunnerGA_HandLogistics);
