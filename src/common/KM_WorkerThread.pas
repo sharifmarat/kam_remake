@@ -134,8 +134,8 @@ begin
   try
     if not fWorkCompleted and not Finished then
     begin
-      if not TMonitor.Wait(fTaskQueue, 10000) then
-        raise Exception.Create('Timeout in TKMWorkerThread.WaitForAllWorkToComplete');
+      //Wait infinite until worker thread finish his job
+      while not TMonitor.Wait(fTaskQueue, 1000) do ;
     end;
   finally
     TMonitor.Exit(fTaskQueue);
