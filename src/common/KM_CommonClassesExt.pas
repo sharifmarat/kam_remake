@@ -23,12 +23,23 @@ type
     function Add(const Value: T): Integer; reintroduce;
   end;
 
+
+  TKMWeightedList<T> = class(TList<T>)
+    fWeight: array of Single;
+  public
+    procedure Add(const aValue: T; aWeight: Single); reintroduce;
+    function GetWeightedRandom(out aValue: T): Boolean;
+  end;
+
   function GetCardinality(const PSet: PByteArray; const SizeOfSet(*in bytes*): Integer): Integer; inline;
+
 
 const
   Masks: array[0..7] of Byte = (1, 2, 4, 8, 16, 32, 64, 128);
 
 implementation
+uses
+  KM_CommonUtils;
 
 
 { TSet<T>
@@ -116,6 +127,48 @@ begin
 
   inherited Add(Value);
 end;
+
+
+{ TKMWeightedList }
+procedure TKMWeightedList<T>.Add(const aValue: T; aWeight: Single);
+begin
+  inherited Add(aValue);
+
+  if Count >= Length(fWeight) then
+    SetLength(fWeight, Count + 32);
+
+  fWeight[Count - 1] := aWeight;
+end;
+
+
+function TKMWeightedList<T>.GetWeightedRandom(out aValue: T): Boolean;
+var
+  I: Integer;
+  WeightsSum, Rnd: Extended;
+begin
+  Result := False;
+
+  if Count = 0 then
+    Exit;
+
+  WeightsSum := 0;
+  for I := 0 to Count - 1 do
+    WeightsSum := WeightsSum + fWeight[I];
+
+  Rnd := KaMRandomS1(WeightsSum, 'TKMWeightedList.GetWeightedRandom');
+
+  for I := 0 to Count - 1 do
+  begin
+    if Rnd < fWeight[I] then
+    begin
+      aValue := Items[I];
+      Exit(True);
+    end;
+    Rnd := Rnd - fWeight[I];
+  end;
+  Assert(False, 'Error getting weighted random');
+end;
+
 
 
 end.
