@@ -284,7 +284,7 @@ var
   GAME_SAVE_CHECKPOINT_FREQ_DEF: Integer = 10*15*60; // 15 minutes
   GAME_SAVE_CHECKPOINT_CNT_LIMIT_MIN: Integer  = 0;  // Min limit for number of game checkpoints
   GAME_SAVE_CHECKPOINT_CNT_LIMIT_MAX: Integer  = 40; // Max limit for number of game checkpoints
-  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF: Integer  = 10; // Def limit for number of game checkpoints
+  GAME_SAVE_CHECKPOINT_CNT_LIMIT_DEF: Integer  = 20; // Def limit for number of game checkpoints
 {$IFDEF DEBUG}
 const
 {$ENDIF}
