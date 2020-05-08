@@ -2357,7 +2357,7 @@ begin
   gLog.AddTime('Make savepoint at tick ' + IntToStr(fGameTick));
 
   SaveStream := TKMemoryStreamBinary.Create;
-  SaveGameToStream(TDateTime(0), SaveStream); // Date is not important
+  SaveGameToStream(0, SaveStream); // Date is not important
 
   fSavedReplays.NewSave(SaveStream, fGameTick);
 end;
