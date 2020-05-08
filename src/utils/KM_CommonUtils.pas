@@ -69,6 +69,8 @@ uses
   function KaMRandomWSeedI2(var aSeed: Integer; Range_Both_Directions: Integer): Integer;
   function KaMRandom(const aCaller: AnsiString; aLogRng: Boolean = True): Extended; overload;
   function KaMRandom(aMax: Integer; const aCaller: AnsiString; aLogRng: Boolean = True): Integer; overload;
+  function KaMRandom(aMax: Cardinal; const aCaller: AnsiString; aLogRng: Boolean = True): Cardinal; overload;
+  function KaMRandom(aMax: Int64; const aCaller: AnsiString; aLogRng: Boolean = True): Int64; overload;
   function KaMRandomS1(aMax: Single; const aCaller: AnsiString): Single;
   function KaMRandomI2(Range_Both_Directions: Integer; const aCaller: AnsiString): Integer; overload;
   function KaMRandomS2(Range_Both_Directions: Single; const aCaller: AnsiString): Single; overload;
@@ -1244,6 +1246,31 @@ begin
   if aLogRng then
     LogKamRandom(Result, aCaller, 'I*');
 end;
+
+
+function KaMRandom(aMax: Cardinal; const aCaller: AnsiString; aLogRng: Boolean = True): Cardinal;
+begin
+  if CUSTOM_RANDOM then
+    Result := Trunc(KaMRandom(aCaller, False)*aMax)
+  else
+    Result := Random(aMax);
+
+  if aLogRng then
+    LogKamRandom(Result, aCaller, 'C*');
+end;
+
+
+function KaMRandom(aMax: Int64; const aCaller: AnsiString; aLogRng: Boolean = True): Int64;
+begin
+  if CUSTOM_RANDOM then
+    Result := Trunc(KaMRandom(aCaller, False)*aMax)
+  else
+    Result := Random(aMax);
+
+  if aLogRng then
+    LogKamRandom(Result, aCaller, 'I64*');
+end;
+
 
 
 //Returns random number from -Range_Both_Directions to +Range_Both_Directions
