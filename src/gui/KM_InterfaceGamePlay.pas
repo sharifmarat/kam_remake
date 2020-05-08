@@ -3287,6 +3287,9 @@ begin
   begin
     if Key = gResKeys[SC_PAUSE].Key then
       SetPause(False);
+
+    if (fUIMode = umReplay) and (Key = gResKeys[SC_REPLAY_PLAY_NEXT_TICK].Key) and Button_ReplayStep.Enabled then
+      ReplayClick(Button_ReplayStep);
     Exit;
   end;
 
