@@ -8,7 +8,7 @@ unit KM_AIParameters;
 
 interface
 uses
-  SysUtils, KM_CommonClasses;
+  SysUtils;
 
 {$IFDEF PARALLEL_RUNNER}
   procedure LoadGAParameters(LoadStream: TKMemoryStream);
