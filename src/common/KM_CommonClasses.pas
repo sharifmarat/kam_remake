@@ -846,7 +846,7 @@ begin
 end;
 
 
-{ TKMWeightedList }
+{ TKMWeightedPointList }
 procedure TKMWeightedPointList.Add(const aLoc: TKMPoint; aWeight: Single);
 begin
   inherited Add(aLoc);
