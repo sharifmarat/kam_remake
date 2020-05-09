@@ -2395,6 +2395,7 @@ begin
     if DesiredPassability = tpWalkRoad then
     begin
       if not gTerrain.CheckPassability(fNextPosition, tpWalk) then
+        {$IFNDEF RUNNER}
         Self.Kill(PLAYER_NONE, False, True);
         //Grayter 18.01.2018
         //Despite checking passability of current tile, some units can walk on
@@ -2402,18 +2403,23 @@ begin
         //I don't know why it happens really, so we decided to kill this unit instead
         //of rising error. This problem does not occur in 99.9% gameplays and is fired
         //randomly so it is practically impossible to debug.
-        //raise ELocError.Create( gRes.Units[UnitType].GUIName+' on unwalkable tile at '+KM_Points.TypeToString(fNextPosition)+' pass CanWalk', fNextPosition);
+        {$ELSE}
+        raise ELocError.Create(Format('%s on unwalkable tile at %s pass CanWalk', [gRes.Units[UnitType].GUIName, fNextPosition.ToString]), fNextPosition);
+        {$ENDIF}
     end else
     if not gTerrain.CheckPassability(fNextPosition, DesiredPassability) then
+      {$IFNDEF RUNNER}
       Self.Kill(PLAYER_NONE, False, True);
       //Explanation above
-      //raise ELocError.Create(gRes.Units[UnitType].GUIName+' on unwalkable tile at '+KM_Points.TypeToString(fNextPosition)+' "'+PassabilityGuiText[DesiredPassability] + '"', fNextPosition);
+      {$ELSE}
+      raise ELocError.Create(Format('%s on unwalkable tile at %s pass: ''%s''', [gRes.Units[UnitType].GUIName, fNextPosition.ToString, PassabilityGuiText[DesiredPassability]]), fNextPosition);
+      {$ENDIF}
 
   //
   //Performing Tasks and Actions now
   //------------------------------------------------------------------------------------------------
   if fAction = nil then
-    raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action in TKMUnit.UpdateState',fCurrPosition);
+    raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action in TKMUnit.UpdateState', fCurrPosition);
 
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
