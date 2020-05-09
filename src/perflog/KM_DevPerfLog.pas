@@ -407,10 +407,11 @@ begin
   // (f.e. for game save)
   // that will make 'rare' graphs move at the same positions as other 'every tick' graphs
   for I := LOW_PERF_SECTION to High(TPerfSectionDev) do
-  begin
-    fItems[I].SectionEnter(fTick);
-    fItems[I].SectionLeave;
-  end;
+    if IsCPUSection(I) then
+    begin
+      fItems[I].SectionEnter(fTick);
+      fItems[I].SectionLeave;
+    end;
 end;
 
 
