@@ -98,7 +98,7 @@ begin
   SaveStream.PlaceMarker('CityManagement');
   SaveStream.Write(fOwner);
   SaveStream.Write(fUnitReqCnt);
-  SaveStream.Write(fWarriorsDemands, SizeOf(fWarriorsDemands)); // Usend for Army management -> must be saved
+  SaveStream.Write(fWarriorsDemands, SizeOf(fWarriorsDemands)); // Used for Army management -> must be saved
   //SaveStream.Write(fRequiredWeapons, SizeOf(fRequiredWeapons)); // Computed every time
 
   fPredictor.Save(SaveStream);
@@ -149,7 +149,7 @@ end;
 
 procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
-  LONG_UPDATE = MAX_HANDS * 2; // 30 sec
+  LONG_UPDATE = MAX_HANDS * 2;
 begin
   {$IFDEF PERFLOG}
   gPerfLogs.SectionEnter(psAICityAdv, aTick);
@@ -599,16 +599,19 @@ begin
   begin
     H := gHands[fOwner].Houses[I];
     if not H.IsDestroyed
-      AND H.ResourceDepleted
-      AND (H.CheckResOut(wtAll) = 0) then
+      AND H.ResourceDepleted then
     begin
-      Loc := H.Entrance;
-      // Remove avoid building around coal mine
-      if (H.HouseType = htCoalMine) then
-        gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-3, Loc.Y-3, Loc.X+4, Loc.Y+2));
-      // Mark house plan as exhausted
-      Builder.Planner.MarkAsExhausted(H.HouseType, Loc);
-      H.DemolishHouse(fOwner);
+      H.IsClosedForWorker := True;
+      if (H.CheckResOut(wtAll) = 0) then
+      begin
+        Loc := H.Entrance;
+        // Remove avoid building around coal mine
+        if (H.HouseType = htCoalMine) then
+          gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-3, Loc.Y-3, Loc.X+4, Loc.Y+2));
+        // Mark house plan as exhausted
+        Builder.Planner.MarkAsExhausted(H.HouseType, Loc);
+        H.DemolishHouse(fOwner);
+      end;
     end;
   end;
 end;
