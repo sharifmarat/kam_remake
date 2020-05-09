@@ -2074,52 +2074,56 @@ begin
   //Wait for previous save async tasks to complete before proceeding
   fSaveWorkerThread.WaitForAllWorkToComplete;
 
-  //Convert name to full path+name
-  fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiplayer);
-  mpLocalDataPath := SaveName(aSaveName, EXT_SAVE_MP_LOCAL, IsMultiplayer);
+  gPerfLogs.SectionEnter(psGameSave, fGameTick);
+  try
+    //Convert name to full path+name
+    fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiplayer);
+    mpLocalDataPath := SaveName(aSaveName, EXT_SAVE_MP_LOCAL, IsMultiplayer);
 
-  SaveGameToFile(fullPath, aTimestamp, mpLocalDataPath);
+    SaveGameToFile(fullPath, aTimestamp, mpLocalDataPath);
 
-  if not IsMultiPlayerOrSpec then
-    // Update GameSettings for saved positions in lists of saves and replays
-    gGameApp.GameSettings.MenuSPSaveFileName := aSaveName;
+    if not IsMultiPlayerOrSpec then
+      // Update GameSettings for saved positions in lists of saves and replays
+      gGameApp.GameSettings.MenuSPSaveFileName := aSaveName;
 
-  //Remember which savegame to try to restart (if game was not saved before)
-  fSaveFile := ExtractRelativePath(ExeDir, fullPath);
+    //Remember which savegame to try to restart (if game was not saved before)
+    fSaveFile := ExtractRelativePath(ExeDir, fullPath);
 
-  NewSaveName := SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer);
-  //Copy basesave so we have a starting point for replay
-  if IsReplay then
-  begin
-    //Game was saved from replay (.bas file)
-    if FileExists(fLoadFromFile) then
-      KMCopyFileAsync(fLoadFromFile, NewSaveName, True, fSaveWorkerThread);
-  end else
-    //Normally saved game
-    {$IFDEF PARALLEL_RUNNER}
-      KMCopyFileAsync(SaveName('basesave_thread_'+IntToStr(THREAD_NUMBER), EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True, fSaveWorkerThread);
-    {$ELSE}
-      KMCopyFileAsync(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True, fSaveWorkerThread);
-    {$ENDIF}
+    NewSaveName := SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer);
+    //Copy basesave so we have a starting point for replay
+    if IsReplay then
+    begin
+      //Game was saved from replay (.bas file)
+      if FileExists(fLoadFromFile) then
+        KMCopyFileAsync(fLoadFromFile, NewSaveName, True, fSaveWorkerThread);
+    end else
+      //Normally saved game
+      {$IFDEF PARALLEL_RUNNER}
+        KMCopyFileAsync(SaveName('basesave_thread_'+IntToStr(THREAD_NUMBER), EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True, fSaveWorkerThread);
+      {$ELSE}
+        KMCopyFileAsync(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True, fSaveWorkerThread);
+      {$ENDIF}
 
-  //Save replay queue
-  gLog.AddTime('Saving replay info');
-  // Save replay info
-  fGameInputProcess.SaveToFileAsync(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT), fSaveWorkerThread);
+    //Save replay queue
+    gLog.AddTime('Saving replay info');
+    // Save replay info
+    fGameInputProcess.SaveToFileAsync(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT), fSaveWorkerThread);
 
-  // Save checkpoints
-  if gGameApp.GameSettings.SaveCheckpoints and not SKIP_SAVE_SAVPTS_TO_FILE then
-    fSavedReplays.SaveToFileAsync(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT), fSaveWorkerThread);
+    // Save checkpoints
+    if gGameApp.GameSettings.SaveCheckpoints and not SKIP_SAVE_SAVPTS_TO_FILE then
+      fSavedReplays.SaveToFileAsync(ChangeFileExt(fullPath, EXT_SAVE_GAME_SAVEPTS_DOT), fSaveWorkerThread);
 
-  if DoSaveRandomChecks then
-    try
-      RngPath := ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT);
-      gRandomCheckLogger.SaveToPathAsync(RngPath, fSaveWorkerThread);
-    except
-      on E: Exception do
-        gLog.AddTime('Error saving random checks to ' + RngPath); //Silently log error, don't propagate error further
-    end;
-
+    if DoSaveRandomChecks then
+      try
+        RngPath := ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT);
+        gRandomCheckLogger.SaveToPathAsync(RngPath, fSaveWorkerThread);
+      except
+        on E: Exception do
+          gLog.AddTime('Error saving random checks to ' + RngPath); //Silently log error, don't propagate error further
+      end;
+  finally
+    gPerfLogs.SectionLeave(psGameSave);
+  end;
   gLog.AddTime('Saving game', True);
 end;
 
