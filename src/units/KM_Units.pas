@@ -1644,7 +1644,8 @@ end;
 
 procedure TKMUnit.SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse);
 begin
-  SetAction(TKMUnitActionGoInOut.Create(Self, aAction, aGoDir, aHouse));
+  SetAction(TKMUnitActionGoInOut.Create(Self, aAction, aGoDir, aHouse), AnimStep);
+
 end;
 
 
