@@ -396,10 +396,11 @@ var
   I: Integer;
 begin
   inherited;
-  SpectatorSlotsOpen := MAX_LOBBY_SPECTATORS;
 
   for I := 1 to MAX_LOBBY_SLOTS do
     fNetPlayers[I] := TKMNetPlayerInfo.Create;
+
+  Clear;
 end;
 
 
@@ -417,7 +418,7 @@ procedure TKMNetPlayersList.Clear;
 begin
   HostDoesSetup := False;
   RandomizeTeamLocations := False;
-  SpectatorsAllowed := False;
+  SpectatorsAllowed := LOBBY_SET_SPECS_DEFAULT;
   SpectatorSlotsOpen := MAX_LOBBY_SPECTATORS;
   ResetVote;
   fCount := 0;

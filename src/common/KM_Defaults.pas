@@ -212,6 +212,7 @@ var
   MP_RESULTS_IN_SP        :Boolean = False; //Display each players stats in SP
   SHOW_DEBUG_OVERLAY_BEVEL:Boolean = True; //Show debug text overlay Bevel (for better text readability)
   {Gameplay}
+  LOBBY_SET_SPECS_DEFAULT :Boolean = DEBUG_CFG; //Set 'Allow spectators' flag in the lobby by default
   USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
   CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
   PAUSE_GAME_AT_TICK    :Integer = -1;    //Pause at specified game tick
