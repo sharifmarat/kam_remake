@@ -2559,7 +2559,7 @@ begin
   //Unit who will be performing the action
   //Does not require pointer tracking because action should always be destroyed before the unit that owns it
   fUnit       := aUnit;
-  fType := aActionType;
+  fType       := aActionType;
   Locked      := aLocked;
   StepDone    := False;
 end;

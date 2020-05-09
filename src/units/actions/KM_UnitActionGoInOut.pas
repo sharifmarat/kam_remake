@@ -54,7 +54,7 @@ uses
 
 
 { TUnitActionGoInOut }
-constructor TKMUnitActionGoInOut.Create(aUnit: TKMUnit; aAction: TKMUnitActionType; aDirection:TKMGoInDirection; aHouse:TKMHouse);
+constructor TKMUnitActionGoInOut.Create(aUnit: TKMUnit; aAction: TKMUnitActionType; aDirection: TKMGoInDirection; aHouse: TKMHouse);
 begin
   inherited Create(aUnit, aAction, True);
 
