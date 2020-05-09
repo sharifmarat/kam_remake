@@ -1762,7 +1762,7 @@ begin
                   case fNetPlayerKind of
                     lpkHost:
                         begin
-                          fNetPlayers.AddPlayer(fMyNikname, fMyIndexOnServer, gResLocales.UserLocale);
+                          fNetPlayers.AddPlayer(fMyNikname, fMyIndexOnServer, gResLocales.UserLocale, LOBBY_HOST_AS_SPECTATOR);
                           fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname);
                           fHostIndex := fMyIndex;
                           MyNetPlayer.ReadyToStart := True;

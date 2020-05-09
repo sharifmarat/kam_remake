@@ -92,7 +92,7 @@ type
     procedure Clear;
     property Count: Integer read fCount;
 
-    procedure AddPlayer(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex; const aLang: AnsiString);
+    procedure AddPlayer(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex; const aLang: AnsiString; aAsSpectator: Boolean = False);
     procedure AddAIPlayer(aAdvancedAI: Boolean; aSlot: Integer = -1);
     procedure AddClosedPlayer(aSlot: Integer = -1);
     procedure DisconnectPlayer(aIndexOnServer: TKMNetHandleIndex);
@@ -550,7 +550,7 @@ begin
 end;
 
 
-procedure TKMNetPlayersList.AddPlayer(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex; const aLang: AnsiString);
+procedure TKMNetPlayersList.AddPlayer(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex; const aLang: AnsiString; aAsSpectator: Boolean = False);
 begin
   Assert(fCount <= MAX_LOBBY_SLOTS, 'Can''t add player');
   Inc(fCount);
@@ -570,7 +570,7 @@ begin
   fNetPlayers[fCount].DownloadInProgress := False;
   fNetPlayers[fCount].ResetPingRecord;
   //Check if this player must go in a spectator slot
-  if fCount - GetSpectatorCount > MAX_LOBBY_PLAYERS then
+  if aAsSpectator or (fCount - GetSpectatorCount > MAX_LOBBY_PLAYERS) then
     fNetPlayers[fCount].StartLocation := LOC_SPECTATE
   else
     fNetPlayers[fCount].StartLocation := LOC_RANDOM;
