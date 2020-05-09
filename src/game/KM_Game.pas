@@ -2594,8 +2594,7 @@ begin
                         if fGameInputProcess.CommandsConfirmed(fGameTick + 1) then
                         begin
                           {$IFDEF PERFLOG}
-                          gPerfLogs.StackCPU.TickBegin;
-                          gPerfLogs.SectionEnter(psGameTick, fGameTick + 1);
+                          gPerfLogs.TickBegin(fGameTick + 1);
                           {$ENDIF}
                           try
                             // As soon as next command arrives we are no longer in a waiting state
@@ -2663,8 +2662,7 @@ begin
                               gRandomCheckLogger.UpdateState(fGameTick);
                           finally
                             {$IFDEF PERFLOG}
-                            gPerfLogs.SectionLeave(psGameTick);
-                            gPerfLogs.StackCPU.TickEnd;
+                            gPerfLogs.TickEnd;
                             {$ENDIF}
                           end;
                         end
@@ -2680,8 +2678,7 @@ begin
                       begin
                         IncGameTick;
                         {$IFDEF PERFLOG}
-                        gPerfLogs.StackCPU.TickBegin;
-                        gPerfLogs.SectionEnter(psGameTick, fGameTick);
+                        gPerfLogs.TickBegin(fGameTick);
                         {$ENDIF}
 
                         try
@@ -2728,8 +2725,7 @@ begin
                           end;
                         finally
                           {$IFDEF PERFLOG}
-                          gPerfLogs.SectionLeave(psGameTick);
-                          gPerfLogs.StackCPU.TickEnd;
+                          gPerfLogs.TickEnd;
                           {$ENDIF}
                         end;
 

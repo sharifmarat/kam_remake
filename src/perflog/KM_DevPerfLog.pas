@@ -12,6 +12,7 @@ type
   // Collection of PerfLoggers
   TKMPerfLogs = class
   private
+    fTick: Integer;
     fPerfLogForm: TForm;
     fItems: array [TPerfSectionDev] of TKMPerfLogSingle;
     fStackCPU: TKMPerfLogStackCPU;
@@ -40,6 +41,10 @@ type
     procedure SaveToFile(const aFilename: string; aSaveThreshold: Integer = 10);
     procedure ShowForm(aContainer: TWinControl);
     function FormHeight: Integer;
+
+    procedure TickBegin(aTick: Integer);
+    procedure TickEnd;
+
 
     class function IsCPUSection(aSection: TPerfSectionDev): Boolean;
     class function IsGFXSection(aSection: TPerfSectionDev): Boolean;
@@ -376,6 +381,36 @@ begin
   end;
 
   TFormPerfLogs(fPerfLogForm).Show(Self);
+end;
+
+
+procedure TKMPerfLogs.TickBegin(aTick: Integer);
+begin
+  if Self = nil then Exit;
+
+  fTick := aTick;
+  StackCPU.TickBegin;
+  SectionEnter(psGameTick, aTick);
+end;
+
+
+procedure TKMPerfLogs.TickEnd;
+var
+  I: TPerfSectionDev;
+begin
+  if Self = nil then Exit;
+
+  StackCPU.TickEnd;
+  SectionLeave(psGameTick);
+
+  // Enter and leave section to add zero records for not happened events in that tick
+  // (f.e. for game save)
+  // that will make 'rare' graphs move at the same positions as other 'every tick' graphs
+  for I := LOW_PERF_SECTION to High(TPerfSectionDev) do
+  begin
+    fItems[I].SectionEnter(fTick);
+    fItems[I].SectionLeave;
+  end;
 end;
 
 
