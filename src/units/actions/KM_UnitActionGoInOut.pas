@@ -260,7 +260,7 @@ begin
   // After house was destroyed other unit could go there / smth could be placed with as script,
   // but this unit is still walking into house so we have keep it consistent:
   // unit occupied tile if he is standing on that tile or he is going to get onto that tile
-  gTerrain.UnitWalkInsideHouse(fUnit.NextPosition, fUnit);
+  gTerrain.UnitAdd(fUnit.NextPosition, fUnit);
 
   //We are walking straight
   if fStreet.X = fDoor.X then
@@ -317,8 +317,16 @@ begin
     fStreet := KMPoint(fUnit.CurrPosition.X, fUnit.CurrPosition.Y + 1 - Round(fStep));
 
     case fDirection of
-      gdGoInside:  WalkIn;
-      gdGoOutside: begin
+      gdGoInside:   // House could be destroyed on the same tick Action was created
+                    // So we can't do the check before this very moment
+
+                    // Do not allow to enter already destroyed houses
+                    // Since we did not occupy entrance tile other units inside house could do that already
+                    if fHouse.IsDestroyed then
+                      Exit(arActCanNotStart)
+                    else
+                      WalkIn;
+      gdGoOutside:  begin
                       case FindBestExit(fStreet) of
                         beLeft:    fStreet.X := fStreet.X - 1;
                         beCenter:  ;

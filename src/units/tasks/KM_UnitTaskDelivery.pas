@@ -45,6 +45,7 @@ type
     procedure DelegateToOtherSerf(aToSerf: TKMUnitSerf);
     function Execute: TKMTaskResult; override;
     function CouldBeCancelled: Boolean; override;
+    function CanRestartAction(aLastActionResult: TKMActionResult): Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
     function ObjToString(const aSeparator: String = ', '): String; override;
@@ -193,6 +194,8 @@ begin
                 or fFrom.ShouldAbandonDeliveryFrom(fWareType)
                 or fFrom.ShouldAbandonDeliveryFromTo(fToHouse, fWareType, fPhase = 2); //Make immidiate check only on Phase 2 (inside house)
 
+  Result := Result or CanRestartAction(fLastActionResult);
+  
   //do not abandon the delivery if target is destroyed/dead, we will find new target later
   case fDeliverKind of
     dkToHouse:        Result := Result or fToHouse.IsDestroyed
@@ -200,6 +203,15 @@ begin
     dkToConstruction: Result := Result or fToHouse.IsDestroyed;
     dkToUnit:         Result := Result or (fToUnit = nil) or fToUnit.IsDeadOrDying;
   end;
+end;
+
+
+// We can restart some actions
+function TKMTaskDeliver.CanRestartAction(aLastActionResult: TKMActionResult): Boolean;
+begin
+  Result :=     (aLastActionResult = arActCanNotStart)
+            and (fDeliverKind = dkToHouse)
+            and (fPhase - 1 = 6); //Serf tried to get inside destination house
 end;
 
 

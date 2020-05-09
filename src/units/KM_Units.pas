@@ -17,7 +17,7 @@ type
   TKMUnitEvent = procedure(aUnit: TKMUnit) of object;
   TKMUnitFromEvent = procedure(aUnit: TKMUnit; aFrom: TKMHandID) of object;
 
-  TKMActionResult = (arActContinues, arActDone, arActAborted); //
+  TKMActionResult = (arActContinues, arActDone, arActAborted, arActCanNotStart);
 
   TKMUnitArray = array of TKMUnit;
 
@@ -49,6 +49,7 @@ type
     fUnit: TKMUnit; //Unit who's performing the Task
     fPhase: Byte;
     fPhase2: Byte;
+    fLastActionResult: TKMActionResult;
     procedure InitDefaultAction; virtual;
   public
     constructor Create(aUnit: TKMUnit);
@@ -61,6 +62,7 @@ type
     function WalkShouldAbandon: Boolean; dynamic;
 
     function CouldBeCancelled: Boolean; virtual;
+    function CanRestartAction(aLastActionResult: TKMActionResult): Boolean; virtual;
 
     function ObjToString(const aSeparator: String = ', '): String; virtual;
 
@@ -1048,9 +1050,8 @@ begin
   end;
 
   case fAction.Execute of
-    arActContinues: exit;
-    arActDone:      FreeAndNil(fAction);
-    arActAborted:   FreeAndNil(fAction);
+    arActContinues: Exit;
+    else            FreeAndNil(fAction);
   end;
   SetCurrPosition(KMPointRound(fPositionF));
 
@@ -2334,6 +2335,8 @@ end;
 
 {Here are common Unit.UpdateState routines}
 function TKMUnit.UpdateState: Boolean;
+var
+  actResult: TKMActionResult;
 begin
   //There are layers of unit activity (bottom to top):
   // - Action (Atom creating layer (walk 1frame, etc..))
@@ -2423,18 +2426,33 @@ begin
 
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
-  case fAction.Execute of
-    arActContinues: begin SetCurrPosition(KMPointRound(fPositionF)); Exit; end; //will update FOW
-    arActAborted:   begin FreeAndNil(fAction); FreeAndNil(fTask); end;
-    arActDone:      FreeAndNil(fAction);
+  actResult := fAction.Execute;
+  case actResult of
+    arActContinues:     begin
+                          SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
+                          Exit;
+                        end;
+    arActAborted:       begin
+                          FreeAndNil(fAction);
+                          FreeAndNil(fTask);
+                        end;
+    arActCanNotStart:   begin
+                          FreeAndNil(fAction);
+                          if not fTask.CanRestartAction(arActCanNotStart) then
+                            FreeAndNil(fTask);
+                        end;
+    arActDone:          FreeAndNil(fAction);
   end;
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
   if fTask <> nil then
-  case fTask.Execute of
-    trTaskContinues:  Exit;
+  begin
+    fTask.fLastActionResult := actResult;
+    case fTask.Execute of
+      trTaskContinues:  Exit;
       trTaskDone:       FreeAndNil(fTask);
     end;
+  end;
 
   //If we get to this point then it means that common part is done and now
   //we can perform unit-specific activities (ask for job, etc..)
@@ -2474,6 +2492,7 @@ begin
   inherited Create;
 
   fType := uttUnknown;
+  fLastActionResult := arActDone;
   Assert(aUnit <> nil);
   fUnit := aUnit.GetUnitPointer;
   fPhase  := 0;
@@ -2492,6 +2511,7 @@ begin
   LoadStream.Read(fUnit, 4);//Substitute it with reference on SyncLoad
   LoadStream.Read(fPhase);
   LoadStream.Read(fPhase2);
+  LoadStream.Read(fLastActionResult, SizeOf(fLastActionResult));
 end;
 
 
@@ -2523,6 +2543,12 @@ begin
 end;
 
 
+function TKMUnitTask.CanRestartAction(aLastActionResult: TKMActionResult): Boolean;
+begin
+  Result := False; // Can't restart by default
+end;
+
+
 function TKMUnitTask.CouldBeCancelled: Boolean;
 begin
   Result := False; //Only used in some child classes
@@ -2548,6 +2574,7 @@ begin
     SaveStream.Write(Integer(0));
   SaveStream.Write(fPhase);
   SaveStream.Write(fPhase2);
+  SaveStream.Write(fLastActionResult, SizeOf(fLastActionResult));
 end;
 
 
