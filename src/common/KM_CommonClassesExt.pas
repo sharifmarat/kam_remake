@@ -18,6 +18,7 @@ type
   end;
 
   // List with unique elements
+  // Very slow implmentation because of 'Contains' - loop through all list when adding 1 element
   TKMListUnique<T> = class(TList<T>)
   public
     function Add(const Value: T): Integer; reintroduce;

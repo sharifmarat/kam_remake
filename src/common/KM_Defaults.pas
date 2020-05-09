@@ -213,29 +213,29 @@ var
   SHOW_DEBUG_OVERLAY_BEVEL:Boolean = True; //Show debug text overlay Bevel (for better text readability)
   {Gameplay}
   LOBBY_SET_SPECS_DEFAULT :Boolean = DEBUG_CFG; //Set 'Allow spectators' flag in the lobby by default
-  USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
-  CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
-  PAUSE_GAME_AT_TICK    :Integer = -1;    //Pause at specified game tick
-  MAKE_SAVEPT_AT_TICK   :Integer = -1;    //Make savepoint at a certain tick (for both game and replay)
-  ALLOW_SAVE_IN_REPLAY  :Boolean = DEBUG_CFG; //Allow to save game from replay, good for debug
-  SAVE_GAME_AS_TEXT     :Boolean = True; //Save game serialized //Todo DEBUG. set to False before releases
+  USE_CUSTOM_SEED         :Boolean = False; //Use custom seed for every game
+  CUSTOM_SEED_VALUE       :Integer = 0;     //Custom seed value
+  PAUSE_GAME_AT_TICK      :Integer = -1;    //Pause at specified game tick
+  MAKE_SAVEPT_AT_TICK     :Integer = -1;    //Make savepoint at a certain tick (for both game and replay)
+  ALLOW_SAVE_IN_REPLAY    :Boolean = DEBUG_CFG; //Allow to save game from replay, good for debug
+  SAVE_GAME_AS_TEXT       :Boolean = True; //Save game serialized //Todo DEBUG. set to False before releases
   {Gameplay cheats}
-  UNLOCK_CAMPAIGN_MAPS  :Boolean = False; //Unlock more maps for debug
-  REDUCE_SHOOTING_RANGE :Boolean = False; //Reduce shooting range for debug
-  MULTIPLAYER_CHEATS    :Boolean = DEBUG_CFG; //Allow cheats and debug overlays (e.g. CanWalk) in Multiplayer
-  DEBUG_CHEATS          :Boolean = DEBUG_CFG; //Cheats for debug (place scout and reveal map) which can be turned On from menu
-  MULTIPLAYER_SPEEDUP   :Boolean = DEBUG_CFG; //Allow you to use F8 to speed up multiplayer for debugging (only effects local client)
-  SKIP_EXE_CRC          :Boolean = False; //Don't check KaM_Remake.exe CRC before MP game (useful for testing with different versions)
-  ALLOW_MP_MODS         :Boolean = False; //Don't let people enter MP mode if they are using mods (unit.dat, house.dat, etc.)
-  ALLOW_TAKE_AI_PLAYERS :Boolean = False; //Allow to load SP maps without Human player (usefull for AI testing)
+  UNLOCK_CAMPAIGN_MAPS    :Boolean = False; //Unlock more maps for debug
+  REDUCE_SHOOTING_RANGE   :Boolean = False; //Reduce shooting range for debug
+  MULTIPLAYER_CHEATS      :Boolean = DEBUG_CFG; //Allow cheats and debug overlays (e.g. CanWalk) in Multiplayer
+  DEBUG_CHEATS            :Boolean = DEBUG_CFG; //Cheats for debug (place scout and reveal map) which can be turned On from menu
+  MULTIPLAYER_SPEEDUP     :Boolean = DEBUG_CFG; //Allow you to use F8 to speed up multiplayer for debugging (only effects local client)
+  SKIP_EXE_CRC            :Boolean = False; //Don't check KaM_Remake.exe CRC before MP game (useful for testing with different versions)
+  ALLOW_MP_MODS           :Boolean = False; //Don't let people enter MP mode if they are using mods (unit.dat, house.dat, etc.)
+  ALLOW_TAKE_AI_PLAYERS   :Boolean = False; //Allow to load SP maps without Human player (usefull for AI testing)
   {Data output}
-  BLOCK_SAVE            :Boolean = False; //Block saving game (used in parallel Runner)
-  BLOCK_FILE_WRITE      :Boolean = False; //Block to write into txt file (used in parallel Runner)
-  WRITE_DECODED_MISSION :Boolean = False; //Save decoded mission as txt file
-  WRITE_WALKTO_LOG      :Boolean = False; //Write even more output into log + slows down game noticably
-  WriteResourceInfoToTXT:Boolean = False; //Whenever to write txt files with defines data properties on loading
-  EXPORT_SPRITE_ATLASES :Boolean = False; //Whenever to write all generated textures to BMP on loading (extremely time consuming)
-  EXPORT_INFLUENCE      :Boolean = False;
+  BLOCK_SAVE              :Boolean = False; //Block saving game (used in parallel Runner)
+  BLOCK_FILE_WRITE        :Boolean = False; //Block to write into txt file (used in parallel Runner)
+  WRITE_DECODED_MISSION   :Boolean = False; //Save decoded mission as txt file
+  WRITE_WALKTO_LOG        :Boolean = False; //Write even more output into log + slows down game noticably
+  WriteResourceInfoToTXT  :Boolean = False; //Whenever to write txt files with defines data properties on loading
+  EXPORT_SPRITE_ATLASES   :Boolean = False; //Whenever to write all generated textures to BMP on loading (extremely time consuming)
+  EXPORT_INFLUENCE        :Boolean = False;
   {Statistic}
   CtrlPaintCount: Word; //How many Controls were painted in last frame
 
