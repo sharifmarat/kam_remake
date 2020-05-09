@@ -487,7 +487,7 @@ begin
 
   if aMP then
   begin
-    MinimapView := TKMMinimapView.Create(Panel_Settings, Column_X, NextLine(Column_Y,30), 192, 192, True);
+    MinimapView := TKMMinimapView.Create(Panel_Settings, Column_X, NextLine(Column_Y,30), 192, 132, True);
       MinimapView.ShowLocs := True; //In the minimap we want player locations to be shown
       MinimapView.Show;
   end;
@@ -543,12 +543,12 @@ begin
 
 
 // Buttons
-  Column_X := SIZE_X - 160 - 215 * Byte(aMP);
+  Column_X := SIZE_X - 160;// - 215 * Byte(aMP);
   Column_Y := SIZE_Y - 50;
   Button_RMG_Generate_New_Seed := TKMButton.Create(Panel_RMG, Column_X-320-60, Column_Y, 200, 30, gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED], bsMenu);
   Button_RMG_Generate_New_Seed.OnClick := RMG_Generate_New_Seed;
   Button_RMG_Generate_New_Seed.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_NEW_RANDOM_SEED_HINT];
-  if aMP then Button_RMG_Generate_New_Seed.Hide;
+  //if aMP then Button_RMG_Generate_New_Seed.Hide;
   Button_RMG_Generate := TKMButton.Create(Panel_RMG, Column_X-160-10, Column_Y, 160, 30, gResTexts[TX_MAPED_RMG_SETTINGS_GENERATE_MAP], bsMenu);
   Button_RMG_Generate.OnClick := RMG_Generate_Map;
   Button_RMG_Generate.Hint := gResTexts[TX_MAPED_RMG_SETTINGS_GENERATE_MAP_HINT];
