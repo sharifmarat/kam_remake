@@ -2589,7 +2589,13 @@ begin
     try
       case fGameMode of
         gmSingle, gmCampaign, gmMulti, gmMultiSpectate:
-                      if not (fGameMode in [gmMulti, gmMultiSpectate]) or (fNetworking.NetGameState <> lgsLoading) then
+                      // For MP game we have to play tick (and possible GIP) only in lgsGame state
+                      // Otherwise fNetworking.MyIndex could contain corrupted data
+                      // (f.e. when reconnecting MyIndex is reset by TKMNetworking.Join, assuming we will receive a new one with PlayerList packet
+                      // which could be delayed)
+                      // Other NetGameState's states could also have potential problems
+                      if   IsSingleplayerGame // SP game
+                        or (fNetworking.NetGameState = lgsGame) then // MP game in Game state
                       begin
                         if fGameInputProcess.CommandsConfirmed(fGameTick + 1) then
                         begin
