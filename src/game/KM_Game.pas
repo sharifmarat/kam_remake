@@ -107,7 +107,6 @@ type
     procedure CheckPauseGameAtTick;
     function IsReplayEnded: Boolean;
 
-    function PlayNextTick: Boolean;
     procedure UserAction(aActionType: TKMUserActionType);
     function GetReplayAutosaveEffectiveFrequency: Integer;
 
@@ -119,8 +118,12 @@ type
     procedure SetGameSpeedActualValue(aSpeed: Single);
     procedure UpdateClockUI;
     function GetMapEditor: TKMMapEditor;
-
     function DoRenderGame: Boolean;
+
+    function PlayGameTick: Boolean;
+    function PlayReplayTick: Boolean;
+
+    function PlayNextTick: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -2574,7 +2577,154 @@ begin
 end;
 
 
+function TKMGame.PlayGameTick: Boolean;
+begin
+  Result := False;
+
+  {$IFDEF PERFLOG}
+  gPerfLogs.TickBegin(fGameTick + 1);
+  {$ENDIF}
+  try
+    // As soon as next command arrives we are no longer in a waiting state
+    if fWaitingForNetwork then
+      WaitingPlayersDisplay(False);
+
+    IncGameTick;
+
+    fLastReplayTick := fGameTick;
+
+    if (fGameMode in [gmMulti, gmMultiSpectate]) then
+      fNetworking.LastProcessedTick := fGameTick;
+
+    //Tell the master server about our game on the specific tick (host only)
+    if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
+      and (((fMissionMode = mmNormal) and (fGameTick = ANNOUNCE_BUILD_MAP))
+      or ((fMissionMode = mmTactic) and (fGameTick = ANNOUNCE_BATTLE_MAP))) then
+    fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapFullCRC, fNetworking.NetPlayers.GetConnectedCount);
+
+    fScripting.UpdateState;
+    UpdatePeacetime; //Send warning messages about peacetime if required
+    gTerrain.UpdateState;
+    gAIFields.UpdateState(fGameTick);
+    gHands.UpdateState(fGameTick); //Quite slow
+
+    if gGame = nil then Exit; //Quit the update if game was stopped for some reason
+
+    gMySpectator.UpdateState(fGameTick);
+    fPathfinding.UpdateState;
+    gProjectiles.UpdateState; //If game has stopped it's NIL
+
+    fGameInputProcess.RunningTimer(fGameTick); //GIP_Multi issues all commands for this tick
+
+    //Returning to the lobby (through MP GIP) ends the game
+    if gGame = nil then Exit;
+
+    //In aggressive mode store a command every tick so we can find exactly when a replay mismatch occurs
+    if AGGRESSIVE_REPLAYS then
+      fGameInputProcess.CmdTemp(gicTempDoNothing); //do call cmd before SaveGameCheckpoint
+
+    fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
+
+    //Save replay to memory (to be able to load it later)
+    //Make replay save only after everything is updated (UpdateState)
+    if gGameApp.GameSettings.SaveCheckpoints
+      and (fSavedReplays.Count <= gGameApp.GameSettings.SaveCheckpointsLimit) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
+      and ((fGameTick = MAKE_SAVEPT_AT_TICK)
+        or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
+        or ((fGameTick mod gGameApp.GameSettings.SaveCheckpointsFreq) = 0)) then
+      SaveReplayToMemory;
+
+    // Update our ware distributions from settings at the start of the game
+    if (fGameTick = 1)
+    and IsWareDistributionStoredBetweenGames then
+      fGameInputProcess.CmdWareDistribution(gicWareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
+
+    if (fGameTick mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
+      IssueAutosaveCommand;
+
+    CheckPauseGameAtTick;
+
+    Result := True;
+
+    if DoSaveRandomChecks then
+      gRandomCheckLogger.UpdateState(fGameTick);
+  finally
+    {$IFDEF PERFLOG}
+    gPerfLogs.TickEnd;
+    {$ENDIF}
+  end;
+end;
+
+
+function TKMGame.PlayReplayTick: Boolean;
+begin
+  Result := False;
+
+  IncGameTick;
+  {$IFDEF PERFLOG}
+  gPerfLogs.TickBegin(fGameTick);
+  {$ENDIF}
+
+  try
+    fScripting.UpdateState;
+    UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
+    gTerrain.UpdateState;
+    gAIFields.UpdateState(fGameTick);
+    gHands.UpdateState(fGameTick); //Quite slow
+    if gGame = nil then Exit; //Quit the update if game was stopped for some reason
+    gMySpectator.UpdateState(fGameTick);
+    fPathfinding.UpdateState;
+    gProjectiles.UpdateState; //If game has stopped it's NIL
+
+    //Issue stored commands
+    fGameInputProcess.ReplayTimer(fGameTick);
+
+    if gGame = nil then
+      Exit; //Quit if the game was stopped by a replay mismatch
+
+    //Only increase LastTick, since we could load replay earlier at earlier state
+//  if fSavedReplays <> nil then
+    fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
+
+    //Save replay to memory (to be able to load it later)
+    //Make replay save only after everything is updated (UpdateState)
+    if gGameApp.GameSettings.ReplayAutosave
+      and (fSavedReplays.Count <= REPLAY_AUTOSAVE_CNT_MAX) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
+      and ((fGameTick = 1) //First tick
+        or (fGameTick = MAKE_SAVEPT_AT_TICK)
+        or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
+        or ((fGameTick mod GetReplayAutosaveEffectiveFrequency) = 0)) then
+    begin
+      SaveReplayToMemory;
+      fGamePlayInterface.AddReplayMark(fGameTick);
+    end;
+
+    if not fSkipReplayEndCheck and IsReplayEnded then
+      RequestGameHold(grReplayEnd);
+
+    if fAdvanceFrame then
+    begin
+      fAdvanceFrame := False;
+      fIsPaused := True;
+    end;
+  finally
+    {$IFDEF PERFLOG}
+    gPerfLogs.TickEnd;
+    {$ENDIF}
+  end;
+
+  if DoGameHold then
+    Exit;
+
+  CheckPauseGameAtTick;
+
+  Result := True;
+end;
+
+
 function TKMGame.PlayNextTick: Boolean;
+var
+  gipMP: TKMGameInputProcess_Multi;
 begin
   Result := False;
   //Some PCs seem to change 8087CW randomly between events like Timers and OnMouse*,
@@ -2588,164 +2738,35 @@ begin
   try
     try
       case fGameMode of
-        gmSingle, gmCampaign, gmMulti, gmMultiSpectate:
-                      // For MP game we have to play tick (and possible GIP) only in lgsGame state
-                      // Otherwise fNetworking.MyIndex could contain corrupted data
-                      // (f.e. when reconnecting MyIndex is reset by TKMNetworking.Join, assuming we will receive a new one with PlayerList packet
-                      // which could be delayed)
-                      // Other NetGameState's states could also have potential problems
-                      if   IsSingleplayerGame // SP game
-                        or (fNetworking.NetGameState = lgsGame) then // MP game in Game state
-                      begin
-                        if fGameInputProcess.CommandsConfirmed(fGameTick + 1) then
-                        begin
-                          {$IFDEF PERFLOG}
-                          gPerfLogs.TickBegin(fGameTick + 1);
-                          {$ENDIF}
-                          try
-                            // As soon as next command arrives we are no longer in a waiting state
-                            if fWaitingForNetwork then
-                              WaitingPlayersDisplay(False);
-
-                            IncGameTick;
-
-                            fLastReplayTick := fGameTick;
-
-                            if (fGameMode in [gmMulti, gmMultiSpectate]) then
-                              fNetworking.LastProcessedTick := fGameTick;
-
-                            //Tell the master server about our game on the specific tick (host only)
-                            if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
-                              and (((fMissionMode = mmNormal) and (fGameTick = ANNOUNCE_BUILD_MAP))
-                              or ((fMissionMode = mmTactic) and (fGameTick = ANNOUNCE_BATTLE_MAP))) then
-                            fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapFullCRC, fNetworking.NetPlayers.GetConnectedCount);
-
-                            fScripting.UpdateState;
-                            UpdatePeacetime; //Send warning messages about peacetime if required
-                            gTerrain.UpdateState;
-                            gAIFields.UpdateState(fGameTick);
-                            gHands.UpdateState(fGameTick); //Quite slow
-
-                            if gGame = nil then Exit; //Quit the update if game was stopped for some reason
-
-                            gMySpectator.UpdateState(fGameTick);
-                            fPathfinding.UpdateState;
-                            gProjectiles.UpdateState; //If game has stopped it's NIL
-
-                            fGameInputProcess.RunningTimer(fGameTick); //GIP_Multi issues all commands for this tick
-
-                            //Returning to the lobby (through MP GIP) ends the game
-                            if gGame = nil then Exit;
-
-                            //In aggressive mode store a command every tick so we can find exactly when a replay mismatch occurs
-                            if AGGRESSIVE_REPLAYS then
-                              fGameInputProcess.CmdTemp(gicTempDoNothing); //do call cmd before SaveGameCheckpoint
-
-                            fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
-
-                            //Save replay to memory (to be able to load it later)
-                            //Make replay save only after everything is updated (UpdateState)
-                            if gGameApp.GameSettings.SaveCheckpoints
-                              and (fSavedReplays.Count <= gGameApp.GameSettings.SaveCheckpointsLimit) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
-                              and ((fGameTick = MAKE_SAVEPT_AT_TICK)
-                                or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
-                                or ((fGameTick mod gGameApp.GameSettings.SaveCheckpointsFreq) = 0)) then
-                              SaveReplayToMemory;
-
-                            // Update our ware distributions from settings at the start of the game
-                            if (fGameTick = 1)
-                            and IsWareDistributionStoredBetweenGames then
-                              fGameInputProcess.CmdWareDistribution(gicWareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
-
-                            if (fGameTick mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
-                              IssueAutosaveCommand;
-
-                            CheckPauseGameAtTick;
-
-                            Result := True;
-
-                            if DoSaveRandomChecks then
-                              gRandomCheckLogger.UpdateState(fGameTick);
-                          finally
-                            {$IFDEF PERFLOG}
-                            gPerfLogs.TickEnd;
-                            {$ENDIF}
+        gmSingle,
+        gmCampaign:       Result := PlayGameTick;
+        gmMulti,
+        gmMultiSpectate:  begin
+                            gipMP := TKMGameInputProcess_Multi(fGameInputProcess);
+                            // For MP game we have to play tick (and possible GIP) only in lgsGame state
+                            // Otherwise fNetworking.MyIndex could contain corrupted data
+                            // (f.e. when reconnecting MyIndex is reset by TKMNetworking.Join, assuming we will receive a new one with PlayerList packet
+                            // which could be delayed)
+                            // Other NetGameState's states could also have potential problems
+                            if fNetworking.NetGameState = lgsGame then // MP game in Game state
+                            begin
+                              if gipMP.CommandsConfirmed(fGameTick + 1) then
+                                Result := PlayGameTick
+                              else
+                              begin
+                                gipMP.WaitingForConfirmation(fGameTick);
+                                if gipMP.NumberConsecutiveWaits > Max(10, Round(fGameSpeedGIP)) then
+                                  WaitingPlayersDisplay(True);
+                              end;
+                              gipMP.UpdateState(fGameTick); //Do maintenance
+                            end;
                           end;
-                        end
-                        else
-                        begin
-                          fGameInputProcess.WaitingForConfirmation(fGameTick);
-                          if TKMGameInputProcess_Multi(fGameInputProcess).NumberConsecutiveWaits > Max(10, Round(fGameSpeedGIP)) then
-                            WaitingPlayersDisplay(True);
-                        end;
-                        fGameInputProcess.UpdateState(fGameTick); //Do maintenance
-                      end;
-        gmReplaySingle,gmReplayMulti:
-                      begin
-                        IncGameTick;
-                        {$IFDEF PERFLOG}
-                        gPerfLogs.TickBegin(fGameTick);
-                        {$ENDIF}
-
-                        try
-                          fScripting.UpdateState;
-                          UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
-                          gTerrain.UpdateState;
-                          gAIFields.UpdateState(fGameTick);
-                          gHands.UpdateState(fGameTick); //Quite slow
-                          if gGame = nil then Exit; //Quit the update if game was stopped for some reason
-                          gMySpectator.UpdateState(fGameTick);
-                          fPathfinding.UpdateState;
-                          gProjectiles.UpdateState; //If game has stopped it's NIL
-
-                          //Issue stored commands
-                          fGameInputProcess.ReplayTimer(fGameTick);
-
-                          if gGame = nil then
-                            Exit; //Quit if the game was stopped by a replay mismatch
-
-                          //Only increase LastTick, since we could load replay earlier at earlier state
-//                          if fSavedReplays <> nil then
-                          fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
-
-                          //Save replay to memory (to be able to load it later)
-                          //Make replay save only after everything is updated (UpdateState)
-                          if gGameApp.GameSettings.ReplayAutosave
-                            and (fSavedReplays.Count <= REPLAY_AUTOSAVE_CNT_MAX) //Do not allow to spam saves, could cause OUT_OF_MEMORY error
-                            and ((fGameTick = 1) //First tick
-                              or (fGameTick = MAKE_SAVEPT_AT_TICK)
-                              or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
-                              or ((fGameTick mod GetReplayAutosaveEffectiveFrequency) = 0)) then
-                          begin
-                            SaveReplayToMemory;
-                            fGamePlayInterface.AddReplayMark(fGameTick);
+        gmReplaySingle,
+        gmReplayMulti:    Result := PlayReplayTick;
+        gmMapEd:          begin
+                            gTerrain.IncAnimStep;
+                            gHands.IncAnimStep;
                           end;
-
-                          if not fSkipReplayEndCheck and IsReplayEnded then
-                            RequestGameHold(grReplayEnd);
-
-                          if fAdvanceFrame then
-                          begin
-                            fAdvanceFrame := False;
-                            fIsPaused := True;
-                          end;
-                        finally
-                          {$IFDEF PERFLOG}
-                          gPerfLogs.TickEnd;
-                          {$ENDIF}
-                        end;
-
-                        if DoGameHold then
-                          Exit;
-
-                        CheckPauseGameAtTick;
-
-                        Result := True;
-                      end;
-        gmMapEd:   begin
-                      gTerrain.IncAnimStep;
-                      gHands.IncAnimStep;
-                    end;
       end;
     except
         on E: Exception do
