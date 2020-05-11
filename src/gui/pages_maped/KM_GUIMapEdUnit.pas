@@ -57,7 +57,7 @@ implementation
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  KM_HandsCollection, KM_RenderUI, KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResUnits, KM_Utils;
+  KM_HandsCollection, KM_RenderUI, KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResUnits, KM_Utils, KM_Terrain;
 
 
 { TKMMapEdUnit }
@@ -120,10 +120,10 @@ begin
   DropBox_ArmyOrder.OnChange := Unit_ArmyChange1;
 
   TKMLabel.Create(Panel_Army, 0, 185, 'X:', fntGrey, taLeft);
-  Edit_ArmyOrderX := TKMNumericEdit.Create(Panel_Army, 20, 185, 0, 255);
+  Edit_ArmyOrderX := TKMNumericEdit.Create(Panel_Army, 20, 185, 1, MAX_MAP_SIZE - 1);
   Edit_ArmyOrderX.OnChange := Unit_ArmyChange1;
   TKMLabel.Create(Panel_Army, 0, 205, 'Y:', fntGrey, taLeft);
-  Edit_ArmyOrderY := TKMNumericEdit.Create(Panel_Army, 20, 205, 0, 255);
+  Edit_ArmyOrderY := TKMNumericEdit.Create(Panel_Army, 20, 205, 1, MAX_MAP_SIZE - 1);
   Edit_ArmyOrderY.OnChange := Unit_ArmyChange1;
   TKMLabel.Create(Panel_Army, 110, 185, gResTexts[TX_MAPED_GROUP_ORDER_DIRECTION], fntGrey, taLeft);
   Edit_ArmyOrderDir := TKMNumericEdit.Create(Panel_Army, 110, 205, 0, 7);
@@ -177,6 +177,9 @@ begin
   SetPositionUnitConditions(fGroup.Condition);
 
   //Warrior specific
+  Edit_ArmyOrderX.ValueMax := gTerrain.MapX - 1;
+  Edit_ArmyOrderY.ValueMax := gTerrain.MapY - 1;
+
   ImageStack_Army.SetCount(fGroup.MapEdCount, fGroup.UnitsPerRow, fGroup.UnitsPerRow div 2);
   Label_ArmyCount.Caption := IntToStr(fGroup.MapEdCount);
   DropBox_ArmyOrder.ItemIndex := Byte(fGroup.MapEdOrder.Order);
