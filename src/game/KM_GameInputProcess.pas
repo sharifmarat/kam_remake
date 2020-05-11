@@ -348,8 +348,6 @@ type
     procedure CmdTemp(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint); overload;
     procedure CmdTemp(aCommandType: TKMGameInputCommandType); overload;
 
-    function CommandsConfirmed(aTick: Cardinal): Boolean; virtual;
-    procedure WaitingForConfirmation(aTick: Cardinal); virtual;
     procedure ReplayTimer(aTick: Cardinal); virtual;
     procedure RunningTimer(aTick: Cardinal); virtual;
     procedure UpdateState(aTick: Cardinal); virtual;
@@ -1221,17 +1219,6 @@ begin
   else
     //This will be our check to ensure everything is consistent
     fQueue[fCount].Rand := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess.StoreCommand'));
-end;
-
-
-function TKMGameInputProcess.CommandsConfirmed(aTick: Cardinal): Boolean;
-begin
-  Result := True;
-end;
-
-
-procedure TKMGameInputProcess.WaitingForConfirmation(aTick: Cardinal);
-begin
 end;
 
 

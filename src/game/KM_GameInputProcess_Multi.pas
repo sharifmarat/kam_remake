@@ -69,7 +69,7 @@ type
   public
     constructor Create(aReplayState: TKMGIPReplayState; aNetworking: TKMNetworking);
     destructor Destroy; override;
-    procedure WaitingForConfirmation(aTick: Cardinal); override;
+    procedure WaitingForConfirmation(aTick: Cardinal);
     procedure AdjustDelay(aGameSpeed: Single);
     procedure PlayerTypeChange(aPlayer: TKMHandID; aType: TKMHandType);
     function GetNetworkDelay: Word;
@@ -78,7 +78,7 @@ type
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
     procedure RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
     procedure ResyncFromTick(aSender: ShortInt; aTick: Cardinal);
-    function CommandsConfirmed(aTick: Cardinal):boolean; override;
+    function CommandsConfirmed(aTick: Cardinal): Boolean;
     procedure RunningTimer(aTick: Cardinal); override;
     procedure UpdateState(aTick: Cardinal); override;
   end;
